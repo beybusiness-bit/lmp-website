@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>결제 완료 — lmp작업실</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+  <div id="header-placeholder"></div>
+
+  <div id="page-content" style="max-width:600px; margin:80px auto; padding:0 24px; text-align:center;">
+    <div id="result-area">
+      <p>결제 확인 중...</p>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="/assets/js/config.js"></script>
+  <script src="/assets/js/main.js"></script>
+  <script>
+    (async () => {
+      const params = new URLSearchParams(location.search);
+      const paymentKey = params.get('paymentKey');
+      const orderId    = params.get('orderId');
+      const amount     = params.get('amount');
+      const el         = document.getElementById('result-area');
+
+      if (!paymentKey || !orderId || !amount) {
+        el.innerHTML = '<h2>잘못된 접근입니다.</h2><a href="/">홈으로</a>';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/confirm-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paymentKey, orderId, amount }),
+        });
+        const json = await res.json();
+
+        if (json.success) {
+          el.innerHTML = `
+            <h2>결제가 완료됐어요 🎉</h2>
+            <p style="margin:16px 0;">주문번호: <strong>${orderId}</strong></p>
+            <p>결제금액: <strong>${Number(amount).toLocaleString()}원</strong></p>
+            <a href="/" style="display:inline-block; margin-top:32px;">홈으로 돌아가기</a>
+          `;
+        } else {
+          el.innerHTML = `
+            <h2>결제 승인에 실패했어요</h2>
+            <p style="color:red;">${json.error}</p>
+            <a href="/potential/shop.html">다시 시도하기</a>
+          `;
+        }
+      } catch (e) {
+        el.innerHTML = '<h2>오류가 발생했어요</h2><a href="/potential/shop.html">다시 시도하기</a>';
+      }
+    })();
+  </script>
+</body>
+</html>
