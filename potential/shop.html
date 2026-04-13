@@ -4,23 +4,56 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>상점 — lmp작업실</title>
-  <meta name="description" content="lmp작업실 상점입니다.">
-  <meta property="og:title" content="상점 — lmp작업실">
-  <meta property="og:url" content="https://lazymaxpotential.kr/potential/shop">
-  <link rel="canonical" href="https://lazymaxpotential.kr/potential/shop">
   <link rel="stylesheet" href="/assets/css/main.css">
 </head>
 <body>
   <div id="header-placeholder"></div>
-  <main id="main-content">
-    <div id="page-content">
-      <div class="container">
-        <p style="padding:80px 0;color:var(--text-muted);text-align:center;">콘텐츠 준비 중</p>
-      </div>
-    </div>
-  </main>
+
+  <div id="page-content">
+
+    <!-- 테스트용 더미 상품 -->
+    <section style="max-width:480px; margin:60px auto; padding:0 24px;">
+      <h2>테스트 상품</h2>
+      <p style="margin:12px 0 4px;">가격: <strong>1,000원</strong></p>
+      <p style="color:#888; font-size:14px; margin-bottom:32px;">
+        결제 테스트용 상품입니다. 실제 결제가 발생하지 않아요. (테스트 모드)
+      </p>
+      <button id="pay-btn"
+        style="background:var(--accent-green); border:none; padding:14px 32px;
+               font-size:16px; font-weight:700; cursor:pointer; border-radius:6px;">
+        결제하기 1,000원
+      </button>
+      <p id="pay-error" style="color:red; margin-top:12px; display:none;"></p>
+    </section>
+
+  </div>
+
   <div id="footer-placeholder"></div>
+
   <script src="/assets/js/config.js"></script>
   <script src="/assets/js/main.js"></script>
+
+  <!-- 토스페이먼츠 SDK -->
+  <script src="https://js.tosspayments.com/v1/payment"></script>
+  <script>
+    document.getElementById('pay-btn').addEventListener('click', () => {
+      const clientKey = 'test_gck_PBal2vxj81jOaG5Njpn235RQgOAN';
+      const orderId = 'lmp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+
+      const tossPayments = TossPayments(clientKey);
+      tossPayments.requestPayment('카드', {
+        amount: 1000,
+        orderId: orderId,
+        orderName: '테스트 상품',
+        customerName: 'lmp고객',
+        successUrl: window.location.origin + '/payment/success.html',
+        failUrl:    window.location.origin + '/payment/fail.html',
+      }).catch((err) => {
+        const errEl = document.getElementById('pay-error');
+        errEl.style.display = 'block';
+        errEl.textContent = err.message || '결제 중 오류가 발생했습니다.';
+      });
+    });
+  </script>
 </body>
 </html>
