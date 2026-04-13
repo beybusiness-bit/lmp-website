@@ -1,3 +1,17 @@
+// ── 준비중 모드 ──────────────────────────────
+const PREVIEW_KEY = 'lmp관리자';
+const urlPreview = new URLSearchParams(window.location.search).get('preview');
+if (urlPreview === PREVIEW_KEY) localStorage.setItem('lmp_preview', 'true');
+const isPreview = localStorage.getItem('lmp_preview') === 'true';
+
+if (!isPreview) {
+  document.documentElement.style.overflow = 'hidden';
+  const cs = document.createElement('div');
+  cs.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#FFF9F3;display:flex;align-items:center;justify-content:center;overflow:hidden;';
+  cs.innerHTML = `<img src="/assets/images/coming-soon.jpg" alt="준비중" class="cs-img">`;
+  document.body.appendChild(cs);
+}
+// ─────────────────────────────────────────────
 /**
  * lmp작업실 — 공통 스크립트
  * 헤더/푸터 주입, 플로팅 버튼, 모바일 메뉴, 인증 상태
