@@ -469,3 +469,16 @@ button { font-family: var(--font-main); cursor: pointer; border: none; backgroun
   .header__mobile  { display: flex; justify-self: end; }
   :root { --container-pad: 16px; }
 }
+
+/* 준비중 이미지 */
+.cs-img {
+  width: 100vw;
+  height: auto;
+}
+@media (max-width: 768px) {
+  .cs-img {
+    width: auto;
+    height: 100vh;
+  }
+}
+
