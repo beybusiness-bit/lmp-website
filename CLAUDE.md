@@ -18,12 +18,16 @@ const AUTH = {
 const REPO = {
   GITHUB_URL: 'https://github.com/beybusiness-bit/lmp-website',
   LOCAL_PATH: '~/projects/lmp-website',
-  DEPLOY_PATH: 'flea-market/index.html', // 기존 사이트에 이 경로로 추가
+  DEPLOY_PATH: 'gmbf/index.html', // 기존 사이트에 이 경로로 추가
+  DEPLOY_METHOD: 'GitHub Pages', // ⚠️ Vercel 아님. GitHub Pages로 배포
+  LIVE_URL: 'https://lazymaxpotential.kr/gmbf/',
+  NOTE: '.nojekyll 파일 필수 (없으면 404 발생)',
 };
 ```
 
 ### 앱 아키텍처 요약
-- **앱 성격**: 플리마켓 셀러 준비 포털 + 방문객 행사 안내 — 단일 HTML 파일(`flea-market/index.html`)로 기존 사이트에 추가
+- **앱 성격**: 플리마켓 셀러 준비 포털 + 방문객 행사 안내 — 단일 HTML 파일(`gmbf/index.html`)로 기존 사이트에 추가
+- **배포 방식**: ⚠️ GitHub Pages (Vercel 아님). push → main 브랜치 → 자동 배포. `.nojekyll` 파일 루트에 필수.
 - **UI 구조**: 하단 탭 (모바일 최적화), 영역별 페이지 전환
 - **로그인**: 공개 영역(누구나) + 셀러 영역(이름+연락처) + 관리자 영역(비밀번호)
 - **반응형 전략**: 모바일 우선 개발. 데스크탑에서 열어도 스마트폰 화면처럼 세로형으로 표시 (폰 프레임 레이아웃). 모든 기능 완성 후 여유 생기면 데스크탑 반응형 추가.
