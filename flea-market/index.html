@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>LMP 플리마켓</title>
+<style>
+/* ===== RESET ===== */
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+  background:#e5ddd5;
+  display:flex;justify-content:center;min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+#app{
+  width:100%;max-width:430px;min-height:100vh;
+  background:#fff;position:relative;overflow-x:hidden;
+  display:flex;flex-direction:column;
+}
+@media(max-width:430px){body{background:#fff;}}
+
+/* ===== TOKENS ===== */
+:root{
+  --p:#FF6B35;--pl:#FF8C5A;--pbg:#FFF3EE;
+  --navy:#1A2940;--accent:#FFD166;--green:#06D6A0;--red:#EF476F;
+  --gray:#8896A5;--glite:#F5F7FA;--border:#E5E9EF;
+  --text:#1A2940;--muted:#8896A5;
+}
+
+/* ===== HEADER ===== */
+#hdr{
+  background:#fff;border-bottom:1px solid var(--border);
+  padding:14px 16px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:100;
+}
+.hdr-title{font-size:17px;font-weight:800;color:var(--text);}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:700;}
+.bv{background:var(--glite);color:var(--gray);}
+.bs{background:#E8F5E9;color:#2E7D32;}
+.ba{background:#FCE4EC;color:#C62828;}
+.hdr-btn{
+  font-size:13px;color:var(--p);cursor:pointer;
+  padding:5px 12px;border-radius:8px;
+  border:1.5px solid var(--p);background:#fff;font-weight:700;
+}
+
+/* ===== CONTENT ===== */
+#content{flex:1;overflow-y:auto;padding-bottom:72px;}
+
+/* ===== BOTTOM NAV ===== */
+#bnav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:430px;
+  background:#fff;border-top:1px solid var(--border);
+  display:flex;z-index:100;
+}
+.ni{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:8px 4px 10px;cursor:pointer;border:none;background:none;
+  transition:color .2s;
+}
+.ni.on{color:var(--p);}
+.ni:not(.on){color:var(--gray);}
+.ni-ico{font-size:20px;margin-bottom:2px;}
+.ni-lbl{font-size:10px;font-weight:700;}
+
+/* ===== PAGES ===== */
+.pg{display:none;}
+.pg.on{display:block;}
+
+/* ===== HERO ===== */
+.hero{
+  background:linear-gradient(135deg,var(--p) 0%,#e83e00 100%);
+  padding:32px 20px 40px;color:#fff;text-align:center;
+}
+.hero-ttl{font-size:26px;font-weight:900;margin-bottom:4px;}
+.hero-sub{font-size:13px;opacity:.85;margin-bottom:20px;}
+.dday-box{
+  display:inline-flex;flex-direction:column;
+  background:rgba(255,255,255,.2);border-radius:18px;
+  padding:14px 30px;backdrop-filter:blur(8px);
+}
+.dday-n{font-size:44px;font-weight:900;line-height:1;}
+.dday-l{font-size:11px;opacity:.9;margin-top:4px;}
+
+/* ===== INFO CARDS ===== */
+.cards{padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.card{background:var(--glite);border-radius:14px;padding:14px;}
+.card-ico{font-size:22px;margin-bottom:6px;}
+.card-lbl{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:3px;}
+.card-val{font-size:14px;font-weight:700;color:var(--text);}
+.card-full{grid-column:1/-1;}
+
+/* ===== NOTICE ===== */
+.notice{
+  margin:0 16px 16px;background:#FFFBEB;
+  border:1px solid var(--accent);border-radius:12px;padding:14px;
+}
+.notice-ttl{font-size:13px;font-weight:700;color:#92400E;margin-bottom:5px;}
+.notice-txt{font-size:13px;color:#78350F;line-height:1.65;}
+
+/* ===== SECTION TITLE ===== */
+.stl{font-size:15px;font-weight:800;color:var(--text);padding:18px 16px 10px;}
+
+/* ===== BUTTONS ===== */
+.btn{
+  display:block;width:100%;padding:14px;
+  border-radius:12px;font-size:15px;font-weight:700;
+  cursor:pointer;border:none;text-align:center;transition:all .2s;
+}
+.btn-p{background:var(--p);color:#fff;}
+.btn-p:active{background:var(--pl);}
+.btn-s{background:var(--glite);color:var(--text);}
+.btn-o{background:#fff;color:var(--p);border:1.5px solid var(--p);}
+.btn-r{background:var(--red);color:#fff;}
+.btn-sm{padding:7px 12px;font-size:12px;border-radius:8px;display:inline-block;width:auto;}
+
+/* ===== INPUTS ===== */
+.ig{margin-bottom:12px;}
+.lbl{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px;display:block;}
+.inp{
+  width:100%;padding:12px 14px;border:1.5px solid var(--border);
+  border-radius:10px;font-size:15px;color:var(--text);background:#fff;
+  transition:border-color .2s;-webkit-appearance:none;
+}
+.inp:focus{outline:none;border-color:var(--p);}
+textarea.inp{resize:vertical;min-height:72px;}
+
+/* ===== MODAL ===== */
+.ov{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.5);z-index:200;
+  justify-content:center;align-items:flex-end;
+}
+.ov.on{display:flex;}
+.modal{
+  background:#fff;width:100%;max-width:430px;
+  border-radius:24px 24px 0 0;padding:20px 20px 40px;
+  animation:up .3s ease;
+}
+@keyframes up{from{transform:translateY(100%);}to{transform:translateY(0);}}
+.mhdl{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px;}
+.modal h2{font-size:20px;font-weight:900;margin-bottom:5px;}
+.modal .msub{font-size:13px;color:var(--muted);margin-bottom:18px;}
+
+/* ===== GUIDE ===== */
+.g-q{background:var(--pbg);border-radius:16px;padding:18px;margin:14px 16px;}
+.g-q h3{font-size:15px;font-weight:800;margin-bottom:12px;}
+.g-opts{display:flex;flex-direction:column;gap:8px;}
+.g-opt{
+  background:#fff;border:1.5px solid var(--border);
+  border-radius:10px;padding:12px 14px;
+  font-size:14px;cursor:pointer;text-align:left;transition:all .2s;
+}
+.g-opt:hover{border-color:var(--p);color:var(--p);}
+.g-ans{
+  background:#fff;border-left:4px solid var(--p);
+  border-radius:12px;margin:14px 16px;padding:18px;
+  box-shadow:0 2px 12px rgba(0,0,0,.07);
+}
+.g-ans h3{font-size:14px;font-weight:800;color:var(--p);margin-bottom:10px;}
+.g-ans ul{padding-left:16px;}
+.g-ans li{font-size:14px;line-height:1.75;margin-bottom:3px;}
+.g-back{margin:0 16px 16px;}
+
+/* ===== CHECKLIST ===== */
+.cl-item{
+  display:flex;align-items:center;
+  padding:14px 16px;border-bottom:1px solid var(--border);gap:12px;cursor:pointer;
+}
+.cl-item:last-child{border-bottom:none;}
+.chk{
+  width:24px;height:24px;border-radius:50%;border:2px solid var(--border);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .2s;font-size:12px;font-weight:700;
+}
+.chk.on{background:var(--green);border-color:var(--green);color:#fff;}
+.cl-txt{font-size:14px;flex:1;line-height:1.4;}
+.cl-txt.done{text-decoration:line-through;color:var(--muted);}
+.pbar-bg{height:6px;background:var(--glite);border-radius:3px;margin:0 16px 4px;overflow:hidden;}
+.pbar{height:100%;background:var(--green);border-radius:3px;transition:width .3s;}
+.ptxt{font-size:12px;color:var(--muted);text-align:right;padding:0 16px 14px;}
+
+/* ===== SELLER CARDS ===== */
+.scrd{
+  background:#fff;border:1px solid var(--border);
+  border-radius:14px;padding:14px;margin-bottom:10px;
+}
+.scrd-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:7px;}
+.booth-tag{font-size:11px;font-weight:700;color:var(--p);background:var(--pbg);padding:3px 9px;border-radius:20px;}
+.cat-tag{font-size:11px;color:var(--muted);background:var(--glite);padding:3px 9px;border-radius:20px;}
+.scrd-name{font-size:16px;font-weight:800;margin-bottom:4px;}
+.scrd-desc{font-size:13px;color:var(--muted);line-height:1.5;}
+
+/* ===== MAP ===== */
+.map-wrap{position:relative;margin:14px 16px;border-radius:14px;overflow:hidden;border:1px solid var(--border);}
+.map-img{width:100%;display:block;}
+.map-ph{
+  background:var(--glite);height:280px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:var(--muted);font-size:13px;gap:8px;
+}
+.mdot{
+  position:absolute;width:22px;height:22px;border-radius:50%;
+  cursor:pointer;transform:translate(-50%,-50%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:800;color:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);transition:transform .2s;
+}
+.mdot:hover{transform:translate(-50%,-50%) scale(1.3);}
+.mdot-mine{background:var(--p);animation:pulse 2s infinite;}
+.mdot-other{background:var(--navy);}
+@keyframes pulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,107,53,.5);}
+  50%{box-shadow:0 0 0 8px rgba(255,107,53,0);}
+}
+
+/* ===== CANVAS ===== */
+#mk-canvas{width:100%;border-radius:12px;border:1px solid var(--border);display:block;}
+
+/* ===== ADMIN ===== */
+.ast{
+  font-size:11px;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.5px;
+  padding:14px 16px 8px;border-bottom:1px solid var(--border);
+}
+.srow{
+  display:flex;align-items:center;
+  padding:11px 16px;border-bottom:1px solid var(--border);gap:10px;
+}
+.srow-info{flex:1;}
+.srow-name{font-size:14px;font-weight:700;}
+.srow-ph{font-size:12px;color:var(--muted);}
+.srow-booth{font-size:11px;font-weight:700;color:var(--p);background:var(--pbg);padding:2px 8px;border-radius:20px;}
+.stats{display:flex;gap:8px;padding:0 16px 14px;}
+.sbox{flex:1;background:var(--glite);border-radius:12px;padding:12px;text-align:center;}
+.sbox-n{font-size:22px;font-weight:900;color:var(--p);}
+.sbox-l{font-size:10px;color:var(--muted);font-weight:700;margin-top:2px;}
+
+/* ===== CHIPS ===== */
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 10px;}
+.chip{
+  font-size:12px;padding:5px 12px;border-radius:20px;
+  border:1.5px solid var(--border);cursor:pointer;background:#fff;font-weight:700;
+}
+.chip.on{border-color:var(--p);background:var(--pbg);color:var(--p);}
+
+/* ===== DIVIDER ===== */
+.div{height:8px;background:var(--glite);}
+
+/* ===== TALLY ===== */
+.tally-wrap{margin:0 16px 16px;border-radius:12px;overflow:hidden;border:1px solid var(--border);}
+.tally-wrap iframe{display:block;width:100%;border:none;}
+.tally-ph{padding:36px;text-align:center;color:var(--muted);font-size:13px;line-height:1.7;}
+
+/* ===== EMPTY ===== */
+.empty{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty-ico{font-size:40px;margin-bottom:10px;}
+
+/* ===== TOAST ===== */
+#toast{
+  position:fixed;bottom:86px;left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:var(--navy);color:#fff;
+  padding:12px 20px;border-radius:50px;
+  font-size:14px;font-weight:700;z-index:300;
+  transition:transform .25s;white-space:nowrap;max-width:88%;
+}
+#toast.on{transform:translateX(-50%) translateY(0);}
+
+/* ===== MISC ===== */
+.row2{display:flex;gap:8px;}
+.row2 .ig{flex:1;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HEADER -->
+<div id="hdr">
+  <div class="hdr-title">🛍️ LMP 플리마켓</div>
+  <div class="hdr-right">
+    <span id="hdr-badge" class="badge bv">방문객</span>
+    <button id="hdr-btn" class="hdr-btn" onclick="openLogin()">로그인</button>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div id="content">
+
+  <!-- ── PAGE: HOME ── -->
+  <div id="pg-home" class="pg on">
+    <div class="hero">
+      <div class="hero-ttl">🛍️ LMP 플리마켓</div>
+      <div class="hero-sub" id="hero-sub">날짜 미정</div>
+      <div class="dday-box">
+        <div class="dday-n" id="dday">D-?</div>
+        <div class="dday-l">행사까지</div>
+      </div>
+    </div>
+
+    <div class="notice" id="notice-box" style="margin-top:14px;">
+      <div class="notice-ttl">📢 공지사항</div>
+      <div class="notice-txt" id="notice-txt">공지사항을 불러오는 중…</div>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-ico">📅</div>
+        <div class="card-lbl">행사 날짜</div>
+        <div class="card-val" id="info-date">미정</div>
+      </div>
+      <div class="card">
+        <div class="card-ico">📍</div>
+        <div class="card-lbl">장소</div>
+        <div class="card-val" id="info-loc">미정</div>
+      </div>
+      <div class="card" id="vc-card" style="display:none;">
+        <div class="card-ico">👥</div>
+        <div class="card-lbl">예상 방문객</div>
+        <div class="card-val" id="info-vis">-</div>
+      </div>
+      <div class="card card-full" id="home-cta">
+        <div class="card-ico">🏪</div>
+        <div class="card-lbl">셀러이신가요?</div>
+        <div class="card-val" style="font-size:13px;font-weight:400;color:var(--muted);margin-top:4px;">
+          로그인하면 체크리스트·마케팅 이미지 등<br>셀러 전용 기능을 쓸 수 있어요.
+        </div>
+        <button class="btn btn-p" style="margin-top:12px;font-size:13px;padding:10px;" onclick="openLogin()">셀러 로그인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: GUIDE ── -->
+  <div id="pg-guide" class="pg">
+    <div class="stl">📖 셀러 준비 가이드</div>
+    <div id="guide-area"></div>
+  </div>
+
+  <!-- ── PAGE: CHECKLIST ── -->
+  <div id="pg-checklist" class="pg">
+    <div class="stl">✅ 준비 체크리스트</div>
+    <div class="pbar-bg"><div class="pbar" id="pbar" style="width:0%"></div></div>
+    <div class="ptxt" id="ptxt">0 / 0 완료</div>
+    <div id="cl-list"></div>
+  </div>
+
+  <!-- ── PAGE: BOOTH ── -->
+  <div id="pg-booth" class="pg">
+    <div class="stl">🏪 내 부스</div>
+    <div id="booth-card" style="margin:0 16px 14px;background:var(--pbg);border-radius:16px;padding:18px;">
+      <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:3px;">내 부스 번호</div>
+      <div style="font-size:36px;font-weight:900;color:var(--p);" id="my-booth-num">-</div>
+      <div style="font-size:14px;color:var(--text);margin-top:5px;" id="my-booth-name">부스명 미등록</div>
+    </div>
+
+    <div class="stl" style="padding-top:4px;">📍 현장 배치도</div>
+    <div class="map-wrap" id="booth-map">
+      <div class="map-ph">
+        <span style="font-size:38px;">🗺️</span>
+        <span>배치도 준비 중</span>
+        <span style="font-size:11px;">관리자가 업로드하면 표시됩니다</span>
+      </div>
+    </div>
+
+    <div class="div" style="margin:14px 0;"></div>
+    <div class="stl" style="padding-top:4px;">📋 부스 정보 제출</div>
+    <div style="padding:0 16px 12px;font-size:13px;color:var(--muted);">
+      방문객 소개 페이지에 표시될 부스 정보를 제출해 주세요.
+    </div>
+    <div class="tally-wrap" id="tally-booth">
+      <div class="tally-ph">📝 부스정보 제출 폼이 여기에 표시됩니다<br><span style="font-size:11px;">(Tally 폼 ID 설정 필요)</span></div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: MARKETING ── -->
+  <div id="pg-marketing" class="pg">
+    <div class="stl">🎨 마케팅 이미지 만들기</div>
+    <div style="padding:0 16px 14px;font-size:13px;color:var(--muted);">템플릿에 상품 사진과 텍스트를 합성해 홍보용 이미지를 만들 수 있어요.</div>
+    <div style="padding:0 16px;">
+      <div class="ig">
+        <label class="lbl">상품 사진 업로드</label>
+        <input type="file" id="product-file" accept="image/*" onchange="loadPhoto(this)" class="inp" style="padding:10px;">
+      </div>
+      <div class="row2">
+        <div class="ig">
+          <label class="lbl">부스명 / 슬로건</label>
+          <input type="text" id="mk-title" class="inp" placeholder="예: 보라네 옷가게" oninput="drawCanvas()">
+        </div>
+        <div class="ig">
+          <label class="lbl">한 줄 소개</label>
+          <input type="text" id="mk-sub" class="inp" placeholder="감성 빈티지 의류" oninput="drawCanvas()">
+        </div>
+      </div>
+    </div>
+    <div style="padding:0 16px;">
+      <canvas id="mk-canvas" width="1080" height="1080"></canvas>
+    </div>
+    <div style="padding:14px 16px;">
+      <button class="btn btn-p" onclick="downloadImg()">⬇️ PNG 다운로드</button>
+    </div>
+  </div>
+
+  <!-- ── PAGE: SELLERS ── -->
+  <div id="pg-sellers" class="pg">
+    <div class="stl">🏪 셀러 소개</div>
+    <div class="chips" id="cat-chips">
+      <div class="chip on" data-f="all" onclick="filterS(this)">전체</div>
+    </div>
+    <div id="sellers-grid" style="padding:0 16px;">
+      <div class="empty"><div class="empty-ico">🛍️</div><p>셀러 정보 준비 중이에요</p></div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: VENUE ── -->
+  <div id="pg-venue" class="pg">
+    <div class="stl">🗺️ 현장 안내</div>
+    <div class="map-wrap" id="venue-map">
+      <div class="map-ph">
+        <span style="font-size:38px;">🗺️</span>
+        <span>배치도 준비 중</span>
+      </div>
+    </div>
+    <div style="padding:0 16px 10px;font-size:13px;color:var(--muted);">지도를 클릭하면 위치별 안내를 볼 수 있어요.</div>
+
+    <div class="div"></div>
+    <div class="stl">🚇 오시는 길</div>
+    <div style="padding:0 16px 16px;">
+      <div class="card" style="margin-bottom:10px;">
+        <div class="card-ico">🚌</div>
+        <div class="card-lbl">대중교통</div>
+        <div class="card-val" style="font-size:13px;font-weight:400;color:var(--muted);" id="transport-txt">안내 준비 중</div>
+      </div>
+      <div class="card">
+        <div class="card-ico">🅿️</div>
+        <div class="card-lbl">주차</div>
+        <div class="card-val" style="font-size:13px;font-weight:400;color:var(--muted);" id="parking-txt">안내 준비 중</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: VISIT ── -->
+  <div id="pg-visit" class="pg">
+    <div class="stl">📝 방문 신청</div>
+    <div style="padding:0 16px 10px;font-size:13px;color:var(--muted);">사전 방문 신청을 하시면 특별 혜택이 있어요!</div>
+    <div class="tally-wrap" id="tally-visit">
+      <div class="tally-ph">📝 방문신청 폼이 여기에 표시됩니다<br><span style="font-size:11px;">(Tally 폼 ID 설정 필요)</span></div>
+    </div>
+  </div>
+
+  <!-- ── PAGE: ADMIN ── -->
+  <div id="pg-admin" class="pg">
+    <div class="stl">⚙️ 관리자 대시보드</div>
+    <div class="stats">
+      <div class="sbox"><div class="sbox-n" id="a-cnt">0</div><div class="sbox-l">등록 셀러</div></div>
+      <div class="sbox"><div class="sbox-n" id="a-cl">0%</div><div class="sbox-l">체크 완료율</div></div>
+      <div class="sbox"><div class="sbox-n" id="a-tally">0</div><div class="sbox-l">부스정보 제출</div></div>
+    </div>
+
+    <div class="div"></div>
+    <div class="ast">셀러 추가</div>
+    <div style="padding:12px 16px;">
+      <div class="row2">
+        <div class="ig"><label class="lbl">이름</label><input type="text" id="ns-name" class="inp" placeholder="셀러 이름"></div>
+        <div class="ig"><label class="lbl">부스 번호</label><input type="text" id="ns-booth" class="inp" placeholder="A-1"></div>
+      </div>
+      <div class="ig"><label class="lbl">연락처 (숫자만)</label><input type="tel" id="ns-phone" class="inp" placeholder="01012345678"></div>
+      <button class="btn btn-p" onclick="addSeller()">➕ 셀러 추가</button>
+    </div>
+
+    <div class="div"></div>
+    <div class="ast">셀러 명단</div>
+    <div id="a-seller-list"><div class="empty"><p>등록된 셀러가 없습니다</p></div></div>
+
+    <div class="div"></div>
+    <div class="ast">행사 설정</div>
+    <div style="padding:12px 16px;">
+      <div class="row2">
+        <div class="ig"><label class="lbl">행사 날짜</label><input type="date" id="a-date" class="inp"></div>
+        <div class="ig"><label class="lbl">예상 방문객 수</label><input type="number" id="a-vis" class="inp" placeholder="200"></div>
+      </div>
+      <div class="ig"><label class="lbl">장소</label><input type="text" id="a-loc" class="inp" placeholder="장소명 입력"></div>
+      <div class="ig"><label class="lbl">대중교통 안내</label><input type="text" id="a-transport" class="inp" placeholder="예: 2호선 성수역 2번 출구 도보 5분"></div>
+      <div class="ig"><label class="lbl">주차 안내</label><input type="text" id="a-parking" class="inp" placeholder="예: 근처 공영주차장 이용"></div>
+      <div class="ig"><label class="lbl">공지사항</label><textarea id="a-notice" class="inp" placeholder="공지 내용 입력"></textarea></div>
+      <button class="btn btn-p" onclick="saveSettings()">💾 설정 저장</button>
+    </div>
+  </div>
+
+</div><!-- /#content -->
+
+<!-- BOTTOM NAV -->
+<nav id="bnav"></nav>
+
+<!-- LOGIN MODAL -->
+<div class="ov" id="login-ov" onclick="if(event.target===this)closeLogin()">
+  <div class="modal">
+    <div class="mhdl"></div>
+    <div id="form-seller">
+      <h2>셀러 로그인</h2>
+      <div class="msub">이름과 연락처를 입력하세요</div>
+      <div class="ig"><label class="lbl">이름</label><input type="text" id="l-name" class="inp" placeholder="이름 입력"></div>
+      <div class="ig"><label class="lbl">연락처 (숫자만)</label><input type="tel" id="l-phone" class="inp" placeholder="01012345678"></div>
+      <button class="btn btn-p" style="margin-bottom:10px;" onclick="doSellerLogin()">셀러로 입장</button>
+      <button class="btn btn-s" onclick="showAdminForm()">관리자 로그인</button>
+    </div>
+    <div id="form-admin" style="display:none;">
+      <h2>관리자 로그인</h2>
+      <div class="msub">관리자 비밀번호를 입력하세요</div>
+      <div class="ig"><label class="lbl">비밀번호</label><input type="password" id="a-pw" class="inp" placeholder="비밀번호"></div>
+      <button class="btn btn-p" style="margin-bottom:10px;" onclick="doAdminLogin()">관리자로 입장</button>
+      <button class="btn btn-s" onclick="showSellerForm()">← 셀러 로그인으로</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAP POPUP -->
+<div class="ov" id="map-ov" onclick="if(event.target===this)closeMapPop()">
+  <div class="modal">
+    <div class="mhdl"></div>
+    <h2 id="pop-ttl">위치 안내</h2>
+    <div class="msub" id="pop-body" style="margin-bottom:16px;font-size:14px;color:var(--text);line-height:1.6;"></div>
+    <button class="btn btn-s" onclick="closeMapPop()">닫기</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+</div><!-- /#app -->
+
+<!-- Firebase SDK (활성화 필요 시 config 입력 후 주석 해제) -->
+<!--
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+-->
+
+<script>
+// ─────────────────────────────────────────
+//  CONFIG — Firebase 설정값을 여기에 입력
+// ─────────────────────────────────────────
+const FB = {
+  apiKey:'TBD', authDomain:'TBD', projectId:'TBD',
+  storageBucket:'TBD', messagingSenderId:'TBD', appId:'TBD',
+};
+const TALLY_BOOTH = 'TBD'; // Tally 부스정보 폼 ID
+const TALLY_VISIT = 'TBD'; // Tally 방문신청 폼 ID
+const ADMIN_PW    = 'beybey12!';
+const FB_READY    = FB.apiKey !== 'TBD';
+
+// ─────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────
+let S = {
+  role: 'visitor',   // visitor | seller | admin
+  seller: null,
+  page: 'home',
+  cfg: { eventDate:'', location:'', expectedVisitors:0, announcementText:'', transportInfo:'', parkingInfo:'' },
+  sellers: [],
+  checklist: [],
+};
+
+const DEFAULT_CL = [
+  {id:'c1', text:'부스 테이블/의자 준비'},
+  {id:'c2', text:'판매 상품 포장 완료'},
+  {id:'c3', text:'가격표 부착'},
+  {id:'c4', text:'거스름돈 준비 (소액권)'},
+  {id:'c5', text:'카드 단말기 충전'},
+  {id:'c6', text:'SNS 홍보 포스팅'},
+  {id:'c7', text:'장식용 소품 준비'},
+  {id:'c8', text:'비닐봉투/포장지 준비'},
+  {id:'c9', text:'부스 정보 제출 완료'},
+  {id:'c10', text:'행사 당일 도착 시간 확인'},
+];
+
+// ─────────────────────────────────────────
+//  GUIDE TREE
+// ─────────────────────────────────────────
+const GUIDE = {
+  q:'어떤 도움이 필요하신가요?',
+  opts:[
+    {t:'🌱 처음 참가하는 셀러예요', next:{
+      q:'어느 단계에 있으신가요?',
+      opts:[
+        {t:'📦 무엇을 팔지 고민 중', a:{
+          ttl:'판매 품목 선정 팁',
+          li:['직접 만들었거나 큐레이션한 물건이 가장 반응이 좋아요','단가 1~3만원 상품이 회전율이 높아요','한 주제로 통일감 있게 구성하면 눈에 띄어요','5~10가지 품목으로 시작하는 걸 추천해요','테스터·샘플을 두면 체험 판매에 효과적이에요']
+        }},
+        {t:'🏗️ 부스 세팅 방법 궁금', a:{
+          ttl:'부스 세팅 가이드',
+          li:['행사 시작 1시간 전에 도착해서 여유 있게 세팅하세요','테이블 위에 높낮이 차이를 두면 입체감이 생겨요','배치도로 내 부스 위치를 미리 확인하세요','이름표·사인보드를 준비하면 좋아요','콘센트 유무를 운영자에게 미리 확인하세요']
+        }},
+        {t:'💰 가격 책정이 어려워요', a:{
+          ttl:'가격 책정 가이드',
+          li:['재료비 × 3배 = 기본 소비자가 (수제품 기준)','주변 비슷한 상품과 비교해 ±20% 범위로 설정','내 시간당 인건비도 꼭 포함하세요','할인 여지를 남겨 시작 가격을 약간 높게 잡아도 좋아요','세트 구성 할인을 활용하면 객단가가 올라요']
+        }},
+      ]
+    }},
+    {t:'🔄 재참가 셀러예요', a:{
+      ttl:'재참가 셀러 빠른 체크리스트',
+      li:['지난 행사 판매 기록 검토 — 잘 팔린 품목 집중','가격표 업데이트 확인','부스 번호 확인 (변경될 수 있어요)','앱 체크리스트 항목 다시 체크','부스정보 제출 여부 확인']
+    }},
+    {t:'📱 SNS 홍보 방법', a:{
+      ttl:'홍보 가이드',
+      li:['행사 1~2주 전 인스타그램에 예고 포스팅','이 앱 "마케팅 이미지" 기능으로 홍보 이미지 만들기','스토리·릴스로 상품 소개 영상 올리기','당일 아침 "오늘 여기 있어요!" 포스팅 잊지 마세요','#플리마켓 #LMP플리마켓 해시태그 활용']
+    }},
+    {t:'💳 결제 준비', a:{
+      ttl:'결제 준비 가이드',
+      li:['현금: 소액권(천원·오천원) 충분히 준비','카드: 네이버페이·카카오페이 단말기 앱 설치','계좌이체: QR 코드 출력해 두기','보조 배터리 챙기기 — 하루 종일 단말기 켜야 해요','영수증 발행이 필요하면 앱에서 가능한 단말기 확인']
+    }},
+  ]
+};
+
+let guideStack = [];
+
+// ─────────────────────────────────────────
+//  FIREBASE
+// ─────────────────────────────────────────
+let db = null;
+function initFB() {
+  if (!FB_READY || typeof firebase === 'undefined') return;
+  if (!firebase.apps.length) firebase.initializeApp(FB);
+  db = firebase.firestore();
+  loadSettings();
+  loadSellers();
+}
+
+// ─────────────────────────────────────────
+//  UTILS
+// ─────────────────────────────────────────
+const today = () => {
+  const d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth()+1).padStart(2,'0') + '-' +
+    String(d.getDate()).padStart(2,'0');
+};
+
+function fmtDate(s) {
+  if (!s) return '미정';
+  const d = new Date(s + 'T00:00:00');
+  return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
+}
+
+function dday(eventDate) {
+  const diff = Math.ceil((new Date(eventDate+'T00:00:00') - new Date(today()+'T00:00:00')) / 86400000);
+  if (diff > 0) return 'D-' + diff;
+  if (diff === 0) return 'D-Day!';
+  return 'D+' + Math.abs(diff);
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('on'), 2500);
+}
+
+function q(id) { return document.getElementById(id); }
+
+// ─────────────────────────────────────────
+//  AUTH
+// ─────────────────────────────────────────
+function openLogin() {
+  showSellerForm();
+  q('login-ov').classList.add('on');
+  q('l-name').value = '';
+  q('l-phone').value = '';
+}
+function closeLogin() { q('login-ov').classList.remove('on'); }
+function showSellerForm() {
+  q('form-seller').style.display = 'block';
+  q('form-admin').style.display = 'none';
+}
+function showAdminForm() {
+  q('form-seller').style.display = 'none';
+  q('form-admin').style.display = 'block';
+  q('a-pw').value = '';
+}
+
+async function doSellerLogin() {
+  const name  = q('l-name').value.trim();
+  const phone = q('l-phone').value.trim().replace(/\D/g,'');
+  if (!name || !phone) { toast('이름과 연락처를 입력해주세요'); return; }
+
+  if (!db) {
+    // Demo mode (Firebase 미설정 시 테스트용)
+    S.seller = { id:'demo', name, phone, boothNumber:'A-1', boothName: name + '의 부스' };
+    S.role = 'seller';
+    sessionStorage.setItem('sellerSession', JSON.stringify(S.seller));
+    closeLogin();
+    onRole();
+    toast('✅ ' + name + '님, 환영해요! (데모 모드)');
+    return;
+  }
+  try {
+    const snap = await db.collection('sellers').where('name','==',name).where('phone','==',phone).get();
+    if (snap.empty) { toast('❌ 등록된 셀러를 찾을 수 없어요'); return; }
+    S.seller = { id: snap.docs[0].id, ...snap.docs[0].data() };
+    S.role = 'seller';
+    sessionStorage.setItem('sellerSession', JSON.stringify(S.seller));
+    closeLogin(); onRole(); loadCL();
+    toast('✅ ' + name + '님, 환영해요!');
+  } catch(e) { toast('로그인 중 오류가 발생했어요'); console.error(e); }
+}
+
+function doAdminLogin() {
+  if (q('a-pw').value === ADMIN_PW) {
+    S.role = 'admin';
+    sessionStorage.setItem('adminSession','true');
+    closeLogin(); onRole(); loadAdminData();
+    toast('✅ 관리자로 로그인했어요');
+  } else { toast('❌ 비밀번호가 틀렸어요'); }
+}
+
+function logout() {
+  S.role = 'visitor'; S.seller = null;
+  sessionStorage.removeItem('sellerSession');
+  sessionStorage.removeItem('adminSession');
+  onRole(); go('home'); toast('로그아웃 했어요');
+}
+
+function checkSession() {
+  const adm = sessionStorage.getItem('adminSession');
+  const sel = sessionStorage.getItem('sellerSession');
+  if (adm === 'true') { S.role = 'admin'; onRole(); loadAdminData(); }
+  else if (sel) { S.seller = JSON.parse(sel); S.role = 'seller'; onRole(); loadCL(); }
+}
+
+function onRole() {
+  const badge = q('hdr-badge');
+  const btn   = q('hdr-btn');
+  const cta   = q('home-cta');
+  const vc    = q('vc-card');
+
+  if (S.role === 'seller') {
+    badge.textContent = S.seller.name + ' 셀러';
+    badge.className = 'badge bs';
+    btn.textContent = '로그아웃'; btn.onclick = logout;
+    if (cta) cta.style.display = 'none';
+    if (vc)  vc.style.display  = 'flex';
+  } else if (S.role === 'admin') {
+    badge.textContent = '관리자';
+    badge.className = 'badge ba';
+    btn.textContent = '로그아웃'; btn.onclick = logout;
+    if (cta) cta.style.display = 'none';
+    if (vc)  vc.style.display  = 'flex';
+  } else {
+    badge.textContent = '방문객';
+    badge.className = 'badge bv';
+    btn.textContent = '로그인'; btn.onclick = openLogin;
+    if (cta) cta.style.display = 'block';
+    if (vc)  vc.style.display  = 'none';
+  }
+  renderNav();
+  const restricted = ['guide','checklist','booth','marketing'];
+  if (restricted.includes(S.page) && S.role === 'visitor') go('home');
+  if (S.page === 'admin' && S.role !== 'admin') go('home');
+}
+
+// ─────────────────────────────────────────
+//  NAVIGATION
+// ─────────────────────────────────────────
+const NAV = {
+  visitor: [
+    {id:'home',   ico:'🏠', lbl:'홈'},
+    {id:'sellers',ico:'🏪', lbl:'셀러소개'},
+    {id:'venue',  ico:'🗺️', lbl:'현장안내'},
+    {id:'visit',  ico:'📝', lbl:'방문신청'},
+  ],
+  seller: [
+    {id:'home',      ico:'🏠', lbl:'홈'},
+    {id:'guide',     ico:'📖', lbl:'가이드'},
+    {id:'checklist', ico:'✅', lbl:'체크리스트'},
+    {id:'booth',     ico:'🏪', lbl:'내부스'},
+    {id:'marketing', ico:'🎨', lbl:'마케팅'},
+  ],
+  admin: [
+    {id:'home',   ico:'🏠', lbl:'홈'},
+    {id:'admin',  ico:'⚙️', lbl:'관리자'},
+    {id:'sellers',ico:'🏪', lbl:'셀러소개'},
+    {id:'venue',  ico:'🗺️', lbl:'현장안내'},
+  ],
+};
+
+function renderNav() {
+  const items = NAV[S.role] || NAV.visitor;
+  q('bnav').innerHTML = items.map(i =>
+    `<button class="ni ${S.page===i.id?'on':''}" onclick="go('${i.id}')">
+       <span class="ni-ico">${i.ico}</span>
+       <span class="ni-lbl">${i.lbl}</span>
+     </button>`
+  ).join('');
+}
+
+function go(pid) {
+  document.querySelectorAll('.pg').forEach(p => p.classList.remove('on'));
+  const pg = q('pg-' + pid);
+  if (pg) { pg.classList.add('on'); S.page = pid; }
+  q('content').scrollTop = 0;
+  renderNav();
+  if (pid === 'guide')      renderGuide();
+  if (pid === 'checklist')  renderCL();
+  if (pid === 'booth')      renderBooth();
+  if (pid === 'marketing')  initCanvas();
+  if (pid === 'sellers')    renderSellers();
+  if (pid === 'admin')      renderAdmin();
+}
+
+// ─────────────────────────────────────────
+//  SETTINGS
+// ─────────────────────────────────────────
+async function loadSettings() {
+  if (!db) return;
+  try {
+    const d = await db.collection('settings').doc('event').get();
+    if (d.exists) { S.cfg = { ...S.cfg, ...d.data() }; applySettings(); }
+  } catch(e) { console.error(e); }
+}
+
+function applySettings() {
+  const c = S.cfg;
+  if (c.eventDate) {
+    q('info-date').textContent = fmtDate(c.eventDate);
+    q('hero-sub').textContent = fmtDate(c.eventDate);
+    q('dday').textContent = dday(c.eventDate);
+  }
+  if (c.location)         q('info-loc').textContent = c.location;
+  if (c.expectedVisitors) q('info-vis').textContent = Number(c.expectedVisitors).toLocaleString() + '명 예상';
+  if (c.announcementText) q('notice-txt').textContent = c.announcementText;
+  else                    q('notice-txt').textContent = '공지사항이 없습니다.';
+  if (c.transportInfo)    q('transport-txt').textContent = c.transportInfo;
+  if (c.parkingInfo)      q('parking-txt').textContent = c.parkingInfo;
+
+  // Admin fields
+  if (q('a-date') && c.eventDate)      q('a-date').value = c.eventDate;
+  if (q('a-vis')  && c.expectedVisitors) q('a-vis').value = c.expectedVisitors;
+  if (q('a-loc')  && c.location)       q('a-loc').value = c.location;
+  if (q('a-transport') && c.transportInfo) q('a-transport').value = c.transportInfo;
+  if (q('a-parking')   && c.parkingInfo)   q('a-parking').value = c.parkingInfo;
+  if (q('a-notice') && c.announcementText) q('a-notice').value = c.announcementText;
+}
+
+async function saveSettings() {
+  S.cfg = {
+    eventDate:       q('a-date').value,
+    location:        q('a-loc').value.trim(),
+    expectedVisitors:parseInt(q('a-vis').value)||0,
+    announcementText:q('a-notice').value.trim(),
+    transportInfo:   q('a-transport').value.trim(),
+    parkingInfo:     q('a-parking').value.trim(),
+  };
+  if (db) {
+    try { await db.collection('settings').doc('event').set(S.cfg); } catch(e) { toast('저장 오류'); return; }
+  }
+  applySettings();
+  toast('✅ 설정이 저장됐어요');
+}
+
+// ─────────────────────────────────────────
+//  SELLERS
+// ─────────────────────────────────────────
+async function loadSellers() {
+  if (!db) return;
+  try {
+    const snap = await db.collection('sellers').get();
+    S.sellers = snap.docs.map(d => ({id:d.id,...d.data()}));
+    renderSellers(); renderAdmin();
+  } catch(e) { console.error(e); }
+}
+
+function renderSellers() {
+  const pub = S.sellers.filter(s => s.isPublic);
+  const grid = q('sellers-grid');
+  if (!grid) return;
+
+  const cats = [...new Set(pub.map(s=>s.category).filter(Boolean))];
+  const chips = q('cat-chips');
+  const active = chips?.querySelector('.chip.on')?.dataset.f || 'all';
+  if (chips) {
+    chips.innerHTML = `<div class="chip ${active==='all'?'on':''}" data-f="all" onclick="filterS(this)">전체</div>` +
+      cats.map(c => `<div class="chip ${active===c?'on':''}" data-f="${c}" onclick="filterS(this)">${c}</div>`).join('');
+  }
+
+  const list = active === 'all' ? pub : pub.filter(s => s.category === active);
+  if (list.length === 0) {
+    grid.innerHTML = '<div class="empty"><div class="empty-ico">🛍️</div><p>셀러 정보 준비 중이에요</p></div>';
+    return;
+  }
+  grid.innerHTML = list.map(s => `
+    <div class="scrd">
+      <div class="scrd-hd">
+        <span class="booth-tag">부스 ${s.boothNumber||'?'}</span>
+        <span class="cat-tag">${s.category||'기타'}</span>
+      </div>
+      <div class="scrd-name">${s.boothName||s.name}</div>
+      <div class="scrd-desc">${s.description||'소개 준비 중'}</div>
+    </div>`
+  ).join('');
+}
+
+function filterS(chip) {
+  document.querySelectorAll('#cat-chips .chip').forEach(c=>c.classList.remove('on'));
+  chip.classList.add('on');
+  renderSellers();
+}
+
+// ─────────────────────────────────────────
+//  ADMIN
+// ─────────────────────────────────────────
+async function addSeller() {
+  const name  = q('ns-name').value.trim();
+  const phone = q('ns-phone').value.trim().replace(/\D/g,'');
+  const booth = q('ns-booth').value.trim();
+  if (!name || !phone) { toast('이름과 연락처는 필수예요'); return; }
+
+  const data = {
+    name, phone, boothNumber:booth,
+    boothName:'', description:'', category:'',
+    isPublic:false, tallySubmitted:false,
+    createdAt: db ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString(),
+  };
+  if (db) {
+    try { await db.collection('sellers').add(data); await loadSellers(); } catch(e) { toast('추가 오류'); return; }
+  } else {
+    S.sellers.push({id:'local-'+Date.now(),...data});
+  }
+  q('ns-name').value = ''; q('ns-phone').value = ''; q('ns-booth').value = '';
+  toast('✅ ' + name + ' 셀러가 추가됐어요');
+  renderAdmin();
+}
+
+async function delSeller(id, name) {
+  if (!confirm(name + ' 셀러를 삭제할까요?')) return;
+  if (db) {
+    try { await db.collection('sellers').doc(id).delete(); await loadSellers(); } catch(e) { toast('삭제 오류'); return; }
+  } else {
+    S.sellers = S.sellers.filter(s => s.id !== id);
+  }
+  toast(name + ' 셀러가 삭제됐어요');
+  renderAdmin();
+}
+
+function renderAdmin() {
+  if (q('a-cnt'))   q('a-cnt').textContent   = S.sellers.length;
+  if (q('a-tally')) q('a-tally').textContent = S.sellers.filter(s=>s.tallySubmitted).length;
+
+  const list = q('a-seller-list');
+  if (!list) return;
+  if (S.sellers.length === 0) {
+    list.innerHTML = '<div class="empty"><p>등록된 셀러가 없습니다</p></div>'; return;
+  }
+  list.innerHTML = S.sellers.map(s => `
+    <div class="srow">
+      <div class="srow-info">
+        <div class="srow-name">${s.name}</div>
+        <div class="srow-ph">${s.phone}</div>
+      </div>
+      <span class="srow-booth">${s.boothNumber||'미배정'}</span>
+      <button class="btn btn-s btn-sm" style="color:var(--red);" onclick="delSeller('${s.id}','${s.name}')">삭제</button>
+    </div>`
+  ).join('');
+  applySettings();
+}
+
+function loadAdminData() {
+  if (db) { loadSellers(); loadSettings(); }
+  if (S.page === 'admin') renderAdmin();
+}
+
+// ─────────────────────────────────────────
+//  CHECKLIST
+// ─────────────────────────────────────────
+async function loadCL() {
+  S.checklist = DEFAULT_CL.map(i => ({...i, checked:false, checkedAt:null}));
+  if (!db || !S.seller || S.seller.id === 'demo') { renderCL(); return; }
+  try {
+    const d = await db.collection('checklists').doc(S.seller.id).get();
+    if (d.exists && d.data().items) {
+      const saved = d.data().items;
+      S.checklist = DEFAULT_CL.map(i => {
+        const f = saved.find(s => s.id === i.id);
+        return f ? {...i,...f} : {...i, checked:false};
+      });
+    }
+  } catch(e) { console.error(e); }
+  renderCL();
+}
+
+async function toggleCL(id) {
+  const item = S.checklist.find(i => i.id === id);
+  if (!item) return;
+  item.checked = !item.checked;
+  item.checkedAt = item.checked ? today() : null;
+  renderCL();
+  if (!db || !S.seller || S.seller.id === 'demo') return;
+  try {
+    await db.collection('checklists').doc(S.seller.id).set({
+      items: S.checklist,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch(e) { console.error(e); }
+}
+
+function renderCL() {
+  const list = q('cl-list');
+  if (!list) return;
+  if (S.role === 'visitor') {
+    list.innerHTML = '<div class="empty"><div class="empty-ico">🔒</div><p>셀러 로그인이 필요해요</p></div>';
+    return;
+  }
+  const checked = S.checklist.filter(i=>i.checked).length;
+  const total   = S.checklist.length;
+  const pct     = total ? Math.round(checked/total*100) : 0;
+  q('pbar').style.width = pct + '%';
+  q('ptxt').textContent = `${checked} / ${total} 완료 (${pct}%)`;
+  list.innerHTML = S.checklist.map(i => `
+    <div class="cl-item" onclick="toggleCL('${i.id}')">
+      <div class="chk ${i.checked?'on':''}">${i.checked?'✓':''}</div>
+      <div class="cl-txt ${i.checked?'done':''}">${i.text}</div>
+    </div>`
+  ).join('');
+}
+
+// ─────────────────────────────────────────
+//  GUIDE
+// ─────────────────────────────────────────
+function renderGuide(node) {
+  if (!node) { guideStack = []; node = GUIDE; }
+  const el = q('guide-area');
+  if (!el) return;
+
+  if (node.a) {
+    el.innerHTML = `
+      <div class="g-ans">
+        <h3>${node.a.ttl}</h3>
+        <ul>${node.a.li.map(i=>`<li>${i}</li>`).join('')}</ul>
+      </div>
+      <div class="g-back"><button class="btn btn-s" onclick="guideBack()">← 다른 질문 보기</button></div>`;
+  } else {
+    el.innerHTML = `
+      <div class="g-q">
+        <h3>${node.q}</h3>
+        <div class="g-opts">${node.opts.map((o,i)=>`<button class="g-opt" onclick="guideSel(${i})">${o.t}</button>`).join('')}</div>
+      </div>
+      ${guideStack.length>0?'<div class="g-back"><button class="btn btn-s" onclick="guideBack()">← 뒤로</button></div>':''}`;
+  }
+  guideStack.push(node);
+}
+
+function guideSel(i) {
+  const cur = guideStack[guideStack.length-1];
+  const opt = cur.opts[i];
+  if (opt.next) renderGuide(opt.next);
+  else if (opt.a) renderGuide({a:opt.a});
+}
+
+function guideBack() {
+  if (guideStack.length <= 1) { guideStack=[]; renderGuide(GUIDE); return; }
+  guideStack.pop();
+  const prev = guideStack.pop();
+  renderGuide(prev);
+}
+
+// ─────────────────────────────────────────
+//  BOOTH PAGE
+// ─────────────────────────────────────────
+function renderBooth() {
+  if (!S.seller) return;
+  const n = q('my-booth-num');
+  const b = q('my-booth-name');
+  if (n) n.textContent = S.seller.boothNumber || '-';
+  if (b) b.textContent = S.seller.boothName   || '부스명 미등록';
+
+  if (TALLY_BOOTH !== 'TBD') {
+    const e = q('tally-booth');
+    if (e) e.innerHTML = `<iframe src="https://tally.so/embed/${TALLY_BOOTH}?transparentBackground=1" width="100%" height="500" loading="lazy"></iframe>`;
+  }
+
+  renderMap('booth-map', true);
+}
+
+// ─────────────────────────────────────────
+//  MAP
+// ─────────────────────────────────────────
+// 현장 배치도 클릭 포인트 — 배치도 이미지 받은 후 좌표 조정
+const MAP_POINTS = [
+  // {x:'30%', y:'40%', label:'입구', info:'행사 메인 입구입니다. 안내 데스크가 위치해 있어요.'},
+  // {x:'60%', y:'55%', label:'A존', info:'A존 셀러 부스 영역입니다.'},
+];
+
+function renderMap(containerId, showMine) {
+  const wrap = q(containerId);
+  if (!wrap) return;
+  const mapUrl = S.cfg.mapImageUrl;
+  if (!mapUrl) return; // 이미지 없으면 placeholder 유지
+
+  let html = `<img class="map-img" src="${mapUrl}" alt="배치도">`;
+  MAP_POINTS.forEach((pt, i) => {
+    html += `<div class="mdot mdot-other" style="left:${pt.x};top:${pt.y};" onclick="openMapPop('${pt.label}','${pt.info}')">${i+1}</div>`;
+  });
+  if (showMine && S.seller?.boothPosition) {
+    const p = S.seller.boothPosition;
+    html += `<div class="mdot mdot-mine" style="left:${p.x};top:${p.y};" onclick="openMapPop('내 부스','${S.seller.boothNumber} ${S.seller.boothName||''}')">나</div>`;
+  }
+  wrap.innerHTML = html;
+}
+
+function openMapPop(ttl, body) {
+  q('pop-ttl').textContent  = ttl;
+  q('pop-body').textContent = body;
+  q('map-ov').classList.add('on');
+}
+function closeMapPop() { q('map-ov').classList.remove('on'); }
+
+// ─────────────────────────────────────────
+//  VISIT PAGE
+// ─────────────────────────────────────────
+function initVisit() {
+  if (TALLY_VISIT !== 'TBD') {
+    const e = q('tally-visit');
+    if (e) e.innerHTML = `<iframe src="https://tally.so/embed/${TALLY_VISIT}?transparentBackground=1" width="100%" height="500" loading="lazy"></iframe>`;
+  }
+}
+
+// ─────────────────────────────────────────
+//  MARKETING CANVAS
+// ─────────────────────────────────────────
+let prodImg = null;
+let tmplImg = null;
+
+function initCanvas() {
+  const cv = q('mk-canvas');
+  if (!cv) return;
+  if (!tmplImg) {
+    const img = new Image();
+    img.onload  = () => { tmplImg = img; drawCanvas(); };
+    img.onerror = () => { tmplImg = null; drawCanvas(); };
+    img.src = '../flea-market/assets/template.png';
+  }
+  drawCanvas();
+}
+
+function loadPhoto(input) {
+  const f = input.files[0]; if (!f) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => { prodImg = img; drawCanvas(); };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(f);
+}
+
+function drawCanvas() {
+  const cv = q('mk-canvas'); if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = 1080, H = 1080;
+
+  // Background
+  if (tmplImg) {
+    ctx.drawImage(tmplImg, 0, 0, W, H);
+  } else {
+    const g = ctx.createLinearGradient(0, 0, W, H);
+    g.addColorStop(0, '#FF6B35'); g.addColorStop(1, '#C0392B');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(255,255,255,.08)';
+    ctx.beginPath(); ctx.arc(W*.82, H*.12, 220, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(W*.12, H*.88, 160, 0, Math.PI*2); ctx.fill();
+  }
+
+  // Product photo
+  if (prodImg) {
+    const sz = 520, px = (W-sz)/2, py = H*.12;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 10;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(px, py, sz, sz, 24);
+    else { ctx.rect(px, py, sz, sz); }
+    ctx.clip();
+    ctx.shadowBlur = 0;
+    const ir = prodImg.width / prodImg.height;
+    let dx=px, dy=py, dw=sz, dh=sz;
+    if (ir > 1) { dh = sz; dw = dh*ir; dx = px-(dw-sz)/2; }
+    else { dw = sz; dh = dw/ir; dy = py-(dh-sz)/2; }
+    ctx.drawImage(prodImg, dx, dy, dw, dh);
+    ctx.restore();
+  }
+
+  // Text
+  const title = q('mk-title')?.value || 'LMP 플리마켓';
+  const sub   = q('mk-sub')?.value   || '';
+  ctx.textAlign = 'center';
+  ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 12;
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 72px -apple-system,"Apple SD Gothic Neo",sans-serif';
+  ctx.fillText(title, W/2, H*.78);
+  if (sub) {
+    ctx.font = '400 44px -apple-system,"Apple SD Gothic Neo",sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,.85)';
+    ctx.fillText(sub, W/2, H*.85);
+  }
+  ctx.font = 'bold 32px -apple-system,"Apple SD Gothic Neo",sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.6)';
+  ctx.fillText('🛍️ LMP 플리마켓', W/2, H*.93);
+  ctx.shadowBlur = 0;
+}
+
+function downloadImg() {
+  const cv = q('mk-canvas'); if (!cv) return;
+  const a = document.createElement('a');
+  a.download = 'lmp-flea-market-' + today() + '.png';
+  a.href = cv.toDataURL('image/png', 1.0);
+  a.click();
+  toast('✅ 이미지가 다운로드됐어요!');
+}
+
+// ─────────────────────────────────────────
+//  DEMO DATA (Firebase 미설정 시)
+// ─────────────────────────────────────────
+function loadDemo() {
+  S.cfg = {
+    eventDate: '2026-06-07',
+    location: '서울 성수동 카페거리',
+    expectedVisitors: 200,
+    announcementText: '🎉 LMP 플리마켓에 오신 것을 환영합니다! Firebase 설정 후 실제 데이터가 표시됩니다.',
+    transportInfo: '2호선 성수역 2번 출구 도보 5분',
+    parkingInfo: '행사장 근처 공영주차장 이용 (유료)',
+  };
+  S.sellers = [
+    {id:'d1', name:'김보라', boothNumber:'A-1', boothName:'보라네 빈티지', description:'감성 빈티지 의류와 소품을 판매해요.', category:'의류', isPublic:true},
+    {id:'d2', name:'이수아', boothNumber:'B-3', boothName:'수아 핸드메이드', description:'손으로 만든 가죽 액세서리와 가방을 선보여요.', category:'액세서리', isPublic:true},
+    {id:'d3', name:'박준호', boothNumber:'A-4', boothName:'준호의 LP샵', description:'희귀 LP판과 카세트테이프 전문점이에요.', category:'음반', isPublic:true},
+  ];
+  applySettings();
+  renderSellers();
+}
+
+// ─────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────
+function init() {
+  checkSession();
+  renderNav();
+  go('home');
+  initVisit();
+  if (FB_READY) initFB();
+  else loadDemo();
+}
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
