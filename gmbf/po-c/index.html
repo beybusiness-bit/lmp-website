@@ -167,11 +167,12 @@ body {
 <body>
 <div id="app">
 
-  <!-- 슬라이드쇼 배경 (4장) -->
+  <!-- 슬라이드쇼 배경 (5장) -->
   <div class="slide on" id="slide-0"></div>
   <div class="slide" id="slide-1"></div>
   <div class="slide" id="slide-2"></div>
   <div class="slide" id="slide-3"></div>
+  <div class="slide" id="slide-4"></div>
 
   <!-- 메인 콘텐츠 -->
   <div id="content">
@@ -206,15 +207,17 @@ const COLORS = ['#00CE6B', '#FFF100', '#F95548', '#0BC6FF', '#000000', '#FFFFFF'
 
 // 배경 사진 (gmbf/assets/ 폴더에 업로드된 파일명)
 const BG_IMAGES = [
-  '../assets/bg1.jpg',
-  '../assets/bg2.jpg',
-  '../assets/bg3.jpg',
-  '../assets/bg4.jpg',
+  '../assets/bg1.jpeg',
+  '../assets/bg2.jpeg',
+  '../assets/bg3.jpeg',
+  '../assets/bg4.jpeg',
+  '../assets/bg5.jpeg',
 ];
 
 let currentSlide = 0;
 let currentColorIdx = -1;
 const slideCount = BG_IMAGES.length;
+
 
 function calcDDay(dateStr) {
   const today = new Date();
