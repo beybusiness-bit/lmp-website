@@ -51,9 +51,22 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 60px 32px 80px;
-  gap: 24px;
+  justify-content: space-between;
+  padding: 80px 32px 100px;
+}
+
+.top-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.bottom-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
 }
 
 /* ── COLOR VARIABLE ── */
@@ -61,8 +74,8 @@ body {
 
 /* ── LOGO ── */
 .logo-wrap {
-  width: 61%; /* 기존 76%의 80% */
-  max-width: 240px;
+  width: 76%;
+  max-width: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -177,23 +190,20 @@ body {
   <!-- 메인 콘텐츠 -->
   <div id="content">
 
-    <!-- 로고 -->
-    <div class="logo-wrap">
-      <div class="logo-mask" id="logo-mask"></div>
-      <div class="logo-fallback" id="logo-fallback">게으러서<br>못열뻔한<br>플리마켓</div>
+    <!-- 상단: 로고 + D-Day + 방문신청 수 -->
+    <div class="top-group">
+      <div class="logo-wrap">
+        <div class="logo-mask" id="logo-mask"></div>
+        <div class="logo-fallback" id="logo-fallback">게으러서<br>못열뻔한<br>플리마켓</div>
+      </div>
+      <div class="dday-num" id="dday-num">D-?</div>
+      <div class="visitor-line" id="visitor-line">0명 방문신청</div>
     </div>
 
-    <!-- D-Day -->
-    <div class="dday-num" id="dday-num">D-?</div>
-
-    <!-- 방문 예정자 수 -->
-    <div class="visitor-line" id="visitor-line">0명 방문예정</div>
-
-    <!-- 내 마켓 준비하기 버튼 -->
-    <div class="basket-btn" onclick="goToPrep()">
+    <!-- 하단: 장바구니 버튼 -->
+    <div class="bottom-group basket-btn" onclick="goToPrep()">
       <div class="basket-mask"></div>
       <div class="basket-text">내 마켓 준비하기</div>
-      <div class="basket-progress" id="prep-progress">0% 완료</div>
     </div>
 
   </div>
@@ -203,7 +213,7 @@ body {
 const EVENT_DATE      = '2026-06-07';
 const APPS_SCRIPT_URL = 'TBD';
 
-const COLORS = ['#00CE6B', '#FFF100', '#F95548', '#0BC6FF', '#000000', '#FFFFFF'];
+const COLORS = ['#00CE6B', '#FFF100', '#F95548', '#0BC6FF', '#FFFFFF'];
 
 // 배경 사진 (gmbf/assets/ 폴더에 업로드된 파일명)
 const BG_IMAGES = [
@@ -262,7 +272,7 @@ async function fetchVisitorCount() {
     const res  = await fetch(APPS_SCRIPT_URL + '?action=count');
     const data = await res.json();
     if (data.count !== undefined) {
-      document.getElementById('visitor-line').textContent = data.count + '명 방문예정';
+      document.getElementById('visitor-line').textContent = data.count + '명 방문신청';
     }
   } catch(e) { console.log('방문자 수 불러오기 실패:', e); }
 }
