@@ -36,7 +36,6 @@ body {
 }
 .slide.on { opacity: 1; }
 
-/* 배경 사진 위 그라디언트 섀도우 (텍스트 가독성) */
 .slide::after {
   content: '';
   position: absolute;
@@ -73,6 +72,17 @@ body {
 
 /* ── COLOR VARIABLE ── */
 :root { --c: #00CE6B; }
+
+/* ── 회차 텍스트 ── */
+.edition-text {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--c);
+  letter-spacing: -0.3px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  transition: color 1s ease;
+  margin-bottom: -14px; /* 로고와 간격 거의 없게 */
+}
 
 /* ── LOGO ── */
 .logo-wrap {
@@ -138,7 +148,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   text-decoration: none;
@@ -169,14 +179,83 @@ body {
   transition: color 1s ease;
 }
 
-.basket-progress {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--c);
-  opacity: 0.75;
-  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-  transition: color 1s ease;
+/* ════════════════════════════════
+   모달 — 공통 디자인 시스템
+   ════════════════════════════════ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.4);
 }
+.modal-overlay.on { display: flex; }
+
+.modal-box {
+  width: 82%;
+  max-width: 340px;
+  padding: 36px 28px 28px;
+  border-radius: 0;
+  /* 배경색은 JS로 동적 설정 */
+  color: #000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #000;
+  margin-bottom: 10px;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+}
+
+.modal-desc {
+  font-size: 14px;
+  color: #000;
+  opacity: 0.75;
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.modal-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid #000;
+  color: #000;
+  font-size: 17px;
+  font-weight: 600;
+  padding: 8px 0;
+  outline: none;
+  margin-bottom: 28px;
+  font-family: inherit;
+  letter-spacing: 1px;
+}
+.modal-input::placeholder { color: rgba(0,0,0,0.35); font-weight: 400; letter-spacing: 0; }
+
+.modal-btns {
+  display: flex;
+  gap: 10px;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 12px 0;
+  background: transparent;
+  border: 2px solid #000;
+  border-radius: 0;
+  color: #000;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: -0.3px;
+  transition: background 0.15s, color 0.15s;
+}
+.modal-btn:active { background: rgba(0,0,0,0.1); }
 </style>
 </head>
 <body>
@@ -192,8 +271,9 @@ body {
   <!-- 메인 콘텐츠 -->
   <div id="content">
 
-    <!-- 상단: 로고 + D-Day + 방문신청 수 -->
+    <!-- 상단: 회차 + 로고 + D-Day + 방문신청 수 -->
     <div class="top-group">
+      <div class="edition-text" id="edition-text">제3회</div>
       <div class="logo-wrap">
         <div class="logo-mask" id="logo-mask"></div>
         <div class="logo-fallback" id="logo-fallback">게으러서<br>못열뻔한<br>플리마켓</div>
@@ -203,7 +283,7 @@ body {
     </div>
 
     <!-- 하단: 장바구니 버튼 -->
-    <div class="bottom-group basket-btn" onclick="goToPrep()">
+    <div class="bottom-group basket-btn" onclick="openAuthModal()">
       <div class="basket-mask"></div>
       <div class="basket-text">내 마켓 준비하기</div>
     </div>
@@ -211,13 +291,29 @@ body {
   </div>
 </div>
 
+<!-- 인증 모달 -->
+<div class="modal-overlay" id="auth-modal" onclick="onOverlayClick(event)">
+  <div class="modal-box" id="auth-modal-box">
+    <div class="modal-title">GMBF 포크이신가요?</div>
+    <div class="modal-desc">신청할 때 입력했던 휴대폰 번호로 인증해주세요.</div>
+    <input class="modal-input" id="auth-phone" type="tel" placeholder="010-0000-0000" maxlength="13">
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="closeAuthModal()">취소</button>
+      <button class="modal-btn" onclick="confirmAuth()">확인</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const EVENT_DATE      = '2026-06-07';
 const APPS_SCRIPT_URL = 'TBD';
+const EDITION_NUM     = 3; // 관리자 설정 예정
 
-const COLORS = ['#00CE6B', '#FFF100', '#F95548', '#0BC6FF', '#FFFFFF'];
+// 메인 색상 순환 (5가지)
+const COLORS     = ['#00CE6B', '#FFF100', '#F95548', '#0BC6FF', '#FFFFFF'];
+// 모달 배경색 후보 (키컬러 4가지만)
+const KEY_COLORS = ['#00CE6B', '#FFF100', '#F95548', '#0BC6FF'];
 
-// 배경 사진 (gmbf/assets/ 폴더에 업로드된 파일명)
 const BG_IMAGES = [
   '../assets/bg1.jpeg',
   '../assets/bg2.jpeg',
@@ -226,21 +322,22 @@ const BG_IMAGES = [
   '../assets/bg5.jpeg',
 ];
 
-let currentSlide = 0;
+let currentSlide    = 0;
 let currentColorIdx = -1;
-const slideCount = BG_IMAGES.length;
+const slideCount    = BG_IMAGES.length;
 
-
+// ── D-Day ──
 function calcDDay(dateStr) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const event = new Date(dateStr + 'T00:00:00');
-  const diff = Math.ceil((event - today) / 86400000);
+  const diff  = Math.ceil((event - today) / 86400000);
   if (diff > 0) return 'D-' + diff;
   if (diff === 0) return 'D-Day';
   return 'D+' + Math.abs(diff);
 }
 
+// ── 색상 순환 ──
 function nextColor() {
   let idx;
   do { idx = Math.floor(Math.random() * COLORS.length); }
@@ -248,11 +345,11 @@ function nextColor() {
   currentColorIdx = idx;
   return COLORS[idx];
 }
-
 function applyColor(hex) {
   document.documentElement.style.setProperty('--c', hex);
 }
 
+// ── 슬라이드 전환 ──
 function nextSlide() {
   const slides = document.querySelectorAll('.slide');
   slides[currentSlide].classList.remove('on');
@@ -268,17 +365,18 @@ function initSlides() {
   });
 }
 
+// ── 방문 신청자 수 ──
 async function fetchVisitorCount() {
   if (APPS_SCRIPT_URL === 'TBD') return;
   try {
     const res  = await fetch(APPS_SCRIPT_URL + '?action=count');
     const data = await res.json();
-    if (data.count !== undefined) {
+    if (data.count !== undefined)
       document.getElementById('visitor-line').textContent = data.count + '명 방문신청';
-    }
   } catch(e) { console.log('방문자 수 불러오기 실패:', e); }
 }
 
+// ── 로고 fallback ──
 function checkLogoLoad() {
   const img = new Image();
   img.onerror = () => {
@@ -288,16 +386,60 @@ function checkLogoLoad() {
   img.src = '../assets/logo.png';
 }
 
-function goToPrep() {
-  window.location.href = '../';
+// ════════════════════════════════
+//  모달
+// ════════════════════════════════
+
+// 현재 --c 와 다른 키컬러를 랜덤 선택
+function getModalColor() {
+  const current = COLORS[currentColorIdx] || '';
+  const available = KEY_COLORS.filter(c => c !== current);
+  return available[Math.floor(Math.random() * available.length)];
 }
 
+function openAuthModal() {
+  const box = document.getElementById('auth-modal-box');
+  box.style.background = getModalColor();
+  document.getElementById('auth-phone').value = '';
+  document.getElementById('auth-modal').classList.add('on');
+}
+
+function closeAuthModal() {
+  document.getElementById('auth-modal').classList.remove('on');
+}
+
+function onOverlayClick(e) {
+  if (e.target === document.getElementById('auth-modal')) closeAuthModal();
+}
+
+function confirmAuth() {
+  const phone = document.getElementById('auth-phone').value.replace(/\D/g, '');
+  if (phone.length < 10) {
+    alert('올바른 휴대폰 번호를 입력해주세요.');
+    return;
+  }
+  closeAuthModal();
+  // 준비 화면으로 이동 (추후 구현)
+  window.location.href = './prep.html';
+}
+
+// 전화번호 자동 하이픈
+document.getElementById('auth-phone').addEventListener('input', function() {
+  let v = this.value.replace(/\D/g, '');
+  if (v.length > 11) v = v.slice(0, 11);
+  if (v.length > 7)      this.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7);
+  else if (v.length > 3) this.value = v.slice(0,3) + '-' + v.slice(3);
+  else                   this.value = v;
+});
+
+// ── 초기화 ──
 function init() {
+  document.getElementById('edition-text').textContent = '제' + EDITION_NUM + '회';
   document.getElementById('dday-num').textContent = calcDDay(EVENT_DATE);
   initSlides();
   checkLogoLoad();
   applyColor(nextColor());
-  setInterval(nextSlide, 10000); // 10초마다 전환
+  setInterval(nextSlide, 10000);
   fetchVisitorCount();
   setInterval(fetchVisitorCount, 30000);
 }
