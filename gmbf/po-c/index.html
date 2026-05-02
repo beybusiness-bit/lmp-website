@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>게으러서 못열뻔한 플리마켓</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #000;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+#app {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── SLIDESHOW ── */
+.slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
+  will-change: opacity;
+}
+.slide.on { opacity: 1; }
+
+/* 임시 그라디언트 슬라이드 (관리자 페이지에서 사진으로 교체 예정) */
+.slide-1 { background: linear-gradient(160deg, #0d0d0d 0%, #1a1a1a 40%, #0a0a0a 100%); }
+.slide-2 { background: linear-gradient(160deg, #0a0f1a 0%, #0d1b2a 40%, #060e18 100%); }
+.slide-3 { background: linear-gradient(160deg, #12080a 0%, #1f0e12 40%, #0c0508 100%); }
+
+/* 슬라이드 위 어두운 레이어 (텍스트 가독성) */
+.slide::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* ── CONTENT OVERLAY ── */
+#content {
+  position: relative;
+  z-index: 10;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 32px 80px;
+  gap: 28px;
+}
+
+/* ── COLOR VARIABLE ── */
+:root { --c: #00CE6B; }
+
+/* ── LOGO ── */
+.logo-wrap {
+  width: 76%;
+  max-width: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* CSS mask 방식: 투명 PNG → background-color 색상으로 표시 */
+.logo-mask {
+  width: 100%;
+  aspect-ratio: 835 / 700; /* 로고 이미지 비율 (업로드 후 조정) */
+  background-color: var(--c);
+  -webkit-mask-image: url(../assets/logo.png);
+  mask-image: url(../assets/logo.png);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  transition: background-color 0.8s ease;
+}
+
+/* 이미지 로드 전 fallback */
+.logo-fallback {
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--c);
+  text-align: center;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+  transition: color 0.8s ease;
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  display: none; /* 이미지 로드 실패 시 JS가 보여줌 */
+}
+
+/* ── D-DAY ── */
+.dday-wrap { text-align: center; }
+.dday-num {
+  font-size: 96px;
+  font-weight: 900;
+  color: var(--c);
+  line-height: 1;
+  letter-spacing: -4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  transition: color 0.8s ease;
+}
+.dday-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c);
+  opacity: 0.7;
+  letter-spacing: 2px;
+  margin-top: 4px;
+  transition: color 0.8s ease;
+}
+
+/* ── VISITOR COUNT ── */
+.visitor-wrap { text-align: center; }
+.visitor-num {
+  font-size: 64px;
+  font-weight: 900;
+  color: var(--c);
+  line-height: 1;
+  letter-spacing: -2px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  transition: color 0.8s ease;
+}
+.visitor-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c);
+  opacity: 0.7;
+  letter-spacing: 1px;
+  margin-top: 4px;
+  transition: color 0.8s ease;
+}
+
+/* ── BASKET BUTTON ── */
+.basket-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none;
+}
+.basket-btn:active { opacity: 0.75; transform: scale(0.97); }
+
+.basket-mask {
+  width: 72px;
+  height: 72px;
+  background-color: var(--c);
+  -webkit-mask-image: url(../assets/basket.png);
+  mask-image: url(../assets/basket.png);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  transition: background-color 0.8s ease;
+}
+
+.basket-text {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--c);
+  letter-spacing: -0.3px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  transition: color 0.8s ease;
+}
+
+.basket-progress {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c);
+  opacity: 0.75;
+  letter-spacing: 0.5px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  transition: color 0.8s ease;
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- 슬라이드쇼 배경 -->
+  <div class="slide slide-1 on" id="slide-0"></div>
+  <div class="slide slide-2" id="slide-1"></div>
+  <div class="slide slide-3" id="slide-2"></div>
+
+  <!-- 메인 콘텐츠 -->
+  <div id="content">
+
+    <!-- 로고 -->
+    <div class="logo-wrap">
+      <div class="logo-mask" id="logo-mask"></div>
+      <div class="logo-fallback" id="logo-fallback">게으러서<br>못열뻔한<br>플리마켓</div>
+    </div>
+
+    <!-- D-Day -->
+    <div class="dday-wrap">
+      <div class="dday-num" id="dday-num">D-?</div>
+      <div class="dday-label">DAYS TO GO</div>
+    </div>
+
+    <!-- 방문 신청자 수 -->
+    <div class="visitor-wrap">
+      <div class="visitor-num" id="visitor-num">0명</div>
+      <div class="visitor-label">지금까지 방문 신청</div>
+    </div>
+
+    <!-- 내 마켓 준비하기 버튼 -->
+    <div class="basket-btn" id="basket-btn" onclick="goToPrep()">
+      <div class="basket-mask" id="basket-mask"></div>
+      <div class="basket-text">내 마켓 준비하기</div>
+      <div class="basket-progress" id="prep-progress">0% 완료</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── 설정값 (나중에 관리자 페이지에서 수정 가능) ──
+const EVENT_DATE     = '2026-06-07'; // 행사 날짜 (관리자 설정 예정)
+const APPS_SCRIPT_URL = 'TBD';       // Google Apps Script URL (설정 예정)
+
+// ── 키 컬러 6가지 ──
+const COLORS = ['#00CE6B', '#FFF100', '#F95548', '#0BC6FF', '#000000', '#FFFFFF'];
+
+// ── 슬라이드쇼 배경 이미지 목록 (관리자 페이지에서 수정 예정) ──
+// 아래 URL 자리에 실제 사진 URL을 넣으면 됩니다.
+// 지금은 CSS 그라디언트로 대체 중.
+const BG_IMAGES = [
+  '', // 비워두면 CSS 그라디언트 사용
+  '',
+  '',
+];
+
+// ── 상태 ──
+let currentSlide = 0;
+let currentColorIdx = -1;
+let slideCount = 3;
+
+// ── D-Day 계산 ──
+function calcDDay(dateStr) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const event = new Date(dateStr + 'T00:00:00');
+  const diff = Math.ceil((event - today) / 86400000);
+  if (diff > 0) return 'D-' + diff;
+  if (diff === 0) return 'D-Day';
+  return 'D+' + Math.abs(diff);
+}
+
+// ── 랜덤 색상 (직전 색상 제외) ──
+function nextColor() {
+  let idx;
+  do { idx = Math.floor(Math.random() * COLORS.length); }
+  while (idx === currentColorIdx);
+  currentColorIdx = idx;
+  return COLORS[idx];
+}
+
+// ── 색상 적용 ──
+function applyColor(hex) {
+  document.documentElement.style.setProperty('--c', hex);
+}
+
+// ── 슬라이드 전환 + 색상 변경 ──
+function nextSlide() {
+  const slides = document.querySelectorAll('.slide');
+  slides[currentSlide].classList.remove('on');
+  currentSlide = (currentSlide + 1) % slideCount;
+  slides[currentSlide].classList.add('on');
+  applyColor(nextColor());
+}
+
+// ── 배경 이미지 설정 ──
+function initSlides() {
+  BG_IMAGES.forEach((url, i) => {
+    const el = document.getElementById('slide-' + i);
+    if (el && url) el.style.backgroundImage = 'url(' + url + ')';
+  });
+}
+
+// ── 방문 신청자 수 가져오기 (Google Apps Script) ──
+async function fetchVisitorCount() {
+  if (APPS_SCRIPT_URL === 'TBD') return; // 미설정 시 스킵
+  try {
+    const res = await fetch(APPS_SCRIPT_URL + '?action=count');
+    const data = await res.json();
+    if (data.count !== undefined) {
+      document.getElementById('visitor-num').textContent = data.count + '명';
+    }
+  } catch(e) { console.log('방문자 수 불러오기 실패:', e); }
+}
+
+// ── 로고 이미지 로드 실패 시 텍스트 fallback ──
+function checkLogoLoad() {
+  const testImg = new Image();
+  testImg.onload = () => { /* 로드 성공, mask 표시 유지 */ };
+  testImg.onerror = () => {
+    document.getElementById('logo-mask').style.display = 'none';
+    document.getElementById('logo-fallback').style.display = 'block';
+  };
+  testImg.src = '../assets/logo.png';
+}
+
+// ── 준비하기 페이지로 이동 ──
+function goToPrep() {
+  // 셀러 로그인 페이지 또는 준비 화면으로 이동 (추후 구현)
+  window.location.href = '../';
+}
+
+// ── 초기화 ──
+function init() {
+  // D-Day 표시
+  document.getElementById('dday-num').textContent = calcDDay(EVENT_DATE);
+
+  // 이미지 초기화
+  initSlides();
+  checkLogoLoad();
+
+  // 첫 색상 적용
+  applyColor(nextColor());
+
+  // 5초마다 슬라이드 + 색상 전환
+  setInterval(nextSlide, 5000);
+
+  // 방문자 수 가져오기 (30초마다 갱신)
+  fetchVisitorCount();
+  setInterval(fetchVisitorCount, 30000);
+}
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
