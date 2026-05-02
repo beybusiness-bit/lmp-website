@@ -401,6 +401,8 @@ function openAuthModal() {
   const box = document.getElementById('auth-modal-box');
   box.style.background = getModalColor();
   document.getElementById('auth-phone').value = '';
+  const err = document.getElementById('modal-error');
+  if (err) err.textContent = '';
   document.getElementById('auth-modal').classList.add('on');
 }
 
@@ -415,12 +417,51 @@ function onOverlayClick(e) {
 function confirmAuth() {
   const phone = document.getElementById('auth-phone').value.replace(/\D/g, '');
   if (phone.length < 10) {
-    alert('올바른 휴대폰 번호를 입력해주세요.');
+    showModalError('올바른 휴대폰 번호를 입력해주세요.');
     return;
   }
-  closeAuthModal();
-  // 준비 화면으로 이동 (추후 구현)
-  window.location.href = './prep.html';
+
+  if (APPS_SCRIPT_URL === 'TBD') {
+    // Apps Script 미연결 시 임시 통과 (개발용)
+    sessionStorage.setItem('sellerSession', JSON.stringify({ name: '테스트', phone }));
+    closeAuthModal();
+    window.location.href = './prep.html';
+    return;
+  }
+
+  const btn = document.querySelectorAll('.modal-btn')[1];
+  btn.textContent = '확인 중…';
+  btn.disabled = true;
+
+  fetch(APPS_SCRIPT_URL + '?action=auth&phone=' + phone)
+    .then(r => r.json())
+    .then(data => {
+      btn.textContent = '확인';
+      btn.disabled = false;
+      if (data.success) {
+        sessionStorage.setItem('sellerSession', JSON.stringify(data.seller));
+        closeAuthModal();
+        window.location.href = './prep.html';
+      } else {
+        showModalError('등록된 셀러를 찾을 수 없어요.');
+      }
+    })
+    .catch(() => {
+      btn.textContent = '확인';
+      btn.disabled = false;
+      showModalError('연결에 실패했어요. 다시 시도해주세요.');
+    });
+}
+
+function showModalError(msg) {
+  let el = document.getElementById('modal-error');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'modal-error';
+    el.style.cssText = 'font-size:13px;color:#000;opacity:0.7;margin-top:-18px;margin-bottom:16px;';
+    document.querySelector('.modal-btns').before(el);
+  }
+  el.textContent = msg;
 }
 
 // 전화번호 자동 하이픈
