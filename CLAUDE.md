@@ -5,15 +5,10 @@
 ```javascript
 const AUTH = {
   ADMIN_PASSWORD: 'beybey12!',
-  SELLER_LOGIN: 'name+phone', // 이름+연락처로 Firestore 명단 대조
-  FIREBASE_CONFIG: {
-    apiKey: 'TBD',
-    authDomain: 'TBD',
-    projectId: 'TBD',
-    storageBucket: 'TBD',
-    messagingSenderId: 'TBD',
-    appId: 'TBD',
-  },
+  SELLER_LOGIN: 'phone', // 전화번호만으로 구글시트 명단 대조
+  SHEETS_API_KEY: 'TBD', // Google Cloud Console → 사용자 인증 정보 → API 키
+  SHEET_ID: '1e6nyZ4fv-QPPX1SZqgakM4eJmBO1Rp-sdfkUtJFgwK8',
+  // Firebase 미사용. 구글 Sheets API (공개 시트 + API 키) 방식으로 대체.
 };
 const REPO = {
   GITHUB_URL: 'https://github.com/beybusiness-bit/lmp-website',
@@ -357,12 +352,19 @@ Tally 폼 ID는 사용자가 Tally에서 폼 만든 후 제공. 현재 TBD.
 
 ### DB 구조 (Google Sheets — Firebase 미사용)
 
+**연동 방식: Google Sheets API (공개 시트 + API 키)**
+- Apps Script 불필요. HTML에서 Sheets API 직접 호출.
+- 시트 공개 설정: "링크가 있는 모든 사용자 → 뷰어"
+- API 엔드포인트: `https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/{RANGE}?key={API_KEY}`
+
 구글시트 ID: `1e6nyZ4fv-QPPX1SZqgakM4eJmBO1Rp-sdfkUtJFgwK8`
 
 탭 구조:
-- `sellers`: 대표자명 | 휴대전화번호 | 부스번호 | 부스명 | 소개 | 카테고리 | 공개여부
+- `sellers`: 대표자명(A) | 휴대전화번호(B) | 부스번호(C) | 부스명(D) | 소개(E) | 카테고리(F) | 공개여부(G)
 - `checklist_log`: 이벤트 로그 형태 (타임스탬프 | 셀러전화번호 | 액션 | 데이터)
 - `event_log`: 전체 사용자 행동 로그 (타임스탬프 | 셀러전화번호 | 이벤트 | 추가데이터)
+
+⚠️ 쓰기(로그 기록) 기능은 현재 미구현. 읽기(셀러 인증)만 API 키로 처리.
 
 ---
 
@@ -411,7 +413,10 @@ Tally 폼 ID는 사용자가 Tally에서 폼 만든 후 제공. 현재 TBD.
 - Canva API: 추후 검토 (현재 미적용)
 
 미결 항목 (개발 시작 전 사용자가 준비해야 할 것)
-- Firebase 새 프로젝트 생성 후 firebaseConfig 값 전달
+- ~~Firebase 새 프로젝트 생성~~ → Google Sheets API 방식으로 대체
+- Google Cloud Console에서 Sheets API 키 발급 후 전달 (AIzaSy... 형태)
+- 구글시트 공개 설정 ("링크 있는 사람 뷰어") 완료
+- 구글시트 sellers 탭 설정 (헤더 + 첫 셀러 입력)
 - Tally 부스정보 제출 폼 생성 후 폼 ID 전달
 - Tally 방문 신청 폼 생성 후 폼 ID 전달
 - 마케팅 이미지 템플릿 파일 (PNG/JPG) 전달
@@ -431,8 +436,8 @@ Tally 폼 ID는 사용자가 Tally에서 폼 만든 후 제공. 현재 TBD.
 2단계 — 셀러 핵심 기능 (스테이지 상세 페이지)부터 시작
 
 세션 시작 시 먼저 확인할 것:
-1. Google Apps Script 배포 완료 여부 → URL 받아서 `gmbf/po-c/index.html`의 `APPS_SCRIPT_URL` 상수에 삽입
-2. 구글시트 "sellers" 탭 설정 완료 여부 (헤더: 대표자명, 휴대전화번호 / 첫 셀러: 백은영, 01063205653)
+1. Google Sheets API 키 받기 (AIzaSy... 형태) → `gmbf/po-c/index.html`의 `SHEETS_API_KEY` 상수에 삽입
+2. 구글시트 공개 설정 + sellers 탭 설정 완료 여부
 3. 스테이지 2~5 각각의 상세 내용 사용자에게 확인
 
 **현재 파일 구조:**
