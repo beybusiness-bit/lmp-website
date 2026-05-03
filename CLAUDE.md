@@ -307,15 +307,25 @@ Tally 폼 ID는 사용자가 Tally에서 폼 만든 후 제공. 현재 TBD.
 
 **🎯 목표 1: 셀러 기능 배포 (1~2일)**
 
-1단계: 기반 구조 + 셀러 로그인 — 🔲 진행 예정
-  - 단일 HTML 파일 기본 구조 (공개/셀러/관리자 영역 분리)
-  - 셀러 로그인: 이름+연락처 입력 → Firestore 명단 대조
+1단계: 기반 구조 + 셀러 로그인 — ✅ 완료
+  - gmbf/po-c/index.html 단일 파일 구조 (셀러 랜딩 + 진행화면 통합)
+  - 셀러 로그인: 휴대전화번호 입력 → Google Apps Script → 구글시트 명단 대조
   - 관리자 로그인: 비밀번호(`beybey12!`)
-  - 모바일 최적화 레이아웃, 하단 탭 네비게이션
+  - 모바일 최적화 레이아웃, 배경 슬라이드쇼 (bg1~bg5.jpeg), 컬러 사이클링
+  - 로고(logo.png) + 장바구니(basket.png) CSS mask 기법으로 컬러 동적 변경
+  - 전역 디자인 시스템: .btn .box .inp (검정 테두리, 투명 배경)
+  - 셀러 인증 후 진행화면(#prep-screen) 아래에서 슬라이드업
+  - 5단계 스테이지 카드 + 좌측 사이드 메뉴
+  - 상단 topbar: 장바구니 아이콘 fill 애니메이션(clip-path) + 완료%
+
+  ⚠️ 미완 항목:
+  - Google Apps Script URL: 사용자가 배포 후 APPS_SCRIPT_URL 상수에 삽입 필요
+  - 구글시트 "sellers" 탭 헤더(대표자명/휴대전화번호) + 첫 셀러(백은영/01063205653) 추가 필요
+  - Google Apps Script에 action=log 핸들러 추가 필요 (이벤트 로깅)
 
 2단계: 셀러 핵심 기능 — 🔲 진행 예정
-  - 안내 가이드: 상황 입력 → 트리형 맞춤 가이드 (분기 로직)
-  - 체크리스트: 항목 체크 & Firestore 저장
+  - 5개 스테이지 상세 페이지 (각 스테이지 클릭 시 내용 표시)
+  - 체크리스트: 항목 체크 & 구글시트 저장
   - 내 부스: 배치도 이미지에서 내 위치 표시, Tally 부스정보 제출 임베드
 
 3단계: 마케팅 이미지 — 🔲 진행 예정
@@ -323,11 +333,10 @@ Tally 폼 ID는 사용자가 Tally에서 폼 만든 후 제공. 현재 TBD.
   - PNG 다운로드
 
 4단계: 관리자 대시보드 (셀러 관련) — 🔲 진행 예정
-  - 셀러 명단 등록·삭제
+  - 셀러 명단 등록·삭제 (구글시트 연동)
   - 체크리스트 제출 현황
   - 배치도 이미지 교체
   - 예상 방문객 수·공지 수정
-  - AI 답변 검토 UI (6단계 이후 연결)
 
 **→ 여기서 배포, 셀러들 사용 시작**
 
@@ -340,17 +349,20 @@ Tally 폼 ID는 사용자가 Tally에서 폼 만든 후 제공. 현재 TBD.
   - 방문 신청: Tally 임베드
 
 6단계: 방문객용 콘텐츠 — 🔲 진행 예정
-  - 셀러 소개 페이지: Firestore에서 부스정보 자동 반영, 카드 형태
+  - 셀러 소개 페이지: 구글시트에서 부스정보 자동 반영, 카드 형태
   - 현장 안내: 배치도 이미지 클릭 → 위치별 안내 팝업
   - 체험·미션 안내: 이미지+텍스트 (코드로 수정)
 
 ---
 
-### DB 구조 (Firestore 컬렉션 구성)
+### DB 구조 (Google Sheets — Firebase 미사용)
 
-- `sellers`: 셀러 명단, 부스 정보, 공개 여부
-- `checklists`: 셀러별 체크리스트 항목 및 완료 상태
-- `settings/event`: 행사 날짜, 예상 방문객 수, 배치도 URL, 공지 텍스트
+구글시트 ID: `1e6nyZ4fv-QPPX1SZqgakM4eJmBO1Rp-sdfkUtJFgwK8`
+
+탭 구조:
+- `sellers`: 대표자명 | 휴대전화번호 | 부스번호 | 부스명 | 소개 | 카테고리 | 공개여부
+- `checklist_log`: 이벤트 로그 형태 (타임스탬프 | 셀러전화번호 | 액션 | 데이터)
+- `event_log`: 전체 사용자 행동 로그 (타임스탬프 | 셀러전화번호 | 이벤트 | 추가데이터)
 
 ---
 
@@ -416,12 +428,49 @@ Tally 폼 ID는 사용자가 Tally에서 폼 만든 후 제공. 현재 TBD.
 
 ### 다음 세션 시작점
 
-1단계 — 기반 구조 + 셀러 로그인부터 시작
+2단계 — 셀러 핵심 기능 (스테이지 상세 페이지)부터 시작
 
-개발 시작 전 Claude Code 첫 세션에서 아래를 먼저 확인한다:
-1. Firebase 새 프로젝트 firebaseConfig 값 받기 (없으면 콘솔.firebase.google.com에서 생성 안내)
-2. Tally 폼 ID 받기 (없으면 tally.so에서 생성 안내)
-3. 템플릿 이미지, 배치도 이미지 파일 받기
+세션 시작 시 먼저 확인할 것:
+1. Google Apps Script 배포 완료 여부 → URL 받아서 `gmbf/po-c/index.html`의 `APPS_SCRIPT_URL` 상수에 삽입
+2. 구글시트 "sellers" 탭 설정 완료 여부 (헤더: 대표자명, 휴대전화번호 / 첫 셀러: 백은영, 01063205653)
+3. 스테이지 2~5 각각의 상세 내용 사용자에게 확인
+
+**현재 파일 구조:**
+```
+lmp-website/
+├── gmbf/
+│   ├── po-c/
+│   │   └── index.html    ← 셀러 메인 (랜딩 + 진행화면 통합) ← 1단계 완성
+│   ├── visitor/
+│   │   └── index.html    ← 방문객 페이지 (플레이스홀더만 있음)
+│   ├── assets/
+│   │   ├── logo.png      ← 투명 PNG 로고
+│   │   ├── basket.png    ← 투명 PNG 장바구니 아이콘
+│   │   ├── bg1~bg5.jpeg  ← 배경 슬라이드쇼 이미지
+│   └── index.html        ← 기존 단일 앱 (현재 미사용)
+├── .nojekyll             ← GitHub Pages 필수
+└── CLAUDE.md
+```
+
+**Google Apps Script 코드 (사용자가 배포해야 함):**
+```javascript
+const SHEET_ID = '1e6nyZ4fv-QPPX1SZqgakM4eJmBO1Rp-sdfkUtJFgwK8';
+function doGet(e) {
+  const action = e.parameter.action || '';
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  if (action === 'auth') {
+    const phone = (e.parameter.phone || '').replace(/\D/g, '');
+    const sheet = ss.getSheetByName('sellers');
+    const rows = sheet.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+      if (String(rows[i][1]).replace(/\D/g, '') === phone)
+        return ContentService.createTextOutput(JSON.stringify({ success: true, seller: { name: rows[i][0], phone: rows[i][1] } })).setMimeType(ContentService.MimeType.JSON);
+    }
+    return ContentService.createTextOutput(JSON.stringify({ success: false })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+```
+배포 방법: Apps Script → 배포 → 새 배포 → 유형: 웹앱 → 액세스: 모든 사용자 → 배포
 
 ---
 
