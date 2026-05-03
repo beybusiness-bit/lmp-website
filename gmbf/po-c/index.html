@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>게으러서 못열뻔한 플리마켓</title>
 <style>
+/* ═══════════════════════════════
+   RESET & BASE
+═══════════════════════════════ */
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
+html { height: 100%; }
 body {
   background: var(--c);
   transition: background-color 1s ease;
@@ -14,264 +17,272 @@ body {
   justify-content: center;
   min-height: 100vh;
   overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
 }
-
 #app {
-  width: 100%;
-  max-width: 430px;
-  min-height: 100vh;
-  position: relative;
-  overflow: hidden;
+  width: 100%; max-width: 430px; min-height: 100vh;
+  position: relative; overflow: hidden;
 }
 
-/* ── SLIDESHOW ── */
-.slide {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  opacity: 0;
-  transition: opacity 2s ease-in-out;
-  will-change: opacity;
-}
-.slide.on { opacity: 1; }
-
-.slide::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.65) 100%);
+/* ═══════════════════════════════
+   디자인 시스템 공통 변수
+═══════════════════════════════ */
+:root {
+  --c: #00CE6B;
+  --prep-bg: #FFF100;
+  --fill-color: #F95548;
+  --menu-bg: #0BC6FF;
 }
 
-/* ── CONTENT OVERLAY ── */
-#content {
-  position: relative;
-  z-index: 10;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: 80px 32px 100px;
-}
-
-.top-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  width: 100%;
-}
-
-.bottom-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-/* ── COLOR VARIABLE ── */
-:root { --c: #00CE6B; }
-
-/* ── 회차 텍스트 ── */
-.edition-text {
-  font-size: 18px;
-  font-weight: 900;
-  color: var(--c);
-  letter-spacing: -0.3px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-  transition: color 1s ease;
-  margin-bottom: -14px; /* 로고와 간격 거의 없게 */
-}
-
-/* ── LOGO ── */
-.logo-wrap {
-  width: 76%;
-  max-width: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.logo-mask {
-  width: 100%;
-  aspect-ratio: 835 / 700;
-  background-color: var(--c);
-  -webkit-mask-image: url(../assets/logo.png);
-  mask-image: url(../assets/logo.png);
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  transition: background-color 1s ease;
-}
-
-.logo-fallback {
-  font-size: 20px;
-  font-weight: 900;
-  color: var(--c);
-  text-align: center;
-  line-height: 1.3;
-  transition: color 1s ease;
-  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-  display: none;
-}
-
-/* ── D-DAY ── */
-.dday-num {
-  font-size: 32px;
-  font-weight: 300;
-  color: var(--c);
-  line-height: 1;
-  letter-spacing: -1px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-  transition: color 1s ease;
-  text-align: center;
-}
-
-/* ── VISITOR COUNT ── */
-.visitor-line {
-  font-size: 21px;
-  font-weight: 400;
-  color: var(--c);
-  line-height: 1;
-  letter-spacing: -0.5px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-  transition: color 1s ease;
-  text-align: center;
-}
-
-/* ── BASKET BUTTON ── */
-.basket-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  text-decoration: none;
-}
-.basket-btn:active { opacity: 0.75; transform: scale(0.97); }
-
-.basket-mask {
-  width: 72px;
-  height: 72px;
-  background-color: var(--c);
-  -webkit-mask-image: url(../assets/basket.png);
-  mask-image: url(../assets/basket.png);
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-  transition: background-color 1s ease;
-}
-
-.basket-text {
-  font-size: 18px;
-  font-weight: 900;
-  color: var(--c);
-  letter-spacing: -0.3px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-  transition: color 1s ease;
-}
-
-/* ════════════════════════════════
-   모달 — 공통 디자인 시스템
-   ════════════════════════════════ */
-.modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  justify-content: center;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.4);
-}
-.modal-overlay.on { display: flex; }
-
-.modal-box {
-  width: 82%;
-  max-width: 340px;
-  padding: 36px 28px 28px;
-  border-radius: 0;
-  /* 배경색은 JS로 동적 설정 */
-  color: #000;
-  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-}
-
-.modal-title {
-  font-size: 20px;
-  font-weight: 900;
-  color: #000;
-  margin-bottom: 10px;
-  line-height: 1.3;
-  letter-spacing: -0.5px;
-}
-
-.modal-desc {
-  font-size: 14px;
-  color: #000;
-  opacity: 0.75;
-  margin-bottom: 24px;
-  line-height: 1.6;
-}
-
-.modal-input {
-  width: 100%;
+/* ── 버튼: 검정 테두리, hover/active → 검정 채움 ── */
+.btn {
+  display: block; width: 100%;
   background: transparent;
-  border: none;
-  border-bottom: 2px solid #000;
+  border: 2px solid #000; border-radius: 0;
   color: #000;
-  font-size: 17px;
-  font-weight: 600;
-  padding: 8px 0;
-  outline: none;
-  margin-bottom: 28px;
-  font-family: inherit;
-  letter-spacing: 1px;
-}
-.modal-input::placeholder { color: rgba(0,0,0,0.35); font-weight: 400; letter-spacing: 0; }
-
-.modal-btns {
-  display: flex;
-  gap: 10px;
-}
-
-.modal-btn {
-  flex: 1;
+  font-size: 15px; font-weight: 700;
   padding: 12px 0;
-  background: transparent;
-  border: 2px solid #000;
-  border-radius: 0;
-  color: #000;
-  font-size: 15px;
-  font-weight: 700;
   cursor: pointer;
-  font-family: inherit;
-  letter-spacing: -0.3px;
+  font-family: inherit; letter-spacing: -0.3px;
+  -webkit-tap-highlight-color: transparent;
   transition: background 0.15s, color 0.15s;
 }
-.modal-btn:active { background: rgba(0,0,0,0.1); }
+.btn:hover, .btn:active {
+  background: #000;
+  color: var(--btn-ctx, #fff);
+}
+
+/* ── 박스: 검정 테두리, 투명 배경 ── */
+.box { border: 2px solid #000; background: transparent; }
+
+/* ── 입력칸: 검정 밑줄만 ── */
+.inp {
+  width: 100%; background: transparent !important;
+  border: none; border-bottom: 2px solid #000;
+  color: #000; font-size: 17px; font-weight: 600;
+  padding: 8px 0; outline: none;
+  font-family: inherit; letter-spacing: 1px;
+  -webkit-appearance: none; appearance: none;
+  border-radius: 0;
+  box-shadow: none !important;
+}
+.inp::placeholder { color: rgba(0,0,0,0.35); font-weight: 400; letter-spacing: 0; }
+.inp:focus { background: transparent !important; outline: none; box-shadow: none !important; }
+.inp:-webkit-autofill { -webkit-box-shadow: 0 0 0 1000px transparent inset !important; }
+
+/* ═══════════════════════════════
+   메인 페이지 — 슬라이드쇼
+═══════════════════════════════ */
+.slide {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  opacity: 0; transition: opacity 2s ease-in-out;
+}
+.slide.on { opacity: 1; }
+.slide::after {
+  content: ''; position: absolute; inset: 0;
+  background: rgba(0, 0, 0, 0.38); /* 균일 오버레이 */
+}
+
+/* ═══════════════════════════════
+   메인 페이지 — 콘텐츠
+═══════════════════════════════ */
+#main-content {
+  position: relative; z-index: 10; min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: space-between;
+  padding: 80px 32px 100px;
+}
+.top-group { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; }
+.bottom-group { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+
+.edition-text {
+  font-size: 18px; font-weight: 900; color: var(--c);
+  letter-spacing: -0.3px; transition: color 1s ease;
+  margin-bottom: -14px;
+}
+.logo-wrap { width: 76%; max-width: 300px; }
+.logo-mask {
+  width: 100%; aspect-ratio: 835 / 700;
+  background-color: var(--c);
+  -webkit-mask-image: url(../assets/logo.png); mask-image: url(../assets/logo.png);
+  -webkit-mask-size: contain; mask-size: contain;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center; mask-position: center;
+  transition: background-color 1s ease;
+}
+.logo-fallback { font-size: 20px; font-weight: 900; color: var(--c); text-align: center; line-height: 1.3; transition: color 1s ease; display: none; }
+.dday-num { font-size: 32px; font-weight: 300; color: var(--c); line-height: 1; letter-spacing: -1px; transition: color 1s ease; text-align: center; }
+.visitor-line { font-size: 21px; font-weight: 400; color: var(--c); line-height: 1; letter-spacing: -0.5px; transition: color 1s ease; text-align: center; }
+
+.basket-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.basket-btn:active { opacity: 0.75; transform: scale(0.97); }
+.basket-mask {
+  width: 72px; height: 72px; background-color: var(--c);
+  -webkit-mask-image: url(../assets/basket.png); mask-image: url(../assets/basket.png);
+  -webkit-mask-size: contain; mask-size: contain;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center; mask-position: center;
+  transition: background-color 1s ease;
+}
+.basket-text { font-size: 18px; font-weight: 900; color: var(--c); letter-spacing: -0.3px; transition: color 1s ease; }
+
+/* ═══════════════════════════════
+   진행화면 (Prep Screen)
+═══════════════════════════════ */
+#prep-screen {
+  position: fixed;
+  top: 0; bottom: 0;
+  left: 50%; width: 100%; max-width: 430px;
+  transform: translateX(-50%) translateY(100%);
+  transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+  z-index: 50;
+  background: var(--prep-bg);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+#prep-screen.open { transform: translateX(-50%) translateY(0); }
+
+/* 스티키 탑바 */
+#prep-topbar {
+  flex-shrink: 0;
+  background: var(--prep-bg);
+  display: flex; align-items: center;
+  padding: 14px 20px; gap: 0;
+  border-bottom: 2px solid #000;
+}
+.topbar-left {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent; flex-shrink: 0;
+}
+/* 장바구니 아이콘 (진행률 채움) */
+.basket-icon-wrap { position: relative; width: 32px; height: 32px; }
+.basket-layer {
+  position: absolute; inset: 0;
+  -webkit-mask-image: url(../assets/basket.png); mask-image: url(../assets/basket.png);
+  -webkit-mask-size: contain; mask-size: contain;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center; mask-position: center;
+}
+.basket-layer-black  { background: #000; }
+.basket-layer-color  { background: var(--fill-color); clip-path: inset(100% 0 0 0); transition: clip-path 0.5s ease; }
+.topbar-pct-lbl { font-size: 8px; font-weight: 800; color: #000; text-align: center; width: 32px; }
+
+.topbar-center { flex: 1; text-align: center; font-size: 15px; font-weight: 800; color: #000; letter-spacing: -0.3px; }
+.topbar-right { font-size: 22px; color: #000; cursor: pointer; -webkit-tap-highlight-color: transparent; flex-shrink: 0; line-height: 1; padding: 4px; }
+
+/* 스크롤 바디 */
+#prep-body { flex: 1; overflow-y: auto; padding: 24px 20px 48px; -webkit-overflow-scrolling: touch; }
+
+/* 단계 카드 */
+.stage-card {
+  border: 2px solid #000; background: transparent;
+  margin-bottom: 16px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s;
+}
+.stage-card:active { opacity: 0.65; }
+.stage-card-body { display: flex; align-items: center; gap: 14px; padding: 18px 16px 14px; }
+
+.status-dot {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: #000; color: var(--prep-bg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 800; flex-shrink: 0;
+  text-align: center; line-height: 1.3;
+}
+.stage-title { font-size: 15px; font-weight: 800; color: #000; letter-spacing: -0.3px; line-height: 1.35; }
+
+/* 진행 바 (카드 하단에 딱 붙음) */
+.stage-pbar { height: 10px; background: transparent; }
+.stage-pbar-fill {
+  height: 100%; background: #000;
+  display: flex; align-items: center; justify-content: flex-end;
+}
+.stage-pct-txt { font-size: 8px; font-weight: 800; color: var(--prep-bg); padding-right: 4px; white-space: nowrap; }
+
+/* ═══════════════════════════════
+   사이드 메뉴
+═══════════════════════════════ */
+#side-menu {
+  position: absolute; inset: 0;
+  background: var(--menu-bg);
+  transform: translateX(-100%);
+  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  z-index: 20;
+  display: flex; flex-direction: column;
+  padding: 60px 28px 40px;
+  overflow-y: auto;
+}
+#side-menu.open { transform: translateX(0); }
+
+.menu-close { position: absolute; top: 20px; right: 20px; font-size: 24px; color: #000; cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 4px; }
+.menu-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 0; border-bottom: 1px solid rgba(0,0,0,0.18);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s;
+}
+.menu-item:last-child { border-bottom: none; }
+.menu-item:active { opacity: 0.6; }
+.menu-dot {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #000; color: var(--menu-bg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 800; flex-shrink: 0;
+  text-align: center; line-height: 1.3;
+}
+.menu-title { font-size: 16px; font-weight: 800; color: #000; letter-spacing: -0.3px; }
+
+/* ═══════════════════════════════
+   모달 (공통 디자인 시스템)
+═══════════════════════════════ */
+.modal-ov {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  justify-content: center; align-items: center;
+  background: rgba(0,0,0,0.42);
+}
+.modal-ov.on { display: flex; }
+
+.modal-box {
+  width: 82%; max-width: 340px;
+  padding: 36px 28px 28px;
+  border-radius: 0; color: #000; font-family: inherit;
+  /* --modal-bg: 열릴 때 JS가 설정 */
+}
+.modal-ttl { font-size: 20px; font-weight: 900; color: #000; margin-bottom: 10px; line-height: 1.3; letter-spacing: -0.5px; }
+.modal-desc { font-size: 14px; color: rgba(0,0,0,0.7); margin-bottom: 24px; line-height: 1.6; }
+.modal-err { font-size: 13px; color: rgba(0,0,0,0.7); margin-bottom: 14px; min-height: 16px; }
+.modal-btns { display: flex; gap: 10px; }
+.modal-btn {
+  flex: 1; padding: 12px 0;
+  background: transparent; border: 2px solid #000; border-radius: 0;
+  color: #000; font-size: 15px; font-weight: 700;
+  cursor: pointer; font-family: inherit; letter-spacing: -0.3px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, color 0.15s;
+}
+.modal-btn:hover, .modal-btn:active {
+  background: #000;
+  color: var(--modal-bg, #fff);
+}
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- 슬라이드쇼 배경 (5장) -->
+  <!-- 슬라이드쇼 배경 -->
   <div class="slide on" id="slide-0"></div>
   <div class="slide" id="slide-1"></div>
   <div class="slide" id="slide-2"></div>
   <div class="slide" id="slide-3"></div>
   <div class="slide" id="slide-4"></div>
 
-  <!-- 메인 콘텐츠 -->
-  <div id="content">
-
-    <!-- 상단: 회차 + 로고 + D-Day + 방문신청 수 -->
+  <!-- ── 메인 콘텐츠 ── -->
+  <div id="main-content">
     <div class="top-group">
       <div class="edition-text" id="edition-text">제3회</div>
       <div class="logo-wrap">
@@ -281,83 +292,126 @@ body {
       <div class="dday-num" id="dday-num">D-?</div>
       <div class="visitor-line" id="visitor-line">0명 방문신청</div>
     </div>
-
-    <!-- 하단: 장바구니 버튼 -->
     <div class="bottom-group basket-btn" onclick="openAuthModal()">
       <div class="basket-mask"></div>
       <div class="basket-text">내 마켓 준비하기</div>
     </div>
+  </div>
+
+  <!-- ══════════ 진행화면 ══════════ -->
+  <div id="prep-screen">
+
+    <!-- 사이드 메뉴 -->
+    <div id="side-menu">
+      <div class="menu-close" onclick="closeMenu()">✕</div>
+      <div id="menu-list"></div>
+    </div>
+
+    <!-- 스티키 탑바 -->
+    <div id="prep-topbar">
+      <div class="topbar-left" onclick="toggleMenu()">
+        <div class="basket-icon-wrap">
+          <div class="basket-layer basket-layer-black"></div>
+          <div class="basket-layer basket-layer-color" id="basket-fill-layer"></div>
+        </div>
+        <div class="topbar-pct-lbl" id="topbar-pct">0% 완료</div>
+      </div>
+      <div class="topbar-center" id="topbar-title">내 마켓 준비</div>
+      <div class="topbar-right" onclick="closePrep()">↓</div>
+    </div>
+
+    <!-- 스크롤 영역 -->
+    <div id="prep-body">
+      <div id="stage-list"></div>
+    </div>
 
   </div>
-</div>
+
+</div><!-- /#app -->
 
 <!-- 인증 모달 -->
-<div class="modal-overlay" id="auth-modal" onclick="onOverlayClick(event)">
-  <div class="modal-box" id="auth-modal-box">
-    <div class="modal-title">GMBF 포크이신가요?</div>
+<div class="modal-ov" id="auth-modal" onclick="onOvClick(event)">
+  <div class="modal-box" id="auth-box">
+    <div class="modal-ttl">GMBF 포크이신가요?</div>
     <div class="modal-desc">신청할 때 입력했던 휴대폰 번호로 인증해주세요.</div>
-    <input class="modal-input" id="auth-phone" type="tel" placeholder="010-0000-0000" maxlength="13">
+    <input class="inp" id="auth-phone" type="tel" placeholder="010-0000-0000" maxlength="13" style="margin-bottom:20px;">
+    <div class="modal-err" id="auth-err"></div>
     <div class="modal-btns">
       <button class="modal-btn" onclick="closeAuthModal()">취소</button>
-      <button class="modal-btn" onclick="confirmAuth()">확인</button>
+      <button class="modal-btn" id="auth-confirm" onclick="confirmAuth()">확인</button>
     </div>
   </div>
 </div>
 
 <script>
+// ─────────────────────────────────
+//  설정값
+// ─────────────────────────────────
 const EVENT_DATE      = '2026-06-07';
 const APPS_SCRIPT_URL = 'TBD';
-const EDITION_NUM     = 3; // 관리자 설정 예정
+const EDITION_NUM     = 3;
 
-// 메인 색상 순환 (5가지)
 const COLORS     = ['#00CE6B', '#FFF100', '#F95548', '#0BC6FF', '#FFFFFF'];
-// 모달 배경색 후보 (키컬러 4가지만)
 const KEY_COLORS = ['#00CE6B', '#FFF100', '#F95548', '#0BC6FF'];
 
 const BG_IMAGES = [
-  '../assets/bg1.jpeg',
-  '../assets/bg2.jpeg',
-  '../assets/bg3.jpeg',
-  '../assets/bg4.jpeg',
-  '../assets/bg5.jpeg',
+  '../assets/bg1.jpeg','../assets/bg2.jpeg','../assets/bg3.jpeg',
+  '../assets/bg4.jpeg','../assets/bg5.jpeg',
 ];
 
+// 더미 데이터 — 실제 데이터는 Google Sheets 이벤트 로그에서 계산 예정
+const STAGES = [
+  { id:'s1', title:'GMBF 포크를 위한 안내',   status:'완료',    progress:100 },
+  { id:'s2', title:'기본 정보 제출하기',        status:'진행 중', progress:60  },
+  { id:'s3', title:'부스 준비 체크리스트',      status:'시작 전', progress:0   },
+  { id:'s4', title:'추가 정보 제출하기',        status:'시작 전', progress:0   },
+  { id:'s5', title:'셀프마케팅 이미지 만들기',  status:'시작 전', progress:0   },
+];
+
+// ─────────────────────────────────
+//  상태
+// ─────────────────────────────────
 let currentSlide    = 0;
 let currentColorIdx = -1;
+let prepBgColor     = KEY_COLORS[0];
 const slideCount    = BG_IMAGES.length;
 
-// ── D-Day ──
-function calcDDay(dateStr) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const event = new Date(dateStr + 'T00:00:00');
-  const diff  = Math.ceil((event - today) / 86400000);
-  if (diff > 0) return 'D-' + diff;
-  if (diff === 0) return 'D-Day';
-  return 'D+' + Math.abs(diff);
+// ─────────────────────────────────
+//  유틸
+// ─────────────────────────────────
+function calcDDay(d) {
+  const t = new Date(); t.setHours(0,0,0,0);
+  const e = new Date(d + 'T00:00:00');
+  const n = Math.ceil((e - t) / 86400000);
+  if (n > 0) return 'D-' + n;
+  if (n === 0) return 'D-Day';
+  return 'D+' + Math.abs(n);
 }
 
-// ── 색상 순환 ──
+function pickOther(exclude, pool) {
+  const a = pool.filter(c => c !== exclude);
+  return a[Math.floor(Math.random() * a.length)];
+}
+
+function setCss(name, val) {
+  document.documentElement.style.setProperty(name, val);
+}
+
+// ─────────────────────────────────
+//  메인 — 슬라이드 / 색상
+// ─────────────────────────────────
 function nextColor() {
-  let idx;
-  do { idx = Math.floor(Math.random() * COLORS.length); }
-  while (idx === currentColorIdx);
-  currentColorIdx = idx;
-  return COLORS[idx];
+  let i;
+  do { i = Math.floor(Math.random() * COLORS.length); } while (i === currentColorIdx);
+  currentColorIdx = i;
+  return COLORS[i];
 }
-function applyColor(hex) {
-  document.documentElement.style.setProperty('--c', hex);
-}
-
-// ── 슬라이드 전환 ──
 function nextSlide() {
-  const slides = document.querySelectorAll('.slide');
-  slides[currentSlide].classList.remove('on');
+  document.querySelectorAll('.slide')[currentSlide].classList.remove('on');
   currentSlide = (currentSlide + 1) % slideCount;
-  slides[currentSlide].classList.add('on');
-  applyColor(nextColor());
+  document.querySelectorAll('.slide')[currentSlide].classList.add('on');
+  setCss('--c', nextColor());
 }
-
 function initSlides() {
   BG_IMAGES.forEach((url, i) => {
     const el = document.getElementById('slide-' + i);
@@ -365,124 +419,172 @@ function initSlides() {
   });
 }
 
-// ── 방문 신청자 수 ──
-async function fetchVisitorCount() {
+// ─────────────────────────────────
+//  방문자 수
+// ─────────────────────────────────
+async function fetchCount() {
   if (APPS_SCRIPT_URL === 'TBD') return;
   try {
-    const res  = await fetch(APPS_SCRIPT_URL + '?action=count');
-    const data = await res.json();
-    if (data.count !== undefined)
-      document.getElementById('visitor-line').textContent = data.count + '명 방문신청';
-  } catch(e) { console.log('방문자 수 불러오기 실패:', e); }
+    const d = await fetch(APPS_SCRIPT_URL + '?action=count').then(r => r.json());
+    if (d.count !== undefined) document.getElementById('visitor-line').textContent = d.count + '명 방문신청';
+  } catch(e) {}
 }
 
-// ── 로고 fallback ──
-function checkLogoLoad() {
-  const img = new Image();
-  img.onerror = () => {
-    document.getElementById('logo-mask').style.display = 'none';
-    document.getElementById('logo-fallback').style.display = 'block';
-  };
-  img.src = '../assets/logo.png';
+// ─────────────────────────────────
+//  이벤트 로그 → Google Sheets
+// ─────────────────────────────────
+async function logEvent(type, stepId, data) {
+  if (APPS_SCRIPT_URL === 'TBD') return;
+  const s = JSON.parse(sessionStorage.getItem('sellerSession') || '{}');
+  try {
+    await fetch(APPS_SCRIPT_URL
+      + '?action=log&phone=' + (s.phone||'')
+      + '&name=' + encodeURIComponent(s.name||'')
+      + '&event=' + encodeURIComponent(type)
+      + '&step=' + (stepId||'')
+      + '&data=' + encodeURIComponent(JSON.stringify(data||{}))
+    );
+  } catch(e) {}
 }
 
-// ════════════════════════════════
-//  모달
-// ════════════════════════════════
-
-// 현재 --c 와 다른 키컬러를 랜덤 선택
-function getModalColor() {
-  const current = COLORS[currentColorIdx] || '';
-  const available = KEY_COLORS.filter(c => c !== current);
-  return available[Math.floor(Math.random() * available.length)];
-}
-
+// ─────────────────────────────────
+//  모달 — 인증
+// ─────────────────────────────────
 function openAuthModal() {
-  const box = document.getElementById('auth-modal-box');
-  box.style.background = getModalColor();
-  document.getElementById('auth-phone').value = '';
-  const err = document.getElementById('modal-error');
-  if (err) err.textContent = '';
+  const color = pickOther(COLORS[currentColorIdx] || '', KEY_COLORS);
+  const box   = document.getElementById('auth-box');
+  box.style.background = color;
+  box.style.setProperty('--modal-bg', color);
+  document.getElementById('auth-phone').value  = '';
+  document.getElementById('auth-err').textContent = '';
+  document.getElementById('auth-confirm').textContent = '확인';
+  document.getElementById('auth-confirm').disabled    = false;
   document.getElementById('auth-modal').classList.add('on');
 }
-
-function closeAuthModal() {
-  document.getElementById('auth-modal').classList.remove('on');
-}
-
-function onOverlayClick(e) {
-  if (e.target === document.getElementById('auth-modal')) closeAuthModal();
-}
+function closeAuthModal() { document.getElementById('auth-modal').classList.remove('on'); }
+function onOvClick(e) { if (e.target.id === 'auth-modal') closeAuthModal(); }
 
 function confirmAuth() {
   const phone = document.getElementById('auth-phone').value.replace(/\D/g, '');
-  if (phone.length < 10) {
-    showModalError('올바른 휴대폰 번호를 입력해주세요.');
-    return;
-  }
+  if (phone.length < 10) { document.getElementById('auth-err').textContent = '올바른 휴대폰 번호를 입력해주세요.'; return; }
 
   if (APPS_SCRIPT_URL === 'TBD') {
-    // Apps Script 미연결 시 임시 통과 (개발용)
-    sessionStorage.setItem('sellerSession', JSON.stringify({ name: '테스트', phone }));
-    closeAuthModal();
-    window.location.href = './prep.html';
-    return;
+    sessionStorage.setItem('sellerSession', JSON.stringify({ name:'테스트 셀러', phone }));
+    closeAuthModal(); openPrep(); return;
   }
 
-  const btn = document.querySelectorAll('.modal-btn')[1];
-  btn.textContent = '확인 중…';
-  btn.disabled = true;
-
+  const btn = document.getElementById('auth-confirm');
+  btn.textContent = '확인 중…'; btn.disabled = true;
   fetch(APPS_SCRIPT_URL + '?action=auth&phone=' + phone)
     .then(r => r.json())
-    .then(data => {
-      btn.textContent = '확인';
-      btn.disabled = false;
-      if (data.success) {
-        sessionStorage.setItem('sellerSession', JSON.stringify(data.seller));
-        closeAuthModal();
-        window.location.href = './prep.html';
-      } else {
-        showModalError('등록된 셀러를 찾을 수 없어요.');
-      }
+    .then(d => {
+      btn.textContent = '확인'; btn.disabled = false;
+      if (d.success) { sessionStorage.setItem('sellerSession', JSON.stringify(d.seller)); closeAuthModal(); openPrep(); }
+      else document.getElementById('auth-err').textContent = '등록된 셀러를 찾을 수 없어요.';
     })
-    .catch(() => {
-      btn.textContent = '확인';
-      btn.disabled = false;
-      showModalError('연결에 실패했어요. 다시 시도해주세요.');
-    });
+    .catch(() => { btn.textContent = '확인'; btn.disabled = false; document.getElementById('auth-err').textContent = '연결 실패. 다시 시도해주세요.'; });
 }
 
-function showModalError(msg) {
-  let el = document.getElementById('modal-error');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'modal-error';
-    el.style.cssText = 'font-size:13px;color:#000;opacity:0.7;margin-top:-18px;margin-bottom:16px;';
-    document.querySelector('.modal-btns').before(el);
-  }
-  el.textContent = msg;
-}
-
-// 전화번호 자동 하이픈
 document.getElementById('auth-phone').addEventListener('input', function() {
-  let v = this.value.replace(/\D/g, '');
-  if (v.length > 11) v = v.slice(0, 11);
+  let v = this.value.replace(/\D/g, '').slice(0, 11);
   if (v.length > 7)      this.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7);
   else if (v.length > 3) this.value = v.slice(0,3) + '-' + v.slice(3);
   else                   this.value = v;
 });
 
-// ── 초기화 ──
+// ─────────────────────────────────
+//  진행화면
+// ─────────────────────────────────
+function calcOverall() {
+  return Math.round(STAGES.reduce((s, t) => s + t.progress, 0) / STAGES.length);
+}
+
+function statusText(stage, forMenu) {
+  if (stage.status === '진행 중' && forMenu) return stage.progress + '%';
+  return stage.status;
+}
+
+function openPrep() {
+  prepBgColor = KEY_COLORS[Math.floor(Math.random() * KEY_COLORS.length)];
+  const fillColor = pickOther(prepBgColor, KEY_COLORS);
+  setCss('--prep-bg', prepBgColor);
+  setCss('--fill-color', fillColor);
+
+  renderStages();
+  updateTopbar();
+
+  document.getElementById('prep-screen').classList.add('open');
+  logEvent('prep_opened', '', {});
+}
+
+function closePrep() {
+  document.getElementById('prep-screen').classList.remove('open');
+  closeMenu();
+}
+
+function updateTopbar() {
+  const pct = calcOverall();
+  document.getElementById('topbar-pct').textContent = pct + '% 완료';
+  document.getElementById('basket-fill-layer').style.clipPath = 'inset(' + (100 - pct) + '% 0 0 0)';
+}
+
+function renderStages() {
+  document.getElementById('stage-list').innerHTML = STAGES.map((s, i) => `
+    <div class="stage-card" onclick="goToStage(${i})">
+      <div class="stage-card-body">
+        <div class="status-dot">${statusText(s, false)}</div>
+        <div class="stage-title">${s.title}</div>
+      </div>
+      <div class="stage-pbar">
+        <div class="stage-pbar-fill" style="width:${s.progress}%">
+          ${s.progress > 0 ? '<span class="stage-pct-txt">' + s.progress + '%</span>' : ''}
+        </div>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function renderMenu() {
+  const menuColor = pickOther(prepBgColor, KEY_COLORS);
+  setCss('--menu-bg', menuColor);
+  document.getElementById('menu-list').innerHTML = STAGES.map((s, i) => `
+    <div class="menu-item" onclick="goToStage(${i}); closeMenu();">
+      <div class="menu-dot">${statusText(s, true)}</div>
+      <div class="menu-title">${s.title}</div>
+    </div>`
+  ).join('');
+}
+
+function toggleMenu() {
+  const m = document.getElementById('side-menu');
+  if (m.classList.contains('open')) closeMenu();
+  else { renderMenu(); m.classList.add('open'); }
+}
+function closeMenu() { document.getElementById('side-menu').classList.remove('on open'); }
+
+function goToStage(i) {
+  document.getElementById('topbar-title').textContent = STAGES[i].title;
+  closeMenu();
+  logEvent('step_viewed', STAGES[i].id, {});
+  // 각 단계 화면 → 추후 구현
+}
+
+// ─────────────────────────────────
+//  초기화
+// ─────────────────────────────────
+function checkLogoLoad() {
+  const img = new Image();
+  img.onerror = () => { document.getElementById('logo-mask').style.display = 'none'; document.getElementById('logo-fallback').style.display = 'block'; };
+  img.src = '../assets/logo.png';
+}
+
 function init() {
   document.getElementById('edition-text').textContent = '제' + EDITION_NUM + '회';
   document.getElementById('dday-num').textContent = calcDDay(EVENT_DATE);
-  initSlides();
-  checkLogoLoad();
-  applyColor(nextColor());
+  initSlides(); checkLogoLoad();
+  setCss('--c', nextColor());
   setInterval(nextSlide, 10000);
-  fetchVisitorCount();
-  setInterval(fetchVisitorCount, 30000);
+  fetchCount(); setInterval(fetchCount, 30000);
 }
 
 window.addEventListener('load', init);
