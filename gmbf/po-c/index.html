@@ -81,7 +81,7 @@ body {
 .slide.on { opacity: 1; }
 .slide::after {
   content: ''; position: absolute; inset: 0;
-  background: rgba(0, 0, 0, 0.38); /* 균일 오버레이 */
+  background: rgba(0, 0, 0, 0.38);
 }
 
 /* ═══════════════════════════════
@@ -158,7 +158,6 @@ body {
   display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
   cursor: pointer; -webkit-tap-highlight-color: transparent; flex-shrink: 0;
 }
-/* 장바구니 아이콘 (진행률 채움) */
 .basket-icon-wrap { position: relative; width: 32px; height: 32px; }
 .basket-layer {
   position: absolute; inset: 0;
@@ -174,7 +173,6 @@ body {
 .topbar-center { flex: 1; text-align: center; font-size: 15px; font-weight: 800; color: #000; letter-spacing: -0.3px; }
 .topbar-right { font-size: 22px; color: #000; cursor: pointer; -webkit-tap-highlight-color: transparent; flex-shrink: 0; line-height: 1; padding: 4px; }
 
-/* 스크롤 바디 */
 #prep-body { flex: 1; overflow-y: auto; padding: 24px 20px 48px; -webkit-overflow-scrolling: touch; }
 
 /* 단계 카드 */
@@ -196,7 +194,6 @@ body {
 }
 .stage-title { font-size: 15px; font-weight: 800; color: #000; letter-spacing: -0.3px; line-height: 1.35; }
 
-/* 진행 바 (카드 하단에 딱 붙음) */
 .stage-pbar { height: 10px; background: transparent; }
 .stage-pbar-fill {
   height: 100%; background: #000;
@@ -251,7 +248,6 @@ body {
   width: 82%; max-width: 340px;
   padding: 36px 28px 28px;
   border-radius: 0; color: #000; font-family: inherit;
-  /* --modal-bg: 열릴 때 JS가 설정 */
 }
 .modal-ttl { font-size: 20px; font-weight: 900; color: #000; margin-bottom: 10px; line-height: 1.3; letter-spacing: -0.5px; }
 .modal-desc { font-size: 14px; color: rgba(0,0,0,0.7); margin-bottom: 24px; line-height: 1.6; }
@@ -343,13 +339,29 @@ body {
   </div>
 </div>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
 <script>
+// ─────────────────────────────────
+//  Firebase 초기화
+// ─────────────────────────────────
+firebase.initializeApp({
+  apiKey: "AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
+  authDomain: "beyhome-admin.firebaseapp.com",
+  projectId: "beyhome-admin",
+  storageBucket: "beyhome-admin.firebasestorage.app",
+  messagingSenderId: "849320781553",
+  appId: "1:849320781553:web:9d844044e85995c0aa2b50"
+});
+const db = firebase.firestore();
+
 // ─────────────────────────────────
 //  설정값
 // ─────────────────────────────────
-const EVENT_DATE      = '2026-06-07';
-const APPS_SCRIPT_URL = 'TBD';
-const EDITION_NUM     = 3;
+const EVENT_DATE  = '2026-06-07';
+const EDITION_NUM = 3;
 
 const COLORS     = ['#00CE6B', '#FFF100', '#F95548', '#0BC6FF', '#FFFFFF'];
 const KEY_COLORS = ['#00CE6B', '#FFF100', '#F95548', '#0BC6FF'];
@@ -359,7 +371,6 @@ const BG_IMAGES = [
   '../assets/bg4.jpeg','../assets/bg5.jpeg',
 ];
 
-// 더미 데이터 — 실제 데이터는 Google Sheets 이벤트 로그에서 계산 예정
 const STAGES = [
   { id:'s1', title:'GMBF 포크를 위한 안내',   status:'완료',    progress:100 },
   { id:'s2', title:'기본 정보 제출하기',        status:'진행 중', progress:60  },
@@ -398,7 +409,7 @@ function setCss(name, val) {
 }
 
 // ─────────────────────────────────
-//  메인 — 슬라이드 / 색상
+//  슬라이드 / 색상
 // ─────────────────────────────────
 function nextColor() {
   let i;
@@ -420,30 +431,32 @@ function initSlides() {
 }
 
 // ─────────────────────────────────
-//  방문자 수
+//  방문자 수 (Firestore)
 // ─────────────────────────────────
 async function fetchCount() {
-  if (APPS_SCRIPT_URL === 'TBD') return;
   try {
-    const d = await fetch(APPS_SCRIPT_URL + '?action=count').then(r => r.json());
-    if (d.count !== undefined) document.getElementById('visitor-line').textContent = d.count + '명 방문신청';
+    const doc = await db.collection('gmbf_settings').doc('event').get();
+    if (doc.exists) {
+      const cnt = doc.data().visitorCount || 0;
+      document.getElementById('visitor-line').textContent = cnt + '명 방문신청';
+    }
   } catch(e) {}
 }
 
 // ─────────────────────────────────
-//  이벤트 로그 → Google Sheets
+//  이벤트 로그 (Firestore)
 // ─────────────────────────────────
 async function logEvent(type, stepId, data) {
-  if (APPS_SCRIPT_URL === 'TBD') return;
-  const s = JSON.parse(sessionStorage.getItem('sellerSession') || '{}');
   try {
-    await fetch(APPS_SCRIPT_URL
-      + '?action=log&phone=' + (s.phone||'')
-      + '&name=' + encodeURIComponent(s.name||'')
-      + '&event=' + encodeURIComponent(type)
-      + '&step=' + (stepId||'')
-      + '&data=' + encodeURIComponent(JSON.stringify(data||{}))
-    );
+    const s = JSON.parse(sessionStorage.getItem('sellerSession') || '{}');
+    await db.collection('gmbf_event_log').add({
+      phone: s.phone || '',
+      name: s.name || '',
+      event: type,
+      step: stepId || '',
+      data: data || {},
+      ts: firebase.firestore.FieldValue.serverTimestamp(),
+    });
   } catch(e) {}
 }
 
@@ -455,8 +468,8 @@ function openAuthModal() {
   const box   = document.getElementById('auth-box');
   box.style.background = color;
   box.style.setProperty('--modal-bg', color);
-  document.getElementById('auth-phone').value  = '';
-  document.getElementById('auth-err').textContent = '';
+  document.getElementById('auth-phone').value      = '';
+  document.getElementById('auth-err').textContent  = '';
   document.getElementById('auth-confirm').textContent = '확인';
   document.getElementById('auth-confirm').disabled    = false;
   document.getElementById('auth-modal').classList.add('on');
@@ -464,25 +477,31 @@ function openAuthModal() {
 function closeAuthModal() { document.getElementById('auth-modal').classList.remove('on'); }
 function onOvClick(e) { if (e.target.id === 'auth-modal') closeAuthModal(); }
 
-function confirmAuth() {
+async function confirmAuth() {
   const phone = document.getElementById('auth-phone').value.replace(/\D/g, '');
-  if (phone.length < 10) { document.getElementById('auth-err').textContent = '올바른 휴대폰 번호를 입력해주세요.'; return; }
-
-  if (APPS_SCRIPT_URL === 'TBD') {
-    sessionStorage.setItem('sellerSession', JSON.stringify({ name:'테스트 셀러', phone }));
-    closeAuthModal(); openPrep(); return;
+  if (phone.length < 10) {
+    document.getElementById('auth-err').textContent = '올바른 휴대폰 번호를 입력해주세요.';
+    return;
   }
 
   const btn = document.getElementById('auth-confirm');
   btn.textContent = '확인 중…'; btn.disabled = true;
-  fetch(APPS_SCRIPT_URL + '?action=auth&phone=' + phone)
-    .then(r => r.json())
-    .then(d => {
-      btn.textContent = '확인'; btn.disabled = false;
-      if (d.success) { sessionStorage.setItem('sellerSession', JSON.stringify(d.seller)); closeAuthModal(); openPrep(); }
-      else document.getElementById('auth-err').textContent = '등록된 셀러를 찾을 수 없어요.';
-    })
-    .catch(() => { btn.textContent = '확인'; btn.disabled = false; document.getElementById('auth-err').textContent = '연결 실패. 다시 시도해주세요.'; });
+
+  try {
+    const snap = await db.collection('gmbf_sellers').where('phone', '==', phone).limit(1).get();
+    btn.textContent = '확인'; btn.disabled = false;
+    if (!snap.empty) {
+      const seller = snap.docs[0].data();
+      sessionStorage.setItem('sellerSession', JSON.stringify({ name: seller.name, phone: seller.phone }));
+      closeAuthModal();
+      openPrep();
+    } else {
+      document.getElementById('auth-err').textContent = '등록된 셀러를 찾을 수 없어요.';
+    }
+  } catch(e) {
+    btn.textContent = '확인'; btn.disabled = false;
+    document.getElementById('auth-err').textContent = '연결 실패. 다시 시도해주세요.';
+  }
 }
 
 document.getElementById('auth-phone').addEventListener('input', function() {
@@ -509,10 +528,8 @@ function openPrep() {
   const fillColor = pickOther(prepBgColor, KEY_COLORS);
   setCss('--prep-bg', prepBgColor);
   setCss('--fill-color', fillColor);
-
   renderStages();
   updateTopbar();
-
   document.getElementById('prep-screen').classList.add('open');
   logEvent('prep_opened', '', {});
 }
@@ -574,7 +591,10 @@ function goToStage(i) {
 // ─────────────────────────────────
 function checkLogoLoad() {
   const img = new Image();
-  img.onerror = () => { document.getElementById('logo-mask').style.display = 'none'; document.getElementById('logo-fallback').style.display = 'block'; };
+  img.onerror = () => {
+    document.getElementById('logo-mask').style.display = 'none';
+    document.getElementById('logo-fallback').style.display = 'block';
+  };
   img.src = '../assets/logo.png';
 }
 
@@ -584,7 +604,7 @@ function init() {
   initSlides(); checkLogoLoad();
   setCss('--c', nextColor());
   setInterval(nextSlide, 10000);
-  fetchCount(); setInterval(fetchCount, 30000);
+  fetchCount(); setInterval(fetchCount, 60000);
 }
 
 window.addEventListener('load', init);
