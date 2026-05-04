@@ -501,9 +501,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       </div>
     </div>
     <div id="bpanel-form" style="display:none;">
-      <div style="padding:24px 0;text-align:center;color:rgba(0,0,0,.4);font-size:13px;line-height:1.7;border:1.5px dashed rgba(0,0,0,.2);">
-        폼 블록은 곧 지원 예정이에요.<br>
-        <span style="font-size:11px;">지금은 <b>임베드</b>로 Tally 폼을 직접 연결해주세요.</span>
+      <div class="ed-lbl" style="margin-bottom:6px;">폼 필드</div>
+      <div id="form-field-list"></div>
+      <button class="add-btn" style="margin-top:8px;font-size:12px;padding:8px 0;" onclick="openFormFieldModal(null)">+ 필드 추가</button>
+      <div style="margin-top:14px;">
+        <div class="ed-lbl">제출 버튼 텍스트</div>
+        <input class="fi-sm" id="form-submit-text" placeholder="제출하기" style="margin-bottom:0;">
+      </div>
+      <div style="margin-top:10px;">
+        <div class="ed-lbl">제출 완료 메시지</div>
+        <input class="fi-sm" id="form-post-text" placeholder="제출이 완료되었어요. 감사합니다!" style="margin-bottom:0;">
+      </div>
+      <div id="form-dup-wrap" style="margin-top:10px;display:none;">
+        <div class="switch-row">
+          <div class="switch" id="form-dup-sw" onclick="toggleFormDup()"></div>
+          <span class="switch-lbl">중복 제출 허용 (같은 사용자가 여러 번 제출 가능)</span>
+        </div>
+      </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
+        <div class="ed-lbl">구글 시트 연동</div>
+        <div id="form-sheet-status" style="font-size:12px;margin-bottom:8px;color:rgba(0,0,0,.5);">연동 없음</div>
+        <button onclick="createFormSheet()" style="padding:7px 12px;background:transparent;border:1.5px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">📊 새 시트 생성</button>
       </div>
     </div>
     <div id="bpanel-mixed" style="display:none;">
@@ -613,6 +631,53 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <div class="modal-footer">
       <button class="mbtn-cancel" onclick="closeModal('bulk-modal')">취소</button>
       <button class="mbtn-ok" onclick="saveBulkUsers()">가져오기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 폼 필드 추가/편집 모달 -->
+<div class="modal-ov" id="form-field-modal">
+  <div class="modal-box">
+    <div class="modal-ttl" id="form-field-modal-ttl">필드 추가</div>
+    <div class="modal-scroll">
+      <div class="ed-lbl">필드 이름 (화면 표시용)</div>
+      <input class="fi-sm" id="ff-label" placeholder="예: 이름" style="margin-bottom:14px;" oninput="autoFfKey(this.value)">
+      <div class="ed-lbl">필드 키 (영문·숫자·_)</div>
+      <input class="fi-sm" id="ff-key" placeholder="예: name" style="margin-bottom:14px;" oninput="this.dataset.userEdited='1'">
+      <div class="ed-lbl">입력 타입</div>
+      <select class="fi-sm" id="ff-type" style="cursor:pointer;margin-bottom:14px;" onchange="onFfTypeChange()">
+        <option value="string">짧은 텍스트</option>
+        <option value="textarea">긴 텍스트</option>
+        <option value="number">숫자</option>
+        <option value="file">파일 업로드</option>
+        <option value="select">선택지 (드롭다운)</option>
+      </select>
+      <div id="ff-options-wrap" style="display:none;margin-bottom:14px;">
+        <div class="ed-lbl">선택지 목록 (줄바꿈 또는 쉼표로 구분)</div>
+        <textarea id="ff-options" style="width:100%;height:80px;border:1.5px solid #000;padding:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none;" placeholder="옵션1&#10;옵션2&#10;옵션3"></textarea>
+      </div>
+      <div class="switch-row">
+        <div class="switch" id="ff-req-sw" onclick="toggleFfReq()"></div>
+        <span class="switch-lbl">필수 입력 항목</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="mbtn-cancel" onclick="closeModal('form-field-modal')">취소</button>
+      <button class="mbtn-ok" onclick="saveFormField()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 폼 응답 보기 모달 -->
+<div class="modal-ov" id="form-resp-modal">
+  <div class="modal-box" style="max-width:700px;width:95vw;">
+    <div class="modal-ttl">응답 보기</div>
+    <div class="modal-scroll" id="form-resp-scroll">
+      <div class="empty-msg">불러오는 중…</div>
+    </div>
+    <div class="modal-footer">
+      <button class="mbtn-cancel" onclick="closeModal('form-resp-modal')">닫기</button>
+      <button class="mbtn-ok" onclick="exportRespCsv()">CSV 내보내기</button>
     </div>
   </div>
 </div>
@@ -752,6 +817,12 @@ let previewWidth = 196;
 let previewTimer = null;
 let pendingStageUploadIdx = null;
 let pendingUploadBtn = null;
+let curFormFields = [];
+let curFormConfig = {};
+let curEditingFormFieldIdx = null;
+let ffReqOn = false;
+let curRespFormId = null;
+let curRespData = [];
 
 /* ── URL Preview ── */
 function updateUrlPreview() {
@@ -1726,13 +1797,14 @@ function renderBlockList() {
              b.type==='image'?(b.imageUrl?'[이미지]'+(b.linkUrl?' 🔗':''):'(URL 없음)'):
              b.type==='mixed'?'['+(b.mixedLayout==='split'?'분리':'오버레이')+'] '+(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,22):
              b.type==='embed'?(b.embedUrl||'(URL 없음)').slice(0,35):
-             '(폼 준비 중)';
+             b.type==='form'?(b.formFields?.length?`필드 ${b.formFields.length}개`:'(필드 없음)'):'';
     return `<div class="blk-item">
       <div class="blk-badge">${tl}</div>
       <div class="blk-prev">${pv||'(내용 없음)'}</div>
       <div class="blk-acts">
         ${i>0?`<button class="b-btn" onclick="mvBlk(${i},-1)">↑</button>`:'<div style="width:28px;"></div>'}
         ${i<curBlocks.length-1?`<button class="b-btn" onclick="mvBlk(${i},1)">↓</button>`:'<div style="width:28px;"></div>'}
+        ${b.type==='form'&&b.formId?`<button class="b-btn" onclick="viewFormResponses('${b.formId}')" title="응답 보기">📋</button>`:''}
         <button class="b-btn" onclick="openBlockModal(${i})">✎</button>
         <button class="b-btn" onclick="rmBlk(${i})">✕</button>
       </div>
@@ -1741,6 +1813,136 @@ function renderBlockList() {
 }
 function mvBlk(i,d){const j=i+d;if(j<0||j>=curBlocks.length)return;[curBlocks[i],curBlocks[j]]=[curBlocks[j],curBlocks[i]];renderBlockList();scheduleGuidePreviewUpdate();}
 function rmBlk(i){if(!confirm('이 블록을 삭제할까요?'))return;curBlocks.splice(i,1);renderBlockList();scheduleGuidePreviewUpdate();}
+
+/* ══════════════════════════════════════
+   폼 빌더
+══════════════════════════════════════ */
+function renderFormFields() {
+  const el = document.getElementById('form-field-list');
+  if (!el) return;
+  if (!curFormFields.length) {
+    el.innerHTML = '<div class="empty-msg" style="padding:6px 0;">필드가 없어요.</div>'; return;
+  }
+  const typeLabel = {string:'짧은텍스트',textarea:'긴텍스트',number:'숫자',file:'파일',select:'선택지'};
+  el.innerHTML = curFormFields.map((f,i) => `
+    <div class="field-item">
+      <div class="field-info">
+        <div class="field-name">${f.label}</div>
+        <div class="field-meta">${f.key} · ${typeLabel[f.type]||f.type}${f.required?' · 필수':''}</div>
+      </div>
+      <div class="field-badges">
+        ${i>0?`<span class="fbadge" onclick="mvFormField(${i},-1)">↑</span>`:''}
+        ${i<curFormFields.length-1?`<span class="fbadge" onclick="mvFormField(${i},1)">↓</span>`:''}
+        <span class="fbadge" onclick="openFormFieldModal(${i})">편집</span>
+        <span class="fbadge" onclick="rmFormField(${i})">삭제</span>
+      </div>
+    </div>`).join('');
+}
+function mvFormField(i,d){const j=i+d;if(j<0||j>=curFormFields.length)return;[curFormFields[i],curFormFields[j]]=[curFormFields[j],curFormFields[i]];renderFormFields();}
+function rmFormField(i){if(!confirm('이 필드를 삭제할까요?'))return;curFormFields.splice(i,1);renderFormFields();}
+function openFormFieldModal(idx) {
+  curEditingFormFieldIdx = idx;
+  document.getElementById('form-field-modal-ttl').textContent = idx===null ? '필드 추가' : '필드 편집';
+  const f = idx!==null ? curFormFields[idx] : {label:'',key:'',type:'string',required:false,options:[]};
+  const labelEl = document.getElementById('ff-label');
+  const keyEl   = document.getElementById('ff-key');
+  labelEl.value = f.label||'';
+  keyEl.value   = f.key||'';
+  keyEl.dataset.userEdited = '';
+  document.getElementById('ff-type').value   = f.type||'string';
+  document.getElementById('ff-options').value = (f.options||[]).join('\n');
+  ffReqOn = f.required||false;
+  document.getElementById('ff-req-sw').classList.toggle('on', ffReqOn);
+  onFfTypeChange();
+  document.getElementById('form-field-modal').classList.add('on');
+}
+function autoFfKey(label) {
+  const keyEl = document.getElementById('ff-key');
+  if (!keyEl || keyEl.dataset.userEdited === '1') return;
+  keyEl.value = label.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'').slice(0,32);
+}
+function onFfTypeChange() {
+  const t = document.getElementById('ff-type').value;
+  document.getElementById('ff-options-wrap').style.display = t==='select' ? '' : 'none';
+}
+function toggleFfReq() { ffReqOn=!ffReqOn; document.getElementById('ff-req-sw').classList.toggle('on',ffReqOn); }
+function saveFormField() {
+  const label = document.getElementById('ff-label').value.trim();
+  const key   = document.getElementById('ff-key').value.trim().replace(/[^a-zA-Z0-9_]/g,'');
+  const type  = document.getElementById('ff-type').value;
+  const optRaw = document.getElementById('ff-options').value;
+  const options = type==='select' ? optRaw.split(/[\n,]/).map(s=>s.trim()).filter(Boolean) : [];
+  if (!label||!key) { alert('이름과 키를 입력해주세요.'); return; }
+  if (curEditingFormFieldIdx===null) {
+    if (curFormFields.find(f=>f.key===key)) { alert('이미 같은 키가 있어요.'); return; }
+    curFormFields.push({id:uid(), key, label, type, required:ffReqOn, options});
+  } else {
+    curFormFields[curEditingFormFieldIdx] = {...curFormFields[curEditingFormFieldIdx], label, type, required:ffReqOn, options};
+  }
+  document.getElementById('ff-key').dataset.userEdited = '';
+  closeModal('form-field-modal');
+  renderFormFields();
+}
+function toggleFormDup() {
+  curFormConfig.allowDuplicates = !curFormConfig.allowDuplicates;
+  document.getElementById('form-dup-sw').classList.toggle('on', !!curFormConfig.allowDuplicates);
+}
+async function createFormSheet() {
+  if (!curFormFields.length) { alert('먼저 필드를 추가해주세요.'); return; }
+  const title = (document.getElementById('p-name')?.value.trim()||'폼') + ' 응답';
+  const headers = ['제출일시', ...(curAuthEnabled ? ['사용자'] : []), ...curFormFields.map(f=>f.label)];
+  const statusEl = document.getElementById('form-sheet-status');
+  statusEl.textContent = '시트 생성 중…';
+  try {
+    const url = GAS_URL + '?action=createSheet&title=' + encodeURIComponent(title) + '&headers=' + encodeURIComponent(JSON.stringify(headers));
+    const r = await fetch(url);
+    const data = await r.json();
+    if (data.success) {
+      curFormConfig.sheetId  = data.sheetId;
+      curFormConfig.sheetUrl = data.url;
+      statusEl.innerHTML = `연동됨 · <a href="${data.url}" target="_blank" style="color:#000;font-weight:700;">시트 열기 ↗</a>`;
+    } else {
+      statusEl.textContent = '생성 실패: ' + (data.error||'오류');
+    }
+  } catch(e) { statusEl.textContent = '생성 실패: ' + e.message; }
+}
+/* ── 폼 응답 보기 ── */
+async function viewFormResponses(formId) {
+  curRespFormId = formId; curRespData = [];
+  document.getElementById('form-resp-scroll').innerHTML = '<div class="empty-msg">불러오는 중…</div>';
+  document.getElementById('form-resp-modal').classList.add('on');
+  try {
+    const snap = await db.collection('cms_form_responses').doc(formId).collection('responses')
+      .orderBy('submittedAt','desc').limit(100).get();
+    curRespData = snap.docs.map(d=>({_id:d.id,...d.data()}));
+    renderRespTable();
+  } catch(e) {
+    document.getElementById('form-resp-scroll').innerHTML = '<div class="empty-msg">불러오기 실패: '+e.message+'</div>';
+  }
+}
+function renderRespTable() {
+  const el = document.getElementById('form-resp-scroll');
+  if (!curRespData.length) { el.innerHTML = '<div class="empty-msg">응답이 없어요.</div>'; return; }
+  const allKeys = Object.keys(curRespData[0]).filter(k=>k!=='_id');
+  const ths = allKeys.map(k=>`<th style="white-space:nowrap;padding:6px 10px;border-bottom:2px solid #000;font-size:11px;text-align:left;">${k}</th>`).join('');
+  const rows = curRespData.map(r=>
+    `<tr>${allKeys.map(k=>{
+      const v=r[k];
+      const txt=v&&typeof v==='object'&&v.seconds?new Date(v.seconds*1000).toLocaleString('ko'):(v??'');
+      return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.1);font-size:12px;white-space:nowrap;">${txt}</td>`;
+    }).join('')}</tr>`
+  ).join('');
+  el.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table></div><div style="margin-top:10px;font-size:11px;color:rgba(0,0,0,.4);">${curRespData.length}개 응답 (최근 100개)</div>`;
+}
+function exportRespCsv() {
+  if (!curRespData.length) { alert('응답이 없어요.'); return; }
+  const allKeys = Object.keys(curRespData[0]).filter(k=>k!=='_id');
+  const lines = [allKeys.join(','), ...curRespData.map(r=>
+    allKeys.map(k=>{const v=r[k];const s=v&&typeof v==='object'&&v.seconds?new Date(v.seconds*1000).toLocaleString('ko'):String(v??'');return '"'+s.replace(/"/g,'""')+'"';}).join(',')
+  )];
+  const blob = new Blob(['﻿'+lines.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='responses_'+curRespFormId+'.csv'; a.click();
+}
 
 /* ── Block editor ── */
 let curBlkIdx=null,curBlkType='text',curMixedLayout='overlay',savedRange=null;
@@ -1779,6 +1981,19 @@ function openBlockModal(idx){
   document.getElementById('ced-mixed').innerHTML=b.type==='mixed'?(b.textContent||''):'';
   document.getElementById('embed-url').value=b.type==='embed'?(b.embedUrl||''):'';
   document.getElementById('embed-height').value=b.type==='embed'?(b.embedHeight||500):'500';
+  /* form */
+  curFormFields = b.type==='form' ? JSON.parse(JSON.stringify(b.formFields||[])) : [];
+  curFormConfig  = b.type==='form' ? {...{submitBtnText:'제출하기',postSubmitText:'제출이 완료되었어요. 감사합니다!',allowDuplicates:false}, ...b.formConfig} : {};
+  if (b.type==='form') {
+    document.getElementById('form-submit-text').value = curFormConfig.submitBtnText||'';
+    document.getElementById('form-post-text').value   = curFormConfig.postSubmitText||'';
+    document.getElementById('form-dup-sw').classList.toggle('on', !!curFormConfig.allowDuplicates);
+    document.getElementById('form-dup-wrap').style.display = curAuthEnabled ? '' : 'none';
+    const shSt = document.getElementById('form-sheet-status');
+    if (curFormConfig.sheetUrl) shSt.innerHTML=`연동됨 · <a href="${curFormConfig.sheetUrl}" target="_blank" style="color:#000;font-weight:700;">시트 열기 ↗</a>`;
+    else shSt.textContent='연동 없음';
+    renderFormFields();
+  }
   prevImg('img-prev',document.getElementById('img-url').value);
   prevImg('mixed-img-prev',document.getElementById('mixed-img-url').value);
   setMixedLayout(curMixedLayout);savedRange=null;
@@ -1808,6 +2023,12 @@ function saveBlock(){
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url').value.trim();
     b.embedHeight=parseInt(document.getElementById('embed-height').value)||500;
+  } else if(curBlkType==='form'){
+    curFormConfig.submitBtnText  = document.getElementById('form-submit-text').value.trim()||'제출하기';
+    curFormConfig.postSubmitText = document.getElementById('form-post-text').value.trim();
+    b.formId     = (curBlkIdx!==null && curBlocks[curBlkIdx]?.formId) || uid();
+    b.formFields = JSON.parse(JSON.stringify(curFormFields));
+    b.formConfig = {...curFormConfig};
   }
   if(curBlkBgColor) b.bgColor=curBlkBgColor;
   const _mv=parseInt(document.getElementById('blk-margin-v')?.value)||0;
@@ -1971,6 +2192,11 @@ function gBlockHtml(b,S){
     return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="width:100%;display:block;" alt=""><div style="position:absolute;inset:0;display:flex;align-items:flex-end;${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;">${b.textContent||''}</div></div></div>`;
   }
   if(b.type==='embed') return `<div style="${mS}${bgS}${pad};text-align:center;font-size:${Math.round(11*S)}px;color:rgba(0,0,0,.4);">[임베드: ${b.embedUrl||'URL 없음'}]</div>`;
+  if(b.type==='form'){
+    const fields=(b.formFields||[]).map(f=>`<div style="margin-bottom:${Math.round(6*S)}px;"><div style="font-size:${Math.round(10*S)}px;font-weight:700;margin-bottom:${Math.round(2*S)}px;">${f.label}${f.required?'*':''}</div><div style="border:1px solid rgba(0,0,0,.3);height:${Math.round(22*S)}px;background:#fafafa;border-radius:2px;"></div></div>`).join('');
+    const btn=`<div style="margin-top:${Math.round(8*S)}px;background:#000;color:#fff;text-align:center;font-size:${Math.round(11*S)}px;font-weight:700;padding:${Math.round(8*S)}px;">${b.formConfig?.submitBtnText||'제출하기'}</div>`;
+    return `<div style="${mS}${bgS}${pad}">${fields}${btn}</div>`;
+  }
   return '';
 }
 
