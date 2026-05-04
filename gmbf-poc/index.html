@@ -232,8 +232,7 @@ const db = firebase.firestore();
 
 /* ── URL에서 프로젝트 ID ── */
 const PROJECT_ID = 'gmbf-poc';
-const COLORS     = ['#00CE6B','#FFF100','#F95548','#0BC6FF','#FFFFFF'];
-const KEY_COLORS = ['#00CE6B','#FFF100','#F95548','#0BC6FF'];
+let KEY_COLORS = ['#00CE6B']; // overwritten from project data in applySettings()
 
 /* project settings */
 let LAYOUT_TYPE    = 'separate';
@@ -286,6 +285,10 @@ async function loadProjectSettings(){
   }catch(e){ showError('연결에 실패했어요.','잠시 후 다시 시도해주세요.'); }
 }
 function applySettings(d){
+  /* apply project key colors */
+  KEY_COLORS = (d.keyColors && d.keyColors.length) ? d.keyColors : (d.keyColor ? [d.keyColor] : ['#00CE6B']);
+  setCss('--c', KEY_COLORS[0]);
+
   LAYOUT_TYPE     = d.layoutType     || 'separate';
   DDAY_ENABLED    = d.ddayEnabled    || false;
   DDAY_DATE       = d.ddayDate       || '';
@@ -354,22 +357,15 @@ function renderTopGroup(d){
     } else if(key==='logo'){
       const wrap=document.createElement('div');
       wrap.className='logo-wrap';
-      wrap.innerHTML=`<div class="logo-mask" id="logo-mask" style="display:none;"></div>
-        <div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>`;
-      tg.appendChild(wrap);
-      /* re-apply logo settings now that DOM exists */
       if(d.logoType==='text'&&d.logoText){
-        document.getElementById('logo-mask').style.display='none';
-        const fb=document.getElementById('logo-fallback');
-        fb.textContent=d.logoText;
-        fb.style.fontSize=(d.logoTextSize||'20')+'px';
-        fb.style.textAlign=d.logoTextAlign||'center';
-        fb.style.display='block';
+        wrap.innerHTML=`<div class="logo-fallback" id="logo-fallback" style="display:block;font-size:${d.logoTextSize||'20'}px;text-align:${d.logoTextAlign||'center'};">${d.logoText}</div>`;
       } else if(d.logoImageUrl){
-        setMaskUrl('#logo-mask',d.logoImageUrl);
-        document.getElementById('logo-mask').style.display='';
-        document.getElementById('logo-fallback').style.display='none';
+        /* Use <img> for broad compatibility (CSS mask requires CORS headers) */
+        wrap.innerHTML=`<img id="logo-img" src="${d.logoImageUrl}" style="width:100%;height:auto;display:block;" onerror="this.style.opacity=0.3">`;
+      } else {
+        wrap.innerHTML=`<div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>`;
       }
+      tg.appendChild(wrap);
     } else if(key==='dday'){
       const el=document.createElement('div');
       el.className='dday-num'; el.id='dday-num';
@@ -413,7 +409,11 @@ function initSlides(){
   slideIdx=0;
   scheduleNextSlide();
 }
-function nextColor(){ let i; do{i=Math.floor(Math.random()*COLORS.length);}while(i===colorIdx); colorIdx=i; return COLORS[i]; }
+function nextColor(){
+  if(KEY_COLORS.length===1){ colorIdx=0; return KEY_COLORS[0]; }
+  let i; do{i=Math.floor(Math.random()*KEY_COLORS.length);}while(i===colorIdx);
+  colorIdx=i; return KEY_COLORS[i];
+}
 function scheduleNextSlide(){
   if(slideTimer) clearTimeout(slideTimer);
   const cur=bgImages[slideIdx];
@@ -494,7 +494,7 @@ function onCtaClick(){
 
 /* ── Auth ── */
 function openAuthModal(){
-  const c=pickOther(COLORS[colorIdx]||'',KEY_COLORS);
+  const c=pickOther(KEY_COLORS[colorIdx]||KEY_COLORS[0],KEY_COLORS);
   const box=document.getElementById('auth-box');
   box.style.background=c; box.style.setProperty('--modal-bg',c);
   document.getElementById('auth-key-input').value='';
@@ -528,7 +528,7 @@ async function confirmAuth(){
 
 /* ── Prep screen (separate) ── */
 function openPrep(){
-  prepBg=KEY_COLORS[Math.floor(Math.random()*KEY_COLORS.length)];
+  prepBg=pickOther(KEY_COLORS[colorIdx]||KEY_COLORS[0], KEY_COLORS);
   sessionStorage.setItem('prepBgColor',prepBg);
   setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
   renderSeparateStages();
