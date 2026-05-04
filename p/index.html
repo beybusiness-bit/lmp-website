@@ -528,7 +528,7 @@ async function confirmAuth(){
 
 /* ── Prep screen (separate) ── */
 function openPrep(){
-  prepBg=KEY_COLORS[Math.floor(Math.random()*KEY_COLORS.length)];
+  prepBg=pickOther(KEY_COLORS[colorIdx]||KEY_COLORS[0], KEY_COLORS);
   sessionStorage.setItem('prepBgColor',prepBg);
   setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
   renderSeparateStages();

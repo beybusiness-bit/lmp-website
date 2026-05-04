@@ -245,7 +245,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div class="inner-panel" id="ip-design">
           <div class="sect-head ip-first-sect">키컬러</div>
           <div class="ed-sect">
-            <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:10px;line-height:1.6;">배경색·텍스트·아이콘 색상으로 사용됩니다. 배경 슬라이드 전환 시 순서대로 순환합니다.</div>
+            <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:10px;line-height:1.6;">배경색·텍스트·아이콘 색상으로 사용됩니다. 배경 슬라이드 전환 시 순서대로 순환합니다. <b>최소 2개 필요</b></div>
             <div id="key-color-list"></div>
             <button class="add-btn" style="margin-top:8px;" onclick="addKeyColor()">+ 색상 추가</button>
           </div>
@@ -790,7 +790,7 @@ function renderKeyColorList() {
     <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1.5px solid rgba(0,0,0,.1);">
       <input type="color" id="kcp-${i}" value="${c}" style="width:36px;height:32px;border:1.5px solid #000;padding:1px;cursor:pointer;flex-shrink:0;" oninput="onKcPick(${i},this.value)">
       <input id="kch-${i}" class="fi-sm" value="${c.toUpperCase()}" style="flex:1;margin-bottom:0;text-transform:uppercase;" oninput="onKcHex(${i},this.value)">
-      ${curKeyColors.length > 1 ? `<button class="rm-btn2" onclick="removeKeyColor(${i})">✕</button>` : ''}
+      ${curKeyColors.length > 2 ? `<button class="rm-btn2" onclick="removeKeyColor(${i})">✕</button>` : ''}
     </div>`).join('');
 }
 function onKcPick(i, v) {
@@ -809,7 +809,7 @@ function onKcHex(i, v) {
 }
 function addKeyColor() { curKeyColors.push('#000000'); renderKeyColorList(); schedulePreviewUpdate(); }
 function removeKeyColor(i) {
-  if (curKeyColors.length <= 1) { alert('최소 1개 색상이 필요해요.'); return; }
+  if (curKeyColors.length <= 2) { alert('최소 2개 색상이 필요해요.'); return; }
   curKeyColors.splice(i, 1); renderKeyColorList(); schedulePreviewUpdate();
 }
 
@@ -1273,7 +1273,7 @@ function backToProjects() { showProjView('list'); curProjId=null; curStages=[]; 
 function startNewProject() {
   curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}];
   curAuthKeyField='name'; curUsers=[]; curLogoTextSize='24'; curLogoTextAlign='center';
-  curStats=[]; curKeyColors=['#00CE6B']; curElementOrder=['edition','logo','dday','stats'];
+  curStats=[]; curKeyColors=['#00CE6B','#FFF100']; curElementOrder=['edition','logo','dday','stats'];
   ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-col','p-auth-title','p-auth-desc']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   const szEl = document.getElementById('p-logo-txt-size'); if(szEl) szEl.value='24';
