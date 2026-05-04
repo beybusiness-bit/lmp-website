@@ -433,7 +433,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   </div>
   <div id="guide-preview-phone">
     <div id="gprev-header" style="position:absolute;top:0;left:0;right:0;z-index:2;background:#fff;border-bottom:1.5px solid #000;"></div>
-    <div id="gprev-content" style="position:absolute;inset:0;overflow-y:auto;"></div>
+    <div id="gprev-content" style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;"></div>
   </div>
   <div style="font-size:9px;color:rgba(0,0,0,.35);text-align:center;margin-top:5px;">실제 화면과 다를 수 있어요</div>
 </div>
@@ -1252,7 +1252,7 @@ async function saveBulkUsers() {
 function renderStageList() {
   const el = document.getElementById('stage-list');
   if (!curStages.length) { el.innerHTML = '<div class="empty-msg" style="padding:12px 0;">스테이지가 없어요.</div>'; return; }
-  const opts = '<option value="">-- 안내 없음 --</option>' +
+  const opts = '<option value="">-- 내용 없음 --</option>' +
     cachedGuides.map(g=>`<option value="${g.id}">${g.title||g.id}</option>`).join('');
   el.innerHTML = curStages.map((s,i) => `
     <div class="stage-item">
@@ -1472,7 +1472,7 @@ async function loadGuides() {
   try {
     const snap = await db.collection('cms_guides').orderBy('updatedAt','desc').get();
     cachedGuides = snap.docs.map(d=>({id:d.id,title:d.data().title||''}));
-    if (snap.empty) { el.innerHTML = '<div class="empty-msg">아직 안내가 없어요.</div>'; return; }
+    if (snap.empty) { el.innerHTML = '<div class="empty-msg">아직 내용이 없어요.</div>'; return; }
     el.innerHTML = snap.docs.map(d=>`
       <div class="list-item" onclick="editGuide('${d.id}')">
         <div class="li-title">${d.data().title||'(제목 없음)'}</div>
@@ -1803,7 +1803,7 @@ function renderGuidePreview() {
 function gBlockHtml(b, S) {
   const pad = `padding:${Math.round(14*S)}px`;
   if (b.type === 'text') {
-    return `<div style="${pad};font-size:${Math.round(14*S)}px;line-height:1.6;word-break:keep-all;">${b.textContent||''}</div>`;
+    return `<div style="${pad};font-size:${Math.round(14*S)}px;line-height:1.6;word-break:break-word;overflow-wrap:break-word;overflow:hidden;box-sizing:border-box;width:100%;">${b.textContent||''}</div>`;
   } else if (b.type === 'image') {
     return b.imageUrl
       ? `<img src="${b.imageUrl}" style="width:100%;display:block;max-height:${Math.round(130*S)}px;object-fit:cover;">`
