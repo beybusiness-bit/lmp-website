@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 html{height:100%;}
-body{background:var(--c);transition:background-color 1s ease;display:flex;justify-content:center;min-height:100vh;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;}
+body{background:var(--body-bg,var(--c));transition:background-color 1s ease;display:flex;justify-content:center;min-height:100vh;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;}
 #app{width:100%;max-width:430px;min-height:100vh;position:relative;overflow:hidden;}
 :root{--c:#00CE6B;--prep-bg:#FFF100;--fill-color:#F95548;--menu-bg:#0BC6FF;}
 .btn{display:block;width:100%;background:transparent;border:2px solid #000;border-radius:0;color:#000;font-size:15px;font-weight:700;padding:12px 0;cursor:pointer;font-family:inherit;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s;}
@@ -252,6 +252,9 @@ let bgImages   = [];   // [{url, holdTime, transitionTime}]
 let slideIdx   = 0;
 let colorIdx   = -1;
 let slideTimer = null;
+let kcTimer    = null;
+let kcIdx      = -1;
+let KEY_COLORS_DATA = []; // [{color, holdTime, transitionTime}]
 let prepBg     = KEY_COLORS[0];
 
 /* ── Util ── */
@@ -300,8 +303,11 @@ function applySettings(d){
   STATS = (d.stats||[]).filter(s=>s.enabled);
   ELEMENT_ORDER = d.elementOrder || ['edition','logo','dday','stats'];
   if(d.keyColors && d.keyColors.length>=2){
-    KEY_COLORS.length=0; d.keyColors.forEach(c=>KEY_COLORS.push(c));
+    KEY_COLORS_DATA = d.keyColors.map(k=>typeof k==='string'?{color:k,holdTime:8,transitionTime:2}:k);
+    KEY_COLORS.length=0; KEY_COLORS_DATA.forEach(k=>KEY_COLORS.push(k.color));
     setCss('--c',KEY_COLORS[0]);
+  } else {
+    KEY_COLORS_DATA = KEY_COLORS.map(c=>({color:c,holdTime:8,transitionTime:2}));
   }
   setCss('--guide-pager', KEY_COLORS[Math.floor(Math.random()*KEY_COLORS.length)]);
 
@@ -406,7 +412,7 @@ function initSlides(){
   const container=document.getElementById('slides-container');
   container.innerHTML='';
   if(!bgImages.length){
-    /* no images: just color cycling */
+    initColorCycle();
     return;
   }
   bgImages.forEach((bg,i)=>{
@@ -439,6 +445,25 @@ function advanceSlide(){
     next.classList.add('on');
   }
   setCss('--c',nextColor());
+}
+function initColorCycle(){
+  if(kcTimer) clearTimeout(kcTimer);
+  kcIdx=-1;
+  advanceKc();
+}
+function advanceKc(){
+  if(!KEY_COLORS_DATA.length) return;
+  kcIdx=(kcIdx+1)%KEY_COLORS_DATA.length;
+  const kc=KEY_COLORS_DATA[kcIdx];
+  setCss('--body-bg',kc.color);
+  setCss('--c',pickOther(kc.color,KEY_COLORS)||KEY_COLORS[(kcIdx+1)%KEY_COLORS.length]);
+  scheduleNextKc();
+}
+function scheduleNextKc(){
+  if(kcTimer) clearTimeout(kcTimer);
+  const kc=KEY_COLORS_DATA[kcIdx];
+  const hold=(kc?.holdTime||8)*1000;
+  kcTimer=setTimeout(advanceKc,hold);
 }
 
 /* ── SEPARATE layout ── */

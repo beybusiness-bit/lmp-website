@@ -843,7 +843,7 @@ let curAuthEnabled = false;
 let curAuthFields = [];        // [{key, label, type, required}]
 let curAuthKeyField = '';
 let curStages = [];
-let curKeyColors = ['#00CE6B','#FFF100','#F95548','#0BC6FF'];
+let curKeyColors = [{color:'#00CE6B',holdTime:8,transitionTime:2},{color:'#FFF100',holdTime:8,transitionTime:2},{color:'#F95548',holdTime:8,transitionTime:2},{color:'#0BC6FF',holdTime:8,transitionTime:2}];
 let curStats = [];             // [{id, label, collection, countType, unit, enabled}]
 let curElementOrder = ['edition','logo','dday','stats']; // order of main screen elements
 let curUsers = [];
@@ -927,28 +927,38 @@ function renderKeyColorList() {
   const el = document.getElementById('key-color-list');
   if (!el) return;
   if (!curKeyColors.length) { el.innerHTML = '<div class="empty-msg" style="padding:8px 0;">색상 없음</div>'; return; }
-  el.innerHTML = curKeyColors.map((c, i) => `
-    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1.5px solid rgba(0,0,0,.1);">
-      <input type="color" id="kcp-${i}" value="${c}" style="width:36px;height:32px;border:1.5px solid #000;padding:1px;cursor:pointer;flex-shrink:0;" oninput="onKcPick(${i},this.value)">
-      <input id="kch-${i}" class="fi-sm" value="${c.toUpperCase()}" style="flex:1;margin-bottom:0;text-transform:uppercase;" oninput="onKcHex(${i},this.value)">
-      ${curKeyColors.length > 2 ? `<button class="rm-btn2" onclick="removeKeyColor(${i})">✕</button>` : ''}
-    </div>`).join('');
+  el.innerHTML = curKeyColors.map((k, i) => {
+    const c = k.color || '#000000';
+    return `<div style="border-bottom:1.5px solid rgba(0,0,0,.1);padding:8px 0;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <input type="color" id="kcp-${i}" value="${c}" style="width:36px;height:32px;border:1.5px solid #000;padding:1px;cursor:pointer;flex-shrink:0;" oninput="onKcPick(${i},this.value)">
+        <input id="kch-${i}" class="fi-sm" value="${c.toUpperCase()}" style="flex:1;margin-bottom:0;text-transform:uppercase;" oninput="onKcHex(${i},this.value)">
+        ${curKeyColors.length > 2 ? `<button class="rm-btn2" onclick="removeKeyColor(${i})">✕</button>` : ''}
+      </div>
+      <div style="display:flex;gap:8px;">
+        <label style="flex:1;font-size:11px;color:rgba(0,0,0,.5);">유지 (초)<input id="kcht-${i}" class="fi-sm" type="number" min="1" max="60" value="${k.holdTime||8}" style="margin:2px 0 0;display:block;" oninput="onKcHold(${i},this.value)"></label>
+        <label style="flex:1;font-size:11px;color:rgba(0,0,0,.5);">전환 (초)<input id="kctt-${i}" class="fi-sm" type="number" min="0" max="10" value="${k.transitionTime||2}" style="margin:2px 0 0;display:block;" oninput="onKcTrans(${i},this.value)"></label>
+      </div>
+    </div>`;
+  }).join('');
 }
 function onKcPick(i, v) {
-  curKeyColors[i] = v;
+  curKeyColors[i].color = v;
   const hex = document.getElementById('kch-'+i);
   if (hex) hex.value = v.toUpperCase();
   schedulePreviewUpdate();
 }
 function onKcHex(i, v) {
   if (/^#[0-9a-fA-F]{6}$/.test(v)) {
-    curKeyColors[i] = v;
+    curKeyColors[i].color = v;
     const p = document.getElementById('kcp-'+i);
     if (p) p.value = v;
     schedulePreviewUpdate();
   }
 }
-function addKeyColor() { curKeyColors.push('#000000'); renderKeyColorList(); schedulePreviewUpdate(); }
+function onKcHold(i, v) { curKeyColors[i].holdTime = parseFloat(v)||8; schedulePreviewUpdate(); }
+function onKcTrans(i, v) { curKeyColors[i].transitionTime = parseFloat(v)||2; schedulePreviewUpdate(); }
+function addKeyColor() { curKeyColors.push({color:'#000000',holdTime:8,transitionTime:2}); renderKeyColorList(); schedulePreviewUpdate(); }
 function removeKeyColor(i) {
   if (curKeyColors.length <= 2) { alert('최소 2개 색상이 필요해요.'); return; }
   curKeyColors.splice(i, 1); renderKeyColorList(); schedulePreviewUpdate();
@@ -1416,7 +1426,7 @@ function startNewProject() {
   curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}];
   curAuthKeyField='name'; curUsers=[]; curLogoTextSize='24'; curLogoTextAlign='center'; curLogoImgW=76;
   curStats=[]; curElementOrder=['edition','logo','dday','stats'];
-  curKeyColors=['#00CE6B','#FFF100','#F95548','#0BC6FF'];
+  curKeyColors=[{color:'#00CE6B',holdTime:8,transitionTime:2},{color:'#FFF100',holdTime:8,transitionTime:2},{color:'#F95548',holdTime:8,transitionTime:2},{color:'#0BC6FF',holdTime:8,transitionTime:2}];
   ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-col','p-auth-title','p-auth-desc']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   const szEl = document.getElementById('p-logo-txt-size'); if(szEl) szEl.value='24';
@@ -1441,7 +1451,8 @@ async function editProject(id) {
     curAuthKeyField = d.authKeyField || curAuthFields[0]?.key || 'name';
     curStats = d.stats || [];
     curElementOrder = d.elementOrder || ['edition','logo','dday','stats'];
-    curKeyColors = (d.keyColors && d.keyColors.length >= 2) ? d.keyColors : ['#00CE6B','#FFF100','#F95548','#0BC6FF'];
+    const rawKc = (d.keyColors && d.keyColors.length >= 2) ? d.keyColors : ['#00CE6B','#FFF100','#F95548','#0BC6FF'];
+    curKeyColors = rawKc.map(k=>typeof k==='string'?{color:k,holdTime:8,transitionTime:2}:k);
 
     document.getElementById('p-id').value         = id;
     document.getElementById('p-name').value       = d.name||'';
@@ -2063,7 +2074,7 @@ let curBlkBgColor='';
 function saveRange(el){const sel=window.getSelection();if(sel.rangeCount)savedRange={el,range:sel.getRangeAt(0).cloneRange()};}
 function restoreRange(el){if(savedRange&&savedRange.el===el){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}}
 function renderBlkKeyColors(){
-  const kc = curKeyColors.length ? curKeyColors : ['#00CE6B','#FFF100'];
+  const kc = curKeyColors.length ? curKeyColors.map(k=>k.color||k) : ['#00CE6B','#FFF100'];
   const bgEl = document.getElementById('blk-kc-bg');
   if(bgEl){
     bgEl.innerHTML = kc.map(c=>{
@@ -2206,7 +2217,7 @@ function openFmtDd(btn,type,ctx){
     }
   } else if(type==='clr'){
     const cur=_detectClr();
-    const kc=curKeyColors.length?curKeyColors:['#00CE6B','#FFF100','#F95548','#0BC6FF'];
+    const kc=curKeyColors.length?curKeyColors.map(k=>k.color||k):['#00CE6B','#FFF100','#F95548','#0BC6FF'];
     const sw=kc.map(c=>{const b=c.toLowerCase()==='#ffffff'?'#ccc':'#000';
       return `<div onpointerdown="epd(event)" onclick="applyFmtClr('${ctx}','${c}')" title="${c}" style="width:20px;height:20px;background:${c};border:2px solid ${b};cursor:pointer;border-radius:2px;flex-shrink:0;"></div>`;
     }).join('');
