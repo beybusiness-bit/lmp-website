@@ -294,7 +294,7 @@ function applySettings(d){
   AUTH_FIELDS     = d.authFields     || [{key:'name',label:'이름',type:'string',required:true}];
   AUTH_KEY_FIELD  = d.authKeyField   || (AUTH_FIELDS[0]?.key||'name');
   STAGES = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0)).map(s=>({
-    id:s.id||'',guideId:s.guideId||'',title:s.title||'',status:s.status||'시작 전',
+    id:s.id||'',title:s.title||'',status:s.status||'시작 전',
     progress:s.progress||0,displayType:s.displayType||'text',stageImageUrl:s.stageImageUrl||''
   }));
   STATS = (d.stats||[]).filter(s=>s.enabled);
@@ -569,18 +569,19 @@ function goToStage(i){
   if(!stage) return;
   if(LAYOUT_TYPE!=='merged') document.getElementById('topbar-title').textContent=stage.title;
   closeMenu();
-  if(stage.guideId) openGuide(stage.guideId,stage.title);
+  openStageContent(stage);
 }
 
 /* ── Guide viewer ── */
 let gSlideIdx=0,gSlideTotal=0,gTouchX=0;
-async function openGuide(guideId,title){
-  document.getElementById('guide-title-bar').textContent=title||'안내';
+async function openStageContent(stage){
+  document.getElementById('guide-title-bar').textContent=stage.title||'안내';
   document.getElementById('guide-scroll-body').style.display='none';
   document.getElementById('guide-slide-body').style.display='none';
   document.getElementById('guide-screen').classList.add('open');
   try{
-    const doc=await db.collection('cms_guides').doc(guideId).get();
+    const doc=await db.collection('cms_projects').doc(PROJECT_ID)
+      .collection('stage_content').doc(stage.id).get();
     if(!doc.exists){ showGuideEmpty('안내 내용이 아직 준비되지 않았어요.'); return; }
     const g=doc.data();
     const blocks=(g.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
@@ -590,22 +591,30 @@ async function openGuide(guideId,title){
 }
 function closeGuide(){ document.getElementById('guide-screen').classList.remove('open'); }
 function showGuideEmpty(msg){ document.getElementById('guide-scroll-blocks').innerHTML='<div class="guide-empty">'+msg+'</div>'; document.getElementById('guide-scroll-body').style.display='block'; }
+/* 변수 치환: {{key}} → 로그인 사용자 값 */
+function applyVars(html){
+  try{const u=JSON.parse(sessionStorage.getItem('userSession')||'{}');return html.replace(/\{\{(\w+)\}\}/g,(_,k)=>u[k]??`{{${k}}}`);}catch(e){return html;}
+}
 function blockHtml(b){
+  const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
+  const txS=b.txtColor?`color:${b.txtColor};`:'';
   if(b.type==='text'){
-    const inner='<div class="g-block-text"><div class="g-block-text-inner">'+(b.textContent||'')+'</div></div>';
+    const html=applyVars(b.textContent||'');
+    const inner=`<div class="g-block-text" style="${bgS}"><div class="g-block-text-inner" style="${txS}">${html}</div></div>`;
     return b.linkUrl?`<a href="${b.linkUrl}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit;">${inner}</a>`:inner;
   }
   if(b.type==='image'){
-    const img=`<div class="g-block-image"><img src="${b.imageUrl||''}" alt="" loading="lazy"></div>`;
+    const img=`<div class="g-block-image" style="${bgS}"><img src="${b.imageUrl||''}" alt="" loading="lazy"></div>`;
     return b.linkUrl?`<a href="${b.linkUrl}" target="_blank" rel="noopener" style="display:block;">${img}</a>`:img;
   }
   if(b.type==='mixed'){
+    const html=applyVars(b.textContent||'');
     if(b.mixedLayout==='split')
-      return '<div class="g-block-mixed-split"><div class="g-split-img"><img src="'+(b.imageUrl||'')+'" alt="" loading="lazy"></div><div class="g-split-text">'+(b.textContent||'')+'</div></div>';
-    return '<div class="g-block-mixed-overlay"><img src="'+(b.imageUrl||'')+'" alt="" loading="lazy"><div class="g-overlay-text"><div class="g-overlay-text-inner">'+(b.textContent||'')+'</div></div></div>';
+      return `<div class="g-block-mixed-split" style="${bgS}"><div class="g-split-img"><img src="${b.imageUrl||''}" alt="" loading="lazy"></div><div class="g-split-text" style="${txS}">${html}</div></div>`;
+    return `<div class="g-block-mixed-overlay" style="${bgS}"><img src="${b.imageUrl||''}" alt="" loading="lazy"><div class="g-overlay-text"><div class="g-overlay-text-inner" style="${txS}">${html}</div></div></div>`;
   }
   if(b.type==='embed' && b.embedUrl){
-    return `<div class="g-block-embed"><iframe src="${b.embedUrl}" width="100%" height="${b.embedHeight||500}" frameborder="0" allowfullscreen style="display:block;border:none;"></iframe></div>`;
+    return `<div class="g-block-embed" style="${bgS}"><iframe src="${b.embedUrl}" width="100%" height="${b.embedHeight||500}" frameborder="0" allowfullscreen style="display:block;border:none;"></iframe></div>`;
   }
   return '';
 }
