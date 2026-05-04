@@ -278,9 +278,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <button class="bg-up-btn" onclick="document.getElementById('logo-file-inp').click()" style="margin-top:4px;">📁 업로드</button>
               <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:4px;">⚠️ 배경이 투명한 PNG만 업로드하세요 — 색상 자동 적용됩니다</div>
               <input type="file" id="logo-file-inp" accept="image/png" style="display:none;" onchange="uploadSingleImage(event,'p-logo-url','cms_projects/logo',true)">
+              <div style="display:flex;gap:6px;margin-top:8px;">
+                <div style="flex:1;">
+                  <div class="ed-lbl">높이</div>
+                  <select class="fi-sm" id="p-logo-img-h" style="margin-bottom:0;" onchange="curLogoImgH=+this.value;schedulePreviewUpdate()">
+                    <option value="50">작게 (50px)</option>
+                    <option value="80" selected>보통 (80px)</option>
+                    <option value="120">크게 (120px)</option>
+                    <option value="160">매우크게 (160px)</option>
+                  </select>
+                </div>
+                <div style="flex:1;">
+                  <div class="ed-lbl">너비</div>
+                  <select class="fi-sm" id="p-logo-img-w" style="margin-bottom:0;" onchange="curLogoImgW=+this.value;schedulePreviewUpdate()">
+                    <option value="50">좁게 (50%)</option>
+                    <option value="65">65%</option>
+                    <option value="76" selected>보통 (76%)</option>
+                    <option value="90">90%</option>
+                    <option value="100">가득 (100%)</option>
+                  </select>
+                </div>
+              </div>
             </div>
             <div id="logo-txt-sec" style="display:none;">
-              <input class="fi-sm" id="p-logo-txt" placeholder="로고 텍스트" oninput="schedulePreviewUpdate()">
+              <textarea class="fi-sm" id="p-logo-txt" placeholder="로고 텍스트 (줄바꿈: Enter)" rows="3" oninput="schedulePreviewUpdate()" style="resize:vertical;line-height:1.5;"></textarea>
               <div style="display:flex;gap:6px;margin-top:4px;">
                 <select class="fi-sm" id="p-logo-txt-size" style="flex:1;margin-bottom:0;" onchange="schedulePreviewUpdate()">
                   <option value="18">작게 (18px)</option>
@@ -723,6 +744,8 @@ let pendingBgUploadIdx = null;
 let pendingStageUploadIdx = null;
 let fmReqOn = false;
 let curLogoBase64 = ''; // base64 data URL of logo PNG (used for CSS mask to avoid CORS)
+let curLogoImgH = 80;  // logo image height (px)
+let curLogoImgW = 76;  // logo image width (% of container)
 let curLogoTextSize = '24';
 let curLogoTextAlign = 'center';
 let previewTimer = null;
@@ -1284,11 +1307,13 @@ function showProjView(v) {
 function backToProjects() { showProjView('list'); curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[]; curUsers=[]; }
 function startNewProject() {
   curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}];
-  curAuthKeyField='name'; curUsers=[]; curLogoBase64=''; curLogoTextSize='24'; curLogoTextAlign='center';
+  curAuthKeyField='name'; curUsers=[]; curLogoBase64=''; curLogoImgH=80; curLogoImgW=76; curLogoTextSize='24'; curLogoTextAlign='center';
   curStats=[]; curKeyColors=['#00CE6B','#FFF100']; curElementOrder=['edition','logo','dday','stats'];
   ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-col','p-auth-title','p-auth-desc']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   const szEl = document.getElementById('p-logo-txt-size'); if(szEl) szEl.value='24';
+  const hEl = document.getElementById('p-logo-img-h'); if(hEl) hEl.value='80';
+  const wEl = document.getElementById('p-logo-img-w'); if(wEl) wEl.value='76';
   document.getElementById('proj-del').style.display = 'none';
   const urlPrev = document.getElementById('p-url-preview');
   urlPrev.textContent = ''; urlPrev.href = '#'; urlPrev.style.display = 'none';
@@ -1317,9 +1342,13 @@ async function editProject(id) {
     document.getElementById('p-logo-url').value   = d.logoImageUrl||'';
     document.getElementById('p-logo-txt').value   = d.logoText||'';
     curLogoBase64    = d.logoBase64 || '';
+    curLogoImgH      = d.logoImgH || 80;
+    curLogoImgW      = d.logoImgW || 76;
     curLogoTextSize  = d.logoTextSize  || '24';
     curLogoTextAlign = d.logoTextAlign || 'center';
     const szEl = document.getElementById('p-logo-txt-size'); if(szEl) szEl.value = curLogoTextSize;
+    const hEl = document.getElementById('p-logo-img-h'); if(hEl) hEl.value = curLogoImgH;
+    const wEl = document.getElementById('p-logo-img-w'); if(wEl) wEl.value = curLogoImgW;
     setLogoAlign(curLogoTextAlign);
     document.getElementById('p-cta-icon').value   = d.ctaIconUrl||'';
     document.getElementById('p-cta-text').value   = d.ctaText||'';
@@ -1355,7 +1384,9 @@ async function saveProject() {
     logoType:      curLogoType,
     logoImageUrl:  document.getElementById('p-logo-url').value.trim(),
     logoBase64:    curLogoBase64 || '',
-    logoText:      document.getElementById('p-logo-txt').value.trim(),
+    logoImgH:      curLogoImgH,
+    logoImgW:      curLogoImgW,
+    logoText:      document.getElementById('p-logo-txt').value,
     logoTextSize:  document.getElementById('p-logo-txt-size')?.value || '24',
     logoTextAlign: curLogoTextAlign,
     ctaIconUrl:   document.getElementById('p-cta-icon').value.trim(),
@@ -1642,12 +1673,11 @@ function renderPreview() {
         topHtml += `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:${KC};margin-bottom:-4px;">${edition}</div>`;
       } else if (key === 'logo') {
         if (curLogoType==='image' && logoUrl) {
-          const lW = Math.round(300*S);
-          const lH = Math.round(72*S);
+          const lH = Math.round(curLogoImgH * S);
           const maskSrc = curLogoBase64 || logoUrl;
-          topHtml += `<div style="width:76%;max-width:${lW}px;height:${lH}px;background-color:${KC};-webkit-mask-image:url('${maskSrc}');mask-image:url('${maskSrc}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;margin:0 auto;"></div>`;
+          topHtml += `<div style="width:${curLogoImgW}%;height:${lH}px;background-color:${KC};-webkit-mask-image:url('${maskSrc}');mask-image:url('${maskSrc}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;margin:0 auto;"></div>`;
         } else if (curLogoType==='text' && logoTxt) {
-          topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:${KC};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
+          topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:${KC};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;white-space:pre-line;">${logoTxt}</div>`;
         } else {
           topHtml += `<div style="font-size:${Math.round(20*S)}px;font-weight:900;color:${KC};">준비 포털</div>`;
         }
