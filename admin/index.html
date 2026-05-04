@@ -508,9 +508,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div class="ed-lbl">제출 버튼 텍스트</div>
         <input class="fi-sm" id="form-submit-text" placeholder="제출하기" style="margin-bottom:0;">
       </div>
-      <div style="margin-top:10px;">
-        <div class="ed-lbl">제출 완료 메시지</div>
-        <input class="fi-sm" id="form-post-text" placeholder="제출이 완료되었어요. 감사합니다!" style="margin-bottom:0;">
+      <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
+        <div class="ed-lbl" style="margin-bottom:8px;">제출 완료 화면</div>
+        <div class="ed-lbl" style="opacity:.55;margin-bottom:4px;">이미지 <span style="font-weight:400;">(선택)</span></div>
+        <input class="img-inp" id="form-post-img-url" type="url" placeholder="https://…" oninput="prevImg('form-post-img-prev',this.value)" style="margin-bottom:6px;">
+        <button class="bg-up-btn" onclick="document.getElementById('form-post-img-file').click()" style="margin-bottom:6px;">📁 직접 업로드</button>
+        <input type="file" id="form-post-img-file" accept="image/*" style="display:none;" onchange="uploadFormPostImage(event)">
+        <img id="form-post-img-prev" class="img-prev">
+        <div class="ed-lbl" style="opacity:.55;margin-top:10px;margin-bottom:4px;">메시지 <span style="font-weight:400;">(줄바꿈 가능)</span></div>
+        <div class="fmt-bar">
+          <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtCmd('formpost','bold')"><b>B</b></button>
+          <button class="fmt-btn" id="fmt-sz-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','formpost')">Aa</button>
+          <button class="fmt-btn" id="fmt-al-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','formpost')">≡</button>
+          <button class="fmt-btn" id="fmt-clr-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','formpost')" style="padding:5px 7px;"><span id="fmt-clr-dot-formpost" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+        </div>
+        <div class="ced" id="ced-formpost" contenteditable="true" data-ph="제출 완료 후 표시할 메시지를 입력하세요…" onblur="saveRange(this)" style="min-height:80px;"></div>
       </div>
       <div id="form-dup-wrap" style="margin-top:10px;display:none;">
         <div class="switch-row">
@@ -650,11 +662,38 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <option value="textarea">긴 텍스트</option>
         <option value="number">숫자</option>
         <option value="file">파일 업로드</option>
-        <option value="select">선택지 (드롭다운)</option>
+        <option value="select">선택지</option>
       </select>
-      <div id="ff-options-wrap" style="display:none;margin-bottom:14px;">
-        <div class="ed-lbl">선택지 목록 (줄바꿈 또는 쉼표로 구분)</div>
+      <div id="ff-options-wrap" style="display:none;margin-bottom:10px;">
+        <div class="ed-lbl" style="margin-bottom:4px;">선택지 목록 (줄바꿈 또는 쉼표로 구분)</div>
         <textarea id="ff-options" style="width:100%;height:80px;border:1.5px solid #000;padding:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none;" placeholder="옵션1&#10;옵션2&#10;옵션3"></textarea>
+      </div>
+      <div id="ff-select-extra" style="display:none;padding:10px 12px;background:#f8f8f8;border:1.5px solid rgba(0,0,0,.12);margin-bottom:12px;">
+        <div class="ed-lbl" style="margin-bottom:6px;">선택 방식</div>
+        <div class="toggle-row" style="margin-bottom:10px;">
+          <button class="tgl-btn on" id="ff-sel-dropdown" onclick="setFfSelectMode('dropdown')">드롭다운</button>
+          <button class="tgl-btn" id="ff-sel-buttons" onclick="setFfSelectMode('buttons')">버튼 선택</button>
+        </div>
+        <div class="switch-row" style="margin-bottom:10px;">
+          <div class="switch" id="ff-other-sw" onclick="toggleFfOther()"></div>
+          <span class="switch-lbl">'기타' 항목 포함</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <div style="flex:1;">
+            <div class="ed-lbl" style="margin-bottom:3px;">최소 선택 수</div>
+            <input class="fi-sm" id="ff-min-sel" type="number" min="0" placeholder="0" style="margin-bottom:0;">
+          </div>
+          <div style="flex:1;">
+            <div class="ed-lbl" style="margin-bottom:3px;">최대 선택 수</div>
+            <input class="fi-sm" id="ff-max-sel" type="number" min="1" placeholder="제한 없음" style="margin-bottom:0;">
+          </div>
+        </div>
+      </div>
+      <div class="ed-lbl" style="margin-bottom:4px;">필드 설명 <span style="font-weight:400;opacity:.55;">(선택, 줄바꿈 가능)</span></div>
+      <textarea id="ff-desc" style="width:100%;height:56px;border:1.5px solid rgba(0,0,0,.25);padding:7px 10px;font-size:12px;font-family:inherit;resize:vertical;outline:none;margin-bottom:10px;" placeholder="항목에 대한 설명을 입력하세요"></textarea>
+      <div id="ff-placeholder-wrap" style="margin-bottom:12px;">
+        <div class="ed-lbl" style="margin-bottom:4px;">플레이스홀더 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
+        <input class="fi-sm" id="ff-placeholder" placeholder="예: 여기에 입력해주세요" style="margin-bottom:0;">
       </div>
       <div class="switch-row">
         <div class="switch" id="ff-req-sw" onclick="toggleFfReq()"></div>
@@ -821,6 +860,8 @@ let curFormFields = [];
 let curFormConfig = {};
 let curEditingFormFieldIdx = null;
 let ffReqOn = false;
+let ffOtherOn = false;
+let ffSelectMode = 'dropdown';
 let curRespFormId = null;
 let curRespData = [];
 
@@ -1823,12 +1864,14 @@ function renderFormFields() {
   if (!curFormFields.length) {
     el.innerHTML = '<div class="empty-msg" style="padding:6px 0;">필드가 없어요.</div>'; return;
   }
-  const typeLabel = {string:'짧은텍스트',textarea:'긴텍스트',number:'숫자',file:'파일',select:'선택지'};
-  el.innerHTML = curFormFields.map((f,i) => `
+  const typeLabel = {string:'짧은텍스트',textarea:'긴텍스트',number:'숫자',file:'파일'};
+  el.innerHTML = curFormFields.map((f,i) => {
+    const tl = f.type==='select' ? (f.selectMode==='buttons'?'버튼선택':'드롭다운') : (typeLabel[f.type]||f.type);
+    return `
     <div class="field-item">
       <div class="field-info">
         <div class="field-name">${f.label}</div>
-        <div class="field-meta">${f.key} · ${typeLabel[f.type]||f.type}${f.required?' · 필수':''}</div>
+        <div class="field-meta">${f.key} · ${tl}${f.required?' · 필수':''}${f.allowOther?' · 기타포함':''}</div>
       </div>
       <div class="field-badges">
         ${i>0?`<span class="fbadge" onclick="mvFormField(${i},-1)">↑</span>`:''}
@@ -1836,23 +1879,33 @@ function renderFormFields() {
         <span class="fbadge" onclick="openFormFieldModal(${i})">편집</span>
         <span class="fbadge" onclick="rmFormField(${i})">삭제</span>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function mvFormField(i,d){const j=i+d;if(j<0||j>=curFormFields.length)return;[curFormFields[i],curFormFields[j]]=[curFormFields[j],curFormFields[i]];renderFormFields();}
 function rmFormField(i){if(!confirm('이 필드를 삭제할까요?'))return;curFormFields.splice(i,1);renderFormFields();}
 function openFormFieldModal(idx) {
   curEditingFormFieldIdx = idx;
   document.getElementById('form-field-modal-ttl').textContent = idx===null ? '필드 추가' : '필드 편집';
-  const f = idx!==null ? curFormFields[idx] : {label:'',key:'',type:'string',required:false,options:[]};
+  const f = idx!==null ? curFormFields[idx] : {label:'',key:'',type:'string',required:false,options:[],description:'',placeholder:'',selectMode:'dropdown',allowOther:false,minSelect:null,maxSelect:null};
   const labelEl = document.getElementById('ff-label');
   const keyEl   = document.getElementById('ff-key');
   labelEl.value = f.label||'';
   keyEl.value   = f.key||'';
   keyEl.dataset.userEdited = '';
-  document.getElementById('ff-type').value   = f.type||'string';
+  document.getElementById('ff-type').value    = f.type||'string';
   document.getElementById('ff-options').value = (f.options||[]).join('\n');
+  document.getElementById('ff-desc').value    = f.description||'';
+  document.getElementById('ff-placeholder').value = f.placeholder||'';
   ffReqOn = f.required||false;
+  ffOtherOn = f.allowOther||false;
+  ffSelectMode = f.selectMode||'dropdown';
   document.getElementById('ff-req-sw').classList.toggle('on', ffReqOn);
+  document.getElementById('ff-other-sw').classList.toggle('on', ffOtherOn);
+  document.getElementById('ff-sel-dropdown').classList.toggle('on', ffSelectMode==='dropdown');
+  document.getElementById('ff-sel-buttons').classList.toggle('on', ffSelectMode==='buttons');
+  document.getElementById('ff-min-sel').value = f.minSelect!=null ? f.minSelect : '';
+  document.getElementById('ff-max-sel').value = f.maxSelect!=null ? f.maxSelect : '';
   onFfTypeChange();
   document.getElementById('form-field-modal').classList.add('on');
 }
@@ -1863,8 +1916,17 @@ function autoFfKey(label) {
 }
 function onFfTypeChange() {
   const t = document.getElementById('ff-type').value;
-  document.getElementById('ff-options-wrap').style.display = t==='select' ? '' : 'none';
+  const isSel = t==='select';
+  document.getElementById('ff-options-wrap').style.display   = isSel ? '' : 'none';
+  document.getElementById('ff-select-extra').style.display   = isSel ? '' : 'none';
+  document.getElementById('ff-placeholder-wrap').style.display = (t==='file'||t==='select') ? 'none' : '';
 }
+function setFfSelectMode(mode) {
+  ffSelectMode = mode;
+  document.getElementById('ff-sel-dropdown').classList.toggle('on', mode==='dropdown');
+  document.getElementById('ff-sel-buttons').classList.toggle('on', mode==='buttons');
+}
+function toggleFfOther() { ffOtherOn=!ffOtherOn; document.getElementById('ff-other-sw').classList.toggle('on',ffOtherOn); }
 function toggleFfReq() { ffReqOn=!ffReqOn; document.getElementById('ff-req-sw').classList.toggle('on',ffReqOn); }
 function saveFormField() {
   const label = document.getElementById('ff-label').value.trim();
@@ -1872,16 +1934,33 @@ function saveFormField() {
   const type  = document.getElementById('ff-type').value;
   const optRaw = document.getElementById('ff-options').value;
   const options = type==='select' ? optRaw.split(/[\n,]/).map(s=>s.trim()).filter(Boolean) : [];
+  const description = document.getElementById('ff-desc').value.trim();
+  const placeholder = document.getElementById('ff-placeholder').value.trim();
+  const minSel = document.getElementById('ff-min-sel').value !== '' ? parseInt(document.getElementById('ff-min-sel').value) : null;
+  const maxSel = document.getElementById('ff-max-sel').value !== '' ? parseInt(document.getElementById('ff-max-sel').value) : null;
   if (!label||!key) { alert('이름과 키를 입력해주세요.'); return; }
+  const extra = {description, placeholder, selectMode: type==='select'?ffSelectMode:'dropdown', allowOther: type==='select'&&ffOtherOn, minSelect: minSel, maxSelect: maxSel};
   if (curEditingFormFieldIdx===null) {
     if (curFormFields.find(f=>f.key===key)) { alert('이미 같은 키가 있어요.'); return; }
-    curFormFields.push({id:uid(), key, label, type, required:ffReqOn, options});
+    curFormFields.push({id:uid(), key, label, type, required:ffReqOn, options, ...extra});
   } else {
-    curFormFields[curEditingFormFieldIdx] = {...curFormFields[curEditingFormFieldIdx], label, type, required:ffReqOn, options};
+    curFormFields[curEditingFormFieldIdx] = {...curFormFields[curEditingFormFieldIdx], label, type, required:ffReqOn, options, ...extra};
   }
   document.getElementById('ff-key').dataset.userEdited = '';
   closeModal('form-field-modal');
   renderFormFields();
+}
+async function uploadFormPostImage(event) {
+  const file = event.target.files[0]; event.target.value='';
+  if (!file) return;
+  const ext=file.name.split('.').pop();
+  const path=`cms_projects/${curProjId||'tmp'}/form_post/${Date.now()}.${ext}`;
+  try {
+    const ref=storage.ref(path); await ref.put(file);
+    const url=await ref.getDownloadURL();
+    document.getElementById('form-post-img-url').value=url;
+    prevImg('form-post-img-prev',url);
+  } catch(e){ alert('업로드 실패: '+e.message); }
 }
 function toggleFormDup() {
   curFormConfig.allowDuplicates = !curFormConfig.allowDuplicates;
@@ -1983,10 +2062,13 @@ function openBlockModal(idx){
   document.getElementById('embed-height').value=b.type==='embed'?(b.embedHeight||500):'500';
   /* form */
   curFormFields = b.type==='form' ? JSON.parse(JSON.stringify(b.formFields||[])) : [];
-  curFormConfig  = b.type==='form' ? {...{submitBtnText:'제출하기',postSubmitText:'제출이 완료되었어요. 감사합니다!',allowDuplicates:false}, ...b.formConfig} : {};
+  curFormConfig  = b.type==='form' ? {...{submitBtnText:'제출하기',postSubmitHtml:'',postSubmitImage:'',allowDuplicates:false}, ...b.formConfig} : {};
   if (b.type==='form') {
     document.getElementById('form-submit-text').value = curFormConfig.submitBtnText||'';
-    document.getElementById('form-post-text').value   = curFormConfig.postSubmitText||'';
+    document.getElementById('ced-formpost').innerHTML  = curFormConfig.postSubmitHtml||'';
+    const piUrl = curFormConfig.postSubmitImage||'';
+    document.getElementById('form-post-img-url').value = piUrl;
+    prevImg('form-post-img-prev', piUrl);
     document.getElementById('form-dup-sw').classList.toggle('on', !!curFormConfig.allowDuplicates);
     document.getElementById('form-dup-wrap').style.display = curAuthEnabled ? '' : 'none';
     const shSt = document.getElementById('form-sheet-status');
@@ -2025,7 +2107,8 @@ function saveBlock(){
     b.embedHeight=parseInt(document.getElementById('embed-height').value)||500;
   } else if(curBlkType==='form'){
     curFormConfig.submitBtnText  = document.getElementById('form-submit-text').value.trim()||'제출하기';
-    curFormConfig.postSubmitText = document.getElementById('form-post-text').value.trim();
+    curFormConfig.postSubmitHtml  = document.getElementById('ced-formpost').innerHTML;
+    curFormConfig.postSubmitImage = document.getElementById('form-post-img-url').value.trim();
     b.formId     = (curBlkIdx!==null && curBlocks[curBlkIdx]?.formId) || uid();
     b.formFields = JSON.parse(JSON.stringify(curFormFields));
     b.formConfig = {...curFormConfig};
@@ -2048,7 +2131,10 @@ function switchBlkTab(t){
   });
 }
 function setMixedLayout(l){curMixedLayout=l;document.getElementById('ml-overlay').classList.toggle('on',l==='overlay');document.getElementById('ml-split').classList.toggle('on',l==='split');}
-function getEd(ctx){return document.getElementById(ctx==='text'?'ced-text':'ced-mixed');}
+function getEd(ctx){
+  if(ctx==='formpost') return document.getElementById('ced-formpost');
+  return document.getElementById(ctx==='text'?'ced-text':'ced-mixed');
+}
 function focusEd(ctx){const ed=getEd(ctx);ed.focus();restoreRange(ed);}
 function fmtCmd(ctx,cmd){focusEd(ctx);document.execCommand(cmd,false,null);}
 function fmtSz(ctx,px){focusEd(ctx);document.execCommand('fontSize',false,'7');getEd(ctx).querySelectorAll('font[size="7"]').forEach(el=>{el.removeAttribute('size');el.style.fontSize=px+'px';});}
@@ -2138,7 +2224,7 @@ function _detectClr(){
 }
 document.addEventListener('click',e=>{
   const pop=document.getElementById('fmt-popup');
-  if(pop&&pop.style.display!=='none'&&!pop.contains(e.target)&&!e.target.closest('#fmt-sz-text,#fmt-al-text,#fmt-clr-text,#fmt-sz-mixed,#fmt-al-mixed,#fmt-clr-mixed'))
+  if(pop&&pop.style.display!=='none'&&!pop.contains(e.target)&&!e.target.closest('#fmt-sz-text,#fmt-al-text,#fmt-clr-text,#fmt-sz-mixed,#fmt-al-mixed,#fmt-clr-mixed,#fmt-sz-formpost,#fmt-al-formpost,#fmt-clr-formpost'))
     closeFmtPopup();
 });
 
