@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LMP 관리자</title>
+<title>lmp 관리자</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f4f4f4;color:#000;min-height:100vh;}
@@ -129,7 +129,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .blk-acts{display:flex;gap:3px;flex-shrink:0;}
 .b-btn{width:28px;height:28px;background:transparent;border:1.5px solid #000;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;}
 .b-btn:active{background:#000;color:#fff;}
-.url-preview{margin-top:8px;padding:8px 10px;background:#f0f0f0;font-size:12px;color:rgba(0,0,0,.55);word-break:break-all;min-height:34px;}
+.url-preview{margin-top:8px;padding:8px 10px;background:#f0f0f0;font-size:12px;color:rgba(0,0,0,.55);word-break:break-all;min-height:34px;display:none;text-decoration:none;}
+.url-preview:hover{background:#e0e0e0;color:#000;}
+.sect-head{font-size:13px;font-weight:900;letter-spacing:-.2px;padding:20px 0 10px;border-top:2px solid #000;margin-top:4px;}
+.ip-first-sect{border-top:none;padding-top:6px;margin-top:0;}
 .switch-row{display:flex;align-items:center;gap:10px;}
 .switch{width:40px;height:22px;background:#ccc;border-radius:11px;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;}
 .switch.on{background:#000;}
@@ -142,7 +145,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
 <div id="login-view">
   <div class="login-card">
-    <div class="login-logo">LMP 관리자</div>
+    <div class="login-logo">lmp 관리자</div>
     <div class="login-sub">승인된 계정으로만 접근 가능합니다</div>
     <button class="google-btn" onclick="signIn()">
       <svg width="18" height="18" viewBox="0 0 18 18">
@@ -159,7 +162,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
 <div id="admin-view">
   <div class="admin-header">
-    <div class="admin-title">LMP 관리자</div>
+    <div class="admin-title">lmp 관리자</div>
     <div class="admin-user" id="admin-user-email"></div>
     <button class="hdr-btn" onclick="managePAT()" id="pat-btn">토큰 ●</button>
     <button class="hdr-btn" onclick="doSignOut()">로그아웃</button>
@@ -193,17 +196,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
         <!-- 기본 -->
         <div class="inner-panel on" id="ip-basic">
+          <div class="sect-head ip-first-sect">기본 정보</div>
           <div class="ed-sect">
             <div class="ed-lbl">슬러그 (ID) — URL 주소가 됩니다</div>
             <input class="fi" id="p-id" placeholder="예: gmbf" oninput="updateUrlPreview()">
-            <div class="url-preview" id="p-url-preview"></div>
+            <a class="url-preview" id="p-url-preview" target="_blank"></a>
           </div>
           <div class="ed-sect">
             <div class="ed-lbl">프로젝트 이름</div>
             <input class="fi" id="p-name" placeholder="예: GMBF 플리마켓">
           </div>
           <div class="ed-sect">
-            <div class="ed-lbl">화면 구성</div>
+            <div class="ed-lbl">로고 위 문구</div>
+            <input class="fi" id="p-edition" placeholder="예: 제3회">
+          </div>
+          <div class="sect-head">D-Day</div>
+          <div class="ed-sect">
+            <div class="switch-row" style="margin-bottom:12px;">
+              <div class="switch" id="dday-sw" onclick="toggleDday()"></div>
+              <span class="switch-lbl">D-Day 표시 사용</span>
+            </div>
+            <div id="dday-fields" style="display:none;">
+              <input class="fi" id="p-dday-date" type="date">
+            </div>
+          </div>
+        </div>
+
+        <!-- 디자인 -->
+        <div class="inner-panel" id="ip-design">
+          <div class="sect-head ip-first-sect">화면 구성</div>
+          <div class="ed-sect">
             <div class="toggle-row" style="margin-bottom:8px;">
               <button class="tgl-btn on" id="lt-sep" onclick="setLayoutType('separate')">메인화면 별도</button>
               <button class="tgl-btn"    id="lt-mrg" onclick="setLayoutType('merged')">메인화면 병합</button>
@@ -212,55 +234,46 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               별도: 메인 화면 → 버튼 탭 → 스테이지 화면<br>병합: 배경 이미지 위에 스테이지 목록 바로 표시
             </div>
           </div>
+          <div class="sect-head">배경 이미지</div>
           <div class="ed-sect">
-            <div class="ed-lbl">D-Day</div>
-            <div class="switch-row" style="margin-bottom:12px;">
-              <div class="switch" id="dday-sw" onclick="toggleDday()"></div>
-              <span class="switch-lbl">D-Day 표시 사용</span>
-            </div>
-            <div id="dday-fields" style="display:none;">
-              <input class="fi" id="p-dday-date" placeholder="예: 2026-06-07 (YYYY-MM-DD)">
-            </div>
-          </div>
-          <div class="ed-sect">
-            <div class="ed-lbl">로고 위 문구</div>
-            <input class="fi" id="p-edition" placeholder="예: 제3회">
-          </div>
-        </div>
-
-        <!-- 디자인 -->
-        <div class="inner-panel" id="ip-design">
-          <div class="ed-sect">
-            <div class="ed-lbl">배경 이미지 <span style="font-weight:400;opacity:.55;">— 없으면 배경색 그대로 사용</span></div>
+            <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;">이미지 없으면 배경색 그대로 사용</div>
             <div id="bg-list"></div>
             <button class="add-btn" onclick="addBgImage()">+ 배경 이미지 추가</button>
             <input type="file" id="bg-file-input" accept="image/*" style="display:none;" onchange="onBgFileSelected(event)">
           </div>
+          <div class="sect-head">로고</div>
           <div class="ed-sect">
-            <div class="ed-lbl">메인 로고</div>
             <div class="toggle-row" style="margin-bottom:10px;">
-              <button class="tgl-btn on" id="logo-t-img" onclick="setLogoType('image')">이미지 URL</button>
+              <button class="tgl-btn on" id="logo-t-img" onclick="setLogoType('image')">이미지</button>
               <button class="tgl-btn"    id="logo-t-txt" onclick="setLogoType('text')">텍스트</button>
             </div>
             <div id="logo-img-sec">
               <input class="fi-sm" id="p-logo-url" placeholder="로고 이미지 URL (투명 PNG 권장)">
+              <button class="bg-up-btn" onclick="document.getElementById('logo-file-inp').click()" style="margin-top:4px;">📁 직접 업로드</button>
+              <input type="file" id="logo-file-inp" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'p-logo-url','cms_projects/logo')">
             </div>
             <div id="logo-txt-sec" style="display:none;">
               <input class="fi-sm" id="p-logo-txt" placeholder="로고 텍스트">
             </div>
           </div>
-          <div class="ed-sect" id="cta-icon-sect">
-            <div class="ed-lbl">CTA 아이콘 URL <span style="font-weight:400;opacity:.55;">(투명 PNG · 메인별도일 때만 사용)</span></div>
-            <input class="fi" id="p-cta-icon" placeholder="https://…">
-          </div>
-          <div class="ed-sect">
-            <div class="ed-lbl">CTA 버튼 문구</div>
-            <input class="fi" id="p-cta-text" placeholder="예: 내 마켓 준비하기">
+          <div id="cta-wrap">
+            <div class="sect-head">CTA (행동 유도 버튼)</div>
+            <div class="ed-sect">
+              <div class="ed-lbl">아이콘 <span style="font-weight:400;opacity:.55;">(투명 PNG)</span></div>
+              <input class="fi-sm" id="p-cta-icon" placeholder="https://…">
+              <button class="bg-up-btn" onclick="document.getElementById('cta-icon-file-inp').click()" style="margin-top:4px;">📁 직접 업로드</button>
+              <input type="file" id="cta-icon-file-inp" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'p-cta-icon','cms_projects/cta')">
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">버튼 문구</div>
+              <input class="fi" id="p-cta-text" placeholder="예: 내 마켓 준비하기">
+            </div>
           </div>
         </div>
 
         <!-- 사용자 인증 -->
         <div class="inner-panel" id="ip-auth">
+          <div class="sect-head ip-first-sect">사용자 인증 설정</div>
           <div class="ed-sect">
             <div class="switch-row" style="margin-bottom:8px;">
               <div class="switch" id="auth-sw" onclick="toggleAuth()"></div>
@@ -271,6 +284,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             </div>
           </div>
           <div id="auth-fields-wrap" style="display:none;">
+            <div class="sect-head">컬렉션 · 필드</div>
             <div class="ed-sect">
               <div class="ed-lbl">사용자 컬렉션 이름 <span style="font-weight:400;opacity:.55;">(Firestore 컬렉션)</span></div>
               <input class="fi" id="p-auth-col" placeholder="자동: cms_users_슬러그">
@@ -286,6 +300,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl">인증 키 필드 <span style="font-weight:400;opacity:.55;">(사용자가 입력해서 인증하는 값)</span></div>
               <select class="fi-sm" id="auth-key-sel" style="margin-bottom:0;cursor:pointer;"></select>
             </div>
+            <div class="sect-head">인증 화면 텍스트</div>
             <div class="ed-sect">
               <div class="ed-lbl">인증 모달 제목</div>
               <input class="fi" id="p-auth-title" placeholder="예: 셀러이신가요?">
@@ -294,6 +309,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl">인증 모달 설명</div>
               <input class="fi" id="p-auth-desc" placeholder="예: 신청 시 입력한 휴대폰 번호로 인증해주세요.">
             </div>
+            <div class="sect-head">사용자 목록</div>
             <div class="ed-sect">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
                 <div class="ed-lbl" style="margin-bottom:0;">사용자 목록</div>
@@ -308,6 +324,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
         <!-- 스테이지 -->
         <div class="inner-panel" id="ip-stages">
+          <div class="sect-head ip-first-sect">스테이지 목록</div>
           <div class="ed-sect">
             <div id="stage-list"></div>
             <button class="add-btn" onclick="addStage()">+ 스테이지 추가</button>
@@ -501,7 +518,7 @@ auth.onAuthStateChanged(user => {
     document.getElementById('login-view').style.display = 'none';
     document.getElementById('admin-user-email').textContent = user.email;
     document.getElementById('admin-view').classList.add('on');
-    loadProjects(); loadGuides();
+    loadProjects(); loadGuides(); loadPATFromFirestore();
   } else {
     if (user) auth.signOut();
     document.getElementById('login-view').style.display = '';
@@ -545,12 +562,28 @@ function updatePATBtn() {
   btn.textContent = getPAT() ? '토큰 ✓' : '토큰 ●';
   btn.style.opacity = getPAT() ? '1' : '0.6';
 }
-function managePAT() {
+async function managePAT() {
   const cur = getPAT();
   const val = prompt(cur ? '새 토큰 입력 (공란으로 확인 시 삭제):' : 'GitHub PAT 입력 (repo 권한):', cur);
   if (val === null) return;
-  val.trim() ? localStorage.setItem('ghPAT', val.trim()) : localStorage.removeItem('ghPAT');
+  const token = val.trim();
+  if (token) {
+    localStorage.setItem('ghPAT', token);
+    try { await db.collection('cms_admin_settings').doc('github').set({pat: token}, {merge:true}); } catch(e) {}
+  } else {
+    localStorage.removeItem('ghPAT');
+    try { await db.collection('cms_admin_settings').doc('github').set({pat: ''}, {merge:true}); } catch(e) {}
+  }
   updatePATBtn();
+}
+async function loadPATFromFirestore() {
+  try {
+    const doc = await db.collection('cms_admin_settings').doc('github').get();
+    if (doc.exists && doc.data().pat) {
+      localStorage.setItem('ghPAT', doc.data().pat);
+      updatePATBtn();
+    }
+  } catch(e) {}
 }
 
 /* ══════════════════════════════════════
@@ -574,7 +607,16 @@ let fmReqOn = false;
 /* ── URL Preview ── */
 function updateUrlPreview() {
   const id = document.getElementById('p-id').value.trim();
-  document.getElementById('p-url-preview').textContent = id ? 'lazymaxpotential.kr/'+id : '';
+  const el = document.getElementById('p-url-preview');
+  if (id) {
+    const url = 'https://lazymaxpotential.kr/' + id;
+    el.textContent = url;
+    el.href = url;
+    el.style.display = 'block';
+  } else {
+    el.textContent = '';
+    el.style.display = 'none';
+  }
 }
 
 /* ── Layout type ── */
@@ -582,7 +624,8 @@ function setLayoutType(t) {
   curLayoutType = t;
   document.getElementById('lt-sep').classList.toggle('on', t==='separate');
   document.getElementById('lt-mrg').classList.toggle('on', t==='merged');
-  document.getElementById('cta-icon-sect').style.display = t==='separate' ? '' : 'none';
+  const ctaWrap = document.getElementById('cta-wrap');
+  if (ctaWrap) ctaWrap.style.display = t==='separate' ? '' : 'none';
 }
 
 /* ── D-day ── */
@@ -677,6 +720,22 @@ function updateBgThumb(i, url) {
 function openBgUpload(i) {
   pendingBgUploadIdx = i;
   document.getElementById('bg-file-input').click();
+}
+async function uploadSingleImage(event, fieldId, storagePath) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  const projId = document.getElementById('p-id').value.trim() || 'tmp';
+  const ext = file.name.split('.').pop();
+  const path = `${storagePath}/${projId}/${Date.now()}.${ext}`;
+  try {
+    const ref = storage.ref(path);
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
+    document.getElementById(fieldId).value = url;
+  } catch(err) {
+    alert('업로드 실패: ' + err.message + '\n\nFirebase Storage 규칙에서 인증된 쓰기를 허용해야 해요.');
+  }
 }
 async function onBgFileSelected(e) {
   const file = e.target.files[0];
@@ -927,7 +986,8 @@ function startNewProject() {
   ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-col','p-auth-title','p-auth-desc']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('proj-del').style.display = 'none';
-  document.getElementById('p-url-preview').textContent = '';
+  const urlPrev = document.getElementById('p-url-preview');
+  urlPrev.textContent = ''; urlPrev.href = '#'; urlPrev.style.display = 'none';
   setLogoType('image'); setLayoutType('separate'); setDday(false); setAuth(false);
   renderBgImages(); renderStageList(); renderAuthFields();
   switchInnerTab('basic'); showProjView('edit');
