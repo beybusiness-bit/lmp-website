@@ -16,6 +16,7 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "849320781553",
   appId: "1:849320781553:web:9d844044e85995c0aa2b50"
 };
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1weS1u1eML_R8nKpMXSP6U-IDGDsazUg-duw/exec';
 const REPO = {
   GITHUB_URL: 'https://github.com/beybusiness-bit/lmp-website',
   LOCAL_PATH: '~/projects/lmp-website',
