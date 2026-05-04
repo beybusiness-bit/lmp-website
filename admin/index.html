@@ -205,8 +205,9 @@ body {
         </div>
 
         <div class="ed-sect">
-          <div class="ed-lbl">프로젝트 ID <span style="font-weight:400;opacity:0.55;">(URL·코드에서 참조)</span></div>
-          <input class="fi" id="p-id" placeholder="예: gmbf_poc">
+          <div class="ed-lbl">슬러그 (ID) <span style="font-weight:400;opacity:0.55;">— 프로젝트 URL의 주소가 됩니다</span></div>
+          <input class="fi" id="p-id" placeholder="예: gmbf" oninput="updateUrlPreview()">
+          <div id="p-url-preview" style="margin-top:8px;padding:8px 10px;background:#f0f0f0;font-size:12px;color:rgba(0,0,0,0.55);word-break:break-all;"></div>
         </div>
         <div class="ed-sect">
           <div class="ed-lbl">프로젝트 이름</div>
@@ -244,6 +245,14 @@ body {
         <div class="ed-sect">
           <div class="ed-lbl">상세화면 열기 버튼 문구</div>
           <input class="fi" id="p-cta-text" placeholder="예: 내 마켓 준비하기">
+        </div>
+        <div class="ed-sect">
+          <div class="ed-lbl">행사 날짜 <span style="font-weight:400;opacity:0.55;">(D-day 계산)</span></div>
+          <input class="fi" id="p-event-date" placeholder="예: 2026-06-07">
+        </div>
+        <div class="ed-sect">
+          <div class="ed-lbl">셀러 인증 컬렉션 <span style="font-weight:400;opacity:0.55;">(Firestore 컬렉션 이름)</span></div>
+          <input class="fi" id="p-seller-col" placeholder="예: gmbf_sellers">
         </div>
         <div class="ed-sect">
           <div class="ed-lbl">스테이지 (박스) 목록</div>
@@ -435,11 +444,18 @@ function showProjView(v) {
   document.getElementById('proj-edit-view').style.display = v==='edit' ? 'block' : 'none';
 }
 function backToProjects() { showProjView('list'); curProjId=null; curStages=[]; }
+function updateUrlPreview() {
+  const id = document.getElementById('p-id').value.trim();
+  const el = document.getElementById('p-url-preview');
+  el.textContent = id ? 'lazymaxpotential.kr/p/?id=' + id : '';
+}
 function startNewProject() {
   curProjId=null; curStages=[]; curLogoType='image';
   ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text',
-   'p-bg0','p-bg1','p-bg2','p-bg3','p-bg4'].forEach(id => { document.getElementById(id).value=''; });
+   'p-event-date','p-seller-col','p-bg0','p-bg1','p-bg2','p-bg3','p-bg4']
+    .forEach(id => { document.getElementById(id).value=''; });
   document.getElementById('proj-del').style.display = 'none';
+  document.getElementById('p-url-preview').textContent = '';
   setLogoType('image'); renderStageList(); showProjView('edit');
 }
 async function editProject(id) {
@@ -454,10 +470,13 @@ async function editProject(id) {
     document.getElementById('p-edition').value   = d.editionText||'';
     document.getElementById('p-logo-url').value  = d.logoImageUrl||'';
     document.getElementById('p-logo-txt').value  = d.logoText||'';
-    document.getElementById('p-cta-icon').value  = d.ctaIconUrl||'';
-    document.getElementById('p-cta-text').value  = d.ctaText||'';
+    document.getElementById('p-cta-icon').value   = d.ctaIconUrl||'';
+    document.getElementById('p-cta-text').value   = d.ctaText||'';
+    document.getElementById('p-event-date').value = d.eventDate||'';
+    document.getElementById('p-seller-col').value = d.sellerCollection||'';
     (d.bgImages||[]).forEach((u,i) => { const el=document.getElementById('p-bg'+i); if(el) el.value=u||''; });
     document.getElementById('proj-del').style.display = 'block';
+    updateUrlPreview();
     setLogoType(d.logoType||'image'); renderStageList();
   } catch(e) {}
 }
@@ -480,15 +499,18 @@ async function saveProject() {
       logoImageUrl: document.getElementById('p-logo-url').value.trim(),
       logoText:     document.getElementById('p-logo-txt').value.trim(),
       editionText:  document.getElementById('p-edition').value.trim(),
-      ctaIconUrl:   document.getElementById('p-cta-icon').value.trim(),
-      ctaText:      document.getElementById('p-cta-text').value.trim(),
+      ctaIconUrl:       document.getElementById('p-cta-icon').value.trim(),
+      ctaText:          document.getElementById('p-cta-text').value.trim(),
+      eventDate:        document.getElementById('p-event-date').value.trim(),
+      sellerCollection: document.getElementById('p-seller-col').value.trim(),
       bgImages,
       stages: curStages.map((s,i)=>({...s,order:i})),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
     curProjId = id;
     document.getElementById('proj-del').style.display = 'block';
-    alert('저장했어요!'); loadProjects();
+    alert('저장했어요! 링크: lazymaxpotential.kr/p/?id=' + id);
+    loadProjects();
   } catch(e) { alert('저장 실패: '+e.message); }
 }
 async function deleteProject() {
