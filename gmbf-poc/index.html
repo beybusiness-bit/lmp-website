@@ -246,7 +246,8 @@ let STAGES         = [];
 let STATS          = [];   // [{id, label, collection, countType, unit, enabled}]
 let ELEMENT_ORDER  = ['edition','logo','dday','stats'];
 let LOGO_BASE64    = ''; // base64 data URL for CSS mask (avoids CORS)
-let LOGO_IMG_H     = 80;
+let LOGO_IMG_RATIO = null; // natural width/height ratio (auto height)
+let LOGO_IMG_H     = 80;  // fallback height for old projects
 let LOGO_IMG_W     = 76;
 
 /* slideshow */
@@ -293,6 +294,7 @@ function applySettings(d){
   setCss('--c', KEY_COLORS[0]);
 
   LOGO_BASE64     = d.logoBase64     || '';
+  LOGO_IMG_RATIO  = d.logoImgRatio  || null;
   LOGO_IMG_H      = d.logoImgH      || 80;
   LOGO_IMG_W      = d.logoImgW      || 76;
   LAYOUT_TYPE     = d.layoutType     || 'separate';
@@ -367,7 +369,8 @@ function renderTopGroup(d){
         wrap.innerHTML=`<div class="logo-fallback" id="logo-fallback" style="display:block;font-size:${d.logoTextSize||'20'}px;text-align:${d.logoTextAlign||'center'};">${d.logoText}</div>`;
       } else if(d.logoImageUrl){
         const maskSrc = LOGO_BASE64 || d.logoImageUrl;
-        wrap.innerHTML=`<div id="logo-img" style="width:${LOGO_IMG_W}%;height:${LOGO_IMG_H}px;background-color:var(--c);-webkit-mask-image:url('${maskSrc}');mask-image:url('${maskSrc}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;margin:0 auto;transition:background-color 1s ease;"></div>`;
+        const logoSizeStyle = LOGO_IMG_RATIO ? `aspect-ratio:${LOGO_IMG_RATIO};` : `height:${LOGO_IMG_H}px;`;
+        wrap.innerHTML=`<div id="logo-img" style="width:${LOGO_IMG_W}%;${logoSizeStyle}background-color:var(--c);-webkit-mask-image:url('${maskSrc}');mask-image:url('${maskSrc}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;margin:0 auto;transition:background-color 1s ease;"></div>`;
       } else {
         wrap.innerHTML=`<div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>`;
       }
