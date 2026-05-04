@@ -286,6 +286,9 @@ async function loadProjectSettings(){
   }catch(e){ showError('연결에 실패했어요.','잠시 후 다시 시도해주세요.'); }
 }
 function applySettings(d){
+  /* apply project key color */
+  setCss('--c', d.keyColor || '#00CE6B');
+
   LAYOUT_TYPE     = d.layoutType     || 'separate';
   DDAY_ENABLED    = d.ddayEnabled    || false;
   DDAY_DATE       = d.ddayDate       || '';
