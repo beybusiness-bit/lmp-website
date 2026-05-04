@@ -633,7 +633,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 <div id="preview-wrap" style="display:none;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
     <span style="font-size:11px;font-weight:900;color:#000;">실시간 미리보기</span>
-    <button onclick="togglePreview()" style="background:transparent;border:none;font-size:16px;cursor:pointer;line-height:1;padding:2px;">✕</button>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <button class="prev-sz-btn" onclick="setPreviewSize(-50)" title="작게">−</button>
+      <button class="prev-sz-btn" onclick="setPreviewSize(+50)" title="크게">+</button>
+      <button onclick="togglePreview()" style="background:transparent;border:none;font-size:16px;cursor:pointer;line-height:1;padding:2px 4px;">✕</button>
+    </div>
   </div>
   <div id="preview-phone">
     <div id="prev-bg" style="position:absolute;inset:0;background-size:cover;background-position:center;transition:background .3s;"></div>

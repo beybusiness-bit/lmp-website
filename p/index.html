@@ -299,6 +299,10 @@ function applySettings(d){
   }));
   STATS = (d.stats||[]).filter(s=>s.enabled);
   ELEMENT_ORDER = d.elementOrder || ['edition','logo','dday','stats'];
+  if(d.keyColors && d.keyColors.length>=2){
+    KEY_COLORS.length=0; d.keyColors.forEach(c=>KEY_COLORS.push(c));
+    setCss('--c',KEY_COLORS[0]);
+  }
 
   /* title */
   if(d.name) document.title = d.name;
@@ -354,6 +358,7 @@ function renderTopGroup(d){
     } else if(key==='logo'){
       const wrap=document.createElement('div');
       wrap.className='logo-wrap';
+      if(d.logoImgW) wrap.style.width=d.logoImgW+'%';
       wrap.innerHTML=`<div class="logo-mask" id="logo-mask" style="display:none;"></div>
         <div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>`;
       tg.appendChild(wrap);
