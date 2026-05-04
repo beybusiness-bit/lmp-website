@@ -505,6 +505,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <span style="font-size:11px;">지금은 <b>임베드</b>로 Tally 폼을 직접 연결해주세요.</span>
       </div>
     </div>
+    <!-- 공통 스타일 (모든 블록 타입) -->
+    <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
+      <div class="ed-lbl">배경색</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <input type="color" id="blk-bg-color" value="#ffffff" oninput="onBlkBgPick(this.value)" style="width:32px;height:32px;border:2px solid #000;padding:0;cursor:pointer;flex-shrink:0;">
+        <input class="fi-sm" id="blk-bg-hex" placeholder="#FFFFFF" style="width:84px;margin-bottom:0;" oninput="onBlkBgHex(this.value)">
+        <button onclick="clearBlkBg()" style="padding:4px 9px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">없음</button>
+        <div id="blk-kc-bg" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"></div>
+      </div>
+      <div class="ed-lbl">텍스트 컬러 <span style="font-weight:400;opacity:.55;">(블록 전체 기본값)</span></div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <input type="color" id="blk-txt-color" value="#000000" oninput="onBlkTxtPick(this.value)" style="width:32px;height:32px;border:2px solid #000;padding:0;cursor:pointer;flex-shrink:0;">
+        <input class="fi-sm" id="blk-txt-hex" placeholder="#000000" style="width:84px;margin-bottom:0;" oninput="onBlkTxtHex(this.value)">
+        <button onclick="clearBlkTxt()" style="padding:4px 9px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">없음</button>
+        <div id="blk-kc-txt" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"></div>
+      </div>
+    </div>
     <div id="bpanel-mixed" style="display:none;">
       <div class="ed-lbl" style="margin-bottom:8px;">레이아웃</div>
       <div class="mixed-row">
@@ -1019,6 +1036,13 @@ async function uploadBlockImage(event, urlFieldId, prevId) {
   const file = event.target.files[0];
   event.target.value = '';
   if (!file) return;
+  // 업로드 중 버튼 피드백: 연결된 file input 바로 앞 bg-up-btn 찾기
+  const fileInp = document.getElementById(
+    urlFieldId === 'img-url' ? 'blk-img-file' : 'blk-mixed-file'
+  );
+  const btn = fileInp ? fileInp.previousElementSibling : null;
+  const origTxt = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = '⏳ 업로드 중…'; btn.disabled = true; }
   const guideId = document.getElementById('g-id').value.trim() || 'tmp';
   const ext = file.name.split('.').pop();
   const path = `cms_guides/${guideId}/blocks/${Date.now()}.${ext}`;
@@ -1028,7 +1052,11 @@ async function uploadBlockImage(event, urlFieldId, prevId) {
     const url = await ref.getDownloadURL();
     document.getElementById(urlFieldId).value = url;
     prevImg(prevId, url);
-  } catch(err) { alert('업로드 실패: ' + err.message); }
+    if (btn) { btn.textContent = '✅ 완료'; btn.disabled = false; setTimeout(()=>{ btn.textContent = origTxt; }, 2000); }
+  } catch(err) {
+    if (btn) { btn.textContent = origTxt; btn.disabled = false; }
+    alert('업로드 실패: ' + err.message + '\n\nFirebase Storage 규칙을 확인해주세요.');
+  }
 }
 async function onBgFileSelected(e) {
   const file = e.target.files[0];
@@ -1554,11 +1582,48 @@ function renderBlockList() {
   }).join('');
 }
 function mvBlk(i,d){const j=i+d;if(j<0||j>=curBlocks.length)return;[curBlocks[i],curBlocks[j]]=[curBlocks[j],curBlocks[i]];renderBlockList();scheduleGuidePreviewUpdate();}
-function rmBlk(i){curBlocks.splice(i,1);renderBlockList();scheduleGuidePreviewUpdate();}
+function rmBlk(i){if(!confirm('이 블록을 삭제할까요?'))return;curBlocks.splice(i,1);renderBlockList();scheduleGuidePreviewUpdate();}
 
 /* ── Block editor ── */
 let guidePreviewTimer = null;
+let gprevSlideIdx = 0;
+function gprevGoTo(i){ gprevSlideIdx=i; renderGuidePreview(); }
 let curBlkIdx=null,curBlkType='text',curMixedLayout='overlay',savedRange=null;
+let curBlkBgColor='', curBlkTxtColor='';
+
+function renderBlkKeyColors(){
+  ['bg','txt'].forEach(t=>{
+    const el=document.getElementById('blk-kc-'+t);
+    if(!el) return;
+    el.innerHTML=(curKeyColors.length?curKeyColors:['#00CE6B','#FFF100']).map(c=>{
+      const fn=t==='bg'?'onBlkBgPick':'onBlkTxtPick';
+      const border=c.toLowerCase()==='#ffffff'?'#ccc':'#000';
+      return `<div onclick="${fn}('${c}')" title="${c}" style="width:22px;height:22px;background:${c};border:2px solid ${border};cursor:pointer;flex-shrink:0;border-radius:2px;"></div>`;
+    }).join('');
+  });
+}
+function onBlkBgPick(v){
+  curBlkBgColor=v;
+  const h=document.getElementById('blk-bg-hex'); if(h) h.value=v.toUpperCase();
+  const p=document.getElementById('blk-bg-color'); if(p) p.value=v;
+}
+function onBlkBgHex(v){ if(/^#[0-9a-fA-F]{6}$/.test(v)) onBlkBgPick(v); }
+function clearBlkBg(){
+  curBlkBgColor='';
+  const h=document.getElementById('blk-bg-hex'); if(h) h.value='';
+  const p=document.getElementById('blk-bg-color'); if(p) p.value='#ffffff';
+}
+function onBlkTxtPick(v){
+  curBlkTxtColor=v;
+  const h=document.getElementById('blk-txt-hex'); if(h) h.value=v.toUpperCase();
+  const p=document.getElementById('blk-txt-color'); if(p) p.value=v;
+}
+function onBlkTxtHex(v){ if(/^#[0-9a-fA-F]{6}$/.test(v)) onBlkTxtPick(v); }
+function clearBlkTxt(){
+  curBlkTxtColor='';
+  const h=document.getElementById('blk-txt-hex'); if(h) h.value='';
+  const p=document.getElementById('blk-txt-color'); if(p) p.value='#000000';
+}
 function saveRange(el){const sel=window.getSelection();if(sel.rangeCount)savedRange={el,range:sel.getRangeAt(0).cloneRange()};}
 function restoreRange(el){if(savedRange&&savedRange.el===el){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}}
 function openBlockModal(idx){
@@ -1578,6 +1643,13 @@ function openBlockModal(idx){
   prevImg('img-prev',document.getElementById('img-url').value);
   prevImg('mixed-img-prev',document.getElementById('mixed-img-url').value);
   setMixedLayout(curMixedLayout);savedRange=null;
+  // 색상 로드
+  curBlkBgColor=b.bgColor||''; curBlkTxtColor=b.txtColor||'';
+  const bgP=document.getElementById('blk-bg-color'); if(bgP) bgP.value=curBlkBgColor||'#ffffff';
+  const bgH=document.getElementById('blk-bg-hex');  if(bgH) bgH.value=(curBlkBgColor||'').toUpperCase();
+  const txP=document.getElementById('blk-txt-color');if(txP) txP.value=curBlkTxtColor||'#000000';
+  const txH=document.getElementById('blk-txt-hex'); if(txH) txH.value=(curBlkTxtColor||'').toUpperCase();
+  renderBlkKeyColors();
   document.getElementById('block-modal').classList.add('on');
 }
 function closeBlockModal(){document.getElementById('block-modal').classList.remove('on');}
@@ -1599,6 +1671,8 @@ function saveBlock(){
     b.embedUrl=document.getElementById('embed-url').value.trim();
     b.embedHeight=parseInt(document.getElementById('embed-height').value)||500;
   }
+  if(curBlkBgColor) b.bgColor=curBlkBgColor;
+  if(curBlkTxtColor) b.txtColor=curBlkTxtColor;
   /* form type: no extra fields */
   if(curBlkIdx!==null)curBlocks[curBlkIdx]={...curBlocks[curBlkIdx],...b};
   else curBlocks.push(b);
@@ -1792,9 +1866,15 @@ function renderGuidePreview() {
     return;
   }
   if (curGuideDispType === 'slide') {
-    content.innerHTML = gBlockHtml(curBlocks[0], S) +
-      `<div style="display:flex;justify-content:center;gap:4px;padding:${Math.round(8*S)}px 0;">
-        ${curBlocks.map((_,i)=>`<div style="width:5px;height:5px;border-radius:50%;background:${i===0?'#000':'rgba(0,0,0,.22)'}"></div>`).join('')}
+    gprevSlideIdx = Math.min(gprevSlideIdx, curBlocks.length - 1);
+    const idx = gprevSlideIdx;
+    const dots = curBlocks.map((_,i)=>`<div onclick="gprevGoTo(${i})" style="width:${Math.round(7*S)}px;height:${Math.round(7*S)}px;border-radius:50%;background:${i===idx?'#000':'rgba(0,0,0,.22)'};cursor:pointer;flex-shrink:0;"></div>`).join('');
+    const arrowStyle = `cursor:pointer;font-size:${Math.round(18*S)}px;padding:0 ${Math.round(8*S)}px;font-weight:900;user-select:none;`;
+    content.innerHTML = gBlockHtml(curBlocks[idx], S) +
+      `<div style="display:flex;justify-content:center;align-items:center;gap:${Math.round(5*S)}px;padding:${Math.round(8*S)}px 0;">
+        <span onclick="gprevGoTo(${Math.max(0,idx-1)})" style="${arrowStyle}opacity:${idx>0?1:.2};">‹</span>
+        ${dots}
+        <span onclick="gprevGoTo(${Math.min(curBlocks.length-1,idx+1)})" style="${arrowStyle}opacity:${idx<curBlocks.length-1?1:.2};">›</span>
       </div>`;
   } else {
     content.innerHTML = curBlocks.map(b => gBlockHtml(b, S)).join('');
@@ -1802,25 +1882,28 @@ function renderGuidePreview() {
 }
 function gBlockHtml(b, S) {
   const pad = `padding:${Math.round(14*S)}px`;
+  const bgS = b.bgColor  ? `background-color:${b.bgColor};`  : '';
+  const txS = b.txtColor ? `color:${b.txtColor};`            : '';
   if (b.type === 'text') {
-    return `<div style="${pad};font-size:${Math.round(14*S)}px;line-height:1.6;word-break:break-word;overflow-wrap:break-word;overflow:hidden;box-sizing:border-box;width:100%;">${b.textContent||''}</div>`;
+    return `<div style="${bgS}${txS}${pad};font-size:${Math.round(14*S)}px;line-height:1.6;word-break:break-word;overflow-wrap:break-word;overflow:hidden;box-sizing:border-box;width:100%;">${b.textContent||''}</div>`;
   } else if (b.type === 'image') {
-    return b.imageUrl
+    const img = b.imageUrl
       ? `<img src="${b.imageUrl}" style="width:100%;display:block;max-height:${Math.round(130*S)}px;object-fit:cover;">`
       : `<div style="height:${Math.round(60*S)}px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:9px;color:#aaa;">[이미지]</div>`;
+    return bgS ? `<div style="${bgS}">${img}</div>` : img;
   } else if (b.type === 'mixed') {
     const imgPart = b.imageUrl
       ? `<img src="${b.imageUrl}" style="width:100%;max-height:${Math.round(80*S)}px;object-fit:cover;display:block;">`
       : `<div style="height:${Math.round(50*S)}px;background:#eee;"></div>`;
-    const txtPart = `<div style="${pad};font-size:${Math.round(12*S)}px;line-height:1.5;">${(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,80)}</div>`;
+    const txtPart = `<div style="${txS}${pad};font-size:${Math.round(12*S)}px;line-height:1.5;">${(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,80)}</div>`;
     if (b.mixedLayout === 'overlay') {
-      return `<div style="position:relative;">${imgPart}<div style="position:absolute;inset:0;background:rgba(0,0,0,.42);display:flex;align-items:flex-end;">${txtPart.replace(pad,`padding:${Math.round(8*S)}px;color:#fff`)}</div></div>`;
+      return `<div style="position:relative;${bgS}">${imgPart}<div style="position:absolute;inset:0;background:rgba(0,0,0,.42);display:flex;align-items:flex-end;">${txtPart.replace(pad,`padding:${Math.round(8*S)}px;${txS||'color:#fff;'}`)}</div></div>`;
     }
-    return imgPart + txtPart;
+    return `<div style="${bgS}">${imgPart}${txtPart}</div>`;
   } else if (b.type === 'embed') {
-    return `<div style="margin:${Math.round(8*S)}px;${pad};background:#f0f0f0;border:1px dashed rgba(0,0,0,.2);text-align:center;font-size:${Math.round(10*S)}px;color:rgba(0,0,0,.5);">[임베드] ${(b.embedUrl||'URL없음').slice(0,30)}</div>`;
+    return `<div style="${bgS}margin:${Math.round(8*S)}px;${pad};background:${b.bgColor?b.bgColor:'#f0f0f0'};border:1px dashed rgba(0,0,0,.2);text-align:center;font-size:${Math.round(10*S)}px;${txS||'color:rgba(0,0,0,.5);'}">[임베드] ${(b.embedUrl||'URL없음').slice(0,30)}</div>`;
   }
-  return `<div style="margin:${Math.round(8*S)}px;${pad};background:#f0f0f0;border:1px dashed rgba(0,0,0,.2);text-align:center;font-size:${Math.round(10*S)}px;color:rgba(0,0,0,.5);">[폼 준비 중]</div>`;
+  return `<div style="${bgS}margin:${Math.round(8*S)}px;${pad};background:#f0f0f0;border:1px dashed rgba(0,0,0,.2);text-align:center;font-size:${Math.round(10*S)}px;color:rgba(0,0,0,.5);">[폼 준비 중]</div>`;
 }
 
 window.addEventListener('load', () => {
