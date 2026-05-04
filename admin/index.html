@@ -470,6 +470,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-sz-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','text')">Aa</button>
         <button class="fmt-btn" id="fmt-al-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','text')">≡</button>
         <button class="fmt-btn" id="fmt-clr-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','text')" style="padding:5px 7px;"><span id="fmt-clr-dot-text" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+        <button class="fmt-btn" id="fmt-var-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','text')" style="display:none;font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
       </div>
       <div class="ced" id="ced-text" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)"></div>
       <div style="margin-top:10px;">
@@ -553,6 +554,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-sz-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','mixed')">Aa</button>
         <button class="fmt-btn" id="fmt-al-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','mixed')">≡</button>
         <button class="fmt-btn" id="fmt-clr-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','mixed')" style="padding:5px 7px;"><span id="fmt-clr-dot-mixed" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+        <button class="fmt-btn" id="fmt-var-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','mixed')" style="display:none;font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
       </div>
       <div class="ced" id="ced-mixed" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)"></div>
     </div>
@@ -2085,6 +2087,9 @@ function openBlockModal(idx){
   const mv=document.getElementById('blk-margin-v'); if(mv) mv.value=b.marginV??'';
   const mh=document.getElementById('blk-margin-h'); if(mh) mh.value=b.marginH??'';
   renderBlkKeyColors();
+  /* 변수 버튼: 인증 활성화 + 필드 있을 때만 표시 */
+  const showVar = curAuthEnabled && curAuthFields.length > 0;
+  ['text','mixed'].forEach(c=>{const b=document.getElementById('fmt-var-'+c);if(b)b.style.display=showVar?'':'none';});
   document.getElementById('block-modal').classList.add('on');
 }
 function closeBlockModal(){document.getElementById('block-modal').classList.remove('on');}
@@ -2159,6 +2164,14 @@ function openFmtDd(btn,type,ctx){
     html=[['←','left','왼쪽'],['≡','center','가운데'],['→','right','오른쪽']].map(([icon,val,lbl])=>
       `<button class="fmt-pop-opt${cur===val?' cur':''}" onpointerdown="epd(event)" onclick="applyFmtAlign('${ctx}','${val}')">${icon} <span style="font-weight:400;">${lbl}</span></button>`
     ).join('');
+  } else if(type==='var'){
+    if(!curAuthEnabled||!curAuthFields.length){
+      html='<div style="padding:12px 14px;font-size:12px;color:rgba(0,0,0,.45);line-height:1.6;">이 프로젝트는<br>사용자 인증이 없어요.</div>';
+    } else {
+      html=curAuthFields.map(f=>
+        `<button class="fmt-pop-opt" onpointerdown="epd(event)" onclick="applyFmtVar('${ctx}','${f.key}')"><code style="font-size:11px;background:rgba(0,0,0,.07);padding:1px 4px;border-radius:2px;">{{${f.key}}}</code><span style="font-weight:400;color:rgba(0,0,0,.5);margin-left:7px;">${f.label}</span></button>`
+      ).join('');
+    }
   } else if(type==='clr'){
     const cur=_detectClr();
     const kc=curKeyColors.length?curKeyColors:['#00CE6B','#FFF100','#F95548','#0BC6FF'];
@@ -2183,6 +2196,7 @@ function openFmtDd(btn,type,ctx){
   if(pr.right>window.innerWidth-6) pop.style.left=(window.innerWidth-pr.width-6)+'px';
 }
 function closeFmtPopup(){document.getElementById('fmt-popup').style.display='none';_fmtPopType=null;_fmtPopCtx=null;}
+function applyFmtVar(ctx,key){focusEd(ctx);document.execCommand('insertText',false,`{{${key}}}`);closeFmtPopup();}
 function applyFmtSz(ctx,px){
   fmtSz(ctx,px);
   const lbl={13:'S',16:'M',20:'L',26:'XL'};
@@ -2224,7 +2238,7 @@ function _detectClr(){
 }
 document.addEventListener('click',e=>{
   const pop=document.getElementById('fmt-popup');
-  if(pop&&pop.style.display!=='none'&&!pop.contains(e.target)&&!e.target.closest('#fmt-sz-text,#fmt-al-text,#fmt-clr-text,#fmt-sz-mixed,#fmt-al-mixed,#fmt-clr-mixed,#fmt-sz-formpost,#fmt-al-formpost,#fmt-clr-formpost'))
+  if(pop&&pop.style.display!=='none'&&!pop.contains(e.target)&&!e.target.closest('#fmt-sz-text,#fmt-al-text,#fmt-clr-text,#fmt-var-text,#fmt-sz-mixed,#fmt-al-mixed,#fmt-clr-mixed,#fmt-var-mixed,#fmt-sz-formpost,#fmt-al-formpost,#fmt-clr-formpost'))
     closeFmtPopup();
 });
 
