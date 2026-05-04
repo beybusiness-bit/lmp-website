@@ -280,25 +280,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <input type="file" id="logo-file-inp" accept="image/png" style="display:none;" onchange="uploadSingleImage(event,'p-logo-url','cms_projects/logo',true)">
               <div style="display:flex;gap:6px;margin-top:8px;">
                 <div style="flex:1;">
-                  <div class="ed-lbl">높이</div>
-                  <select class="fi-sm" id="p-logo-img-h" style="margin-bottom:0;" onchange="curLogoImgH=+this.value;schedulePreviewUpdate()">
-                    <option value="50">작게 (50px)</option>
-                    <option value="80" selected>보통 (80px)</option>
-                    <option value="120">크게 (120px)</option>
-                    <option value="160">매우크게 (160px)</option>
-                  </select>
+                  <div class="ed-lbl">높이 (px)</div>
+                  <input class="fi-sm" type="number" id="p-logo-img-h" value="80" min="10" step="10" placeholder="80" style="margin-bottom:0;" oninput="curLogoImgH=+this.value||80;schedulePreviewUpdate()">
                 </div>
                 <div style="flex:1;">
-                  <div class="ed-lbl">너비</div>
-                  <select class="fi-sm" id="p-logo-img-w" style="margin-bottom:0;" onchange="curLogoImgW=+this.value;schedulePreviewUpdate()">
-                    <option value="50">좁게 (50%)</option>
-                    <option value="65">65%</option>
-                    <option value="76" selected>보통 (76%)</option>
-                    <option value="90">90%</option>
-                    <option value="100">가득 (100%)</option>
-                  </select>
+                  <div class="ed-lbl">너비 (%)</div>
+                  <input class="fi-sm" type="number" id="p-logo-img-w" value="76" min="10" max="100" step="5" placeholder="76" style="margin-bottom:0;" oninput="curLogoImgW=Math.min(100,+this.value||76);schedulePreviewUpdate()">
                 </div>
               </div>
+              <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:3px;">너비는 화면 가로 대비 비율, 높이는 픽셀 단위 (제한 없음)</div>
             </div>
             <div id="logo-txt-sec" style="display:none;">
               <textarea class="fi-sm" id="p-logo-txt" placeholder="로고 텍스트 (줄바꿈: Enter)" rows="3" oninput="schedulePreviewUpdate()" style="resize:vertical;line-height:1.5;"></textarea>
