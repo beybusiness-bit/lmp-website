@@ -49,7 +49,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .fi::placeholder{color:rgba(0,0,0,.28);font-weight:400;}
 .fi-sm{width:100%;background:#fff;border:1.5px solid rgba(0,0,0,.25);font-size:13px;color:#000;padding:7px 10px;outline:none;font-family:inherit;margin-bottom:7px;}
 .fi-sm:focus{border-color:#000;}
-.save-btn{padding:9px 18px;background:#000;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.save-btn{padding:9px 18px;background:#000;border:2px solid #000;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 .del-btn{padding:9px 14px;background:transparent;border:2px solid #000;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 .toggle-row{display:flex;}
 .tgl-btn{flex:1;padding:9px 0;background:transparent;border:2px solid #000;border-right:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s,color .15s;}
@@ -136,7 +136,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 /* preview */
 #preview-wrap{position:fixed;right:16px;top:72px;z-index:90;width:196px;}
 #preview-phone{width:196px;height:348px;border:3px solid #000;border-radius:18px;overflow:hidden;position:relative;background:#f5f5f5;box-shadow:0 6px 24px rgba(0,0,0,.2);}
-.prev-btn{padding:5px 10px;background:#f4f4f4;border:1.5px solid rgba(0,0,0,.25);color:#000;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.prev-sz-btn{padding:2px 7px;background:transparent;border:1.5px solid #000;color:#000;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;line-height:1.4;border-radius:3px;}
+.prev-sz-btn:hover{background:#000;color:#fff;}
+.prev-btn{padding:9px 14px;background:transparent;border:2px solid #000;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
 .prev-btn:hover{background:#000;color:#fff;}
 .switch-row{display:flex;align-items:center;gap:10px;}
 .switch{width:40px;height:22px;background:#ccc;border-radius:11px;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;}
@@ -210,7 +212,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <input class="fi" id="p-name" placeholder="예: GMBF 플리마켓">
           </div>
           <div class="ed-sect">
-            <div class="ed-lbl">로고 위 문구</div>
+            <div class="ed-lbl">문구</div>
             <input class="fi" id="p-edition" placeholder="예: 제3회">
           </div>
           <div class="sect-head">D-Day</div>
@@ -238,7 +240,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
         <!-- 디자인 -->
         <div class="inner-panel" id="ip-design">
-          <div class="sect-head ip-first-sect">화면 구성</div>
+          <div class="sect-head ip-first-sect">키컬러</div>
+          <div class="ed-sect">
+            <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:10px;line-height:1.6;">배경색·텍스트·아이콘 색상으로 사용됩니다. 배경 슬라이드 전환 시 순서대로 순환합니다. <b>최소 2개 필요</b></div>
+            <div id="key-color-list"></div>
+            <button class="add-btn" style="margin-top:8px;" onclick="addKeyColor()">+ 색상 추가</button>
+          </div>
+          <div class="sect-head">화면 구성</div>
           <div class="ed-sect">
             <div class="toggle-row" style="margin-bottom:8px;">
               <button class="tgl-btn on" id="lt-sep" onclick="setLayoutType('separate')">메인화면 별도</button>
@@ -254,6 +262,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div id="bg-list"></div>
             <button class="add-btn" onclick="addBgImage()">+ 배경 이미지 추가</button>
             <input type="file" id="bg-file-input" accept="image/*" style="display:none;" onchange="onBgFileSelected(event)">
+            <input type="file" id="stage-img-file-input" accept="image/*" style="display:none;" onchange="onStageImgFileSelected(event)">
           </div>
           <div class="sect-head">로고</div>
           <div class="ed-sect">
@@ -263,11 +272,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             </div>
             <div id="logo-img-sec">
               <input class="fi-sm" id="p-logo-url" placeholder="로고 이미지 URL (투명 PNG 권장)">
-              <button class="bg-up-btn" onclick="document.getElementById('logo-file-inp').click()" style="margin-top:4px;">📁 직접 업로드</button>
-              <input type="file" id="logo-file-inp" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'p-logo-url','cms_projects/logo')">
+              <button class="bg-up-btn" onclick="document.getElementById('logo-file-inp').click()" style="margin-top:4px;">📁 업로드</button>
+              <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:4px;">⚠️ 배경이 투명한 PNG만 업로드하세요 — 색상 자동 적용됩니다</div>
+              <input type="file" id="logo-file-inp" accept="image/png" style="display:none;" onchange="uploadSingleImage(event,'p-logo-url','cms_projects/logo',true)">
+              <div style="margin-top:8px;">
+                <div class="ed-lbl">너비 (%)</div>
+                <input class="fi-sm" type="number" id="p-logo-img-w" value="76" min="10" max="100" step="5" placeholder="76" style="margin-bottom:0;" oninput="curLogoImgW=Math.min(100,+this.value||76);schedulePreviewUpdate()">
+                <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:3px;">화면 가로 대비 비율 — 높이는 이미지 비율에 맞게 자동</div>
+              </div>
             </div>
             <div id="logo-txt-sec" style="display:none;">
-              <input class="fi-sm" id="p-logo-txt" placeholder="로고 텍스트" oninput="schedulePreviewUpdate()">
+              <textarea class="fi-sm" id="p-logo-txt" placeholder="로고 텍스트 (줄바꿈: Enter)" rows="3" oninput="schedulePreviewUpdate()" style="resize:vertical;line-height:1.5;"></textarea>
               <div style="display:flex;gap:6px;margin-top:4px;">
                 <select class="fi-sm" id="p-logo-txt-size" style="flex:1;margin-bottom:0;" onchange="schedulePreviewUpdate()">
                   <option value="18">작게 (18px)</option>
@@ -288,8 +303,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div class="ed-sect">
               <div class="ed-lbl">아이콘 <span style="font-weight:400;opacity:.55;">(투명 PNG)</span></div>
               <input class="fi-sm" id="p-cta-icon" placeholder="https://…">
-              <button class="bg-up-btn" onclick="document.getElementById('cta-icon-file-inp').click()" style="margin-top:4px;">📁 직접 업로드</button>
-              <input type="file" id="cta-icon-file-inp" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'p-cta-icon','cms_projects/cta')">
+              <button class="bg-up-btn" onclick="document.getElementById('cta-icon-file-inp').click()" style="margin-top:4px;">📁 업로드</button>
+              <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:4px;">⚠️ 배경이 투명한 PNG만 업로드하세요 — 색상 자동 적용됩니다</div>
+              <input type="file" id="cta-icon-file-inp" accept="image/png" style="display:none;" onchange="uploadSingleImage(event,'p-cta-icon','cms_projects/cta',true)">
             </div>
             <div class="ed-sect">
               <div class="ed-lbl">버튼 문구</div>
@@ -397,7 +413,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 <div id="guide-preview-wrap" style="display:none;position:fixed;right:16px;top:72px;z-index:300;width:196px;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
     <span style="font-size:11px;font-weight:900;color:#000;">실시간 미리보기</span>
-    <button onclick="toggleGuidePreview()" style="background:transparent;border:none;font-size:16px;cursor:pointer;line-height:1;padding:2px 4px;">✕</button>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <button class="prev-sz-btn" onclick="setPreviewSize(-50)" title="작게">−</button>
+      <button class="prev-sz-btn" onclick="setPreviewSize(+50)" title="크게">+</button>
+      <button onclick="toggleGuidePreview()" style="background:transparent;border:none;font-size:16px;cursor:pointer;line-height:1;padding:2px 4px;">✕</button>
+    </div>
   </div>
   <div id="guide-preview-phone" style="border:3px solid #000;border-radius:18px;overflow:hidden;position:relative;background:#fff;box-shadow:0 6px 24px rgba(0,0,0,.2);width:196px;height:348px;">
     <div id="gprev-header" style="position:absolute;top:0;left:0;right:0;z-index:2;background:#fff;border-bottom:1.5px solid #000;"></div>
@@ -734,7 +754,11 @@ let pendingBgUploadIdx = null;
 let fmReqOn = false;
 let curLogoTextSize = '24';
 let curLogoTextAlign = 'center';
+let curLogoImgW = 76;
+let previewWidth = 196;
 let previewTimer = null;
+let pendingStageUploadIdx = null;
+let pendingUploadBtn = null;
 
 /* ── URL Preview ── */
 function updateUrlPreview() {
@@ -791,8 +815,40 @@ function setLogoAlign(a) {
   schedulePreviewUpdate();
 }
 
+/* ── Key colors ── */
+function renderKeyColorList() {
+  const el = document.getElementById('key-color-list');
+  if (!el) return;
+  if (!curKeyColors.length) { el.innerHTML = '<div class="empty-msg" style="padding:8px 0;">색상 없음</div>'; return; }
+  el.innerHTML = curKeyColors.map((c, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1.5px solid rgba(0,0,0,.1);">
+      <input type="color" id="kcp-${i}" value="${c}" style="width:36px;height:32px;border:1.5px solid #000;padding:1px;cursor:pointer;flex-shrink:0;" oninput="onKcPick(${i},this.value)">
+      <input id="kch-${i}" class="fi-sm" value="${c.toUpperCase()}" style="flex:1;margin-bottom:0;text-transform:uppercase;" oninput="onKcHex(${i},this.value)">
+      ${curKeyColors.length > 2 ? `<button class="rm-btn2" onclick="removeKeyColor(${i})">✕</button>` : ''}
+    </div>`).join('');
+}
+function onKcPick(i, v) {
+  curKeyColors[i] = v;
+  const hex = document.getElementById('kch-'+i);
+  if (hex) hex.value = v.toUpperCase();
+  schedulePreviewUpdate();
+}
+function onKcHex(i, v) {
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+    curKeyColors[i] = v;
+    const p = document.getElementById('kcp-'+i);
+    if (p) p.value = v;
+    schedulePreviewUpdate();
+  }
+}
+function addKeyColor() { curKeyColors.push('#000000'); renderKeyColorList(); schedulePreviewUpdate(); }
+function removeKeyColor(i) {
+  if (curKeyColors.length <= 2) { alert('최소 2개 색상이 필요해요.'); return; }
+  curKeyColors.splice(i, 1); renderKeyColorList(); schedulePreviewUpdate();
+}
+
 /* ── Stats (realtime counters) ── */
-const ELEM_LABELS = {edition:'로고 위 문구',logo:'로고',dday:'D-Day',stats:'카운터'};
+const ELEM_LABELS = {edition:'문구',logo:'로고',dday:'D-Day',stats:'카운터'};
 function renderStatList() {
   const el = document.getElementById('stats-list');
   if (!curStats.length) { el.innerHTML = '<div class="empty-msg" style="padding:8px 0;">카운터 없음</div>'; return; }
@@ -911,10 +967,41 @@ function openBgUpload(i) {
   pendingBgUploadIdx = i;
   document.getElementById('bg-file-input').click();
 }
-async function uploadSingleImage(event, fieldId, storagePath) {
+async function checkPngTransparency(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.min(img.width,120); canvas.height = Math.min(img.height,120);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        const d = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+        for (let i=3;i<d.length;i+=4){if(d[i]<250){resolve(true);return;}}
+        resolve(false);
+      };
+      img.onerror = ()=>resolve(null);
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+async function uploadSingleImage(event, fieldId, storagePath, checkTransparency=false) {
   const file = event.target.files[0];
   event.target.value = '';
   if (!file) return;
+  const fileId = event.target.id;
+  const btn = fileId ? document.querySelector(`[onclick*="${fileId}"]`) : null;
+  const origTxt = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = '⏳ 업로드 중…'; btn.disabled = true; }
+  if (checkTransparency) {
+    const isTransparent = await checkPngTransparency(file);
+    if (isTransparent === false) {
+      const ok = confirm('배경이 투명하지 않은 PNG인 것 같아요.\n배경이 있으면 로고가 색상 사각형으로 보일 수 있어요.\n그래도 계속할까요?');
+      if (!ok) { if(btn){btn.textContent=origTxt;btn.disabled=false;} return; }
+    }
+  }
   const projId = document.getElementById('p-id').value.trim() || 'tmp';
   const ext = file.name.split('.').pop();
   const path = `${storagePath}/${projId}/${Date.now()}.${ext}`;
@@ -923,8 +1010,11 @@ async function uploadSingleImage(event, fieldId, storagePath) {
     await ref.put(file);
     const url = await ref.getDownloadURL();
     document.getElementById(fieldId).value = url;
+    schedulePreviewUpdate();
   } catch(err) {
     alert('업로드 실패: ' + err.message + '\n\nFirebase Storage 규칙에서 인증된 쓰기를 허용해야 해요.');
+  } finally {
+    if (btn) { btn.textContent = origTxt; btn.disabled = false; }
   }
 }
 async function uploadBlockImage(event, urlFieldId, prevId) {
@@ -1159,11 +1249,39 @@ function renderStageList() {
           <button class="tgl-btn${s.displayType==='image'?' on':''}" onclick="curStages[${i}].displayType='image';renderStageList();" style="font-size:11px;padding:5px 0;">이미지형</button>
         </div>
       </div>
-      ${s.displayType==='image'?`<input class="fi-sm" style="margin-top:5px;" placeholder="카드 배경 이미지 URL" value="${(s.stageImageUrl||'').replace(/"/g,'&quot;')}" oninput="curStages[${i}].stageImageUrl=this.value">`:''}</div>`).join('');
+      ${s.displayType==='image'?`<div style="display:flex;gap:4px;margin-top:5px;align-items:center;"><input class="fi-sm" style="flex:1;margin-bottom:0;" placeholder="카드 배경 이미지 URL" value="${(s.stageImageUrl||'').replace(/"/g,'&quot;')}" oninput="curStages[${i}].stageImageUrl=this.value"><button class="bg-up-btn" onclick="openStageImageUpload(${i},this)" style="flex-shrink:0;">📁 업로드</button></div>`:''}</div>`).join('');
 }
 function addStage()   { curStages.push({id:uid(),title:'',displayType:'text',stageImageUrl:'',order:curStages.length}); renderStageList(); }
 function mvStage(i,d) { const j=i+d; if(j<0||j>=curStages.length) return; [curStages[i],curStages[j]]=[curStages[j],curStages[i]]; renderStageList(); }
 function rmStage(i)   { curStages.splice(i,1); renderStageList(); }
+function openStageImageUpload(i, btn) {
+  pendingStageUploadIdx = i;
+  pendingUploadBtn = btn || null;
+  document.getElementById('stage-img-file-input').click();
+}
+async function onStageImgFileSelected(e) {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file || pendingStageUploadIdx === null) return;
+  const i = pendingStageUploadIdx;
+  const btn = pendingUploadBtn;
+  pendingStageUploadIdx = null; pendingUploadBtn = null;
+  const origTxt = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  const projId = document.getElementById('p-id').value.trim() || 'tmp';
+  const ext = file.name.split('.').pop();
+  const path = `cms_projects/${projId}/stages/${Date.now()}.${ext}`;
+  try {
+    const ref = storage.ref(path);
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
+    curStages[i].stageImageUrl = url;
+    renderStageList();
+  } catch(err) {
+    if (btn) { btn.textContent = origTxt; btn.disabled = false; }
+    alert('업로드 실패: ' + err.message + '\n\nFirebase Storage 규칙에서 인증된 쓰기를 허용해야 해요.');
+  }
+}
 
 /* ══════════════════════════════════════
    Project CRUD
@@ -1189,8 +1307,9 @@ function showProjView(v) {
 function backToProjects() { showProjView('list'); curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[]; curUsers=[]; }
 function startNewProject() {
   curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}];
-  curAuthKeyField='name'; curUsers=[]; curLogoTextSize='24'; curLogoTextAlign='center';
+  curAuthKeyField='name'; curUsers=[]; curLogoTextSize='24'; curLogoTextAlign='center'; curLogoImgW=76;
   curStats=[]; curElementOrder=['edition','logo','dday','stats'];
+  curKeyColors=['#00CE6B','#FFF100','#F95548','#0BC6FF'];
   ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-col','p-auth-title','p-auth-desc']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   const szEl = document.getElementById('p-logo-txt-size'); if(szEl) szEl.value='24';
@@ -1199,7 +1318,7 @@ function startNewProject() {
   urlPrev.textContent = ''; urlPrev.href = '#'; urlPrev.style.display = 'none';
   setLogoAlign('center');
   setLogoType('image'); setLayoutType('separate'); setDday(false); setAuth(false);
-  renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList();
+  renderKeyColorList(); renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList();
   switchInnerTab('basic'); showProjView('edit');
 }
 async function editProject(id) {
@@ -1215,6 +1334,7 @@ async function editProject(id) {
     curAuthKeyField = d.authKeyField || curAuthFields[0]?.key || 'name';
     curStats = d.stats || [];
     curElementOrder = d.elementOrder || ['edition','logo','dday','stats'];
+    curKeyColors = (d.keyColors && d.keyColors.length >= 2) ? d.keyColors : ['#00CE6B','#FFF100','#F95548','#0BC6FF'];
 
     document.getElementById('p-id').value         = id;
     document.getElementById('p-name').value       = d.name||'';
@@ -1223,7 +1343,9 @@ async function editProject(id) {
     document.getElementById('p-logo-txt').value   = d.logoText||'';
     curLogoTextSize  = d.logoTextSize  || '24';
     curLogoTextAlign = d.logoTextAlign || 'center';
+    curLogoImgW      = d.logoImgW || 76;
     const szEl = document.getElementById('p-logo-txt-size'); if(szEl) szEl.value = curLogoTextSize;
+    const wEl  = document.getElementById('p-logo-img-w');    if(wEl)  wEl.value  = curLogoImgW;
     setLogoAlign(curLogoTextAlign);
     document.getElementById('p-cta-icon').value   = d.ctaIconUrl||'';
     document.getElementById('p-cta-text').value   = d.ctaText||'';
@@ -1238,7 +1360,7 @@ async function editProject(id) {
     setLayoutType(d.layoutType||'separate');
     setDday(d.ddayEnabled||false);
     setAuth(d.authEnabled||false);
-    renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList();
+    renderKeyColorList(); renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList();
     if (d.authEnabled) await loadUsers();
     switchInnerTab('basic'); showProjView('edit');
   } catch(e) { alert('불러오기 실패: '+e.message); }
@@ -1260,6 +1382,7 @@ async function saveProject() {
     logoText:      document.getElementById('p-logo-txt').value.trim(),
     logoTextSize:  document.getElementById('p-logo-txt-size')?.value || '24',
     logoTextAlign: curLogoTextAlign,
+    logoImgW:      curLogoImgW,
     ctaIconUrl:   document.getElementById('p-cta-icon').value.trim(),
     ctaText:      document.getElementById('p-cta-text').value.trim(),
     ddayEnabled:  curDdayEnabled,
@@ -1274,6 +1397,7 @@ async function saveProject() {
     stages:       curStages.map((s,i)=>({...s,order:i})),
     stats:        curStats,
     elementOrder: curElementOrder,
+    keyColors:    curKeyColors,
     updatedAt:    firebase.firestore.FieldValue.serverTimestamp(),
   };
 
@@ -1620,6 +1744,24 @@ function gBlockHtml(b,S){
 /* ══════════════════════════════════════
    실시간 미리보기
 ══════════════════════════════════════ */
+function applyPreviewSize() {
+  const pw = document.getElementById('preview-wrap');
+  const pp = document.getElementById('preview-phone');
+  const gpw = document.getElementById('guide-preview-wrap');
+  const gpp = document.getElementById('guide-preview-phone');
+  const h = Math.round(previewWidth * (348/196));
+  if (pw)  pw.style.width  = previewWidth+'px';
+  if (pp)  { pp.style.width=previewWidth+'px'; pp.style.height=h+'px'; }
+  if (gpw) gpw.style.width = previewWidth+'px';
+  if (gpp) { gpp.style.width=previewWidth+'px'; gpp.style.height=h+'px'; }
+}
+function setPreviewSize(delta) {
+  previewWidth = Math.max(140, Math.min(380, previewWidth + delta));
+  localStorage.setItem('adminPreviewWidth', previewWidth);
+  applyPreviewSize();
+  schedulePreviewUpdate();
+  scheduleGuidePreviewUpdate();
+}
 function schedulePreviewUpdate() {
   const wrap = document.getElementById('preview-wrap');
   if (!wrap || wrap.style.display === 'none') return;
@@ -1678,7 +1820,7 @@ function renderPreview() {
     /* logo */
     if (curLogoType==='image' && logoUrl) {
       /* replicate CSS mask: colored div with mask */
-      topHtml += `<div style="width:76%;max-width:${Math.round(300*S)}px;aspect-ratio:835/700;background-color:#00CE6B;-webkit-mask-image:url(${logoUrl});mask-image:url(${logoUrl});-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>`;
+      topHtml += `<div style="width:${curLogoImgW}%;max-width:${Math.round(300*S)}px;aspect-ratio:835/700;background-color:#00CE6B;-webkit-mask-image:url(${logoUrl});mask-image:url(${logoUrl});-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>`;
     } else if (curLogoType==='text' && logoTxt) {
       topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:#00CE6B;text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
     } else {
