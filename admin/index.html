@@ -1813,15 +1813,20 @@ function gBlockHtml(b,S){
    실시간 미리보기
 ══════════════════════════════════════ */
 function applyPreviewSize() {
-  const pw = document.getElementById('preview-wrap');
-  const pp = document.getElementById('preview-phone');
-  const gpw = document.getElementById('guide-preview-wrap');
-  const gpp = document.getElementById('guide-preview-phone');
-  const h = Math.round(previewWidth * (348/196));
-  if (pw)  pw.style.width  = previewWidth+'px';
-  if (pp)  { pp.style.width=previewWidth+'px'; pp.style.height=h+'px'; }
-  if (gpw) gpw.style.width = previewWidth+'px';
-  if (gpp) { gpp.style.width=previewWidth+'px'; gpp.style.height=h+'px'; }
+  const BASE_W = 196, BASE_H = 348;
+  const scale = previewWidth / BASE_W;
+  [['preview-phone','preview-wrap'],['guide-preview-phone','guide-preview-wrap']].forEach(([phoneId,wrapId])=>{
+    const pp = document.getElementById(phoneId);
+    const pw = document.getElementById(wrapId);
+    if (pp) {
+      pp.style.width  = BASE_W + 'px';
+      pp.style.height = BASE_H + 'px';
+      pp.style.transform = `scale(${scale.toFixed(4)})`;
+      pp.style.transformOrigin = 'top left';
+      pp.style.marginBottom = Math.round((scale - 1) * BASE_H) + 'px';
+    }
+    if (pw) pw.style.width = Math.round(BASE_W * scale) + 'px';
+  });
 }
 function setPreviewSize(delta) {
   previewWidth = Math.max(140, Math.min(380, previewWidth + delta));
