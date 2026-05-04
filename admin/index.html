@@ -278,17 +278,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <button class="bg-up-btn" onclick="document.getElementById('logo-file-inp').click()" style="margin-top:4px;">📁 업로드</button>
               <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:4px;">⚠️ 배경이 투명한 PNG만 업로드하세요 — 색상 자동 적용됩니다</div>
               <input type="file" id="logo-file-inp" accept="image/png" style="display:none;" onchange="uploadSingleImage(event,'p-logo-url','cms_projects/logo',true)">
-              <div style="display:flex;gap:6px;margin-top:8px;">
-                <div style="flex:1;">
-                  <div class="ed-lbl">높이 (px)</div>
-                  <input class="fi-sm" type="number" id="p-logo-img-h" value="80" min="10" step="10" placeholder="80" style="margin-bottom:0;" oninput="curLogoImgH=+this.value||80;schedulePreviewUpdate()">
-                </div>
-                <div style="flex:1;">
-                  <div class="ed-lbl">너비 (%)</div>
-                  <input class="fi-sm" type="number" id="p-logo-img-w" value="76" min="10" max="100" step="5" placeholder="76" style="margin-bottom:0;" oninput="curLogoImgW=Math.min(100,+this.value||76);schedulePreviewUpdate()">
-                </div>
+              <div style="margin-top:8px;">
+                <div class="ed-lbl">너비 (%)</div>
+                <input class="fi-sm" type="number" id="p-logo-img-w" value="76" min="10" max="100" step="5" placeholder="76" style="margin-bottom:0;" oninput="curLogoImgW=Math.min(100,+this.value||76);schedulePreviewUpdate()">
+                <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:3px;">화면 가로 대비 비율 — 높이는 이미지 비율에 맞게 자동</div>
               </div>
-              <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:3px;">너비는 화면 가로 대비 비율, 높이는 픽셀 단위 (제한 없음)</div>
             </div>
             <div id="logo-txt-sec" style="display:none;">
               <textarea class="fi-sm" id="p-logo-txt" placeholder="로고 텍스트 (줄바꿈: Enter)" rows="3" oninput="schedulePreviewUpdate()" style="resize:vertical;line-height:1.5;"></textarea>
@@ -734,7 +728,8 @@ let pendingBgUploadIdx = null;
 let pendingStageUploadIdx = null;
 let fmReqOn = false;
 let curLogoBase64 = ''; // base64 data URL of logo PNG (used for CSS mask to avoid CORS)
-let curLogoImgH = 80;  // logo image height (px)
+let curLogoImgRatio = null; // natural width/height ratio — auto-detected on upload
+let curLogoImgH = 80;  // fallback height (px) for old projects without ratio
 let curLogoImgW = 76;  // logo image width (% of container)
 let curLogoTextSize = '24';
 let curLogoTextAlign = 'center';
@@ -978,7 +973,7 @@ async function uploadSingleImage(event, fieldId, storagePath, checkTransparency=
       if (!ok) return;
     }
   }
-  // 로고 이미지는 base64로도 저장 (CSS mask에 사용 → CORS 우회)
+  // 로고 이미지는 base64로도 저장 (CSS mask에 사용 → CORS 우회) + 자연 비율 감지
   const isLogo = fieldId === 'p-logo-url';
   let base64 = '';
   if (isLogo) {
@@ -986,6 +981,13 @@ async function uploadSingleImage(event, fieldId, storagePath, checkTransparency=
       const r = new FileReader();
       r.onload = e => res(e.target.result);
       r.readAsDataURL(file);
+    });
+    // 이미지 가로세로 비율 자동 감지
+    curLogoImgRatio = await new Promise(res => {
+      const img = new Image();
+      img.onload = () => res(img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : null);
+      img.onerror = () => res(null);
+      img.src = base64;
     });
   }
   const projId = document.getElementById('p-id').value.trim() || 'tmp';
@@ -1297,12 +1299,11 @@ function showProjView(v) {
 function backToProjects() { showProjView('list'); curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[]; curUsers=[]; }
 function startNewProject() {
   curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}];
-  curAuthKeyField='name'; curUsers=[]; curLogoBase64=''; curLogoImgH=80; curLogoImgW=76; curLogoTextSize='24'; curLogoTextAlign='center';
+  curAuthKeyField='name'; curUsers=[]; curLogoBase64=''; curLogoImgRatio=null; curLogoImgW=76; curLogoTextSize='24'; curLogoTextAlign='center';
   curStats=[]; curKeyColors=['#00CE6B','#FFF100']; curElementOrder=['edition','logo','dday','stats'];
   ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-col','p-auth-title','p-auth-desc']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   const szEl = document.getElementById('p-logo-txt-size'); if(szEl) szEl.value='24';
-  const hEl = document.getElementById('p-logo-img-h'); if(hEl) hEl.value='80';
   const wEl = document.getElementById('p-logo-img-w'); if(wEl) wEl.value='76';
   document.getElementById('proj-del').style.display = 'none';
   const urlPrev = document.getElementById('p-url-preview');
@@ -1332,12 +1333,12 @@ async function editProject(id) {
     document.getElementById('p-logo-url').value   = d.logoImageUrl||'';
     document.getElementById('p-logo-txt').value   = d.logoText||'';
     curLogoBase64    = d.logoBase64 || '';
-    curLogoImgH      = d.logoImgH || 80;
+    curLogoImgRatio  = d.logoImgRatio || null;
+    curLogoImgH      = d.logoImgH || 80; // fallback for old projects
     curLogoImgW      = d.logoImgW || 76;
     curLogoTextSize  = d.logoTextSize  || '24';
     curLogoTextAlign = d.logoTextAlign || 'center';
     const szEl = document.getElementById('p-logo-txt-size'); if(szEl) szEl.value = curLogoTextSize;
-    const hEl = document.getElementById('p-logo-img-h'); if(hEl) hEl.value = curLogoImgH;
     const wEl = document.getElementById('p-logo-img-w'); if(wEl) wEl.value = curLogoImgW;
     setLogoAlign(curLogoTextAlign);
     document.getElementById('p-cta-icon').value   = d.ctaIconUrl||'';
@@ -1374,7 +1375,8 @@ async function saveProject() {
     logoType:      curLogoType,
     logoImageUrl:  document.getElementById('p-logo-url').value.trim(),
     logoBase64:    curLogoBase64 || '',
-    logoImgH:      curLogoImgH,
+    logoImgRatio:  curLogoImgRatio,
+    logoImgH:      curLogoImgH, // kept for backward compat
     logoImgW:      curLogoImgW,
     logoText:      document.getElementById('p-logo-txt').value,
     logoTextSize:  document.getElementById('p-logo-txt-size')?.value || '24',
@@ -1663,9 +1665,11 @@ function renderPreview() {
         topHtml += `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:${KC};margin-bottom:-4px;">${edition}</div>`;
       } else if (key === 'logo') {
         if (curLogoType==='image' && logoUrl) {
-          const lH = Math.round(curLogoImgH * S);
           const maskSrc = curLogoBase64 || logoUrl;
-          topHtml += `<div style="width:${curLogoImgW}%;height:${lH}px;background-color:${KC};-webkit-mask-image:url('${maskSrc}');mask-image:url('${maskSrc}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;margin:0 auto;"></div>`;
+          const sizeStyle = curLogoImgRatio
+            ? `aspect-ratio:${curLogoImgRatio};`
+            : `height:${Math.round(curLogoImgH*S)}px;`;
+          topHtml += `<div style="width:${curLogoImgW}%;${sizeStyle}background-color:${KC};-webkit-mask-image:url('${maskSrc}');mask-image:url('${maskSrc}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;margin:0 auto;"></div>`;
         } else if (curLogoType==='text' && logoTxt) {
           topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:${KC};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;white-space:pre-line;">${logoTxt}</div>`;
         } else {
