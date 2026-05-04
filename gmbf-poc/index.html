@@ -110,6 +110,7 @@ body{background:var(--c);transition:background-color 1s ease;display:flex;justif
 .g-split-img img{width:100%;display:block;max-height:260px;object-fit:cover;}
 .g-split-text{padding:16px 20px;border-top:2px solid #000;font-size:15px;line-height:1.6;max-height:160px;overflow-y:auto;}
 .guide-empty{padding:60px 20px;text-align:center;color:rgba(0,0,0,.4);font-size:14px;}
+.g-block-embed{width:100%;}
 /* modal */
 .modal-ov{display:none;position:fixed;inset:0;z-index:300;justify-content:center;align-items:center;background:rgba(0,0,0,.42);}
 .modal-ov.on{display:flex;}
@@ -243,6 +244,8 @@ let AUTH_COLLECTION = '';
 let AUTH_FIELDS    = [];
 let AUTH_KEY_FIELD = '';
 let STAGES         = [];
+let STATS          = [];   // [{id, label, collection, countType, unit, enabled}]
+let ELEMENT_ORDER  = ['edition','logo','dday','stats'];
 
 /* slideshow */
 let bgImages   = [];   // [{url, holdTime, transitionTime}]
@@ -291,37 +294,18 @@ function applySettings(d){
   AUTH_FIELDS     = d.authFields     || [{key:'name',label:'이름',type:'string',required:true}];
   AUTH_KEY_FIELD  = d.authKeyField   || (AUTH_FIELDS[0]?.key||'name');
   STAGES = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0)).map(s=>({
-    id:s.id||'',guideId:s.guideId||'',title:s.title||'',status:s.status||'시작 전',progress:s.progress||0
+    id:s.id||'',guideId:s.guideId||'',title:s.title||'',status:s.status||'시작 전',
+    progress:s.progress||0,displayType:s.displayType||'text',stageImageUrl:s.stageImageUrl||''
   }));
+  STATS = (d.stats||[]).filter(s=>s.enabled);
+  ELEMENT_ORDER = d.elementOrder || ['edition','logo','dday','stats'];
 
   /* title */
   if(d.name) document.title = d.name;
 
-  /* D-day */
-  if(DDAY_ENABLED && DDAY_DATE){
-    const txt = calcDDay(DDAY_DATE);
-    document.getElementById('dday-num').textContent = txt;
-    document.getElementById('merged-dday').textContent = txt;
-  }
-
-  /* edition text */
-  document.getElementById('edition-text').textContent = d.editionText||'';
-  document.getElementById('merged-edition').textContent = d.editionText||'';
-
   /* project title in merged topbar */
   if(d.name) document.getElementById('merged-title').textContent = d.name;
   if(d.name) document.getElementById('topbar-title').textContent = d.name;
-
-  /* logo */
-  if(d.logoType==='text'&&d.logoText){
-    document.getElementById('logo-mask').style.display='none';
-    const fb=document.getElementById('logo-fallback');
-    fb.textContent=d.logoText; fb.style.display='block';
-  } else if(d.logoImageUrl){
-    setMaskUrl('#logo-mask',d.logoImageUrl);
-    document.getElementById('logo-mask').style.display='';
-    document.getElementById('logo-fallback').style.display='none';
-  }
 
   /* CTA */
   if(d.ctaIconUrl){ setMaskUrl('#cta-icon',d.ctaIconUrl); setMaskUrl('#prep-cta-icon',d.ctaIconUrl); }
@@ -338,14 +322,77 @@ function applySettings(d){
   bgImages = rawBgs.map(b=>typeof b==='string'?{url:b,holdTime:10,transitionTime:2}:b);
   initSlides();
 
+  /* element order: rebuild top-group in order */
+  renderTopGroup(d);
+
   /* layout */
   if(LAYOUT_TYPE==='merged'){
     document.getElementById('main-content').style.display='none';
     document.getElementById('merged-content').style.display='flex';
+    /* merged: show edition+dday in merged-stage-wrap */
+    document.getElementById('merged-edition').textContent = d.editionText||'';
+    if(DDAY_ENABLED && DDAY_DATE) document.getElementById('merged-dday').textContent = calcDDay(DDAY_DATE);
     renderMergedStages();
   } else {
     renderSeparateStages();
   }
+
+  /* load real-time counters */
+  if(STATS.length) loadStats();
+}
+
+function renderTopGroup(d){
+  const tg = document.getElementById('main-content')?.querySelector('.top-group');
+  if(!tg) return;
+  tg.innerHTML = '';
+  ELEMENT_ORDER.forEach(key => {
+    if(key==='edition'){
+      const el=document.createElement('div');
+      el.className='edition-text'; el.id='edition-text';
+      el.textContent=d.editionText||'';
+      tg.appendChild(el);
+    } else if(key==='logo'){
+      const wrap=document.createElement('div');
+      wrap.className='logo-wrap';
+      wrap.innerHTML=`<div class="logo-mask" id="logo-mask" style="display:none;"></div>
+        <div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>`;
+      tg.appendChild(wrap);
+      /* re-apply logo settings now that DOM exists */
+      if(d.logoType==='text'&&d.logoText){
+        document.getElementById('logo-mask').style.display='none';
+        const fb=document.getElementById('logo-fallback');
+        fb.textContent=d.logoText;
+        fb.style.fontSize=(d.logoTextSize||'20')+'px';
+        fb.style.textAlign=d.logoTextAlign||'center';
+        fb.style.display='block';
+      } else if(d.logoImageUrl){
+        setMaskUrl('#logo-mask',d.logoImageUrl);
+        document.getElementById('logo-mask').style.display='';
+        document.getElementById('logo-fallback').style.display='none';
+      }
+    } else if(key==='dday'){
+      const el=document.createElement('div');
+      el.className='dday-num'; el.id='dday-num';
+      if(DDAY_ENABLED && DDAY_DATE) el.textContent=calcDDay(DDAY_DATE);
+      tg.appendChild(el);
+    } else if(key==='stats'){
+      const el=document.createElement('div');
+      el.className='visitor-line'; el.id='visitor-line';
+      tg.appendChild(el);
+    }
+  });
+}
+
+async function loadStats(){
+  const vl = document.getElementById('visitor-line');
+  if(!vl||!STATS.length) return;
+  try {
+    const parts = await Promise.all(STATS.map(async s => {
+      const snap = await db.collection(s.collection).get();
+      return `${s.label} ${snap.size}${s.unit||''}`;
+    }));
+    vl.textContent = parts.join(' · ');
+  } catch(e) { /* silently fail */ }
 }
 
 /* ── Slideshow ── */
@@ -392,28 +439,50 @@ function advanceSlide(){
 function renderSeparateStages(){
   const el=document.getElementById('stage-list');
   if(!STAGES.length){ el.innerHTML='<div style="padding:40px 20px;text-align:center;color:rgba(0,0,0,.4);font-size:14px;">준비된 단계가 없어요.</div>'; return; }
-  el.innerHTML=STAGES.map((s,i)=>`
-    <div class="stage-card" onclick="goToStage(${i})">
+  el.innerHTML=STAGES.map((s,i)=>{
+    if(s.displayType==='image' && s.stageImageUrl){
+      return `<div class="stage-card" onclick="goToStage(${i})" style="overflow:hidden;position:relative;min-height:100px;background:url(${s.stageImageUrl}) center/cover no-repeat;">
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,.45);"></div>
+        <div class="stage-card-body" style="position:relative;z-index:1;">
+          <div class="status-dot" style="background:rgba(255,255,255,.9);color:#000;">${s.status}</div>
+          <div class="stage-title" style="color:#fff;">${s.title}</div>
+        </div>
+        <div class="stage-pbar" style="position:relative;z-index:1;"><div class="stage-pbar-fill" style="background:rgba(255,255,255,.7);width:${s.progress}%">${s.progress>0?'<span class="stage-pct-txt" style="color:#000;">'+s.progress+'%</span>':''}</div></div>
+      </div>`;
+    }
+    return `<div class="stage-card" onclick="goToStage(${i})">
       <div class="stage-card-body">
         <div class="status-dot">${s.status}</div>
         <div class="stage-title">${s.title}</div>
       </div>
       <div class="stage-pbar"><div class="stage-pbar-fill" style="width:${s.progress}%">${s.progress>0?'<span class="stage-pct-txt">'+s.progress+'%</span>':''}</div></div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 /* ── MERGED layout ── */
 function renderMergedStages(){
   const el=document.getElementById('merged-stage-list');
   if(!STAGES.length){ el.innerHTML='<div style="padding:40px 20px;text-align:center;color:rgba(255,255,255,.6);font-size:14px;">준비된 단계가 없어요.</div>'; return; }
-  el.innerHTML=STAGES.map((s,i)=>`
-    <div class="stage-card merged" onclick="goToStage(${i})">
+  el.innerHTML=STAGES.map((s,i)=>{
+    if(s.displayType==='image' && s.stageImageUrl){
+      return `<div class="stage-card merged" onclick="goToStage(${i})" style="overflow:hidden;position:relative;background:url(${s.stageImageUrl}) center/cover no-repeat;border-color:rgba(255,255,255,.7);">
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,.5);"></div>
+        <div class="stage-card-body" style="position:relative;z-index:1;">
+          <div class="status-dot merged">${s.status}</div>
+          <div class="stage-title merged">${s.title}</div>
+        </div>
+        <div class="stage-pbar" style="position:relative;z-index:1;"><div class="stage-pbar-fill merged" style="width:${s.progress}%">${s.progress>0?'<span class="stage-pct-txt" style="color:#000;">'+s.progress+'%</span>':''}</div></div>
+      </div>`;
+    }
+    return `<div class="stage-card merged" onclick="goToStage(${i})">
       <div class="stage-card-body">
         <div class="status-dot merged">${s.status}</div>
         <div class="stage-title merged">${s.title}</div>
       </div>
       <div class="stage-pbar"><div class="stage-pbar-fill merged" style="width:${s.progress}%">${s.progress>0?'<span class="stage-pct-txt" style="color:#000;">'+s.progress+'%</span>':''}</div></div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 /* ── CTA ── */
@@ -522,12 +591,21 @@ async function openGuide(guideId,title){
 function closeGuide(){ document.getElementById('guide-screen').classList.remove('open'); }
 function showGuideEmpty(msg){ document.getElementById('guide-scroll-blocks').innerHTML='<div class="guide-empty">'+msg+'</div>'; document.getElementById('guide-scroll-body').style.display='block'; }
 function blockHtml(b){
-  if(b.type==='text') return '<div class="g-block-text"><div class="g-block-text-inner">'+(b.textContent||'')+'</div></div>';
-  if(b.type==='image') return '<div class="g-block-image"><img src="'+(b.imageUrl||'')+'" alt="" loading="lazy"></div>';
+  if(b.type==='text'){
+    const inner='<div class="g-block-text"><div class="g-block-text-inner">'+(b.textContent||'')+'</div></div>';
+    return b.linkUrl?`<a href="${b.linkUrl}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit;">${inner}</a>`:inner;
+  }
+  if(b.type==='image'){
+    const img=`<div class="g-block-image"><img src="${b.imageUrl||''}" alt="" loading="lazy"></div>`;
+    return b.linkUrl?`<a href="${b.linkUrl}" target="_blank" rel="noopener" style="display:block;">${img}</a>`:img;
+  }
   if(b.type==='mixed'){
     if(b.mixedLayout==='split')
       return '<div class="g-block-mixed-split"><div class="g-split-img"><img src="'+(b.imageUrl||'')+'" alt="" loading="lazy"></div><div class="g-split-text">'+(b.textContent||'')+'</div></div>';
     return '<div class="g-block-mixed-overlay"><img src="'+(b.imageUrl||'')+'" alt="" loading="lazy"><div class="g-overlay-text"><div class="g-overlay-text-inner">'+(b.textContent||'')+'</div></div></div>';
+  }
+  if(b.type==='embed' && b.embedUrl){
+    return `<div class="g-block-embed"><iframe src="${b.embedUrl}" width="100%" height="${b.embedHeight||500}" frameborder="0" allowfullscreen style="display:block;border:none;"></iframe></div>`;
   }
   return '';
 }
