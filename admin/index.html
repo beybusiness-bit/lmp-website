@@ -927,7 +927,7 @@ function renderBgImages() {
           <div class="bg-url-row">
             <input class="bg-url-inp" value="${(bg.url||'').replace(/"/g,'&quot;')}" placeholder="이미지 URL 또는 업로드"
               oninput="curBgImages[${i}].url=this.value;updateBgThumb(${i},this.value)">
-            <button class="bg-up-btn" onclick="openBgUpload(${i})">📁 업로드</button>
+            <button class="bg-up-btn" onclick="openBgUpload(${i},this)">📁 업로드</button>
           </div>
           <div class="bg-timing">
             <div class="timing-wrap">
@@ -966,8 +966,10 @@ function updateBgThumb(i, url) {
   if (!img) return;
   if (url) { img.src=url; img.style.opacity=1; } else img.style.opacity=0;
 }
-function openBgUpload(i) {
+let pendingUploadBtn = null; // shared: stores the button that triggered the upload
+function openBgUpload(i, btn) {
   pendingBgUploadIdx = i;
+  pendingUploadBtn = btn || null;
   document.getElementById('bg-file-input').click();
 }
 async function checkPngTransparency(file) {
@@ -994,6 +996,11 @@ async function uploadSingleImage(event, fieldId, storagePath, checkTransparency=
   const file = event.target.files[0];
   event.target.value = '';
   if (!file) return;
+  // 업로드 버튼 피드백 — file input의 id로 연결된 버튼 찾기
+  const fileId = event.target.id;
+  const btn = fileId ? document.querySelector(`[onclick*="${fileId}"]`) : null;
+  const origTxt = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = '⏳ 업로드 중…'; btn.disabled = true; }
   if (checkTransparency) {
     const isTransparent = await checkPngTransparency(file);
     if (isTransparent === false) {
@@ -1028,7 +1035,9 @@ async function uploadSingleImage(event, fieldId, storagePath, checkTransparency=
     document.getElementById(fieldId).value = url;
     if (isLogo) { curLogoBase64 = base64; }
     schedulePreviewUpdate();
+    if (btn) { btn.textContent = '✅ 완료'; btn.disabled = false; setTimeout(()=>{ btn.textContent = origTxt; }, 2000); }
   } catch(err) {
+    if (btn) { btn.textContent = origTxt; btn.disabled = false; }
     alert('업로드 실패: ' + err.message + '\n\nFirebase Storage 규칙에서 인증된 쓰기를 허용해야 해요.');
   }
 }
@@ -1063,7 +1072,10 @@ async function onBgFileSelected(e) {
   e.target.value = '';
   if (!file || pendingBgUploadIdx === null) return;
   const i = pendingBgUploadIdx;
-  pendingBgUploadIdx = null;
+  const btn = pendingUploadBtn;
+  pendingBgUploadIdx = null; pendingUploadBtn = null;
+  const origTxt = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
   const projId = document.getElementById('p-id').value.trim() || 'tmp';
   const ext = file.name.split('.').pop();
   const path = `cms_projects/${projId}/bg/${Date.now()}.${ext}`;
@@ -1072,14 +1084,16 @@ async function onBgFileSelected(e) {
     await ref.put(file);
     const url = await ref.getDownloadURL();
     curBgImages[i].url = url;
-    renderBgImages();
+    renderBgImages(); // re-render shows the URL — button is gone after this
   } catch(err) {
+    if (btn) { btn.textContent = origTxt; btn.disabled = false; }
     alert('업로드 실패: ' + err.message + '\n\nFirebase Storage 규칙에서 인증된 쓰기를 허용해야 해요.');
   }
 }
 
-function openStageImageUpload(i) {
+function openStageImageUpload(i, btn) {
   pendingStageUploadIdx = i;
+  pendingUploadBtn = btn || null;
   document.getElementById('stage-img-file-input').click();
 }
 async function onStageImgFileSelected(e) {
@@ -1087,7 +1101,10 @@ async function onStageImgFileSelected(e) {
   e.target.value = '';
   if (!file || pendingStageUploadIdx === null) return;
   const i = pendingStageUploadIdx;
-  pendingStageUploadIdx = null;
+  const btn = pendingUploadBtn;
+  pendingStageUploadIdx = null; pendingUploadBtn = null;
+  const origTxt = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
   const projId = document.getElementById('p-id').value.trim() || 'tmp';
   const ext = file.name.split('.').pop();
   const path = `cms_projects/${projId}/stages/${Date.now()}.${ext}`;
@@ -1096,8 +1113,9 @@ async function onStageImgFileSelected(e) {
     await ref.put(file);
     const url = await ref.getDownloadURL();
     curStages[i].stageImageUrl = url;
-    renderStageList();
+    renderStageList(); // re-render shows the image preview
   } catch(err) {
+    if (btn) { btn.textContent = origTxt; btn.disabled = false; }
     alert('업로드 실패: ' + err.message + '\n\nFirebase Storage 규칙에서 인증된 쓰기를 허용해야 해요.');
   }
 }
@@ -1303,7 +1321,7 @@ function renderStageList() {
       </div>
       ${s.displayType==='image'?`<div style="display:flex;gap:4px;margin-top:5px;align-items:center;">
         <input class="fi-sm" style="flex:1;margin-bottom:0;" placeholder="카드 배경 이미지 URL" value="${(s.stageImageUrl||'').replace(/"/g,'&quot;')}" oninput="curStages[${i}].stageImageUrl=this.value">
-        <button class="bg-up-btn" onclick="openStageImageUpload(${i})" style="flex-shrink:0;">📁 업로드</button>
+        <button class="bg-up-btn" onclick="openStageImageUpload(${i},this)" style="flex-shrink:0;">📁 업로드</button>
       </div>`:''}</div>`).join('');
   curStages.forEach((s,i) => {
     const sel = document.querySelectorAll('.stage-sel')[i];
