@@ -182,6 +182,24 @@ claude
 
 ---
 
+### ⚠️ 브랜치 운영 규칙
+
+Claude Code 세션은 자동으로 기능 브랜치(claude/...)에서 시작된다.
+**모든 커밋 후 즉시 main에 머지·push한다. 사용자가 요청하지 않아도 자동으로 수행.**
+
+```bash
+# 커밋 후 항상 실행
+git checkout main
+git pull origin main
+git merge [기능브랜치] --no-edit
+git push origin main
+git checkout [기능브랜치]  # 다시 작업 브랜치로 복귀
+```
+
+사용자는 머지를 별도로 요청할 필요가 없다.
+
+---
+
 ### 🔑 PAT(Personal Access Token) 설정 프로토콜
 
 **실패 시점(push 403) 또는 세션 시작 시(Step 1-R)에 PAT이 없으면:**
