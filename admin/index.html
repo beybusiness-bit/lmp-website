@@ -1538,6 +1538,7 @@ async function seedTestData() {
     { id: 's-mixed', title: '혼합형 블록', displayType: 'text',  stageImageUrl: '', order: 2 },
     { id: 's-embed', title: '임베드 블록', displayType: 'text',  stageImageUrl: '', order: 3 },
     { id: 's-slide', title: '슬라이드 모드', displayType: 'text', stageImageUrl: '', order: 4 },
+    { id: 's-form',  title: '폼 블록',    displayType: 'text',  stageImageUrl: '', order: 5 },
   ];
   const proj = {
     name: '블록 기능 테스트',
@@ -1670,6 +1671,37 @@ async function seedTestData() {
           bgColor:'#004E89', marginV:0, marginH:0 },
       ]
     },
+    's-form': {
+      displayType: 'scroll',
+      blocks: [
+        { id: uid(), type:'text', order:0,
+          textContent:'<div style="text-align:center;"><b><span style="font-size:16px;">폼 블록 예시</span></b><br><span style="font-size:13px;color:rgba(0,0,0,.55);">아래 폼을 눌러 편집하면<br>필드 구성을 확인할 수 있어요.</span></div>',
+          bgColor:'#F4D35E', marginV:0, marginH:0 },
+        (() => {
+          const fid = uid();
+          return {
+            id: uid(), type:'form', order:1, formId: fid,
+            formFields: [
+              { id:uid(), key:'name',    label:'이름',      type:'string',   required:true,  description:'',                                                           placeholder:'성함을 입력해주세요',  options:[], selectMode:'dropdown', allowOther:false, minSelect:null, maxSelect:null },
+              { id:uid(), key:'phone',   label:'연락처',    type:'string',   required:true,  description:'숫자만 입력해주세요 (예: 01012345678)',                       placeholder:'01012345678',         options:[], selectMode:'dropdown', allowOther:false, minSelect:null, maxSelect:null },
+              { id:uid(), key:'age',     label:'나이',      type:'number',   required:false, description:'',                                                           placeholder:'만 나이로 입력',      options:[], selectMode:'dropdown', allowOther:false, minSelect:null, maxSelect:null },
+              { id:uid(), key:'gender',  label:'성별',      type:'select',   required:true,  description:'',                                                           placeholder:'',                    options:['남성','여성','답하지 않음'], selectMode:'dropdown', allowOther:false, minSelect:1, maxSelect:1 },
+              { id:uid(), key:'session', label:'참가 세션', type:'select',   required:true,  description:'참여하고 싶은 세션을 1~2개 선택해주세요',                   placeholder:'',                    options:['오전 (10:00~12:00)','오후 (14:00~16:00)','저녁 (18:00~20:00)'], selectMode:'buttons', allowOther:false, minSelect:1, maxSelect:2 },
+              { id:uid(), key:'diet',    label:'식이 제한', type:'select',   required:false, description:'해당 항목이 없으면 선택하지 않아도 됩니다',                 placeholder:'',                    options:['채식','비건','할랄','글루텐프리'], selectMode:'buttons', allowOther:true, minSelect:0, maxSelect:4 },
+              { id:uid(), key:'note',    label:'기타 요청', type:'textarea', required:false, description:'알레르기, 좌석 배치 요청 등을 자유롭게 적어주세요',         placeholder:'없으면 비워두세요',   options:[], selectMode:'dropdown', allowOther:false, minSelect:null, maxSelect:null },
+            ],
+            formConfig: {
+              submitBtnText: '신청 완료하기',
+              postSubmitHtml: '<div style="text-align:center;"><b><span style="font-size:20px;">신청이 완료됐어요!</span></b><br><br><span style="font-size:14px;line-height:1.8;">소중한 참여 감사합니다.<br>확인 안내는 입력하신 연락처로<br>개별 전송됩니다.</span></div>',
+              postSubmitImage: '',
+              allowDuplicates: false,
+              sheetId: '', sheetUrl: '',
+            },
+            bgColor:'', marginV:0, marginH:0,
+          };
+        })(),
+      ]
+    },
   };
 
   try {
@@ -1682,7 +1714,7 @@ async function seedTestData() {
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         }, {merge:true});
     }
-    alert('✅ 테스트 프로젝트 추가 완료!\n\n목록에서 "블록 기능 테스트"를 열어 확인해보세요.\n\n스테이지별 내용:\n- 텍스트 블록: 크기·정렬·색상·배경·링크·혼합\n- 이미지 블록: 기본·링크·여백·URL 없음\n- 혼합형 블록: 오버레이·분리·배경색·이미지 없음\n- 임베드 블록: 유튜브·Tally\n- 슬라이드 모드: 4장 슬라이드');
+    alert('✅ 테스트 프로젝트 추가 완료!\n\n목록에서 "블록 기능 테스트"를 열어 확인해보세요.\n\n스테이지별 내용:\n- 텍스트 블록: 크기·정렬·색상·배경·링크·혼합\n- 이미지 블록: 기본·링크·여백·URL 없음\n- 혼합형 블록: 오버레이·분리·배경색·이미지 없음\n- 임베드 블록: 유튜브·Tally\n- 슬라이드 모드: 4장 슬라이드\n- 폼 블록: 짧은텍스트·숫자·드롭다운선택·버튼선택(기타포함)·긴텍스트');
     loadProjects();
   } catch(e) {
     alert('실패: ' + e.message);
