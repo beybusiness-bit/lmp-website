@@ -5,10 +5,16 @@
 ```javascript
 const AUTH = {
   ADMIN_PASSWORD: 'beybey12!',
-  SELLER_LOGIN: 'phone', // 전화번호만으로 구글시트 명단 대조
-  SHEETS_API_KEY: 'TBD', // Google Cloud Console → 사용자 인증 정보 → API 키
-  SHEET_ID: '1e6nyZ4fv-QPPX1SZqgakM4eJmBO1Rp-sdfkUtJFgwK8',
-  // Firebase 미사용. 구글 Sheets API (공개 시트 + API 키) 방식으로 대체.
+  SELLER_LOGIN: 'phone', // 전화번호만으로 Firestore 명단 대조
+  FIREBASE_PROJECT: 'beyhome-admin', // 기존 프로젝트에 gmbf_ 컬렉션 prefix로 공존
+};
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
+  authDomain: "beyhome-admin.firebaseapp.com",
+  projectId: "beyhome-admin",
+  storageBucket: "beyhome-admin.firebasestorage.app",
+  messagingSenderId: "849320781553",
+  appId: "1:849320781553:web:9d844044e85995c0aa2b50"
 };
 const REPO = {
   GITHUB_URL: 'https://github.com/beybusiness-bit/lmp-website',
@@ -304,24 +310,23 @@ Tally 폼 ID는 사용자가 Tally에서 폼 만든 후 제공. 현재 TBD.
 
 1단계: 기반 구조 + 셀러 로그인 — ✅ 완료
   - gmbf/po-c/index.html 단일 파일 구조 (셀러 랜딩 + 진행화면 통합)
-  - 셀러 로그인: 휴대전화번호 입력 → Google Apps Script → 구글시트 명단 대조
+  - 셀러 로그인: 휴대전화번호 입력 → Firebase Firestore(gmbf_sellers) 대조
   - 관리자 로그인: 비밀번호(`beybey12!`)
   - 모바일 최적화 레이아웃, 배경 슬라이드쇼 (bg1~bg5.jpeg), 컬러 사이클링
   - 로고(logo.png) + 장바구니(basket.png) CSS mask 기법으로 컬러 동적 변경
   - 전역 디자인 시스템: .btn .box .inp (검정 테두리, 투명 배경)
   - 셀러 인증 후 진행화면(#prep-screen) 아래에서 슬라이드업
   - 5단계 스테이지 카드 + 좌측 사이드 메뉴
-  - 상단 topbar: 장바구니 아이콘 fill 애니메이션(clip-path) + 완료%
-
-  ⚠️ 미완 항목:
-  - Google Apps Script URL: 사용자가 배포 후 APPS_SCRIPT_URL 상수에 삽입 필요
-  - 구글시트 "sellers" 탭 헤더(대표자명/휴대전화번호) + 첫 셀러(백은영/01063205653) 추가 필요
-  - Google Apps Script에 action=log 핸들러 추가 필요 (이벤트 로깅)
+  - 상단 topbar: 장바구니 아이콘(단색), 탭바 단순화
+  - 세션 유지 시 메인 복귀버튼(↑) 표시 — prepBgColor 기억, 앱 컨테이너 우하단 고정
+  - Firebase Firestore 연동 완료 (gmbf_sellers 인증, gmbf_event_log 로깅)
+  - Firestore 규칙: gmbf_ 컬렉션만 공개 읽기/쓰기, 기존 앱은 영향 없음
 
 2단계: 셀러 핵심 기능 — 🔲 진행 예정
   - 5개 스테이지 상세 페이지 (각 스테이지 클릭 시 내용 표시)
-  - 체크리스트: 항목 체크 & 구글시트 저장
+  - 체크리스트: 항목 체크 & Firestore 저장
   - 내 부스: 배치도 이미지에서 내 위치 표시, Tally 부스정보 제출 임베드
+  - 관리자 페이지: 셀러 추가/수정/삭제 (Firestore gmbf_sellers 관리)
 
 3단계: 마케팅 이미지 — 🔲 진행 예정
   - HTML Canvas로 템플릿+사진+텍스트 합성
@@ -433,12 +438,19 @@ Tally 폼 ID는 사용자가 Tally에서 폼 만든 후 제공. 현재 TBD.
 
 ### 다음 세션 시작점
 
-2단계 — 셀러 핵심 기능 (스테이지 상세 페이지)부터 시작
+2단계 — 셀러 핵심 기능 + 안내 페이지(CMS) 설계부터 시작
 
 세션 시작 시 먼저 확인할 것:
-1. Google Sheets API 키 받기 (AIzaSy... 형태) → `gmbf/po-c/index.html`의 `SHEETS_API_KEY` 상수에 삽입
-2. 구글시트 공개 설정 + sellers 탭 설정 완료 여부
-3. 스테이지 2~5 각각의 상세 내용 사용자에게 확인
+1. 스테이지 2~5 각각의 상세 내용 사용자에게 확인
+2. 안내 페이지 기능 설계 논의 (블록 에디터, 스크롤/슬라이드형, LMP 전체 사이트용)
+3. 관리자 페이지 구조 논의 (셀러 관리 + 안내 페이지 관리 통합)
+
+**안내 페이지(CMS) 기획 요약 (다음 세션 주요 작업):**
+- 관리자가 안내 블록을 작성 → 특정 페이지에 표시
+- 전시 방법: 스크롤형 / 슬라이드형
+- 블록 유형: 텍스트형 / 이미지형 / 혼합형(오버레이 or 분리형)
+- 리치 텍스트(정렬, 볼드, 크기, 색상), 블록 순서 변경
+- LMP 전체 사이트에서 재사용 가능한 범용 CMS로 구축
 
 **현재 파일 구조:**
 ```
