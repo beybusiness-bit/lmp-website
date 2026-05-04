@@ -136,7 +136,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 /* preview */
 #preview-wrap{position:fixed;right:16px;top:72px;z-index:90;width:196px;}
 #preview-phone{width:196px;height:348px;border:3px solid #000;border-radius:18px;overflow:hidden;position:relative;background:#f5f5f5;box-shadow:0 6px 24px rgba(0,0,0,.2);}
-.prev-btn{padding:5px 10px;background:transparent;border:1.5px solid rgba(255,255,255,.55);color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.prev-btn{padding:5px 10px;background:#f4f4f4;border:1.5px solid rgba(0,0,0,.25);color:#000;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.prev-btn:hover{background:#000;color:#fff;}
 .switch-row{display:flex;align-items:center;gap:10px;}
 .switch{width:40px;height:22px;background:#ccc;border-radius:11px;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;}
 .switch.on{background:#000;}
@@ -173,7 +174,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   </div>
   <div class="tab-nav">
     <button class="tab-btn on" id="tab-proj"  onclick="switchTab('proj')">프로젝트</button>
-    <button class="tab-btn"    id="tab-guide" onclick="switchTab('guide')">안내</button>
+    <button class="tab-btn"    id="tab-guide" onclick="switchTab('guide')">내용</button>
   </div>
   <div class="admin-body">
 
@@ -188,7 +189,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <span class="back-btn" onclick="backToProjects()">←</span>
           <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">프로젝트 편집</span>
           <div style="flex:1;"></div>
-          <button class="prev-btn" onclick="togglePreview()">👁 미리보기</button>
+          <button class="prev-btn" onclick="togglePreview()">미리보기</button>
           <button class="save-btn" onclick="saveProject()">저장 + 배포</button>
           <button class="del-btn" id="proj-del" onclick="deleteProject()" style="display:none;">삭제</button>
         </div>
@@ -224,6 +225,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div id="dday-fields" style="display:none;">
               <input class="fi" id="p-dday-date" type="date">
             </div>
+          </div>
+          <div class="sect-head">실시간 카운터</div>
+          <div class="ed-sect">
+            <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;line-height:1.6;">Firestore 컬렉션 문서 수를 실시간으로 집계해 메인 화면에 표시합니다.<br>예: "방문신청 42명"</div>
+            <div id="stats-list"></div>
+            <button class="add-btn" style="margin-top:8px;" onclick="addStat()">+ 카운터 추가</button>
+          </div>
+          <div class="sect-head">메인 화면 요소 순서</div>
+          <div class="ed-sect">
+            <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;">메인 화면 상단에 표시되는 요소의 순서를 설정합니다.</div>
+            <div id="elem-order-list"></div>
           </div>
         </div>
 
@@ -355,12 +367,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <div class="panel" id="panel-guide">
       <div id="guide-list-view">
         <div id="guide-list"><div class="empty-msg">불러오는 중…</div></div>
-        <button class="add-btn" onclick="startNewGuide()">+ 안내 추가</button>
+        <button class="add-btn" onclick="startNewGuide()">+ 내용 추가</button>
       </div>
       <div id="guide-edit-view" style="display:none;">
         <div class="ed-top">
           <span class="back-btn" onclick="backToGuides()">←</span>
-          <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">안내 편집</span>
+          <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">내용 편집</span>
           <div style="flex:1;"></div>
           <button class="save-btn" onclick="saveGuide()">저장</button>
           <button class="del-btn" id="guide-del" onclick="deleteGuide()" style="display:none;">삭제</button>
@@ -402,6 +414,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <button class="blk-tab on" id="btab-text"  onclick="switchBlkTab('text')">텍스트</button>
       <button class="blk-tab"    id="btab-image" onclick="switchBlkTab('image')">이미지</button>
       <button class="blk-tab"    id="btab-mixed" onclick="switchBlkTab('mixed')">혼합</button>
+      <button class="blk-tab"    id="btab-embed" onclick="switchBlkTab('embed')">임베드</button>
+      <button class="blk-tab"    id="btab-form"  onclick="switchBlkTab('form')">폼</button>
     </div>
     <div id="bpanel-text">
       <div class="fmt-bar">
@@ -421,6 +435,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('text','#00CE6B')" style="background:#00CE6B;color:#fff;border-color:#00CE6B;">●</button>
       </div>
       <div class="ced" id="ced-text" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)"></div>
+      <div style="margin-top:10px;">
+        <div class="ed-lbl" style="margin-bottom:4px;">링크 URL <span style="font-weight:400;opacity:.55;">(선택, 텍스트 전체를 링크로)</span></div>
+        <input class="img-inp" id="text-link-url" type="url" placeholder="https://…" style="margin-bottom:0;">
+      </div>
     </div>
     <div id="bpanel-image" style="display:none;">
       <div class="ed-lbl" style="margin-bottom:8px;">이미지</div>
@@ -428,6 +446,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <button class="bg-up-btn" onclick="document.getElementById('blk-img-file').click()" style="margin-bottom:8px;">📁 직접 업로드</button>
       <input type="file" id="blk-img-file" accept="image/*" style="display:none;" onchange="uploadBlockImage(event,'img-url','img-prev')">
       <img id="img-prev" class="img-prev">
+      <div style="margin-top:6px;">
+        <div class="ed-lbl" style="margin-bottom:4px;">링크 URL <span style="font-weight:400;opacity:.55;">(선택, 이미지 탭 시 이동)</span></div>
+        <input class="img-inp" id="img-link-url" type="url" placeholder="https://…" style="margin-bottom:0;">
+      </div>
+    </div>
+    <div id="bpanel-embed" style="display:none;">
+      <div class="ed-lbl" style="margin-bottom:8px;">임베드 URL <span style="font-weight:400;opacity:.55;">(Tally 폼, 유튜브 등)</span></div>
+      <input class="img-inp" id="embed-url" type="url" placeholder="https://tally.so/embed/…">
+      <div style="font-size:11px;color:rgba(0,0,0,.45);line-height:1.6;margin-top:4px;">
+        Tally 폼: 공유 → 임베드 링크 복사<br>
+        유튜브: 공유 → 삽입 → src 값 복사
+      </div>
+      <div style="margin-top:10px;">
+        <div class="ed-lbl" style="margin-bottom:4px;">높이 (px)</div>
+        <input class="img-inp" id="embed-height" type="number" placeholder="500" style="margin-bottom:0;width:120px;">
+      </div>
+    </div>
+    <div id="bpanel-form" style="display:none;">
+      <div style="padding:24px 0;text-align:center;color:rgba(0,0,0,.4);font-size:13px;line-height:1.7;border:1.5px dashed rgba(0,0,0,.2);">
+        폼 블록은 곧 지원 예정이에요.<br>
+        <span style="font-size:11px;">지금은 <b>임베드</b>로 Tally 폼을 직접 연결해주세요.</span>
+      </div>
     </div>
     <div id="bpanel-mixed" style="display:none;">
       <div class="ed-lbl" style="margin-bottom:8px;">레이아웃</div>
@@ -514,6 +554,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         예시) <code style="background:#e8e8e8;padding:1px 4px;">이름,전화번호</code> 형식이면:<br>
         <code style="background:#e8e8e8;padding:1px 4px;">홍길동,01012345678</code><br>
         <code style="background:#e8e8e8;padding:1px 4px;">김영희,01098765432</code>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div class="ed-lbl" style="margin-bottom:0;white-space:nowrap;">구분자</div>
+        <input class="fi-sm" id="bulk-sep" placeholder="공란 = 탭/쉼표 자동 감지  (예: | 또는 ;)" style="margin-bottom:0;flex:1;">
       </div>
       <textarea id="bulk-input" style="width:100%;height:160px;border:1.5px solid #000;padding:10px;font-size:13px;font-family:inherit;resize:vertical;outline:none;" placeholder="여기에 붙여넣기…"></textarea>
     </div>
@@ -644,6 +688,8 @@ let curAuthEnabled = false;
 let curAuthFields = [];        // [{key, label, type, required}]
 let curAuthKeyField = '';
 let curStages = [];
+let curStats = [];             // [{id, label, collection, countType, unit, enabled}]
+let curElementOrder = ['edition','logo','dday','stats']; // order of main screen elements
 let curUsers = [];
 let curEditingFieldIdx = null;
 let curEditingUserId = null;
@@ -705,6 +751,54 @@ function setLogoType(t) {
 function setLogoAlign(a) {
   curLogoTextAlign = a;
   ['l','c','r'].forEach(x => document.getElementById('logo-al-'+x).classList.toggle('on', x===a[0]));
+  schedulePreviewUpdate();
+}
+
+/* ── Stats (realtime counters) ── */
+const ELEM_LABELS = {edition:'로고 위 문구',logo:'로고',dday:'D-Day',stats:'카운터'};
+function renderStatList() {
+  const el = document.getElementById('stats-list');
+  if (!curStats.length) { el.innerHTML = '<div class="empty-msg" style="padding:8px 0;">카운터 없음</div>'; return; }
+  el.innerHTML = curStats.map((s,i) => `
+    <div class="bg-item" style="margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <div class="switch${s.enabled?' on':''}" onclick="curStats[${i}].enabled=!curStats[${i}].enabled;renderStatList();schedulePreviewUpdate();" style="flex-shrink:0;"></div>
+        <input class="fi-sm" style="flex:1;margin-bottom:0;" placeholder="표시 이름 (예: 방문신청)" value="${(s.label||'').replace(/"/g,'&quot;')}"
+          oninput="curStats[${i}].label=this.value;schedulePreviewUpdate();">
+        <button class="rm-btn2" onclick="removeStat(${i})">✕</button>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <input class="fi-sm" style="flex:2;margin-bottom:0;" placeholder="Firestore 컬렉션 (예: visit_requests)" value="${(s.collection||'').replace(/"/g,'&quot;')}"
+          oninput="curStats[${i}].collection=this.value;">
+        <input class="fi-sm" style="flex:1;margin-bottom:0;width:70px;" placeholder="단위 (예: 명)" value="${(s.unit||'').replace(/"/g,'&quot;')}"
+          oninput="curStats[${i}].unit=this.value;schedulePreviewUpdate();">
+      </div>
+    </div>`).join('');
+}
+function addStat() {
+  curStats.push({id:uid(),label:'',collection:'',countType:'count',unit:'명',enabled:true});
+  renderStatList();
+}
+function removeStat(i) { curStats.splice(i,1); renderStatList(); schedulePreviewUpdate(); }
+
+/* ── Element order ── */
+function renderElemOrderList() {
+  const el = document.getElementById('elem-order-list');
+  if (!el) return;
+  el.innerHTML = curElementOrder.map((key,i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fafafa;border:1.5px solid rgba(0,0,0,.12);margin-bottom:5px;">
+      <div style="flex:1;font-size:13px;font-weight:600;">${ELEM_LABELS[key]||key}</div>
+      <div style="display:flex;gap:3px;">
+        ${i>0?`<button class="s-btn" onclick="mvElem(${i},-1)">↑</button>`:'<div style="width:28px;"></div>'}
+        ${i<curElementOrder.length-1?`<button class="s-btn" onclick="mvElem(${i},1)">↓</button>`:'<div style="width:28px;"></div>'}
+      </div>
+    </div>`).join('');
+}
+function mvElem(i,d) {
+  const j=i+d;
+  if(j<0||j>=curElementOrder.length) return;
+  [curElementOrder[i],curElementOrder[j]]=[curElementOrder[j],curElementOrder[i]];
+  renderElemOrderList();
   schedulePreviewUpdate();
 }
 
@@ -977,7 +1071,8 @@ async function saveBulkUsers() {
   const raw = document.getElementById('bulk-input').value.trim();
   if (!raw) { closeModal('bulk-modal'); return; }
   const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
-  const sep = lines[0].includes('\t') ? '\t' : ',';
+  const customSep = document.getElementById('bulk-sep')?.value || '';
+  const sep = customSep || (lines[0].includes('\t') ? '\t' : ',');
   const headers = lines[0].split(sep).map(h=>h.trim());
   const fieldMap = {};
   headers.forEach((h,i) => {
@@ -1022,13 +1117,20 @@ function renderStageList() {
         </div>
       </div>
       <select class="stage-sel" onchange="curStages[${i}].guideId=this.value">${opts}</select>
-    </div>`).join('');
+      <div style="display:flex;gap:6px;margin-top:6px;align-items:center;">
+        <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);white-space:nowrap;">카드 형태</div>
+        <div class="toggle-row" style="flex:1;">
+          <button class="tgl-btn${(s.displayType||'text')==='text'?' on':''}" onclick="curStages[${i}].displayType='text';renderStageList();" style="font-size:11px;padding:5px 0;">텍스트형</button>
+          <button class="tgl-btn${s.displayType==='image'?' on':''}" onclick="curStages[${i}].displayType='image';renderStageList();" style="font-size:11px;padding:5px 0;">이미지형</button>
+        </div>
+      </div>
+      ${s.displayType==='image'?`<input class="fi-sm" style="margin-top:5px;" placeholder="카드 배경 이미지 URL" value="${(s.stageImageUrl||'').replace(/"/g,'&quot;')}" oninput="curStages[${i}].stageImageUrl=this.value">`:''}</div>`).join('');
   curStages.forEach((s,i) => {
     const sel = document.querySelectorAll('.stage-sel')[i];
     if (sel && s.guideId) sel.value = s.guideId;
   });
 }
-function addStage()   { curStages.push({id:uid(),title:'',guideId:'',order:curStages.length}); renderStageList(); }
+function addStage()   { curStages.push({id:uid(),title:'',guideId:'',displayType:'text',stageImageUrl:'',order:curStages.length}); renderStageList(); }
 function mvStage(i,d) { const j=i+d; if(j<0||j>=curStages.length) return; [curStages[i],curStages[j]]=[curStages[j],curStages[i]]; renderStageList(); }
 function rmStage(i)   { curStages.splice(i,1); renderStageList(); }
 
@@ -1057,6 +1159,7 @@ function backToProjects() { showProjView('list'); curProjId=null; curStages=[]; 
 function startNewProject() {
   curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}];
   curAuthKeyField='name'; curUsers=[]; curLogoTextSize='24'; curLogoTextAlign='center';
+  curStats=[]; curElementOrder=['edition','logo','dday','stats'];
   ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-col','p-auth-title','p-auth-desc']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   const szEl = document.getElementById('p-logo-txt-size'); if(szEl) szEl.value='24';
@@ -1065,7 +1168,7 @@ function startNewProject() {
   urlPrev.textContent = ''; urlPrev.href = '#'; urlPrev.style.display = 'none';
   setLogoAlign('center');
   setLogoType('image'); setLayoutType('separate'); setDday(false); setAuth(false);
-  renderBgImages(); renderStageList(); renderAuthFields();
+  renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList();
   switchInnerTab('basic'); showProjView('edit');
 }
 async function editProject(id) {
@@ -1079,6 +1182,8 @@ async function editProject(id) {
     curBgImages = (d.bgImages||[]).map(b => typeof b==='string' ? {url:b,holdTime:10,transitionTime:2} : b);
     curAuthFields = d.authFields && d.authFields.length ? d.authFields : [{key:'name',label:'이름',type:'string',required:true}];
     curAuthKeyField = d.authKeyField || curAuthFields[0]?.key || 'name';
+    curStats = d.stats || [];
+    curElementOrder = d.elementOrder || ['edition','logo','dday','stats'];
 
     document.getElementById('p-id').value         = id;
     document.getElementById('p-name').value       = d.name||'';
@@ -1102,7 +1207,7 @@ async function editProject(id) {
     setLayoutType(d.layoutType||'separate');
     setDday(d.ddayEnabled||false);
     setAuth(d.authEnabled||false);
-    renderBgImages(); renderStageList(); renderAuthFields();
+    renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList();
     if (d.authEnabled) await loadUsers();
     switchInnerTab('basic'); showProjView('edit');
   } catch(e) { alert('불러오기 실패: '+e.message); }
@@ -1136,6 +1241,8 @@ async function saveProject() {
     authDesc:     document.getElementById('p-auth-desc').value.trim(),
     bgImages:     curBgImages,
     stages:       curStages.map((s,i)=>({...s,order:i})),
+    stats:        curStats,
+    elementOrder: curElementOrder,
     updatedAt:    firebase.firestore.FieldValue.serverTimestamp(),
   };
 
@@ -1263,10 +1370,12 @@ function renderBlockList() {
   const el=document.getElementById('block-list');
   if(!curBlocks.length){el.innerHTML='<div class="empty-msg" style="padding:10px 0;">블록이 없어요.</div>';return;}
   el.innerHTML=curBlocks.map((b,i)=>{
-    const tl=b.type==='text'?'텍스트':b.type==='image'?'이미지':'혼합';
+    const tl=b.type==='text'?'텍스트':b.type==='image'?'이미지':b.type==='mixed'?'혼합':b.type==='embed'?'임베드':'폼';
     const pv=b.type==='text'?(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,32):
-             b.type==='image'?(b.imageUrl?'[이미지]':'(URL 없음)'):
-             '['+(b.mixedLayout==='split'?'분리':'오버레이')+'] '+(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,22);
+             b.type==='image'?(b.imageUrl?'[이미지]'+(b.linkUrl?' 🔗':''):'(URL 없음)'):
+             b.type==='mixed'?'['+(b.mixedLayout==='split'?'분리':'오버레이')+'] '+(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,22):
+             b.type==='embed'?(b.embedUrl||'(URL 없음)').slice(0,35):
+             '(폼 준비 중)';
     return `<div class="blk-item">
       <div class="blk-badge">${tl}</div>
       <div class="blk-prev">${pv||'(내용 없음)'}</div>
@@ -1293,9 +1402,13 @@ function openBlockModal(idx){
   curBlkType=b.type||'text';curMixedLayout=b.mixedLayout||'overlay';
   switchBlkTab(curBlkType);
   document.getElementById('ced-text').innerHTML=b.type==='text'?(b.textContent||''):'';
+  document.getElementById('text-link-url').value=b.type==='text'?(b.linkUrl||''):'';
   document.getElementById('img-url').value=b.type==='image'?(b.imageUrl||''):'';
+  document.getElementById('img-link-url').value=b.type==='image'?(b.linkUrl||''):'';
   document.getElementById('mixed-img-url').value=b.type==='mixed'?(b.imageUrl||''):'';
   document.getElementById('ced-mixed').innerHTML=b.type==='mixed'?(b.textContent||''):'';
+  document.getElementById('embed-url').value=b.type==='embed'?(b.embedUrl||''):'';
+  document.getElementById('embed-height').value=b.type==='embed'?(b.embedHeight||500):'500';
   prevImg('img-prev',document.getElementById('img-url').value);
   prevImg('mixed-img-prev',document.getElementById('mixed-img-url').value);
   setMixedLayout(curMixedLayout);savedRange=null;
@@ -1304,16 +1417,30 @@ function openBlockModal(idx){
 function closeBlockModal(){document.getElementById('block-modal').classList.remove('on');}
 function saveBlock(){
   let b={id:uid(),type:curBlkType};
-  if(curBlkType==='text') b.textContent=document.getElementById('ced-text').innerHTML;
-  else if(curBlkType==='image') b.imageUrl=document.getElementById('img-url').value.trim();
-  else{b.imageUrl=document.getElementById('mixed-img-url').value.trim();b.textContent=document.getElementById('ced-mixed').innerHTML;b.mixedLayout=curMixedLayout;}
+  if(curBlkType==='text'){
+    b.textContent=document.getElementById('ced-text').innerHTML;
+    const lnk=document.getElementById('text-link-url').value.trim();
+    if(lnk) b.linkUrl=lnk;
+  } else if(curBlkType==='image'){
+    b.imageUrl=document.getElementById('img-url').value.trim();
+    const lnk=document.getElementById('img-link-url').value.trim();
+    if(lnk) b.linkUrl=lnk;
+  } else if(curBlkType==='mixed'){
+    b.imageUrl=document.getElementById('mixed-img-url').value.trim();
+    b.textContent=document.getElementById('ced-mixed').innerHTML;
+    b.mixedLayout=curMixedLayout;
+  } else if(curBlkType==='embed'){
+    b.embedUrl=document.getElementById('embed-url').value.trim();
+    b.embedHeight=parseInt(document.getElementById('embed-height').value)||500;
+  }
+  /* form type: no extra fields */
   if(curBlkIdx!==null)curBlocks[curBlkIdx]={...curBlocks[curBlkIdx],...b};
   else curBlocks.push(b);
   renderBlockList();closeBlockModal();
 }
 function switchBlkTab(t){
   curBlkType=t;
-  ['text','image','mixed'].forEach(k=>{
+  ['text','image','mixed','embed','form'].forEach(k=>{
     document.getElementById('btab-'+k).classList.toggle('on',k===t);
     document.getElementById('bpanel-'+k).style.display=k===t?'block':'none';
   });
@@ -1344,48 +1471,100 @@ function togglePreview() {
   if (!showing) renderPreview();
 }
 function renderPreview() {
-  const bg = document.getElementById('prev-bg');
+  const bg      = document.getElementById('prev-bg');
   const overlay = document.getElementById('prev-overlay');
-  const ddayEl = document.getElementById('prev-dday');
+  const ddayEl  = document.getElementById('prev-dday');
   const content = document.getElementById('prev-content');
   if (!bg) return;
+
+  /* ── background ── */
   const firstBg = curBgImages[0];
-  const hasBg = firstBg && firstBg.url;
+  const hasBg   = firstBg && firstBg.url;
   bg.style.backgroundImage = hasBg ? `url(${firstBg.url})` : '';
-  overlay.style.display = hasBg ? '' : 'none';
-  const tc = hasBg ? '#fff' : '#000';
-  // D-day
+  bg.style.backgroundColor = hasBg ? '' : '#00CE6B'; /* player default color */
+  overlay.style.display    = hasBg ? '' : 'none';
+  const tc = '#fff'; /* player text always on colored/image bg */
+
+  /* ── D-day ── */
   if (curDdayEnabled) {
     const dv = document.getElementById('p-dday-date')?.value;
     if (dv) {
-      const diff = Math.round((new Date(dv) - new Date().setHours(0,0,0,0)) / 86400000);
-      ddayEl.textContent = diff===0 ? 'D-DAY' : diff>0 ? `D-${diff}` : `D+${Math.abs(diff)}`;
-      ddayEl.style.color = tc; ddayEl.style.display = '';
-    } else ddayEl.style.display = 'none';
-  } else ddayEl.style.display = 'none';
-  // Content
+      const t=new Date(); t.setHours(0,0,0,0);
+      const n=Math.ceil((new Date(dv+'T00:00:00')-t)/86400000);
+      ddayEl.textContent = n>0?'D-'+n:n===0?'D-Day':'D+'+Math.abs(n);
+      ddayEl.style.color='#00CE6B'; ddayEl.style.display='';
+    } else ddayEl.style.display='none';
+  } else ddayEl.style.display='none';
+
+  /* ── helpers ── */
   const edition = document.getElementById('p-edition')?.value.trim();
   const logoUrl = document.getElementById('p-logo-url')?.value.trim();
   const logoTxt = document.getElementById('p-logo-txt')?.value.trim();
-  const logoSz  = Math.round((+( document.getElementById('p-logo-txt-size')?.value||24)) * 0.52);
+  const logoSz  = Math.round((+(document.getElementById('p-logo-txt-size')?.value||24)) * 0.46);
   const ctaIcon = document.getElementById('p-cta-icon')?.value.trim();
   const ctaTxt  = document.getElementById('p-cta-text')?.value.trim();
-  let html = '';
-  if (edition) html += `<div style="font-size:9px;font-weight:700;color:${tc};opacity:.75;">${edition}</div>`;
-  if (curLogoType==='image' && logoUrl)
-    html += `<img src="${logoUrl}" style="max-width:90px;max-height:38px;object-fit:contain;${hasBg?'filter:brightness(0) invert(1);':''}">`;
-  else if (curLogoType==='text' && logoTxt)
-    html += `<div style="font-size:${logoSz}px;font-weight:900;color:${tc};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;">${logoTxt}</div>`;
-  if (curLayoutType==='merged' && curStages.length) {
-    html += `<div style="width:100%;margin-top:4px;">` +
-      curStages.slice(0,4).map(s=>`<div style="background:rgba(${hasBg?'255,255,255':'0,0,0'},.12);border:1px solid rgba(${hasBg?'255,255,255':'0,0,0'},.25);padding:3px 8px;margin-bottom:2px;font-size:8px;font-weight:700;color:${tc};">${s.title||'스테이지'}</div>`).join('') +
-      (curStages.length>4 ? `<div style="font-size:7px;color:${tc};opacity:.55;">+${curStages.length-4}개 더</div>` : '') +
-      `</div>`;
-  } else if (curLayoutType==='separate' && (ctaIcon||ctaTxt)) {
-    const ico = ctaIcon ? `<img src="${ctaIcon}" style="width:11px;height:11px;object-fit:contain;vertical-align:middle;${hasBg?'filter:brightness(0) invert(1);':''};margin-right:4px;">` : '';
-    html += `<div style="margin-top:6px;padding:5px 12px;background:rgba(${hasBg?'255,255,255,.88':'0,0,0,1'});color:${hasBg?'#000':'#fff'};font-size:8px;font-weight:700;display:flex;align-items:center;gap:3px;">${ico}${ctaTxt}</div>`;
+
+  /* scale: preview is 196px wide vs 430px player → ~0.456x */
+  const S = 0.456;
+
+  /* ── SEPARATE layout ── */
+  if (curLayoutType === 'separate') {
+    /* top-group: edition + logo + dday(via CSS) + stats placeholder */
+    let topHtml = '';
+    if (edition) topHtml += `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:#00CE6B;margin-bottom:-4px;">${edition}</div>`;
+    /* logo */
+    if (curLogoType==='image' && logoUrl) {
+      /* replicate CSS mask: colored div with mask */
+      topHtml += `<div style="width:76%;max-width:${Math.round(300*S)}px;aspect-ratio:835/700;background-color:#00CE6B;-webkit-mask-image:url(${logoUrl});mask-image:url(${logoUrl});-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>`;
+    } else if (curLogoType==='text' && logoTxt) {
+      topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:#00CE6B;text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
+    } else {
+      topHtml += `<div style="font-size:${Math.round(20*S)}px;font-weight:900;color:#00CE6B;">준비 포털</div>`;
+    }
+    /* visitor-line placeholder (counters) */
+    if (curStats && curStats.some(s=>s.enabled)) {
+      const labels = curStats.filter(s=>s.enabled).map(s=>`${s.label} …${s.unit||''}`).join(' · ');
+      topHtml += `<div style="font-size:${Math.round(21*S)}px;font-weight:400;color:#00CE6B;">${labels}</div>`;
+    }
+    /* CTA */
+    let botHtml = '';
+    if (ctaIcon || ctaTxt) {
+      const icoDiv = ctaIcon ? `<div style="width:${Math.round(72*S)}px;height:${Math.round(72*S)}px;background-color:#00CE6B;-webkit-mask-image:url(${ctaIcon});mask-image:url(${ctaIcon});-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>` : '';
+      const txtDiv = ctaTxt ? `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:#00CE6B;">${ctaTxt}</div>` : '';
+      botHtml = `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">${icoDiv}${txtDiv}</div>`;
+    }
+    content.style.justifyContent = 'space-between';
+    content.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:${Math.round(20*S)}px;width:100%;">${topHtml}</div>${botHtml}`;
+
+  /* ── MERGED layout ── */
+  } else {
+    const projName = document.getElementById('p-name')?.value.trim() || '준비';
+    let topbar = `<div style="display:flex;align-items:center;padding:${Math.round(14*S)}px ${Math.round(20*S)}px;border-bottom:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.25);">
+      <div style="font-size:10px;font-weight:900;color:#fff;">☰</div>
+      <div style="flex:1;text-align:center;font-size:${Math.round(15*S)}px;font-weight:800;color:#fff;">${projName}</div>
+    </div>`;
+    let inner = '';
+    if (edition) inner += `<div style="font-size:${Math.round(14*S)}px;font-weight:800;color:rgba(255,255,255,.8);margin-bottom:3px;">${edition}</div>`;
+    if (curDdayEnabled && document.getElementById('p-dday-date')?.value) {
+      const t=new Date();t.setHours(0,0,0,0);
+      const n=Math.ceil((new Date(document.getElementById('p-dday-date').value+'T00:00:00')-t)/86400000);
+      inner += `<div style="font-size:${Math.round(28*S)}px;font-weight:300;color:#fff;margin-bottom:8px;">${n>0?'D-'+n:n===0?'D-Day':'D+'+Math.abs(n)}</div>`;
+    }
+    inner += curStages.slice(0,4).map(s=>`
+      <div style="border:1px solid rgba(255,255,255,.7);background:rgba(0,0,0,.25);margin-bottom:4px;padding:${Math.round(14*S)}px ${Math.round(12*S)}px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="width:${Math.round(42*S)}px;height:${Math.round(42*S)}px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:800;flex-shrink:0;">${s.status||'시작 전'}</div>
+          <div style="font-size:${Math.round(15*S)}px;font-weight:800;color:#fff;">${s.title||'스테이지'}</div>
+        </div>
+        ${s.progress>0?`<div style="height:${Math.round(10*S)}px;background:transparent;margin-top:4px;"><div style="height:100%;width:${s.progress}%;background:rgba(255,255,255,.7);"></div></div>`:''}
+      </div>`).join('');
+    if (curStages.length>4) inner += `<div style="font-size:7px;color:rgba(255,255,255,.55);">+${curStages.length-4}개 더</div>`;
+    content.style.justifyContent = 'flex-start';
+    content.innerHTML = `<div style="width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden;">
+      ${topbar}
+      <div style="flex:1;overflow:hidden;padding:${Math.round(16*S)}px;">${inner}</div>
+    </div>`;
   }
-  content.innerHTML = html;
 }
 
 window.addEventListener('load', () => {
