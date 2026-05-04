@@ -116,6 +116,19 @@ body {
   출력된 origin URL에 `ghp_` 또는 `github_pat_`로 시작하는 토큰이 포함되어 있으면 OK.
   없다면 → 아래 "🔑 PAT 설정 프로토콜" 섹션을 먼저 수행한다.
 
+- **⬇️ main 최신화 (PAT 확인 후 반드시 수행):**
+  ```bash
+  git fetch origin main
+  git log HEAD..origin/main --oneline
+  ```
+  origin/main이 현재 브랜치보다 앞서 있으면(새 커밋이 있으면) 사용자에게 알리고:
+  ```bash
+  git checkout main
+  git pull origin main
+  ```
+  을 실행한다. 이후 작업 브랜치가 있으면 그 브랜치로 이동한다.
+  **⚠️ 이 단계를 생략하면 나중에 머지할 때 이전 세션 변경사항이 유실될 수 있다.**
+
 #### Step 1-L. Local 세션 (💻 환경)
 
 ```
