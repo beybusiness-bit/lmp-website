@@ -5,88 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>게으러서 못열뻔한 플리마켓</title>
 <style>
-/* ═══════════════════════════════
-   RESET & BASE
-═══════════════════════════════ */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { height: 100%; }
 body {
   background: var(--c);
   transition: background-color 1s ease;
-  display: flex;
-  justify-content: center;
-  min-height: 100vh;
-  overflow: hidden;
+  display: flex; justify-content: center;
+  min-height: 100vh; overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
 }
-#app {
-  width: 100%; max-width: 430px; min-height: 100vh;
-  position: relative; overflow: hidden;
-}
+#app { width: 100%; max-width: 430px; min-height: 100vh; position: relative; overflow: hidden; }
 
-/* ═══════════════════════════════
-   디자인 시스템 공통 변수
-═══════════════════════════════ */
-:root {
-  --c: #00CE6B;
-  --prep-bg: #FFF100;
-  --fill-color: #F95548;
-  --menu-bg: #0BC6FF;
-}
+:root { --c: #00CE6B; --prep-bg: #FFF100; --fill-color: #F95548; --menu-bg: #0BC6FF; }
 
-/* ── 버튼: 검정 테두리, hover/active → 검정 채움 ── */
+/* ── 디자인 시스템 ── */
 .btn {
-  display: block; width: 100%;
-  background: transparent;
-  border: 2px solid #000; border-radius: 0;
-  color: #000;
-  font-size: 15px; font-weight: 700;
-  padding: 12px 0;
-  cursor: pointer;
-  font-family: inherit; letter-spacing: -0.3px;
+  display: block; width: 100%; background: transparent;
+  border: 2px solid #000; border-radius: 0; color: #000;
+  font-size: 15px; font-weight: 700; padding: 12px 0;
+  cursor: pointer; font-family: inherit; letter-spacing: -0.3px;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s, color 0.15s;
 }
-.btn:hover, .btn:active {
-  background: #000;
-  color: var(--btn-ctx, #fff);
-}
-
-/* ── 박스: 검정 테두리, 투명 배경 ── */
+.btn:hover, .btn:active { background: #000; color: var(--btn-ctx, #fff); }
 .box { border: 2px solid #000; background: transparent; }
-
-/* ── 입력칸: 검정 밑줄만 ── */
 .inp {
   width: 100%; background: transparent !important;
   border: none; border-bottom: 2px solid #000;
   color: #000; font-size: 17px; font-weight: 600;
   padding: 8px 0; outline: none;
   font-family: inherit; letter-spacing: 1px;
-  -webkit-appearance: none; appearance: none;
-  border-radius: 0;
-  box-shadow: none !important;
+  -webkit-appearance: none; appearance: none; border-radius: 0; box-shadow: none !important;
 }
 .inp::placeholder { color: rgba(0,0,0,0.35); font-weight: 400; letter-spacing: 0; }
 .inp:focus { background: transparent !important; outline: none; box-shadow: none !important; }
 .inp:-webkit-autofill { -webkit-box-shadow: 0 0 0 1000px transparent inset !important; }
 
-/* ═══════════════════════════════
-   메인 페이지 — 슬라이드쇼
-═══════════════════════════════ */
-.slide {
-  position: absolute; inset: 0;
-  background-size: cover; background-position: center;
-  opacity: 0; transition: opacity 2s ease-in-out;
-}
+/* ── 슬라이드쇼 ── */
+.slide { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transition: opacity 2s ease-in-out; }
 .slide.on { opacity: 1; }
-.slide::after {
-  content: ''; position: absolute; inset: 0;
-  background: rgba(0, 0, 0, 0.38);
-}
+.slide::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.38); }
 
-/* ═══════════════════════════════
-   메인 페이지 — 콘텐츠
-═══════════════════════════════ */
+/* ── 메인 콘텐츠 ── */
 #main-content {
   position: relative; z-index: 10; min-height: 100vh;
   display: flex; flex-direction: column;
@@ -96,15 +56,10 @@ body {
 .top-group { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; }
 .bottom-group { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 
-.edition-text {
-  font-size: 18px; font-weight: 900; color: var(--c);
-  letter-spacing: -0.3px; transition: color 1s ease;
-  margin-bottom: -14px;
-}
+.edition-text { font-size: 18px; font-weight: 900; color: var(--c); letter-spacing: -0.3px; transition: color 1s ease; margin-bottom: -14px; }
 .logo-wrap { width: 76%; max-width: 300px; }
 .logo-mask {
-  width: 100%; aspect-ratio: 835 / 700;
-  background-color: var(--c);
+  width: 100%; aspect-ratio: 835 / 700; background-color: var(--c);
   -webkit-mask-image: url(../assets/logo.png); mask-image: url(../assets/logo.png);
   -webkit-mask-size: contain; mask-size: contain;
   -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
@@ -115,10 +70,7 @@ body {
 .dday-num { font-size: 32px; font-weight: 300; color: var(--c); line-height: 1; letter-spacing: -1px; transition: color 1s ease; text-align: center; }
 .visitor-line { font-size: 21px; font-weight: 400; color: var(--c); line-height: 1; letter-spacing: -0.5px; transition: color 1s ease; text-align: center; }
 
-.basket-btn {
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
+.basket-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .basket-btn:active { opacity: 0.75; transform: scale(0.97); }
 .basket-mask {
   width: 72px; height: 72px; background-color: var(--c);
@@ -130,35 +82,42 @@ body {
 }
 .basket-text { font-size: 18px; font-weight: 900; color: var(--c); letter-spacing: -0.3px; transition: color 1s ease; }
 
-/* ═══════════════════════════════
-   진행화면 (Prep Screen)
-═══════════════════════════════ */
+/* ── 세션 복귀 버튼 ── */
+#return-btn {
+  display: none;
+  position: fixed; bottom: 100px; right: 24px;
+  z-index: 30;
+  width: 44px; height: 44px;
+  align-items: center; justify-content: center;
+  font-size: 20px; color: #000; font-weight: 900;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  border: 2px solid #000;
+  transition: opacity 0.2s;
+}
+#return-btn:active { opacity: 0.65; }
+
+/* ── 진행화면 ── */
 #prep-screen {
-  position: fixed;
-  top: 0; bottom: 0;
+  position: fixed; top: 0; bottom: 0;
   left: 50%; width: 100%; max-width: 430px;
   transform: translateX(-50%) translateY(100%);
   transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
-  z-index: 50;
-  background: var(--prep-bg);
-  display: flex; flex-direction: column;
-  overflow: hidden;
+  z-index: 50; background: var(--prep-bg);
+  display: flex; flex-direction: column; overflow: hidden;
 }
 #prep-screen.open { transform: translateX(-50%) translateY(0); }
 
-/* 스티키 탑바 */
+/* 탑바 */
 #prep-topbar {
-  flex-shrink: 0;
-  background: var(--prep-bg);
+  flex-shrink: 0; background: var(--prep-bg);
   display: flex; align-items: center;
-  padding: 14px 20px; gap: 0;
-  border-bottom: 2px solid #000;
+  padding: 14px 20px; gap: 0; border-bottom: 2px solid #000;
 }
 .topbar-left {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+  display: flex; align-items: center;
   cursor: pointer; -webkit-tap-highlight-color: transparent; flex-shrink: 0;
 }
-.basket-icon-wrap { position: relative; width: 32px; height: 32px; }
+.basket-icon-wrap { width: 32px; height: 32px; position: relative; }
 .basket-layer {
   position: absolute; inset: 0;
   -webkit-mask-image: url(../assets/basket.png); mask-image: url(../assets/basket.png);
@@ -166,10 +125,7 @@ body {
   -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
   -webkit-mask-position: center; mask-position: center;
 }
-.basket-layer-black  { background: #000; }
-.basket-layer-color  { background: var(--fill-color); clip-path: inset(100% 0 0 0); transition: clip-path 0.5s ease; }
-.topbar-pct-lbl { font-size: 8px; font-weight: 800; color: #000; text-align: center; width: 32px; }
-
+.basket-layer-black { background: #000; }
 .topbar-center { flex: 1; text-align: center; font-size: 15px; font-weight: 800; color: #000; letter-spacing: -0.3px; }
 .topbar-right { font-size: 22px; color: #000; cursor: pointer; -webkit-tap-highlight-color: transparent; flex-shrink: 0; line-height: 1; padding: 4px; }
 
@@ -179,31 +135,22 @@ body {
 .stage-card {
   border: 2px solid #000; background: transparent;
   margin-bottom: 16px; cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: opacity 0.15s;
+  -webkit-tap-highlight-color: transparent; transition: opacity 0.15s;
 }
 .stage-card:active { opacity: 0.65; }
 .stage-card-body { display: flex; align-items: center; gap: 14px; padding: 18px 16px 14px; }
-
 .status-dot {
   width: 42px; height: 42px; border-radius: 50%;
   background: #000; color: var(--prep-bg);
   display: flex; align-items: center; justify-content: center;
-  font-size: 9px; font-weight: 800; flex-shrink: 0;
-  text-align: center; line-height: 1.3;
+  font-size: 9px; font-weight: 800; flex-shrink: 0; text-align: center; line-height: 1.3;
 }
 .stage-title { font-size: 15px; font-weight: 800; color: #000; letter-spacing: -0.3px; line-height: 1.35; }
-
 .stage-pbar { height: 10px; background: transparent; }
-.stage-pbar-fill {
-  height: 100%; background: #000;
-  display: flex; align-items: center; justify-content: flex-end;
-}
+.stage-pbar-fill { height: 100%; background: #000; display: flex; align-items: center; justify-content: flex-end; }
 .stage-pct-txt { font-size: 8px; font-weight: 800; color: var(--prep-bg); padding-right: 4px; white-space: nowrap; }
 
-/* ═══════════════════════════════
-   사이드 메뉴
-═══════════════════════════════ */
+/* ── 사이드 메뉴 ── */
 #side-menu {
   position: absolute; inset: 0;
   background: var(--menu-bg);
@@ -211,17 +158,26 @@ body {
   transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
   z-index: 20;
   display: flex; flex-direction: column;
-  padding: 60px 28px 40px;
-  overflow-y: auto;
 }
 #side-menu.open { transform: translateX(0); }
 
-.menu-close { position: absolute; top: 20px; right: 20px; font-size: 24px; color: #000; cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 4px; }
+.menu-header {
+  flex-shrink: 0;
+  display: flex; justify-content: flex-end;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0,0,0,0.12);
+}
+.menu-close {
+  font-size: 24px; color: #000; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; padding: 4px 4px 4px 16px;
+  line-height: 1;
+}
+#menu-list { flex: 1; overflow-y: auto; padding: 8px 28px 40px; }
+
 .menu-item {
   display: flex; align-items: center; gap: 14px;
   padding: 16px 0; border-bottom: 1px solid rgba(0,0,0,0.18);
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-  transition: opacity 0.15s;
+  cursor: pointer; -webkit-tap-highlight-color: transparent; transition: opacity 0.15s;
 }
 .menu-item:last-child { border-bottom: none; }
 .menu-item:active { opacity: 0.6; }
@@ -229,26 +185,18 @@ body {
   width: 36px; height: 36px; border-radius: 50%;
   background: #000; color: var(--menu-bg);
   display: flex; align-items: center; justify-content: center;
-  font-size: 9px; font-weight: 800; flex-shrink: 0;
-  text-align: center; line-height: 1.3;
+  font-size: 9px; font-weight: 800; flex-shrink: 0; text-align: center; line-height: 1.3;
 }
 .menu-title { font-size: 16px; font-weight: 800; color: #000; letter-spacing: -0.3px; }
 
-/* ═══════════════════════════════
-   모달 (공통 디자인 시스템)
-═══════════════════════════════ */
+/* ── 모달 ── */
 .modal-ov {
   display: none; position: fixed; inset: 0; z-index: 200;
   justify-content: center; align-items: center;
   background: rgba(0,0,0,0.42);
 }
 .modal-ov.on { display: flex; }
-
-.modal-box {
-  width: 82%; max-width: 340px;
-  padding: 36px 28px 28px;
-  border-radius: 0; color: #000; font-family: inherit;
-}
+.modal-box { width: 82%; max-width: 340px; padding: 36px 28px 28px; border-radius: 0; color: #000; font-family: inherit; }
 .modal-ttl { font-size: 20px; font-weight: 900; color: #000; margin-bottom: 10px; line-height: 1.3; letter-spacing: -0.5px; }
 .modal-desc { font-size: 14px; color: rgba(0,0,0,0.7); margin-bottom: 24px; line-height: 1.6; }
 .modal-err { font-size: 13px; color: rgba(0,0,0,0.7); margin-bottom: 14px; min-height: 16px; }
@@ -261,23 +209,18 @@ body {
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s, color 0.15s;
 }
-.modal-btn:hover, .modal-btn:active {
-  background: #000;
-  color: var(--modal-bg, #fff);
-}
+.modal-btn:hover, .modal-btn:active { background: #000; color: var(--modal-bg, #fff); }
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- 슬라이드쇼 배경 -->
   <div class="slide on" id="slide-0"></div>
   <div class="slide" id="slide-1"></div>
   <div class="slide" id="slide-2"></div>
   <div class="slide" id="slide-3"></div>
   <div class="slide" id="slide-4"></div>
 
-  <!-- ── 메인 콘텐츠 ── -->
   <div id="main-content">
     <div class="top-group">
       <div class="edition-text" id="edition-text">제3회</div>
@@ -294,36 +237,38 @@ body {
     </div>
   </div>
 
-  <!-- ══════════ 진행화면 ══════════ -->
+  <!-- 세션 복귀 버튼 -->
+  <div id="return-btn" onclick="reopenPrep()">↑</div>
+
+  <!-- 진행화면 -->
   <div id="prep-screen">
 
     <!-- 사이드 메뉴 -->
     <div id="side-menu">
-      <div class="menu-close" onclick="closeMenu()">✕</div>
+      <div class="menu-header">
+        <div class="menu-close" onclick="closeMenu()">✕</div>
+      </div>
       <div id="menu-list"></div>
     </div>
 
-    <!-- 스티키 탑바 -->
+    <!-- 탑바 -->
     <div id="prep-topbar">
       <div class="topbar-left" onclick="toggleMenu()">
         <div class="basket-icon-wrap">
           <div class="basket-layer basket-layer-black"></div>
-          <div class="basket-layer basket-layer-color" id="basket-fill-layer"></div>
         </div>
-        <div class="topbar-pct-lbl" id="topbar-pct">0% 완료</div>
       </div>
       <div class="topbar-center" id="topbar-title">내 마켓 준비</div>
       <div class="topbar-right" onclick="closePrep()">↓</div>
     </div>
 
-    <!-- 스크롤 영역 -->
     <div id="prep-body">
       <div id="stage-list"></div>
     </div>
 
   </div>
 
-</div><!-- /#app -->
+</div>
 
 <!-- 인증 모달 -->
 <div class="modal-ov" id="auth-modal" onclick="onOvClick(event)">
@@ -339,14 +284,10 @@ body {
   </div>
 </div>
 
-<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <script>
-// ─────────────────────────────────
-//  Firebase 초기화
-// ─────────────────────────────────
 firebase.initializeApp({
   apiKey: "AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
   authDomain: "beyhome-admin.firebaseapp.com",
@@ -357,20 +298,11 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
-// ─────────────────────────────────
-//  설정값
-// ─────────────────────────────────
 const EVENT_DATE  = '2026-06-07';
 const EDITION_NUM = 3;
-
-const COLORS     = ['#00CE6B', '#FFF100', '#F95548', '#0BC6FF', '#FFFFFF'];
-const KEY_COLORS = ['#00CE6B', '#FFF100', '#F95548', '#0BC6FF'];
-
-const BG_IMAGES = [
-  '../assets/bg1.jpeg','../assets/bg2.jpeg','../assets/bg3.jpeg',
-  '../assets/bg4.jpeg','../assets/bg5.jpeg',
-];
-
+const COLORS      = ['#00CE6B', '#FFF100', '#F95548', '#0BC6FF', '#FFFFFF'];
+const KEY_COLORS  = ['#00CE6B', '#FFF100', '#F95548', '#0BC6FF'];
+const BG_IMAGES   = ['../assets/bg1.jpeg','../assets/bg2.jpeg','../assets/bg3.jpeg','../assets/bg4.jpeg','../assets/bg5.jpeg'];
 const STAGES = [
   { id:'s1', title:'GMBF 포크를 위한 안내',   status:'완료',    progress:100 },
   { id:'s2', title:'기본 정보 제출하기',        status:'진행 중', progress:60  },
@@ -379,17 +311,10 @@ const STAGES = [
   { id:'s5', title:'셀프마케팅 이미지 만들기',  status:'시작 전', progress:0   },
 ];
 
-// ─────────────────────────────────
-//  상태
-// ─────────────────────────────────
 let currentSlide    = 0;
 let currentColorIdx = -1;
 let prepBgColor     = KEY_COLORS[0];
-const slideCount    = BG_IMAGES.length;
 
-// ─────────────────────────────────
-//  유틸
-// ─────────────────────────────────
 function calcDDay(d) {
   const t = new Date(); t.setHours(0,0,0,0);
   const e = new Date(d + 'T00:00:00');
@@ -398,80 +323,63 @@ function calcDDay(d) {
   if (n === 0) return 'D-Day';
   return 'D+' + Math.abs(n);
 }
-
 function pickOther(exclude, pool) {
   const a = pool.filter(c => c !== exclude);
   return a[Math.floor(Math.random() * a.length)];
 }
+function setCss(name, val) { document.documentElement.style.setProperty(name, val); }
 
-function setCss(name, val) {
-  document.documentElement.style.setProperty(name, val);
-}
-
-// ─────────────────────────────────
-//  슬라이드 / 색상
-// ─────────────────────────────────
+// 슬라이드
 function nextColor() {
-  let i;
-  do { i = Math.floor(Math.random() * COLORS.length); } while (i === currentColorIdx);
-  currentColorIdx = i;
-  return COLORS[i];
+  let i; do { i = Math.floor(Math.random() * COLORS.length); } while (i === currentColorIdx);
+  currentColorIdx = i; return COLORS[i];
 }
 function nextSlide() {
   document.querySelectorAll('.slide')[currentSlide].classList.remove('on');
-  currentSlide = (currentSlide + 1) % slideCount;
+  currentSlide = (currentSlide + 1) % BG_IMAGES.length;
   document.querySelectorAll('.slide')[currentSlide].classList.add('on');
   setCss('--c', nextColor());
 }
 function initSlides() {
-  BG_IMAGES.forEach((url, i) => {
-    const el = document.getElementById('slide-' + i);
-    if (el) el.style.backgroundImage = 'url(' + url + ')';
-  });
+  BG_IMAGES.forEach((url, i) => { const el = document.getElementById('slide-' + i); if (el) el.style.backgroundImage = 'url(' + url + ')'; });
 }
 
-// ─────────────────────────────────
-//  방문자 수 (Firestore)
-// ─────────────────────────────────
+// 방문자 수
 async function fetchCount() {
   try {
     const doc = await db.collection('gmbf_settings').doc('event').get();
-    if (doc.exists) {
-      const cnt = doc.data().visitorCount || 0;
-      document.getElementById('visitor-line').textContent = cnt + '명 방문신청';
-    }
+    if (doc.exists) document.getElementById('visitor-line').textContent = (doc.data().visitorCount || 0) + '명 방문신청';
   } catch(e) {}
 }
 
-// ─────────────────────────────────
-//  이벤트 로그 (Firestore)
-// ─────────────────────────────────
+// 이벤트 로그
 async function logEvent(type, stepId, data) {
   try {
     const s = JSON.parse(sessionStorage.getItem('sellerSession') || '{}');
-    await db.collection('gmbf_event_log').add({
-      phone: s.phone || '',
-      name: s.name || '',
-      event: type,
-      step: stepId || '',
-      data: data || {},
-      ts: firebase.firestore.FieldValue.serverTimestamp(),
-    });
+    await db.collection('gmbf_event_log').add({ phone: s.phone||'', name: s.name||'', event: type, step: stepId||'', data: data||{}, ts: firebase.firestore.FieldValue.serverTimestamp() });
   } catch(e) {}
 }
 
-// ─────────────────────────────────
-//  모달 — 인증
-// ─────────────────────────────────
+// 복귀 버튼
+function showReturnBtn() {
+  const btn = document.getElementById('return-btn');
+  btn.style.display = 'flex';
+  btn.style.background = prepBgColor;
+}
+function hideReturnBtn() {
+  document.getElementById('return-btn').style.display = 'none';
+}
+
+// 인증 모달
 function openAuthModal() {
   const color = pickOther(COLORS[currentColorIdx] || '', KEY_COLORS);
-  const box   = document.getElementById('auth-box');
+  const box = document.getElementById('auth-box');
   box.style.background = color;
   box.style.setProperty('--modal-bg', color);
-  document.getElementById('auth-phone').value      = '';
-  document.getElementById('auth-err').textContent  = '';
+  document.getElementById('auth-phone').value = '';
+  document.getElementById('auth-err').textContent = '';
   document.getElementById('auth-confirm').textContent = '확인';
-  document.getElementById('auth-confirm').disabled    = false;
+  document.getElementById('auth-confirm').disabled = false;
   document.getElementById('auth-modal').classList.add('on');
 }
 function closeAuthModal() { document.getElementById('auth-modal').classList.remove('on'); }
@@ -479,22 +387,16 @@ function onOvClick(e) { if (e.target.id === 'auth-modal') closeAuthModal(); }
 
 async function confirmAuth() {
   const phone = document.getElementById('auth-phone').value.replace(/\D/g, '');
-  if (phone.length < 10) {
-    document.getElementById('auth-err').textContent = '올바른 휴대폰 번호를 입력해주세요.';
-    return;
-  }
-
+  if (phone.length < 10) { document.getElementById('auth-err').textContent = '올바른 휴대폰 번호를 입력해주세요.'; return; }
   const btn = document.getElementById('auth-confirm');
   btn.textContent = '확인 중…'; btn.disabled = true;
-
   try {
     const snap = await db.collection('gmbf_sellers').where('phone', '==', phone).limit(1).get();
     btn.textContent = '확인'; btn.disabled = false;
     if (!snap.empty) {
       const seller = snap.docs[0].data();
       sessionStorage.setItem('sellerSession', JSON.stringify({ name: seller.name, phone: seller.phone }));
-      closeAuthModal();
-      openPrep();
+      closeAuthModal(); openPrep();
     } else {
       document.getElementById('auth-err').textContent = '등록된 셀러를 찾을 수 없어요.';
     }
@@ -511,13 +413,8 @@ document.getElementById('auth-phone').addEventListener('input', function() {
   else                   this.value = v;
 });
 
-// ─────────────────────────────────
-//  진행화면
-// ─────────────────────────────────
-function calcOverall() {
-  return Math.round(STAGES.reduce((s, t) => s + t.progress, 0) / STAGES.length);
-}
-
+// 진행화면
+function calcOverall() { return Math.round(STAGES.reduce((s, t) => s + t.progress, 0) / STAGES.length); }
 function statusText(stage, forMenu) {
   if (stage.status === '진행 중' && forMenu) return stage.progress + '%';
   return stage.status;
@@ -525,24 +422,29 @@ function statusText(stage, forMenu) {
 
 function openPrep() {
   prepBgColor = KEY_COLORS[Math.floor(Math.random() * KEY_COLORS.length)];
+  sessionStorage.setItem('prepBgColor', prepBgColor);
   const fillColor = pickOther(prepBgColor, KEY_COLORS);
   setCss('--prep-bg', prepBgColor);
   setCss('--fill-color', fillColor);
   renderStages();
-  updateTopbar();
   document.getElementById('prep-screen').classList.add('open');
+  hideReturnBtn();
   logEvent('prep_opened', '', {});
+}
+
+function reopenPrep() {
+  const fillColor = pickOther(prepBgColor, KEY_COLORS);
+  setCss('--prep-bg', prepBgColor);
+  setCss('--fill-color', fillColor);
+  renderStages();
+  document.getElementById('prep-screen').classList.add('open');
+  hideReturnBtn();
 }
 
 function closePrep() {
   document.getElementById('prep-screen').classList.remove('open');
   closeMenu();
-}
-
-function updateTopbar() {
-  const pct = calcOverall();
-  document.getElementById('topbar-pct').textContent = pct + '% 완료';
-  document.getElementById('basket-fill-layer').style.clipPath = 'inset(' + (100 - pct) + '% 0 0 0)';
+  if (sessionStorage.getItem('sellerSession')) showReturnBtn();
 }
 
 function renderStages() {
@@ -557,19 +459,16 @@ function renderStages() {
           ${s.progress > 0 ? '<span class="stage-pct-txt">' + s.progress + '%</span>' : ''}
         </div>
       </div>
-    </div>`
-  ).join('');
+    </div>`).join('');
 }
 
 function renderMenu() {
-  const menuColor = pickOther(prepBgColor, KEY_COLORS);
-  setCss('--menu-bg', menuColor);
+  setCss('--menu-bg', pickOther(prepBgColor, KEY_COLORS));
   document.getElementById('menu-list').innerHTML = STAGES.map((s, i) => `
     <div class="menu-item" onclick="goToStage(${i}); closeMenu();">
       <div class="menu-dot">${statusText(s, true)}</div>
       <div class="menu-title">${s.title}</div>
-    </div>`
-  ).join('');
+    </div>`).join('');
 }
 
 function toggleMenu() {
@@ -577,24 +476,18 @@ function toggleMenu() {
   if (m.classList.contains('open')) closeMenu();
   else { renderMenu(); m.classList.add('open'); }
 }
-function closeMenu() { document.getElementById('side-menu').classList.remove('on open'); }
+function closeMenu() { document.getElementById('side-menu').classList.remove('open'); }
 
 function goToStage(i) {
   document.getElementById('topbar-title').textContent = STAGES[i].title;
   closeMenu();
   logEvent('step_viewed', STAGES[i].id, {});
-  // 각 단계 화면 → 추후 구현
 }
 
-// ─────────────────────────────────
-//  초기화
-// ─────────────────────────────────
+// 초기화
 function checkLogoLoad() {
   const img = new Image();
-  img.onerror = () => {
-    document.getElementById('logo-mask').style.display = 'none';
-    document.getElementById('logo-fallback').style.display = 'block';
-  };
+  img.onerror = () => { document.getElementById('logo-mask').style.display = 'none'; document.getElementById('logo-fallback').style.display = 'block'; };
   img.src = '../assets/logo.png';
 }
 
@@ -605,6 +498,13 @@ function init() {
   setCss('--c', nextColor());
   setInterval(nextSlide, 10000);
   fetchCount(); setInterval(fetchCount, 60000);
+
+  // 세션 복원
+  const saved = sessionStorage.getItem('sellerSession');
+  if (saved) {
+    prepBgColor = sessionStorage.getItem('prepBgColor') || KEY_COLORS[0];
+    showReturnBtn();
+  }
 }
 
 window.addEventListener('load', init);
