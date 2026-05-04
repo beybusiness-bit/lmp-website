@@ -134,10 +134,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .sect-head{font-size:10px;font-weight:900;letter-spacing:.9px;text-transform:uppercase;background:rgba(0,0,0,.08);color:rgba(0,0,0,.5);padding:5px 16px;margin:20px -16px 14px;display:block;}
 .ip-first-sect{margin-top:2px;}
 /* preview */
-#preview-wrap{position:fixed;right:16px;top:72px;z-index:90;width:196px;}
-#preview-phone{width:196px;height:348px;border:3px solid #000;border-radius:18px;overflow:hidden;position:relative;background:#f5f5f5;box-shadow:0 6px 24px rgba(0,0,0,.2);}
-#guide-preview-wrap{position:fixed;right:16px;top:72px;z-index:90;width:196px;}
-#guide-preview-phone{width:196px;height:348px;border:3px solid #000;border-radius:18px;overflow:hidden;position:relative;background:#fff;box-shadow:0 6px 24px rgba(0,0,0,.2);}
+#preview-wrap{position:fixed;right:16px;top:72px;z-index:90;}
+#preview-phone{border:3px solid #000;border-radius:18px;overflow:hidden;position:relative;background:#f5f5f5;box-shadow:0 6px 24px rgba(0,0,0,.2);}
+#guide-preview-wrap{position:fixed;right:16px;top:72px;z-index:90;}
+#guide-preview-phone{border:3px solid #000;border-radius:18px;overflow:hidden;position:relative;background:#fff;box-shadow:0 6px 24px rgba(0,0,0,.2);}
+.prev-sz-btn{padding:2px 7px;background:transparent;border:1.5px solid #000;color:#000;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;line-height:1.4;border-radius:3px;}
+.prev-sz-btn:hover{background:#000;color:#fff;}
 .prev-btn{padding:9px 14px;background:transparent;border:2px solid #000;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
 .prev-btn:hover{background:#000;color:#fff;}
 .switch-row{display:flex;align-items:center;gap:10px;}
@@ -423,7 +425,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 <div id="guide-preview-wrap" style="display:none;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
     <span style="font-size:11px;font-weight:900;color:#000;">실시간 미리보기</span>
-    <button onclick="toggleGuidePreview()" style="background:transparent;border:none;font-size:16px;cursor:pointer;line-height:1;padding:2px;">✕</button>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <button class="prev-sz-btn" onclick="setPreviewSize(-50)" title="작게">−</button>
+      <button class="prev-sz-btn" onclick="setPreviewSize(+50)" title="크게">+</button>
+      <button onclick="toggleGuidePreview()" style="background:transparent;border:none;font-size:16px;cursor:pointer;line-height:1;padding:2px 4px;">✕</button>
+    </div>
   </div>
   <div id="guide-preview-phone">
     <div id="gprev-header" style="position:absolute;top:0;left:0;right:0;z-index:2;background:#fff;border-bottom:1.5px solid #000;"></div>
@@ -602,7 +608,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 <div id="preview-wrap" style="display:none;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
     <span style="font-size:11px;font-weight:900;color:#000;">실시간 미리보기</span>
-    <button onclick="togglePreview()" style="background:transparent;border:none;font-size:16px;cursor:pointer;line-height:1;padding:2px;">✕</button>
+    <div style="display:flex;align-items:center;gap:4px;">
+      <button class="prev-sz-btn" onclick="setPreviewSize(-50)" title="작게">−</button>
+      <button class="prev-sz-btn" onclick="setPreviewSize(+50)" title="크게">+</button>
+      <button onclick="togglePreview()" style="background:transparent;border:none;font-size:16px;cursor:pointer;line-height:1;padding:2px 4px;">✕</button>
+    </div>
   </div>
   <div id="preview-phone">
     <div id="prev-bg" style="position:absolute;inset:0;background-size:cover;background-position:center;transition:background .3s;"></div>
@@ -734,6 +744,7 @@ let curLogoImgW = 76;  // logo image width (% of container)
 let curLogoTextSize = '24';
 let curLogoTextAlign = 'center';
 let previewTimer = null;
+let previewWidth = parseInt(localStorage.getItem('adminPreviewWidth') || '196');
 
 /* ── URL Preview ── */
 function updateUrlPreview() {
@@ -1612,6 +1623,24 @@ function prevImg(id,url){const el=document.getElementById(id);if(url&&url.starts
 /* ══════════════════════════════════════
    실시간 미리보기
 ══════════════════════════════════════ */
+function applyPreviewSize() {
+  const h = Math.round(previewWidth * 1.776); // phone aspect ratio
+  ['preview-wrap','guide-preview-wrap'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.width = previewWidth + 'px';
+  });
+  ['preview-phone','guide-preview-phone'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.width = previewWidth + 'px'; el.style.height = h + 'px'; }
+  });
+}
+function setPreviewSize(delta) {
+  previewWidth = Math.max(140, Math.min(380, previewWidth + delta));
+  localStorage.setItem('adminPreviewWidth', previewWidth);
+  applyPreviewSize();
+  schedulePreviewUpdate();
+  scheduleGuidePreviewUpdate();
+}
 function schedulePreviewUpdate() {
   const wrap = document.getElementById('preview-wrap');
   if (!wrap || wrap.style.display === 'none') return;
@@ -1654,7 +1683,7 @@ function renderPreview() {
   const ctaTxt  = document.getElementById('p-cta-text')?.value.trim();
 
   /* scale: preview is 196px wide vs 430px player → ~0.456x */
-  const S = 0.456;
+  const S = previewWidth / 430;
 
   /* ── SEPARATE layout ── */
   if (curLayoutType === 'separate') {
@@ -1749,7 +1778,7 @@ function renderGuidePreview() {
   const content = document.getElementById('gprev-content');
   if (!header || !content) return;
   const title = document.getElementById('g-title')?.value.trim() || '내용';
-  const S = 0.456;
+  const S = previewWidth / 430;
   const hh = Math.round(38 * S); /* header height px */
   header.style.height = hh + 'px';
   header.innerHTML = `<div style="display:flex;align-items:center;height:${hh}px;padding:0 ${Math.round(16*S)}px;gap:${Math.round(10*S)}px;">
@@ -1796,6 +1825,7 @@ function gBlockHtml(b, S) {
 
 window.addEventListener('load', () => {
   updatePATBtn();
+  applyPreviewSize(); // restore saved preview size
   const pev = document.getElementById('proj-edit-view');
   if (pev) { pev.addEventListener('input', schedulePreviewUpdate); pev.addEventListener('change', schedulePreviewUpdate); }
   const gev = document.getElementById('guide-edit-view');
