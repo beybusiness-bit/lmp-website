@@ -181,6 +181,7 @@ body {
   <div class="admin-header">
     <div class="admin-title">LMP 관리자</div>
     <div class="admin-user" id="admin-user-email"></div>
+    <button class="logout-btn" style="margin-right:6px;" onclick="managePAT()" id="pat-btn" title="GitHub 배포 토큰">토큰 ●</button>
     <button class="logout-btn" onclick="doSignOut()">로그아웃</button>
   </div>
   <div class="tab-nav">
@@ -447,7 +448,7 @@ function backToProjects() { showProjView('list'); curProjId=null; curStages=[]; 
 function updateUrlPreview() {
   const id = document.getElementById('p-id').value.trim();
   const el = document.getElementById('p-url-preview');
-  el.textContent = id ? 'lazymaxpotential.kr/p/?id=' + id : '';
+  el.textContent = id ? 'lazymaxpotential.kr/' + id : '';
 }
 function startNewProject() {
   curProjId=null; curStages=[]; curLogoType='image';
@@ -509,9 +510,80 @@ async function saveProject() {
     }, { merge: true });
     curProjId = id;
     document.getElementById('proj-del').style.display = 'block';
-    alert('저장했어요! 링크: lazymaxpotential.kr/p/?id=' + id);
     loadProjects();
+
+    /* GitHub에 /{slug}/index.html 자동 생성 */
+    const deployed = await deployProjectPage(id);
+    if (deployed) {
+      alert('저장 + 배포 완료!\n\n링크: lazymaxpotential.kr/' + id + '\n\n(GitHub Pages 반영까지 약 1분 소요)');
+    } else {
+      alert('Firestore 저장은 완료됐지만 GitHub 배포는 건너뜠어요.\n토큰을 설정하면 다음번에 자동 배포됩니다.\n\n링크(배포 전): lazymaxpotential.kr/' + id);
+    }
   } catch(e) { alert('저장 실패: '+e.message); }
+}
+
+/* ── GitHub API 배포 ── */
+const GH_REPO = 'beybusiness-bit/lmp-website';
+
+function getPAT() { return localStorage.getItem('ghPAT') || ''; }
+function updatePATBtn() {
+  const btn = document.getElementById('pat-btn');
+  if (!btn) return;
+  btn.textContent = getPAT() ? '토큰 ✓' : '토큰 ●';
+  btn.style.opacity = getPAT() ? '1' : '0.6';
+}
+function managePAT() {
+  const cur = getPAT();
+  const msg = cur
+    ? '현재 GitHub 토큰이 설정되어 있어요.\n\n새 토큰을 입력하거나, 지우려면 공란으로 확인하세요.\n(Settings → Developer settings → Personal access tokens → repo 권한)'
+    : 'GitHub Personal Access Token을 입력해주세요.\n(Settings → Developer settings → Personal access tokens → repo 권한 체크)';
+  const val = prompt(msg, cur);
+  if (val === null) return;
+  if (val.trim()) { localStorage.setItem('ghPAT', val.trim()); }
+  else { localStorage.removeItem('ghPAT'); }
+  updatePATBtn();
+}
+
+async function deployProjectPage(slug) {
+  const pat = getPAT();
+  if (!pat) return false;
+
+  const headers = { Authorization: 'token ' + pat, 'Content-Type': 'application/json' };
+
+  /* p/index.html 템플릿 가져오기 */
+  let templateContent;
+  try {
+    const res = await fetch('https://api.github.com/repos/' + GH_REPO + '/contents/p/index.html', { headers });
+    if (!res.ok) return false;
+    const data = await res.json();
+    templateContent = decodeURIComponent(escape(atob(data.content.replace(/\n/g,''))));
+  } catch(e) { return false; }
+
+  /* PROJECT_ID 교체 */
+  const fileContent = templateContent.replace(
+    "const PROJECT_ID = new URLSearchParams(location.search).get('id') || '';",
+    "const PROJECT_ID = '" + slug + "';"
+  );
+
+  /* 기존 파일 SHA 확인 (수정 시 필요) */
+  let sha = null;
+  try {
+    const chk = await fetch('https://api.github.com/repos/' + GH_REPO + '/contents/' + slug + '/index.html', { headers });
+    if (chk.ok) sha = (await chk.json()).sha;
+  } catch(e) {}
+
+  /* 파일 생성/수정 */
+  try {
+    const body = {
+      message: 'deploy: ' + slug + ' project page',
+      content: btoa(unescape(encodeURIComponent(fileContent))),
+    };
+    if (sha) body.sha = sha;
+    const put = await fetch('https://api.github.com/repos/' + GH_REPO + '/contents/' + slug + '/index.html', {
+      method: 'PUT', headers, body: JSON.stringify(body),
+    });
+    return put.ok;
+  } catch(e) { return false; }
 }
 async function deleteProject() {
   if (!curProjId || !confirm('이 프로젝트를 삭제할까요?')) return;
@@ -692,6 +764,8 @@ function fmtSz(ctx,px)     { focusEd(ctx); document.execCommand('fontSize',false
 function fmtAlign(ctx,dir) { focusEd(ctx); document.execCommand('justify'+dir.charAt(0).toUpperCase()+dir.slice(1),false,null); }
 function fmtClr(ctx,clr)   { focusEd(ctx); document.execCommand('foreColor',false,clr); }
 function prevImg(id,url)   { const el=document.getElementById(id); if(url&&url.startsWith('http')){ el.src=url; el.style.display='block'; } else el.style.display='none'; }
+
+window.addEventListener('load', updatePATBtn);
 </script>
 </body>
 </html>
