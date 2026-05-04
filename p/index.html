@@ -54,7 +54,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .fullscreen{position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:430px;transform:translateX(-50%) translateY(100%);transition:transform .5s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column;overflow:hidden;}
 .fullscreen.open{transform:translateX(-50%) translateY(0);}
 #prep-screen{z-index:50;background:var(--prep-bg);}
-#guide-screen{z-index:60;background:#fff;}
+#guide-screen{z-index:60;background:var(--body-bg,#fff);transition:none;}
 /* topbar */
 .topbar{flex-shrink:0;display:flex;align-items:center;padding:14px 20px;border-bottom:2px solid #000;}
 #prep-topbar{background:var(--prep-bg);}
@@ -81,7 +81,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .stage-pbar-fill.merged{background:rgba(255,255,255,.7);}
 .stage-pct-txt{font-size:8px;font-weight:800;color:var(--prep-bg);padding-right:4px;white-space:nowrap;}
 /* side menu */
-#side-menu{position:absolute;inset:0;background:var(--menu-bg);transform:translateX(-100%);transition:transform .35s cubic-bezier(.32,.72,0,1);z-index:20;display:flex;flex-direction:column;}
+#side-menu{position:absolute;inset:0;background:var(--menu-bg);transform:translateX(-100%);transition:transform .35s cubic-bezier(.32,.72,0,1);z-index:80;display:flex;flex-direction:column;}
 #side-menu.open{transform:translateX(0);}
 .menu-header{flex-shrink:0;display:flex;justify-content:flex-end;padding:16px 20px;border-bottom:1px solid rgba(0,0,0,.12);}
 .menu-close{font-size:24px;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:4px 4px 4px 16px;line-height:1;}
@@ -121,12 +121,30 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .modal-btns{display:flex;gap:10px;}
 .modal-btn{flex:1;padding:12px 0;background:transparent;border:2px solid #000;color:#000;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s;}
 .modal-btn:hover,.modal-btn:active{background:#000;color:var(--modal-bg,#fff);}
+/* merged hamburger icon */
+#merged-menu-icon{font-size:22px;font-weight:900;color:#fff;}
+/* merged layout + no bg image → dark text */
+.no-bg-img #merged-menu-icon{color:#000;}
+.no-bg-img #merged-topbar{background:transparent!important;border-bottom-color:rgba(0,0,0,.15)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+.no-bg-img #merged-topbar .topbar-center{color:#000!important;}
+.no-bg-img #merged-edition{color:rgba(0,0,0,.65)!important;}
+.no-bg-img #merged-dday{color:#000!important;}
+.no-bg-img .stage-card.merged{border-color:#000!important;background:transparent!important;}
+.no-bg-img .stage-title.merged{color:#000!important;}
+.no-bg-img .status-dot.merged{background:#000!important;color:var(--c)!important;}
+.no-bg-img .stage-pbar-fill.merged{background:#000!important;}
 </style>
 </head>
 <body>
 <div id="app">
   <!-- background slides (동적으로 추가됨) -->
   <div id="slides-container"></div>
+
+  <!-- 사이드 메뉴 (separate / merged 공용) -->
+  <div id="side-menu">
+    <div class="menu-header"><div class="menu-close" onclick="closeMenu()">✕</div></div>
+    <div id="menu-list"></div>
+  </div>
 
   <!-- SEPARATE layout main -->
   <div id="main-content">
@@ -149,7 +167,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
   <div id="merged-content">
     <div id="merged-topbar">
       <div class="topbar-left" onclick="toggleMenu()">
-        <div style="font-size:22px;color:#fff;font-weight:900;">☰</div>
+        <div id="merged-menu-icon">☰</div>
       </div>
       <div class="topbar-center" id="merged-title">준비</div>
       <div style="width:30px;"></div>
@@ -170,10 +188,6 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 
   <!-- Prep screen (separate layout only) -->
   <div id="prep-screen" class="fullscreen">
-    <div id="side-menu">
-      <div class="menu-header"><div class="menu-close" onclick="closeMenu()">✕</div></div>
-      <div id="menu-list"></div>
-    </div>
     <div id="prep-topbar" class="topbar">
       <div class="topbar-left" onclick="toggleMenu()">
         <div class="basket-icon-wrap">
@@ -412,9 +426,11 @@ function initSlides(){
   const container=document.getElementById('slides-container');
   container.innerHTML='';
   if(!bgImages.length){
+    document.getElementById('app').classList.add('no-bg-img');
     initColorCycle();
     return;
   }
+  document.getElementById('app').classList.remove('no-bg-img');
   bgImages.forEach((bg,i)=>{
     const div=document.createElement('div');
     div.className='slide'+(i===0?' on':'');
@@ -618,7 +634,7 @@ async function openStageContent(stage){
     const blocks=(g.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
     if(g.displayType==='slide') renderGuideSlide(blocks);
     else renderGuideScroll(blocks);
-  }catch(e){ showGuideEmpty('불러오기에 실패했어요.'); }
+  }catch(e){ console.error('stage_content load error:',e); showGuideEmpty('불러오기에 실패했어요.'+(e.code?'\n('+e.code+')':'')); }
 }
 function closeGuide(){ document.getElementById('guide-screen').classList.remove('open'); }
 function showGuideEmpty(msg){ document.getElementById('guide-scroll-blocks').innerHTML='<div class="guide-empty">'+msg+'</div>'; document.getElementById('guide-scroll-body').style.display='block'; }
