@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>준비 포털</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html{height:100%;}
+body{background:var(--c);transition:background-color 1s ease;display:flex;justify-content:center;min-height:100vh;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;}
+#app{width:100%;max-width:430px;min-height:100vh;position:relative;overflow:hidden;}
+:root{--c:#00CE6B;--prep-bg:#FFF100;--fill-color:#F95548;--menu-bg:#0BC6FF;}
+.btn{display:block;width:100%;background:transparent;border:2px solid #000;border-radius:0;color:#000;font-size:15px;font-weight:700;padding:12px 0;cursor:pointer;font-family:inherit;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s;}
+.btn:hover,.btn:active{background:#000;color:var(--btn-ctx,#fff);}
+.inp{width:100%;background:transparent!important;border:none;border-bottom:2px solid #000;color:#000;font-size:17px;font-weight:600;padding:8px 0;outline:none;font-family:inherit;letter-spacing:1px;-webkit-appearance:none;appearance:none;border-radius:0;box-shadow:none!important;}
+.inp::placeholder{color:rgba(0,0,0,.35);font-weight:400;letter-spacing:0;}
+.inp:focus{background:transparent!important;outline:none;box-shadow:none!important;}
+.inp:-webkit-autofill{-webkit-box-shadow:0 0 0 1000px transparent inset!important;}
+/* slides */
+.slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;}
+.slide.on{opacity:1;}
+.slide::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,.38);}
+/* ── SEPARATE layout: main content ── */
+#main-content{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:80px 32px 100px;}
+.top-group{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;}
+.bottom-group{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.edition-text{font-size:18px;font-weight:900;color:var(--c);letter-spacing:-.3px;transition:color 1s ease;margin-bottom:-14px;}
+.logo-wrap{width:76%;max-width:300px;}
+.logo-mask{width:100%;aspect-ratio:835/700;background-color:var(--c);-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;transition:background-color 1s ease;}
+.logo-fallback{font-size:20px;font-weight:900;color:var(--c);text-align:center;line-height:1.3;transition:color 1s ease;display:none;white-space:pre-line;}
+.dday-num{font-size:32px;font-weight:300;color:var(--c);line-height:1;letter-spacing:-1px;transition:color 1s ease;text-align:center;}
+.visitor-line{font-size:21px;font-weight:400;color:var(--c);line-height:1;letter-spacing:-.5px;transition:color 1s ease;text-align:center;}
+.basket-btn{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.basket-btn:active{opacity:.75;transform:scale(.97);}
+.basket-mask{width:72px;height:72px;background-color:var(--c);-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;transition:background-color 1s ease;}
+.basket-text{font-size:18px;font-weight:900;color:var(--c);letter-spacing:-.3px;transition:color 1s ease;}
+/* ── MERGED layout ── */
+#merged-content{display:none;position:relative;z-index:10;min-height:100vh;flex-direction:column;}
+#merged-topbar{flex-shrink:0;display:flex;align-items:center;padding:14px 20px;border-bottom:2px solid rgba(255,255,255,.3);background:rgba(0,0,0,.25);backdrop-filter:blur(4px);}
+#merged-topbar .topbar-left{cursor:pointer;-webkit-tap-highlight-color:transparent;}
+#merged-topbar .topbar-center{flex:1;text-align:center;font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+#merged-stage-wrap{flex:1;overflow-y:auto;padding:20px 16px 60px;-webkit-overflow-scrolling:touch;}
+#merged-edition{font-size:14px;font-weight:800;color:rgba(255,255,255,.8);margin-bottom:6px;letter-spacing:-.2px;}
+#merged-dday{font-size:28px;font-weight:300;color:#fff;margin-bottom:20px;letter-spacing:-1px;}
+/* return btn */
+#return-btn{display:none;position:absolute;bottom:100px;right:24px;z-index:30;width:44px;height:44px;align-items:center;justify-content:center;font-size:20px;color:#000;font-weight:900;cursor:pointer;-webkit-tap-highlight-color:transparent;border:2px solid #000;transition:opacity .2s;}
+#return-btn:active{opacity:.65;}
+/* error */
+#error-screen{display:none;position:absolute;inset:0;z-index:200;background:#fff;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:40px;}
+#error-screen.on{display:flex;}
+.error-msg{font-size:18px;font-weight:800;color:#000;text-align:center;letter-spacing:-.5px;}
+.error-sub{font-size:14px;color:rgba(0,0,0,.5);text-align:center;}
+/* fullscreen panels */
+.fullscreen{position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:430px;transform:translateX(-50%) translateY(100%);transition:transform .5s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column;overflow:hidden;}
+.fullscreen.open{transform:translateX(-50%) translateY(0);}
+#prep-screen{z-index:50;background:var(--prep-bg);}
+#guide-screen{z-index:60;background:#fff;}
+/* topbar */
+.topbar{flex-shrink:0;display:flex;align-items:center;padding:14px 20px;border-bottom:2px solid #000;}
+#prep-topbar{background:var(--prep-bg);}
+#guide-topbar{background:#fff;}
+.topbar-left{display:flex;align-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
+.basket-icon-wrap{width:32px;height:32px;position:relative;}
+.basket-layer{position:absolute;inset:0;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;}
+.basket-layer-black{background:#000;}
+.topbar-center{flex:1;text-align:center;font-size:15px;font-weight:800;color:#000;letter-spacing:-.3px;}
+.topbar-right{font-size:22px;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;line-height:1;padding:4px;}
+.topbar-back{font-size:22px;font-weight:900;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;padding:4px;line-height:1;}
+.screen-body{flex:1;overflow-y:auto;padding:24px 20px 48px;-webkit-overflow-scrolling:touch;}
+/* stage cards */
+.stage-card{border:2px solid #000;background:transparent;margin-bottom:16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s;}
+.stage-card:active{opacity:.65;}
+.stage-card.merged{border-color:rgba(255,255,255,.7);background:rgba(0,0,0,.25);}
+.stage-card-body{display:flex;align-items:center;gap:14px;padding:18px 16px 14px;}
+.status-dot{width:42px;height:42px;border-radius:50%;background:#000;color:var(--prep-bg);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;text-align:center;line-height:1.3;}
+.status-dot.merged{background:rgba(255,255,255,.9);color:#000;}
+.stage-title{font-size:15px;font-weight:800;color:#000;letter-spacing:-.3px;line-height:1.35;}
+.stage-title.merged{color:#fff;}
+.stage-pbar{height:10px;background:transparent;}
+.stage-pbar-fill{height:100%;background:#000;display:flex;align-items:center;justify-content:flex-end;}
+.stage-pbar-fill.merged{background:rgba(255,255,255,.7);}
+.stage-pct-txt{font-size:8px;font-weight:800;color:var(--prep-bg);padding-right:4px;white-space:nowrap;}
+/* side menu */
+#side-menu{position:absolute;inset:0;background:var(--menu-bg);transform:translateX(-100%);transition:transform .35s cubic-bezier(.32,.72,0,1);z-index:20;display:flex;flex-direction:column;}
+#side-menu.open{transform:translateX(0);}
+.menu-header{flex-shrink:0;display:flex;justify-content:flex-end;padding:16px 20px;border-bottom:1px solid rgba(0,0,0,.12);}
+.menu-close{font-size:24px;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:4px 4px 4px 16px;line-height:1;}
+#menu-list{flex:1;overflow-y:auto;padding:8px 28px 40px;}
+.menu-item{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid rgba(0,0,0,.18);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s;}
+.menu-item:last-child{border-bottom:none;}
+.menu-item:active{opacity:.6;}
+.menu-dot{width:36px;height:36px;border-radius:50%;background:#000;color:var(--menu-bg);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;text-align:center;line-height:1.3;}
+.menu-title{font-size:16px;font-weight:800;color:#000;letter-spacing:-.3px;}
+/* guide viewer */
+.guide-scroll-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.guide-slide-body{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.guide-slide-track{flex:1;display:flex;overflow:hidden;transition:transform .4s cubic-bezier(.32,.72,0,1);}
+.guide-slide-item{flex-shrink:0;overflow-y:auto;}
+.guide-dots{flex-shrink:0;display:flex;justify-content:center;align-items:center;gap:8px;padding:10px 0;background:#fff;border-top:1.5px solid rgba(0,0,0,.08);}
+.guide-dot{width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,.2);transition:background .2s;cursor:pointer;}
+.guide-dot.on{background:var(--guide-pager,#000);}
+.g-block-text{padding:24px 20px;}
+.g-block-text-inner{font-size:15px;line-height:1.7;color:#000;max-height:65vh;overflow-y:auto;}
+.g-block-image img{width:100%;display:block;}
+.g-block-mixed-overlay{position:relative;min-height:260px;}
+.g-block-mixed-overlay img{width:100%;display:block;min-height:260px;object-fit:cover;}
+.g-overlay-text{position:absolute;inset:0;display:flex;align-items:flex-end;background:linear-gradient(to top,rgba(0,0,0,.65) 0%,transparent 60%);padding:20px;}
+.g-overlay-text-inner{color:#fff;font-size:15px;line-height:1.6;max-height:45vh;overflow-y:auto;}
+.g-block-mixed-split{display:flex;flex-direction:column;}
+.g-split-img img{width:100%;display:block;max-height:260px;object-fit:cover;}
+.g-split-text{padding:16px 20px;border-top:2px solid #000;font-size:15px;line-height:1.6;max-height:160px;overflow-y:auto;}
+.guide-empty{padding:60px 20px;text-align:center;color:rgba(0,0,0,.4);font-size:14px;}
+.g-block-embed{width:100%;}
+/* modal */
+.modal-ov{display:none;position:fixed;inset:0;z-index:300;justify-content:center;align-items:center;background:rgba(0,0,0,.42);}
+.modal-ov.on{display:flex;}
+.modal-box{width:82%;max-width:340px;padding:36px 28px 28px;color:#000;font-family:inherit;}
+.modal-ttl{font-size:20px;font-weight:900;color:#000;margin-bottom:10px;line-height:1.3;letter-spacing:-.5px;}
+.modal-desc{font-size:14px;color:rgba(0,0,0,.7);margin-bottom:24px;line-height:1.6;}
+.modal-err{font-size:13px;color:rgba(0,0,0,.7);margin-bottom:14px;min-height:16px;}
+.modal-btns{display:flex;gap:10px;}
+.modal-btn{flex:1;padding:12px 0;background:transparent;border:2px solid #000;color:#000;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s;}
+.modal-btn:hover,.modal-btn:active{background:#000;color:var(--modal-bg,#fff);}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- background slides (동적으로 추가됨) -->
+  <div id="slides-container"></div>
+
+  <!-- SEPARATE layout main -->
+  <div id="main-content">
+    <div class="top-group">
+      <div class="edition-text" id="edition-text"></div>
+      <div class="logo-wrap">
+        <div class="logo-mask" id="logo-mask" style="display:none;"></div>
+        <div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>
+      </div>
+      <div class="dday-num" id="dday-num"></div>
+      <div class="visitor-line" id="visitor-line"></div>
+    </div>
+    <div class="bottom-group basket-btn" onclick="onCtaClick()">
+      <div class="basket-mask" id="cta-icon"></div>
+      <div class="basket-text" id="cta-text">준비하기</div>
+    </div>
+  </div>
+
+  <!-- MERGED layout main -->
+  <div id="merged-content">
+    <div id="merged-topbar">
+      <div class="topbar-left" onclick="toggleMenu()">
+        <div style="font-size:22px;color:#fff;font-weight:900;">☰</div>
+      </div>
+      <div class="topbar-center" id="merged-title">준비</div>
+      <div style="width:30px;"></div>
+    </div>
+    <div id="merged-stage-wrap">
+      <div id="merged-edition"></div>
+      <div id="merged-dday"></div>
+      <div id="merged-stage-list"></div>
+    </div>
+  </div>
+
+  <div id="return-btn" onclick="reopenPrep()">↑</div>
+
+  <div id="error-screen">
+    <div class="error-msg" id="error-msg">프로젝트를 찾을 수 없어요.</div>
+    <div class="error-sub" id="error-sub">URL을 확인해주세요.</div>
+  </div>
+
+  <!-- Prep screen (separate layout only) -->
+  <div id="prep-screen" class="fullscreen">
+    <div id="side-menu">
+      <div class="menu-header"><div class="menu-close" onclick="closeMenu()">✕</div></div>
+      <div id="menu-list"></div>
+    </div>
+    <div id="prep-topbar" class="topbar">
+      <div class="topbar-left" onclick="toggleMenu()">
+        <div class="basket-icon-wrap">
+          <div class="basket-layer basket-layer-black" id="prep-cta-icon"></div>
+        </div>
+      </div>
+      <div class="topbar-center" id="topbar-title">준비</div>
+      <div class="topbar-right" onclick="closePrep()">↓</div>
+    </div>
+    <div class="screen-body"><div id="stage-list"></div></div>
+  </div>
+
+  <!-- Guide viewer -->
+  <div id="guide-screen" class="fullscreen">
+    <div id="guide-topbar" class="topbar">
+      <div class="topbar-back" onclick="closeGuide()">←</div>
+      <div class="topbar-center" id="guide-title-bar">안내</div>
+      <div style="width:30px;"></div>
+    </div>
+    <div id="guide-scroll-body" class="guide-scroll-body" style="display:none;">
+      <div id="guide-scroll-blocks"></div>
+    </div>
+    <div id="guide-slide-body" class="guide-slide-body" style="display:none;">
+      <div id="guide-slide-track" class="guide-slide-track"></div>
+      <div id="guide-dots" class="guide-dots"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Auth modal -->
+<div class="modal-ov" id="auth-modal" onclick="ovClick(event,'auth-modal')">
+  <div class="modal-box" id="auth-box">
+    <div class="modal-ttl" id="auth-title">인증이 필요해요</div>
+    <div class="modal-desc" id="auth-desc">인증 코드를 입력해주세요.</div>
+    <input class="inp" id="auth-key-input" placeholder="" style="margin-bottom:20px;" onkeydown="if(event.key==='Enter')confirmAuth()">
+    <div class="modal-err" id="auth-err"></div>
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="closeModal('auth-modal')">취소</button>
+      <button class="modal-btn" id="auth-ok" onclick="confirmAuth()">확인</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
+  authDomain:"beyhome-admin.firebaseapp.com",
+  projectId:"beyhome-admin",
+  storageBucket:"beyhome-admin.firebasestorage.app",
+  messagingSenderId:"849320781553",
+  appId:"1:849320781553:web:9d844044e85995c0aa2b50"
+});
+const db = firebase.firestore();
+
+/* ── URL에서 프로젝트 ID ── */
+const PROJECT_ID = 'block-test-demo';
+const COLORS     = ['#00CE6B','#FFF100','#F95548','#0BC6FF','#FFFFFF'];
+const KEY_COLORS = ['#00CE6B','#FFF100','#F95548','#0BC6FF'];
+
+/* project settings */
+let LAYOUT_TYPE    = 'separate';
+let DDAY_ENABLED   = false;
+let DDAY_DATE      = '';
+let AUTH_ENABLED   = false;
+let AUTH_COLLECTION = '';
+let AUTH_FIELDS    = [];
+let AUTH_KEY_FIELD = '';
+let STAGES         = [];
+let STATS          = [];   // [{id, label, collection, countType, unit, enabled}]
+let ELEMENT_ORDER  = ['edition','logo','dday','stats'];
+
+/* slideshow */
+let bgImages   = [];   // [{url, holdTime, transitionTime}]
+let slideIdx   = 0;
+let colorIdx   = -1;
+let slideTimer = null;
+let prepBg     = KEY_COLORS[0];
+
+/* ── Util ── */
+function setCss(k,v){ document.documentElement.style.setProperty(k,v); }
+function pickOther(ex,pool){ const a=pool.filter(c=>c!==ex); return a[Math.floor(Math.random()*a.length)]; }
+function calcDDay(d){
+  const t=new Date(); t.setHours(0,0,0,0);
+  const n=Math.ceil((new Date(d+'T00:00:00')-t)/86400000);
+  return n>0?'D-'+n:n===0?'D-Day':'D+'+Math.abs(n);
+}
+function setMaskUrl(selector,url){
+  document.querySelectorAll(selector).forEach(el=>{
+    el.style.webkitMaskImage='url('+url+')';
+    el.style.maskImage='url('+url+')';
+  });
+}
+function showError(msg,sub){
+  document.getElementById('error-msg').textContent=msg||'오류가 발생했어요.';
+  document.getElementById('error-sub').textContent=sub||'';
+  document.getElementById('error-screen').classList.add('on');
+}
+function closeModal(id){ document.getElementById(id).classList.remove('on'); }
+function ovClick(e,id){ if(e.target.id===id) closeModal(id); }
+
+/* ── 프로젝트 로드 ── */
+async function loadProjectSettings(){
+  if(!PROJECT_ID){ showError('프로젝트 ID가 없어요.','URL에 ?id=프로젝트ID 형식으로 접근해주세요.'); return; }
+  try{
+    const doc=await db.collection('cms_projects').doc(PROJECT_ID).get();
+    if(!doc.exists){ showError('프로젝트를 찾을 수 없어요.','관리자에게 문의해주세요.'); return; }
+    applySettings(doc.data());
+  }catch(e){ showError('연결에 실패했어요.','잠시 후 다시 시도해주세요.'); }
+}
+function applySettings(d){
+  LAYOUT_TYPE     = d.layoutType     || 'separate';
+  DDAY_ENABLED    = d.ddayEnabled    || false;
+  DDAY_DATE       = d.ddayDate       || '';
+  AUTH_ENABLED    = d.authEnabled    || false;
+  AUTH_COLLECTION = d.authCollection || ('cms_users_'+PROJECT_ID);
+  AUTH_FIELDS     = d.authFields     || [{key:'name',label:'이름',type:'string',required:true}];
+  AUTH_KEY_FIELD  = d.authKeyField   || (AUTH_FIELDS[0]?.key||'name');
+  STAGES = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0)).map(s=>({
+    id:s.id||'',title:s.title||'',status:s.status||'시작 전',
+    progress:s.progress||0,displayType:s.displayType||'text',stageImageUrl:s.stageImageUrl||''
+  }));
+  STATS = (d.stats||[]).filter(s=>s.enabled);
+  ELEMENT_ORDER = d.elementOrder || ['edition','logo','dday','stats'];
+  if(d.keyColors && d.keyColors.length>=2){
+    KEY_COLORS.length=0; d.keyColors.forEach(c=>KEY_COLORS.push(c));
+    setCss('--c',KEY_COLORS[0]);
+  }
+  setCss('--guide-pager', KEY_COLORS[Math.floor(Math.random()*KEY_COLORS.length)]);
+
+  /* title */
+  if(d.name) document.title = d.name;
+
+  /* project title in merged topbar */
+  if(d.name) document.getElementById('merged-title').textContent = d.name;
+  if(d.name) document.getElementById('topbar-title').textContent = d.name;
+
+  /* CTA */
+  if(d.ctaIconUrl){ setMaskUrl('#cta-icon',d.ctaIconUrl); setMaskUrl('#prep-cta-icon',d.ctaIconUrl); }
+  if(d.ctaText) document.getElementById('cta-text').textContent=d.ctaText;
+
+  /* auth modal text */
+  if(d.authTitle) document.getElementById('auth-title').textContent=d.authTitle;
+  if(d.authDesc)  document.getElementById('auth-desc').textContent=d.authDesc;
+  const keyField = AUTH_FIELDS.find(f=>f.key===AUTH_KEY_FIELD);
+  if(keyField) document.getElementById('auth-key-input').placeholder=keyField.label;
+
+  /* bg images */
+  const rawBgs = d.bgImages||[];
+  bgImages = rawBgs.map(b=>typeof b==='string'?{url:b,holdTime:10,transitionTime:2}:b);
+  initSlides();
+
+  /* element order: rebuild top-group in order */
+  renderTopGroup(d);
+
+  /* layout */
+  if(LAYOUT_TYPE==='merged'){
+    document.getElementById('main-content').style.display='none';
+    document.getElementById('merged-content').style.display='flex';
+    /* merged: show edition+dday in merged-stage-wrap */
+    document.getElementById('merged-edition').textContent = d.editionText||'';
+    if(DDAY_ENABLED && DDAY_DATE) document.getElementById('merged-dday').textContent = calcDDay(DDAY_DATE);
+    renderMergedStages();
+  } else {
+    renderSeparateStages();
+  }
+
+  /* load real-time counters */
+  if(STATS.length) loadStats();
+}
+
+function renderTopGroup(d){
+  const tg = document.getElementById('main-content')?.querySelector('.top-group');
+  if(!tg) return;
+  tg.innerHTML = '';
+  ELEMENT_ORDER.forEach(key => {
+    if(key==='edition'){
+      const el=document.createElement('div');
+      el.className='edition-text'; el.id='edition-text';
+      el.textContent=d.editionText||'';
+      tg.appendChild(el);
+    } else if(key==='logo'){
+      const wrap=document.createElement('div');
+      wrap.className='logo-wrap';
+      if(d.logoImgW) wrap.style.width=d.logoImgW+'%';
+      wrap.innerHTML=`<div class="logo-mask" id="logo-mask" style="display:none;"></div>
+        <div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>`;
+      tg.appendChild(wrap);
+      /* re-apply logo settings now that DOM exists */
+      if(d.logoType==='text'&&d.logoText){
+        document.getElementById('logo-mask').style.display='none';
+        const fb=document.getElementById('logo-fallback');
+        fb.textContent=d.logoText;
+        fb.style.fontSize=(d.logoTextSize||'20')+'px';
+        fb.style.textAlign=d.logoTextAlign||'center';
+        fb.style.display='block';
+      } else if(d.logoImageUrl){
+        setMaskUrl('#logo-mask',d.logoImageUrl);
+        document.getElementById('logo-mask').style.display='';
+        document.getElementById('logo-fallback').style.display='none';
+      }
+    } else if(key==='dday'){
+      const el=document.createElement('div');
+      el.className='dday-num'; el.id='dday-num';
+      if(DDAY_ENABLED && DDAY_DATE) el.textContent=calcDDay(DDAY_DATE);
+      tg.appendChild(el);
+    } else if(key==='stats'){
+      const el=document.createElement('div');
+      el.className='visitor-line'; el.id='visitor-line';
+      tg.appendChild(el);
+    }
+  });
+}
+
+async function loadStats(){
+  const vl = document.getElementById('visitor-line');
+  if(!vl||!STATS.length) return;
+  try {
+    const parts = await Promise.all(STATS.map(async s => {
+      const snap = await db.collection(s.collection).get();
+      return `${s.label} ${snap.size}${s.unit||''}`;
+    }));
+    vl.textContent = parts.join(' · ');
+  } catch(e) { /* silently fail */ }
+}
+
+/* ── Slideshow ── */
+function initSlides(){
+  const container=document.getElementById('slides-container');
+  container.innerHTML='';
+  if(!bgImages.length){
+    /* no images: just color cycling */
+    return;
+  }
+  bgImages.forEach((bg,i)=>{
+    const div=document.createElement('div');
+    div.className='slide'+(i===0?' on':'');
+    div.style.backgroundImage='url('+bg.url+')';
+    div.style.transition='opacity '+(bg.transitionTime||2)+'s ease-in-out';
+    container.appendChild(div);
+  });
+  slideIdx=0;
+  scheduleNextSlide();
+}
+function nextColor(){ let i; do{i=Math.floor(Math.random()*COLORS.length);}while(i===colorIdx); colorIdx=i; return COLORS[i]; }
+function scheduleNextSlide(){
+  if(slideTimer) clearTimeout(slideTimer);
+  const cur=bgImages[slideIdx];
+  const hold=(cur?.holdTime||10)*1000;
+  slideTimer=setTimeout(()=>{ advanceSlide(); scheduleNextSlide(); }, hold);
+}
+function advanceSlide(){
+  if(!bgImages.length) return;
+  const slides=document.querySelectorAll('.slide');
+  if(!slides.length) return;
+  slides[slideIdx].classList.remove('on');
+  slideIdx=(slideIdx+1)%bgImages.length;
+  const next=slides[slideIdx];
+  if(next){
+    const trans=(bgImages[slideIdx]?.transitionTime||2)+'s';
+    next.style.transition='opacity '+trans+' ease-in-out';
+    next.classList.add('on');
+  }
+  setCss('--c',nextColor());
+}
+
+/* ── SEPARATE layout ── */
+function renderSeparateStages(){
+  const el=document.getElementById('stage-list');
+  if(!STAGES.length){ el.innerHTML='<div style="padding:40px 20px;text-align:center;color:rgba(0,0,0,.4);font-size:14px;">준비된 단계가 없어요.</div>'; return; }
+  el.innerHTML=STAGES.map((s,i)=>{
+    if(s.displayType==='image' && s.stageImageUrl){
+      return `<div class="stage-card" onclick="goToStage(${i})" style="overflow:hidden;position:relative;min-height:100px;background:url(${s.stageImageUrl}) center/cover no-repeat;">
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,.45);"></div>
+        <div class="stage-card-body" style="position:relative;z-index:1;">
+          <div class="status-dot" style="background:rgba(255,255,255,.9);color:#000;">${s.status}</div>
+          <div class="stage-title" style="color:#fff;">${s.title}</div>
+        </div>
+        <div class="stage-pbar" style="position:relative;z-index:1;"><div class="stage-pbar-fill" style="background:rgba(255,255,255,.7);width:${s.progress}%">${s.progress>0?'<span class="stage-pct-txt" style="color:#000;">'+s.progress+'%</span>':''}</div></div>
+      </div>`;
+    }
+    return `<div class="stage-card" onclick="goToStage(${i})">
+      <div class="stage-card-body">
+        <div class="status-dot">${s.status}</div>
+        <div class="stage-title">${s.title}</div>
+      </div>
+      <div class="stage-pbar"><div class="stage-pbar-fill" style="width:${s.progress}%">${s.progress>0?'<span class="stage-pct-txt">'+s.progress+'%</span>':''}</div></div>
+    </div>`;
+  }).join('');
+}
+
+/* ── MERGED layout ── */
+function renderMergedStages(){
+  const el=document.getElementById('merged-stage-list');
+  if(!STAGES.length){ el.innerHTML='<div style="padding:40px 20px;text-align:center;color:rgba(255,255,255,.6);font-size:14px;">준비된 단계가 없어요.</div>'; return; }
+  el.innerHTML=STAGES.map((s,i)=>{
+    if(s.displayType==='image' && s.stageImageUrl){
+      return `<div class="stage-card merged" onclick="goToStage(${i})" style="overflow:hidden;position:relative;background:url(${s.stageImageUrl}) center/cover no-repeat;border-color:rgba(255,255,255,.7);">
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,.5);"></div>
+        <div class="stage-card-body" style="position:relative;z-index:1;">
+          <div class="status-dot merged">${s.status}</div>
+          <div class="stage-title merged">${s.title}</div>
+        </div>
+        <div class="stage-pbar" style="position:relative;z-index:1;"><div class="stage-pbar-fill merged" style="width:${s.progress}%">${s.progress>0?'<span class="stage-pct-txt" style="color:#000;">'+s.progress+'%</span>':''}</div></div>
+      </div>`;
+    }
+    return `<div class="stage-card merged" onclick="goToStage(${i})">
+      <div class="stage-card-body">
+        <div class="status-dot merged">${s.status}</div>
+        <div class="stage-title merged">${s.title}</div>
+      </div>
+      <div class="stage-pbar"><div class="stage-pbar-fill merged" style="width:${s.progress}%">${s.progress>0?'<span class="stage-pct-txt" style="color:#000;">'+s.progress+'%</span>':''}</div></div>
+    </div>`;
+  }).join('');
+}
+
+/* ── CTA ── */
+function onCtaClick(){
+  if(document.getElementById('error-screen').classList.contains('on')) return;
+  if(AUTH_ENABLED) openAuthModal();
+  else openPrep();
+}
+
+/* ── Auth ── */
+function openAuthModal(){
+  const c=pickOther(COLORS[colorIdx]||'',KEY_COLORS);
+  const box=document.getElementById('auth-box');
+  box.style.background=c; box.style.setProperty('--modal-bg',c);
+  document.getElementById('auth-key-input').value='';
+  document.getElementById('auth-err').textContent='';
+  document.getElementById('auth-ok').textContent='확인';
+  document.getElementById('auth-ok').disabled=false;
+  document.getElementById('auth-modal').classList.add('on');
+  setTimeout(()=>document.getElementById('auth-key-input').focus(),200);
+}
+async function confirmAuth(){
+  const val=document.getElementById('auth-key-input').value.trim();
+  if(!val){ document.getElementById('auth-err').textContent='값을 입력해주세요.'; return; }
+  const btn=document.getElementById('auth-ok');
+  btn.textContent='확인 중…'; btn.disabled=true;
+  try{
+    const keyField=AUTH_FIELDS.find(f=>f.key===AUTH_KEY_FIELD);
+    const queryVal=keyField?.type==='number'?(parseFloat(val)||0):val;
+    const snap=await db.collection(AUTH_COLLECTION).where(AUTH_KEY_FIELD,'==',queryVal).limit(1).get();
+    btn.textContent='확인'; btn.disabled=false;
+    if(!snap.empty){
+      const u=snap.docs[0].data();
+      sessionStorage.setItem('userSession',JSON.stringify({...u,project:PROJECT_ID}));
+      closeModal('auth-modal');
+      if(LAYOUT_TYPE==='merged') { /* already showing stages */ }
+      else openPrep();
+    } else {
+      document.getElementById('auth-err').textContent='인증 정보를 찾을 수 없어요.';
+    }
+  }catch(e){ btn.textContent='확인'; btn.disabled=false; document.getElementById('auth-err').textContent='연결 실패. 다시 시도해주세요.'; }
+}
+
+/* ── Prep screen (separate) ── */
+function openPrep(){
+  prepBg=KEY_COLORS[Math.floor(Math.random()*KEY_COLORS.length)];
+  sessionStorage.setItem('prepBgColor',prepBg);
+  setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
+  renderSeparateStages();
+  document.getElementById('prep-screen').classList.add('open');
+  hideReturnBtn();
+}
+function reopenPrep(){
+  setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
+  document.getElementById('prep-screen').classList.add('open'); hideReturnBtn();
+}
+function closePrep(){
+  document.getElementById('prep-screen').classList.remove('open'); closeMenu();
+  if(sessionStorage.getItem('userSession')) showReturnBtn();
+}
+function showReturnBtn(){ const b=document.getElementById('return-btn'); b.style.display='flex'; b.style.background=prepBg; }
+function hideReturnBtn(){ document.getElementById('return-btn').style.display='none'; }
+
+/* ── Side menu (both layouts) ── */
+function renderMenu(){
+  const target=LAYOUT_TYPE==='merged'?'merged-side':'side';
+  setCss('--menu-bg',pickOther(prepBg,KEY_COLORS));
+  document.getElementById('menu-list').innerHTML=STAGES.map((s,i)=>`
+    <div class="menu-item" onclick="goToStage(${i});closeMenu();">
+      <div class="menu-dot">${s.status}</div>
+      <div class="menu-title">${s.title}</div>
+    </div>`).join('');
+}
+function toggleMenu(){
+  const m=document.getElementById('side-menu');
+  if(m.classList.contains('open')) closeMenu();
+  else{ renderMenu(); m.classList.add('open'); }
+}
+function closeMenu(){ document.getElementById('side-menu').classList.remove('open'); }
+
+/* ── Stage navigation ── */
+function goToStage(i){
+  const stage=STAGES[i];
+  if(!stage) return;
+  if(LAYOUT_TYPE!=='merged') document.getElementById('topbar-title').textContent=stage.title;
+  closeMenu();
+  openStageContent(stage);
+}
+
+/* ── Guide viewer ── */
+let gSlideIdx=0,gSlideTotal=0,gTouchX=0;
+async function openStageContent(stage){
+  document.getElementById('guide-title-bar').textContent=stage.title||'안내';
+  document.getElementById('guide-scroll-body').style.display='none';
+  document.getElementById('guide-slide-body').style.display='none';
+  document.getElementById('guide-screen').classList.add('open');
+  try{
+    const doc=await db.collection('cms_projects').doc(PROJECT_ID)
+      .collection('stage_content').doc(stage.id).get();
+    if(!doc.exists){ showGuideEmpty('안내 내용이 아직 준비되지 않았어요.'); return; }
+    const g=doc.data();
+    const blocks=(g.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
+    if(g.displayType==='slide') renderGuideSlide(blocks);
+    else renderGuideScroll(blocks);
+  }catch(e){ showGuideEmpty('불러오기에 실패했어요.'); }
+}
+function closeGuide(){ document.getElementById('guide-screen').classList.remove('open'); }
+function showGuideEmpty(msg){ document.getElementById('guide-scroll-blocks').innerHTML='<div class="guide-empty">'+msg+'</div>'; document.getElementById('guide-scroll-body').style.display='block'; }
+/* 변수 치환: {{key}} → 로그인 사용자 값 */
+function applyVars(html){
+  try{const u=JSON.parse(sessionStorage.getItem('userSession')||'{}');return html.replace(/\{\{(\w+)\}\}/g,(_,k)=>u[k]??`{{${k}}}`);}catch(e){return html;}
+}
+function blockHtml(b){
+  const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
+  const txS=b.txtColor?`color:${b.txtColor};`:'';
+  const mS=(b.marginV||b.marginH)?`margin:${b.marginV||0}px ${b.marginH||0}px;`:'';
+  if(b.type==='text'){
+    const html=applyVars(b.textContent||'');
+    const inner=`<div class="g-block-text" style="${mS}${bgS}"><div class="g-block-text-inner" style="${txS}">${html}</div></div>`;
+    return b.linkUrl?`<a href="${b.linkUrl}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit;">${inner}</a>`:inner;
+  }
+  if(b.type==='image'){
+    const img=`<div class="g-block-image" style="${mS}${bgS}"><img src="${b.imageUrl||''}" alt="" loading="lazy"></div>`;
+    return b.linkUrl?`<a href="${b.linkUrl}" target="_blank" rel="noopener" style="display:block;">${img}</a>`:img;
+  }
+  if(b.type==='mixed'){
+    const html=applyVars(b.textContent||'');
+    if(b.mixedLayout==='split')
+      return `<div class="g-block-mixed-split" style="${mS}${bgS}"><div class="g-split-img"><img src="${b.imageUrl||''}" alt="" loading="lazy"></div><div class="g-split-text" style="${txS}">${html}</div></div>`;
+    return `<div class="g-block-mixed-overlay" style="${mS}${bgS}"><img src="${b.imageUrl||''}" alt="" loading="lazy"><div class="g-overlay-text"><div class="g-overlay-text-inner" style="${txS}">${html}</div></div></div>`;
+  }
+  if(b.type==='embed' && b.embedUrl){
+    return `<div class="g-block-embed" style="${mS}${bgS}"><iframe src="${b.embedUrl}" width="100%" height="${b.embedHeight||500}" frameborder="0" allowfullscreen style="display:block;border:none;"></iframe></div>`;
+  }
+  return '';
+}
+function renderGuideScroll(blocks){ document.getElementById('guide-scroll-blocks').innerHTML=blocks.map(blockHtml).join(''); document.getElementById('guide-scroll-body').style.display='block'; }
+function renderGuideSlide(blocks){
+  gSlideIdx=0; gSlideTotal=blocks.length;
+  const track=document.getElementById('guide-slide-track');
+  const N=blocks.length||1;
+  track.innerHTML=blocks.map(b=>'<div class="guide-slide-item" style="width:'+(100/N)+'%">'+blockHtml(b)+'</div>').join('');
+  track.style.width=(N*100)+'%';
+  updateDots(); document.getElementById('guide-slide-body').style.display='flex';
+  const sb=document.getElementById('guide-slide-body');
+  sb.ontouchstart=e=>{ gTouchX=e.touches[0].clientX; };
+  sb.ontouchend  =e=>{ const dx=e.changedTouches[0].clientX-gTouchX; if(Math.abs(dx)>40) goSlide(gSlideIdx+(dx<0?1:-1)); };
+}
+function updateDots(){ document.getElementById('guide-dots').innerHTML=Array.from({length:gSlideTotal},(_,i)=>'<div class="guide-dot'+(i===gSlideIdx?' on':'')+'" onclick="goSlide('+i+')"></div>').join(''); }
+function goSlide(i){ gSlideIdx=Math.max(0,Math.min(i,gSlideTotal-1)); document.getElementById('guide-slide-track').style.transform='translateX('+(-gSlideIdx*(100/gSlideTotal))+'%)'; updateDots(); }
+
+/* ── Init ── */
+async function init(){
+  setCss('--c',nextColor());
+  await loadProjectSettings();
+  /* merged + auth: show modal immediately */
+  if(LAYOUT_TYPE==='merged'&&AUTH_ENABLED){
+    const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+    if(!saved.project||saved.project!==PROJECT_ID) openAuthModal();
+  }
+  /* separate: restore session */
+  if(LAYOUT_TYPE==='separate'){
+    const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+    if(saved.project===PROJECT_ID){
+      prepBg=sessionStorage.getItem('prepBgColor')||KEY_COLORS[0];
+      showReturnBtn();
+    }
+  }
+}
+window.addEventListener('load',init);
+</script>
+</body>
+</html>
