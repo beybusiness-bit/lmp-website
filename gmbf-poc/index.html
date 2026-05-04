@@ -245,6 +245,7 @@ let AUTH_KEY_FIELD = '';
 let STAGES         = [];
 let STATS          = [];   // [{id, label, collection, countType, unit, enabled}]
 let ELEMENT_ORDER  = ['edition','logo','dday','stats'];
+let LOGO_BASE64    = ''; // base64 data URL for CSS mask (avoids CORS)
 
 /* slideshow */
 let bgImages   = [];   // [{url, holdTime, transitionTime}]
@@ -289,6 +290,7 @@ function applySettings(d){
   KEY_COLORS = (d.keyColors && d.keyColors.length) ? d.keyColors : (d.keyColor ? [d.keyColor] : ['#00CE6B']);
   setCss('--c', KEY_COLORS[0]);
 
+  LOGO_BASE64     = d.logoBase64     || '';
   LAYOUT_TYPE     = d.layoutType     || 'separate';
   DDAY_ENABLED    = d.ddayEnabled    || false;
   DDAY_DATE       = d.ddayDate       || '';
@@ -360,8 +362,8 @@ function renderTopGroup(d){
       if(d.logoType==='text'&&d.logoText){
         wrap.innerHTML=`<div class="logo-fallback" id="logo-fallback" style="display:block;font-size:${d.logoTextSize||'20'}px;text-align:${d.logoTextAlign||'center'};">${d.logoText}</div>`;
       } else if(d.logoImageUrl){
-        /* Use <img> for broad compatibility (CSS mask requires CORS headers) */
-        wrap.innerHTML=`<img id="logo-img" src="${d.logoImageUrl}" style="width:100%;height:auto;display:block;" onerror="this.style.opacity=0.3">`;
+        const maskSrc = LOGO_BASE64 || d.logoImageUrl;
+        wrap.innerHTML=`<div id="logo-img" style="width:100%;height:80px;background-color:var(--c);-webkit-mask-image:url('${maskSrc}');mask-image:url('${maskSrc}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>`;
       } else {
         wrap.innerHTML=`<div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>`;
       }
