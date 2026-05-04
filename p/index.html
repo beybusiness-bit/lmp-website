@@ -598,23 +598,24 @@ function applyVars(html){
 function blockHtml(b){
   const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
   const txS=b.txtColor?`color:${b.txtColor};`:'';
+  const mS=(b.marginV||b.marginH)?`margin:${b.marginV||0}px ${b.marginH||0}px;`:'';
   if(b.type==='text'){
     const html=applyVars(b.textContent||'');
-    const inner=`<div class="g-block-text" style="${bgS}"><div class="g-block-text-inner" style="${txS}">${html}</div></div>`;
+    const inner=`<div class="g-block-text" style="${mS}${bgS}"><div class="g-block-text-inner" style="${txS}">${html}</div></div>`;
     return b.linkUrl?`<a href="${b.linkUrl}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit;">${inner}</a>`:inner;
   }
   if(b.type==='image'){
-    const img=`<div class="g-block-image" style="${bgS}"><img src="${b.imageUrl||''}" alt="" loading="lazy"></div>`;
+    const img=`<div class="g-block-image" style="${mS}${bgS}"><img src="${b.imageUrl||''}" alt="" loading="lazy"></div>`;
     return b.linkUrl?`<a href="${b.linkUrl}" target="_blank" rel="noopener" style="display:block;">${img}</a>`:img;
   }
   if(b.type==='mixed'){
     const html=applyVars(b.textContent||'');
     if(b.mixedLayout==='split')
-      return `<div class="g-block-mixed-split" style="${bgS}"><div class="g-split-img"><img src="${b.imageUrl||''}" alt="" loading="lazy"></div><div class="g-split-text" style="${txS}">${html}</div></div>`;
-    return `<div class="g-block-mixed-overlay" style="${bgS}"><img src="${b.imageUrl||''}" alt="" loading="lazy"><div class="g-overlay-text"><div class="g-overlay-text-inner" style="${txS}">${html}</div></div></div>`;
+      return `<div class="g-block-mixed-split" style="${mS}${bgS}"><div class="g-split-img"><img src="${b.imageUrl||''}" alt="" loading="lazy"></div><div class="g-split-text" style="${txS}">${html}</div></div>`;
+    return `<div class="g-block-mixed-overlay" style="${mS}${bgS}"><img src="${b.imageUrl||''}" alt="" loading="lazy"><div class="g-overlay-text"><div class="g-overlay-text-inner" style="${txS}">${html}</div></div></div>`;
   }
   if(b.type==='embed' && b.embedUrl){
-    return `<div class="g-block-embed" style="${bgS}"><iframe src="${b.embedUrl}" width="100%" height="${b.embedHeight||500}" frameborder="0" allowfullscreen style="display:block;border:none;"></iframe></div>`;
+    return `<div class="g-block-embed" style="${mS}${bgS}"><iframe src="${b.embedUrl}" width="100%" height="${b.embedHeight||500}" frameborder="0" allowfullscreen style="display:block;border:none;"></iframe></div>`;
   }
   return '';
 }
