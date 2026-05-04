@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>준비 포털</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  background: var(--c);
+  transition: background-color 1s ease;
+  display: flex; justify-content: center;
+  min-height: 100vh; overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+}
+#app { width: 100%; max-width: 430px; min-height: 100vh; position: relative; overflow: hidden; }
+:root { --c: #00CE6B; --prep-bg: #FFF100; --fill-color: #F95548; --menu-bg: #0BC6FF; }
+
+/* ── 디자인 시스템 ── */
+.btn {
+  display: block; width: 100%; background: transparent;
+  border: 2px solid #000; border-radius: 0; color: #000;
+  font-size: 15px; font-weight: 700; padding: 12px 0;
+  cursor: pointer; font-family: inherit; letter-spacing: -0.3px;
+  -webkit-tap-highlight-color: transparent; transition: background 0.15s, color 0.15s;
+}
+.btn:hover, .btn:active { background: #000; color: var(--btn-ctx, #fff); }
+.inp {
+  width: 100%; background: transparent !important; border: none; border-bottom: 2px solid #000;
+  color: #000; font-size: 17px; font-weight: 600; padding: 8px 0; outline: none;
+  font-family: inherit; letter-spacing: 1px;
+  -webkit-appearance: none; appearance: none; border-radius: 0; box-shadow: none !important;
+}
+.inp::placeholder { color: rgba(0,0,0,0.35); font-weight: 400; letter-spacing: 0; }
+.inp:focus { background: transparent !important; outline: none; box-shadow: none !important; }
+.inp:-webkit-autofill { -webkit-box-shadow: 0 0 0 1000px transparent inset !important; }
+
+/* ── 슬라이드쇼 ── */
+.slide { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transition: opacity 2s ease-in-out; }
+.slide.on { opacity: 1; }
+.slide::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.38); }
+
+/* ── 메인 콘텐츠 ── */
+#main-content {
+  position: relative; z-index: 10; min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: space-between;
+  padding: 80px 32px 100px;
+}
+.top-group { display: flex; flex-direction: column; align-items: center; gap: 20px; width: 100%; }
+.bottom-group { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.edition-text { font-size: 18px; font-weight: 900; color: var(--c); letter-spacing: -0.3px; transition: color 1s ease; margin-bottom: -14px; }
+.logo-wrap { width: 76%; max-width: 300px; }
+.logo-mask {
+  width: 100%; aspect-ratio: 835 / 700; background-color: var(--c);
+  -webkit-mask-image: none; mask-image: none;
+  -webkit-mask-size: contain; mask-size: contain;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center; mask-position: center;
+  transition: background-color 1s ease;
+}
+.logo-fallback { font-size: 20px; font-weight: 900; color: var(--c); text-align: center; line-height: 1.3; transition: color 1s ease; display: none; white-space: pre-line; }
+.dday-num { font-size: 32px; font-weight: 300; color: var(--c); line-height: 1; letter-spacing: -1px; transition: color 1s ease; text-align: center; }
+.visitor-line { font-size: 21px; font-weight: 400; color: var(--c); line-height: 1; letter-spacing: -0.5px; transition: color 1s ease; text-align: center; }
+.basket-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.basket-btn:active { opacity: 0.75; transform: scale(0.97); }
+.basket-mask {
+  width: 72px; height: 72px; background-color: var(--c);
+  -webkit-mask-image: none; mask-image: none;
+  -webkit-mask-size: contain; mask-size: contain;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center; mask-position: center;
+  transition: background-color 1s ease;
+}
+.basket-text { font-size: 18px; font-weight: 900; color: var(--c); letter-spacing: -0.3px; transition: color 1s ease; }
+
+/* ── 복귀 버튼 ── */
+#return-btn {
+  display: none; position: absolute; bottom: 100px; right: 24px; z-index: 30;
+  width: 44px; height: 44px; align-items: center; justify-content: center;
+  font-size: 20px; color: #000; font-weight: 900;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  border: 2px solid #000; transition: opacity 0.2s;
+}
+#return-btn:active { opacity: 0.65; }
+
+/* ── 에러 화면 ── */
+#error-screen {
+  display: none; position: absolute; inset: 0; z-index: 200;
+  background: #fff; align-items: center; justify-content: center;
+  flex-direction: column; gap: 16px; padding: 40px;
+}
+#error-screen.on { display: flex; }
+.error-msg { font-size: 18px; font-weight: 800; color: #000; text-align: center; letter-spacing: -0.5px; }
+.error-sub { font-size: 14px; color: rgba(0,0,0,0.5); text-align: center; }
+
+/* ── 공통 풀스크린 ── */
+.fullscreen {
+  position: fixed; top: 0; bottom: 0;
+  left: 50%; width: 100%; max-width: 430px;
+  transform: translateX(-50%) translateY(100%);
+  transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.fullscreen.open { transform: translateX(-50%) translateY(0); }
+#prep-screen  { z-index: 50; background: var(--prep-bg); }
+#guide-screen { z-index: 60; background: #fff; }
+
+/* ── 공통 탑바 ── */
+.topbar { flex-shrink: 0; display: flex; align-items: center; padding: 14px 20px; border-bottom: 2px solid #000; }
+#prep-topbar  { background: var(--prep-bg); }
+#guide-topbar { background: #fff; }
+.topbar-left { display: flex; align-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent; flex-shrink: 0; }
+.basket-icon-wrap { width: 32px; height: 32px; position: relative; }
+.basket-layer {
+  position: absolute; inset: 0;
+  -webkit-mask-image: none; mask-image: none;
+  -webkit-mask-size: contain; mask-size: contain;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center; mask-position: center;
+}
+.basket-layer-black { background: #000; }
+.topbar-center { flex: 1; text-align: center; font-size: 15px; font-weight: 800; color: #000; letter-spacing: -0.3px; }
+.topbar-right { font-size: 22px; color: #000; cursor: pointer; -webkit-tap-highlight-color: transparent; flex-shrink: 0; line-height: 1; padding: 4px; }
+.topbar-back { font-size: 22px; font-weight: 900; color: #000; cursor: pointer; -webkit-tap-highlight-color: transparent; flex-shrink: 0; padding: 4px; line-height: 1; }
+
+/* ── 공통 스크롤 바디 ── */
+.screen-body { flex: 1; overflow-y: auto; padding: 24px 20px 48px; -webkit-overflow-scrolling: touch; }
+
+/* ── 단계 카드 ── */
+.stage-card { border: 2px solid #000; background: transparent; margin-bottom: 16px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: opacity 0.15s; }
+.stage-card:active { opacity: 0.65; }
+.stage-card-body { display: flex; align-items: center; gap: 14px; padding: 18px 16px 14px; }
+.status-dot { width: 42px; height: 42px; border-radius: 50%; background: #000; color: var(--prep-bg); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; flex-shrink: 0; text-align: center; line-height: 1.3; }
+.stage-title { font-size: 15px; font-weight: 800; color: #000; letter-spacing: -0.3px; line-height: 1.35; }
+.stage-pbar { height: 10px; background: transparent; }
+.stage-pbar-fill { height: 100%; background: #000; display: flex; align-items: center; justify-content: flex-end; }
+.stage-pct-txt { font-size: 8px; font-weight: 800; color: var(--prep-bg); padding-right: 4px; white-space: nowrap; }
+
+/* ── 사이드 메뉴 ── */
+#side-menu { position: absolute; inset: 0; background: var(--menu-bg); transform: translateX(-100%); transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1); z-index: 20; display: flex; flex-direction: column; }
+#side-menu.open { transform: translateX(0); }
+.menu-header { flex-shrink: 0; display: flex; justify-content: flex-end; padding: 16px 20px; border-bottom: 1px solid rgba(0,0,0,0.12); }
+.menu-close { font-size: 24px; color: #000; cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 4px 4px 4px 16px; line-height: 1; }
+#menu-list { flex: 1; overflow-y: auto; padding: 8px 28px 40px; }
+.menu-item { display: flex; align-items: center; gap: 14px; padding: 16px 0; border-bottom: 1px solid rgba(0,0,0,0.18); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: opacity 0.15s; }
+.menu-item:last-child { border-bottom: none; }
+.menu-item:active { opacity: 0.6; }
+.menu-dot { width: 36px; height: 36px; border-radius: 50%; background: #000; color: var(--menu-bg); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; flex-shrink: 0; text-align: center; line-height: 1.3; }
+.menu-title { font-size: 16px; font-weight: 800; color: #000; letter-spacing: -0.3px; }
+
+/* ── 가이드 뷰어 ── */
+.guide-scroll-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.guide-slide-body { flex: 1; position: relative; overflow: hidden; }
+.guide-slide-track { display: flex; height: 100%; transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1); }
+.guide-slide-item { flex-shrink: 0; height: 100%; overflow-y: auto; }
+.guide-dots { position: absolute; bottom: 16px; left: 0; right: 0; display: flex; justify-content: center; gap: 8px; z-index: 5; pointer-events: none; }
+.guide-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(0,0,0,0.25); transition: background 0.2s; pointer-events: all; cursor: pointer; }
+.guide-dot.on { background: #000; }
+.g-block-text { padding: 24px 20px; }
+.g-block-text-inner { font-size: 15px; line-height: 1.7; color: #000; max-height: 65vh; overflow-y: auto; }
+.g-block-image img { width: 100%; display: block; }
+.g-block-mixed-overlay { position: relative; min-height: 260px; }
+.g-block-mixed-overlay img { width: 100%; display: block; min-height: 260px; object-fit: cover; }
+.g-overlay-text { position: absolute; inset: 0; display: flex; align-items: flex-end; background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 60%); padding: 20px; }
+.g-overlay-text-inner { color: #fff; font-size: 15px; line-height: 1.6; max-height: 45vh; overflow-y: auto; }
+.g-block-mixed-split { display: flex; flex-direction: column; }
+.g-split-img img { width: 100%; display: block; max-height: 260px; object-fit: cover; }
+.g-split-text { padding: 16px 20px; border-top: 2px solid #000; font-size: 15px; line-height: 1.6; max-height: 160px; overflow-y: auto; }
+.guide-empty { padding: 60px 20px; text-align: center; color: rgba(0,0,0,0.4); font-size: 14px; }
+
+/* ── 모달 ── */
+.modal-ov { display: none; position: fixed; inset: 0; z-index: 300; justify-content: center; align-items: center; background: rgba(0,0,0,0.42); }
+.modal-ov.on { display: flex; }
+.modal-box { width: 82%; max-width: 340px; padding: 36px 28px 28px; color: #000; font-family: inherit; }
+.modal-ttl { font-size: 20px; font-weight: 900; color: #000; margin-bottom: 10px; line-height: 1.3; letter-spacing: -0.5px; }
+.modal-desc { font-size: 14px; color: rgba(0,0,0,0.7); margin-bottom: 24px; line-height: 1.6; }
+.modal-err { font-size: 13px; color: rgba(0,0,0,0.7); margin-bottom: 14px; min-height: 16px; }
+.modal-btns { display: flex; gap: 10px; }
+.modal-btn { flex: 1; padding: 12px 0; background: transparent; border: 2px solid #000; color: #000; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; letter-spacing: -0.3px; -webkit-tap-highlight-color: transparent; transition: background 0.15s, color 0.15s; }
+.modal-btn:hover, .modal-btn:active { background: #000; color: var(--modal-bg, #fff); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="slide on" id="slide-0"></div>
+  <div class="slide" id="slide-1"></div>
+  <div class="slide" id="slide-2"></div>
+  <div class="slide" id="slide-3"></div>
+  <div class="slide" id="slide-4"></div>
+
+  <div id="main-content">
+    <div class="top-group">
+      <div class="edition-text" id="edition-text"></div>
+      <div class="logo-wrap">
+        <div class="logo-mask" id="logo-mask" style="display:none;"></div>
+        <div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>
+      </div>
+      <div class="dday-num" id="dday-num">D-?</div>
+      <div class="visitor-line" id="visitor-line"></div>
+    </div>
+    <div class="bottom-group basket-btn" onclick="openAuthModal()">
+      <div class="basket-mask" id="cta-icon"></div>
+      <div class="basket-text" id="cta-text">준비하기</div>
+    </div>
+  </div>
+
+  <div id="return-btn" onclick="reopenPrep()">↑</div>
+
+  <!-- 에러 화면 -->
+  <div id="error-screen">
+    <div class="error-msg" id="error-msg">프로젝트를 찾을 수 없어요.</div>
+    <div class="error-sub" id="error-sub">URL을 확인해주세요.</div>
+  </div>
+
+  <!-- 셀러 진행화면 -->
+  <div id="prep-screen" class="fullscreen">
+    <div id="side-menu">
+      <div class="menu-header"><div class="menu-close" onclick="closeMenu()">✕</div></div>
+      <div id="menu-list"></div>
+    </div>
+    <div id="prep-topbar" class="topbar">
+      <div class="topbar-left" onclick="toggleMenu()">
+        <div class="basket-icon-wrap">
+          <div class="basket-layer basket-layer-black" id="prep-cta-icon"></div>
+        </div>
+      </div>
+      <div class="topbar-center" id="topbar-title">준비</div>
+      <div class="topbar-right" onclick="closePrep()">↓</div>
+    </div>
+    <div class="screen-body" id="prep-body">
+      <div id="stage-list"></div>
+    </div>
+  </div>
+
+  <!-- 가이드 뷰어 -->
+  <div id="guide-screen" class="fullscreen">
+    <div id="guide-topbar" class="topbar">
+      <div class="topbar-back" onclick="closeGuide()">←</div>
+      <div class="topbar-center" id="guide-title-bar">안내</div>
+      <div style="width:30px;"></div>
+    </div>
+    <div id="guide-scroll-body" class="guide-scroll-body" style="display:none;">
+      <div id="guide-scroll-blocks"></div>
+    </div>
+    <div id="guide-slide-body" class="guide-slide-body" style="display:none;">
+      <div id="guide-slide-track" class="guide-slide-track"></div>
+      <div id="guide-dots" class="guide-dots"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 셀러 인증 모달 -->
+<div class="modal-ov" id="auth-modal" onclick="ovClick(event,'auth-modal')">
+  <div class="modal-box" id="auth-box">
+    <div class="modal-ttl" id="auth-title">셀러이신가요?</div>
+    <div class="modal-desc" id="auth-desc">신청할 때 입력했던 휴대폰 번호로 인증해주세요.</div>
+    <input class="inp" id="auth-phone" type="tel" placeholder="010-0000-0000" maxlength="13" style="margin-bottom:20px;">
+    <div class="modal-err" id="auth-err"></div>
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="closeModal('auth-modal')">취소</button>
+      <button class="modal-btn" id="auth-ok" onclick="confirmAuth()">확인</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
+  authDomain: "beyhome-admin.firebaseapp.com",
+  projectId: "beyhome-admin",
+  storageBucket: "beyhome-admin.firebasestorage.app",
+  messagingSenderId: "849320781553",
+  appId: "1:849320781553:web:9d844044e85995c0aa2b50"
+});
+const db = firebase.firestore();
+
+/* ── URL에서 프로젝트 ID 읽기 ── */
+const PROJECT_ID = 'gmbf-poc';
+const COLORS     = ['#00CE6B','#FFF100','#F95548','#0BC6FF','#FFFFFF'];
+const KEY_COLORS = ['#00CE6B','#FFF100','#F95548','#0BC6FF'];
+
+let EVENT_DATE       = '2099-01-01';
+let SELLER_COLLECTION = 'gmbf_sellers';
+let STAGES           = [];
+let slideIdx = 0, colorIdx = -1, prepBg = KEY_COLORS[0];
+
+/* ── 유틸 ── */
+function setCss(k,v){ document.documentElement.style.setProperty(k,v); }
+function pickOther(ex,pool){ const a=pool.filter(c=>c!==ex); return a[Math.floor(Math.random()*a.length)]; }
+function calcDDay(d){
+  const t=new Date(); t.setHours(0,0,0,0);
+  const n=Math.ceil((new Date(d+'T00:00:00')-t)/86400000);
+  return n>0?'D-'+n:n===0?'D-Day':'D+'+Math.abs(n);
+}
+function setMaskUrl(selector, url) {
+  document.querySelectorAll(selector).forEach(el => {
+    el.style.webkitMaskImage = 'url('+url+')';
+    el.style.maskImage = 'url('+url+')';
+  });
+}
+function showError(msg, sub) {
+  document.getElementById('error-msg').textContent = msg || '프로젝트를 찾을 수 없어요.';
+  document.getElementById('error-sub').textContent = sub || 'URL을 확인해주세요.';
+  document.getElementById('error-screen').classList.add('on');
+}
+
+/* ── 프로젝트 설정 로드 ── */
+async function loadProjectSettings() {
+  if (!PROJECT_ID) { showError('프로젝트 ID가 없어요.', 'URL에 ?id=프로젝트ID 형식으로 접근해주세요.'); return; }
+  try {
+    const doc = await db.collection('cms_projects').doc(PROJECT_ID).get();
+    if (!doc.exists) { showError('프로젝트를 찾을 수 없어요.', '관리자에게 문의해주세요.'); return; }
+    applySettings(doc.data());
+  } catch(e) { showError('연결에 실패했어요.', '잠시 후 다시 시도해주세요.'); }
+}
+
+function applySettings(d) {
+  /* 날짜 및 셀러 컬렉션 */
+  if (d.eventDate) EVENT_DATE = d.eventDate;
+  if (d.sellerCollection) SELLER_COLLECTION = d.sellerCollection;
+
+  /* 페이지 타이틀 */
+  if (d.name) document.title = d.name;
+
+  /* 배경 이미지 */
+  const bgs = (d.bgImages && d.bgImages.length) ? d.bgImages : [];
+  bgs.slice(0,5).forEach((url,i) => {
+    const el = document.getElementById('slide-'+i);
+    if (el && url) el.style.backgroundImage = 'url('+url+')';
+  });
+
+  /* 로고 위 문구 */
+  document.getElementById('edition-text').textContent = d.editionText || '';
+
+  /* 로고 */
+  if (d.logoType === 'text' && d.logoText) {
+    document.getElementById('logo-mask').style.display = 'none';
+    const fb = document.getElementById('logo-fallback');
+    fb.textContent = d.logoText;
+    fb.style.display = 'block';
+  } else if (d.logoImageUrl) {
+    setMaskUrl('#logo-mask', d.logoImageUrl);
+    document.getElementById('logo-mask').style.display = '';
+    document.getElementById('logo-fallback').style.display = 'none';
+  }
+
+  /* CTA 아이콘 */
+  if (d.ctaIconUrl) {
+    setMaskUrl('#cta-icon', d.ctaIconUrl);
+    setMaskUrl('#prep-cta-icon', d.ctaIconUrl);
+  }
+
+  /* CTA 텍스트 */
+  if (d.ctaText) document.getElementById('cta-text').textContent = d.ctaText;
+
+  /* 인증 모달 문구 */
+  if (d.authTitle) document.getElementById('auth-title').textContent = d.authTitle;
+  if (d.authDesc) document.getElementById('auth-desc').textContent = d.authDesc;
+
+  /* 진행화면 타이틀 */
+  if (d.prepTitle) document.getElementById('topbar-title').textContent = d.prepTitle;
+
+  /* D-Day 갱신 */
+  document.getElementById('dday-num').textContent = calcDDay(EVENT_DATE);
+
+  /* 스테이지 */
+  if (d.stages && d.stages.length) {
+    STAGES = d.stages.slice().sort((a,b)=>(a.order||0)-(b.order||0)).map(s=>({
+      id: s.id||'', guideId: s.guideId||'', title: s.title||'',
+      status: s.status||'시작 전', progress: s.progress||0,
+    }));
+  }
+}
+
+/* ── 슬라이드쇼 ── */
+function nextColor(){ let i; do{i=Math.floor(Math.random()*COLORS.length);}while(i===colorIdx); colorIdx=i; return COLORS[i]; }
+function nextSlide(){
+  document.querySelectorAll('.slide')[slideIdx].classList.remove('on');
+  slideIdx=(slideIdx+1)%5;
+  document.querySelectorAll('.slide')[slideIdx].classList.add('on');
+  setCss('--c',nextColor());
+}
+
+/* ── 복귀 버튼 ── */
+function showReturnBtn(){ const b=document.getElementById('return-btn'); b.style.display='flex'; b.style.background=prepBg; }
+function hideReturnBtn(){ document.getElementById('return-btn').style.display='none'; }
+
+/* ── 모달 공통 ── */
+function closeModal(id){ document.getElementById(id).classList.remove('on'); }
+function ovClick(e,id){ if(e.target.id===id) closeModal(id); }
+
+/* ── 셀러 인증 ── */
+function openAuthModal(){
+  if (!PROJECT_ID || document.getElementById('error-screen').classList.contains('on')) return;
+  const c=pickOther(COLORS[colorIdx]||'',KEY_COLORS);
+  const box=document.getElementById('auth-box');
+  box.style.background=c; box.style.setProperty('--modal-bg',c);
+  document.getElementById('auth-phone').value='';
+  document.getElementById('auth-err').textContent='';
+  document.getElementById('auth-ok').textContent='확인';
+  document.getElementById('auth-ok').disabled=false;
+  document.getElementById('auth-modal').classList.add('on');
+}
+async function confirmAuth(){
+  const phone=document.getElementById('auth-phone').value.replace(/\D/g,'');
+  if(phone.length<10){ document.getElementById('auth-err').textContent='올바른 휴대폰 번호를 입력해주세요.'; return; }
+  const btn=document.getElementById('auth-ok');
+  btn.textContent='확인 중…'; btn.disabled=true;
+  try{
+    const snap=await db.collection(SELLER_COLLECTION).where('phone','==',phone).limit(1).get();
+    btn.textContent='확인'; btn.disabled=false;
+    if(!snap.empty){
+      const s=snap.docs[0].data();
+      sessionStorage.setItem('sellerSession',JSON.stringify({name:s.name,phone:s.phone,project:PROJECT_ID}));
+      closeModal('auth-modal'); openPrep();
+    } else { document.getElementById('auth-err').textContent='등록된 셀러를 찾을 수 없어요.'; }
+  }catch(e){ btn.textContent='확인'; btn.disabled=false; document.getElementById('auth-err').textContent='연결 실패. 다시 시도해주세요.'; }
+}
+document.getElementById('auth-phone').addEventListener('input',function(){
+  let v=this.value.replace(/\D/g,'').slice(0,11);
+  if(v.length>7) this.value=v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7);
+  else if(v.length>3) this.value=v.slice(0,3)+'-'+v.slice(3);
+  else this.value=v;
+});
+
+/* ── 진행화면 ── */
+function statusText(s,forMenu){ return s.status==='진행 중'&&forMenu? s.progress+'%': s.status; }
+function openPrep(){
+  prepBg=KEY_COLORS[Math.floor(Math.random()*KEY_COLORS.length)];
+  sessionStorage.setItem('prepBgColor',prepBg);
+  setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
+  renderStages(); document.getElementById('prep-screen').classList.add('open');
+  hideReturnBtn();
+}
+function reopenPrep(){
+  setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
+  renderStages(); document.getElementById('prep-screen').classList.add('open'); hideReturnBtn();
+}
+function closePrep(){
+  document.getElementById('prep-screen').classList.remove('open'); closeMenu();
+  if(sessionStorage.getItem('sellerSession')) showReturnBtn();
+}
+function renderStages(){
+  if (!STAGES.length) {
+    document.getElementById('stage-list').innerHTML='<div style="padding:40px 20px;text-align:center;color:rgba(0,0,0,0.4);font-size:14px;">준비된 단계가 없어요.</div>';
+    return;
+  }
+  document.getElementById('stage-list').innerHTML=STAGES.map((s,i)=>`
+    <div class="stage-card" onclick="goToStage(${i})">
+      <div class="stage-card-body">
+        <div class="status-dot">${statusText(s,false)}</div>
+        <div class="stage-title">${s.title}</div>
+      </div>
+      <div class="stage-pbar"><div class="stage-pbar-fill" style="width:${s.progress}%">${s.progress>0?'<span class="stage-pct-txt">'+s.progress+'%</span>':''}</div></div>
+    </div>`).join('');
+}
+function renderMenu(){
+  setCss('--menu-bg',pickOther(prepBg,KEY_COLORS));
+  document.getElementById('menu-list').innerHTML=STAGES.map((s,i)=>`
+    <div class="menu-item" onclick="goToStage(${i});closeMenu();">
+      <div class="menu-dot">${statusText(s,true)}</div>
+      <div class="menu-title">${s.title}</div>
+    </div>`).join('');
+}
+function toggleMenu(){ const m=document.getElementById('side-menu'); if(m.classList.contains('open')) closeMenu(); else{ renderMenu(); m.classList.add('open'); } }
+function closeMenu(){ document.getElementById('side-menu').classList.remove('open'); }
+function goToStage(i){
+  document.getElementById('topbar-title').textContent=STAGES[i].title;
+  closeMenu();
+  if(STAGES[i].guideId) openGuide(STAGES[i].guideId, STAGES[i].title);
+}
+
+/* ── 가이드 뷰어 ── */
+let gSlideIdx=0, gSlideTotal=0, gTouchX=0;
+async function openGuide(guideId, title){
+  document.getElementById('guide-title-bar').textContent=title||'안내';
+  document.getElementById('guide-scroll-body').style.display='none';
+  document.getElementById('guide-slide-body').style.display='none';
+  document.getElementById('guide-screen').classList.add('open');
+  try{
+    const doc=await db.collection('cms_guides').doc(guideId).get();
+    if(!doc.exists){ showGuideEmpty('안내 내용이 아직 준비되지 않았어요.'); return; }
+    const g=doc.data();
+    const blocks=(g.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
+    if(g.displayType==='slide') renderGuideSlide(blocks);
+    else renderGuideScroll(blocks);
+  }catch(e){ showGuideEmpty('불러오기에 실패했어요.'); }
+}
+function closeGuide(){ document.getElementById('guide-screen').classList.remove('open'); }
+function showGuideEmpty(msg){
+  document.getElementById('guide-scroll-blocks').innerHTML='<div class="guide-empty">'+msg+'</div>';
+  document.getElementById('guide-scroll-body').style.display='block';
+}
+function blockHtml(b){
+  if(b.type==='text')
+    return '<div class="g-block-text"><div class="g-block-text-inner">'+(b.textContent||'')+'</div></div>';
+  if(b.type==='image')
+    return '<div class="g-block-image"><img src="'+(b.imageUrl||'')+'" alt="" loading="lazy"></div>';
+  if(b.type==='mixed'){
+    if(b.mixedLayout==='split')
+      return '<div class="g-block-mixed-split"><div class="g-split-img"><img src="'+(b.imageUrl||'')+'" alt="" loading="lazy"></div><div class="g-split-text">'+(b.textContent||'')+'</div></div>';
+    return '<div class="g-block-mixed-overlay"><img src="'+(b.imageUrl||'')+'" alt="" loading="lazy"><div class="g-overlay-text"><div class="g-overlay-text-inner">'+(b.textContent||'')+'</div></div></div>';
+  }
+  return '';
+}
+function renderGuideScroll(blocks){
+  document.getElementById('guide-scroll-blocks').innerHTML=blocks.map(blockHtml).join('');
+  document.getElementById('guide-scroll-body').style.display='block';
+}
+function renderGuideSlide(blocks){
+  gSlideIdx=0; gSlideTotal=blocks.length;
+  const track=document.getElementById('guide-slide-track');
+  const N=blocks.length||1;
+  track.innerHTML=blocks.map(b=>'<div class="guide-slide-item" style="width:'+(100/N)+'%">'+blockHtml(b)+'</div>').join('');
+  track.style.width=(N*100)+'%';
+  updateDots(); document.getElementById('guide-slide-body').style.display='block';
+  const sb=document.getElementById('guide-slide-body');
+  sb.ontouchstart=e=>{ gTouchX=e.touches[0].clientX; };
+  sb.ontouchend  =e=>{ const dx=e.changedTouches[0].clientX-gTouchX; if(Math.abs(dx)>40) goSlide(gSlideIdx+(dx<0?1:-1)); };
+}
+function updateDots(){
+  document.getElementById('guide-dots').innerHTML=Array.from({length:gSlideTotal},(_,i)=>
+    '<div class="guide-dot'+(i===gSlideIdx?' on':'')+'" onclick="goSlide('+i+')"></div>').join('');
+}
+function goSlide(i){
+  gSlideIdx=Math.max(0,Math.min(i,gSlideTotal-1));
+  document.getElementById('guide-slide-track').style.transform='translateX('+(-gSlideIdx*(100/gSlideTotal))+'%)';
+  updateDots();
+}
+
+/* ── 초기화 ── */
+async function init(){
+  setCss('--c',nextColor()); setInterval(nextSlide,10000);
+  await loadProjectSettings();
+  /* 세션 복원 (같은 프로젝트일 때만) */
+  const saved = JSON.parse(sessionStorage.getItem('sellerSession')||'{}');
+  if(saved.phone && saved.project === PROJECT_ID){
+    prepBg = sessionStorage.getItem('prepBgColor')||KEY_COLORS[0];
+    showReturnBtn();
+  }
+}
+window.addEventListener('load', init);
+</script>
+</body>
+</html>
