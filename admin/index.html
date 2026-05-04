@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LMP 관리자</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  background: #f4f4f4; color: #000; min-height: 100vh;
+}
+
+/* ── 로그인 ── */
+#login-view { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.login-card { width: 100%; max-width: 360px; background: #fff; border: 2px solid #000; padding: 48px 32px 40px; }
+.login-logo { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 6px; }
+.login-sub { font-size: 13px; color: rgba(0,0,0,0.45); margin-bottom: 40px; }
+.google-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 13px 0; background: #fff; border: 2px solid #000;
+  font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+.google-btn:hover { background: #000; color: #fff; }
+.login-err { font-size: 12px; color: #c00; margin-top: 12px; min-height: 16px; text-align: center; }
+
+/* ── 관리자 ── */
+#admin-view { display: none; min-height: 100vh; flex-direction: column; }
+#admin-view.on { display: flex; }
+.admin-header {
+  background: #000; color: #fff; padding: 13px 20px;
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+}
+.admin-title { font-size: 16px; font-weight: 900; flex: 1; }
+.admin-user { font-size: 11px; color: rgba(255,255,255,0.55); }
+.logout-btn {
+  background: transparent; border: 1.5px solid rgba(255,255,255,0.45);
+  color: #fff; font-size: 12px; font-weight: 700; padding: 5px 10px;
+  cursor: pointer; font-family: inherit;
+}
+
+/* ── 탭 ── */
+.tab-nav { background: #fff; border-bottom: 2px solid #000; display: flex; flex-shrink: 0; }
+.tab-btn {
+  flex: 1; padding: 12px 0; background: transparent; border: none; border-bottom: 3px solid transparent;
+  font-size: 14px; font-weight: 700; color: rgba(0,0,0,0.35);
+  cursor: pointer; font-family: inherit; transition: color 0.15s;
+}
+.tab-btn.on { color: #000; border-bottom-color: #000; }
+
+.admin-body { flex: 1; overflow-y: auto; }
+.panel { display: none; max-width: 600px; margin: 0 auto; padding: 20px 16px 80px; }
+.panel.on { display: block; }
+
+/* ── 공통 리스트 ── */
+.list-item {
+  display: flex; align-items: center; gap: 10px; padding: 14px 0;
+  border-bottom: 1.5px solid #000; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.list-item:active { opacity: 0.6; }
+.li-title { flex: 1; font-size: 15px; font-weight: 700; }
+.li-badge { font-size: 10px; font-weight: 700; color: rgba(0,0,0,0.5); border: 1.5px solid rgba(0,0,0,0.3); padding: 2px 6px; }
+.li-arrow { font-size: 18px; }
+.add-btn {
+  display: block; width: 100%; margin-top: 16px; padding: 12px 0;
+  background: transparent; border: 2px solid #000;
+  font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+.add-btn:hover { background: #000; color: #fff; }
+
+/* ── 에디터 공통 ── */
+.ed-top { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+.back-btn { font-size: 20px; font-weight: 900; cursor: pointer; padding: 4px; line-height: 1; -webkit-tap-highlight-color: transparent; }
+.ed-sect { margin-bottom: 22px; }
+.ed-lbl { font-size: 11px; font-weight: 800; color: rgba(0,0,0,0.45); letter-spacing: 0.5px; margin-bottom: 6px; }
+.fi {
+  width: 100%; background: transparent; border: none; border-bottom: 2px solid #000;
+  font-size: 15px; font-weight: 600; color: #000; padding: 8px 0; outline: none; font-family: inherit;
+}
+.fi::placeholder { color: rgba(0,0,0,0.28); font-weight: 400; }
+.fi-sm {
+  width: 100%; background: #fff; border: 1.5px solid rgba(0,0,0,0.25);
+  font-size: 13px; color: #000; padding: 7px 10px; outline: none; font-family: inherit; margin-bottom: 7px;
+}
+.fi-sm:focus { border-color: #000; }
+.save-btn { padding: 9px 18px; background: #000; border: none; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.del-btn { padding: 9px 14px; background: transparent; border: 2px solid #000; color: #000; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.toggle-row { display: flex; }
+.tgl-btn {
+  flex: 1; padding: 9px 0; background: transparent; border: 2px solid #000; border-right: none;
+  font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+.tgl-btn:last-child { border-right: 2px solid #000; }
+.tgl-btn.on { background: #000; color: #fff; }
+.empty-msg { padding: 32px 0; text-align: center; color: rgba(0,0,0,0.35); font-size: 13px; }
+
+/* ── 스테이지 에디터 ── */
+.stage-item {
+  background: #fafafa; border: 1.5px solid rgba(0,0,0,0.15);
+  padding: 12px; margin-bottom: 8px;
+}
+.stage-row1 { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.stage-inp {
+  flex: 1; background: transparent; border: none; border-bottom: 1.5px solid rgba(0,0,0,0.3);
+  font-size: 14px; font-weight: 600; color: #000; padding: 4px 0; outline: none; font-family: inherit;
+}
+.stage-acts { display: flex; gap: 4px; flex-shrink: 0; }
+.s-btn {
+  width: 28px; height: 28px; background: transparent; border: 1.5px solid #000;
+  font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit;
+}
+.s-btn:active { background: #000; color: #fff; }
+.stage-sel {
+  width: 100%; padding: 6px 8px; border: 1.5px solid rgba(0,0,0,0.25);
+  background: #fff; font-size: 13px; color: #000; font-family: inherit; outline: none;
+}
+
+/* ── 블록 에디터 ── */
+#block-modal {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  flex-direction: column; background: #fff;
+}
+#block-modal.on { display: flex; }
+.bm-top {
+  flex-shrink: 0; display: flex; align-items: center; gap: 12px;
+  padding: 13px 16px; border-bottom: 2px solid #000; background: #fff;
+}
+.bm-body { flex: 1; overflow-y: auto; padding: 16px 16px 40px; }
+.blk-tabs { display: flex; margin-bottom: 16px; }
+.blk-tab {
+  flex: 1; padding: 9px 0; background: transparent;
+  border: 2px solid #000; border-right: none;
+  font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+.blk-tab:last-child { border-right: 2px solid #000; }
+.blk-tab.on { background: #000; color: #fff; }
+.fmt-bar { display: flex; flex-wrap: wrap; gap: 5px; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1.5px solid rgba(0,0,0,0.1); }
+.fmt-btn { padding: 5px 8px; background: transparent; border: 1.5px solid rgba(0,0,0,0.3); font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; color: #000; min-width: 30px; text-align: center; user-select: none; }
+.fmt-btn:active { background: #000; color: #fff; }
+.ced { min-height: 150px; max-height: 260px; overflow-y: auto; border: 2px solid #000; padding: 10px; font-size: 14px; line-height: 1.7; outline: none; font-family: inherit; }
+.ced:empty::before { content: attr(data-ph); color: rgba(0,0,0,0.3); pointer-events: none; }
+.img-inp { width: 100%; background: transparent; border: none; border-bottom: 2px solid #000; color: #000; font-size: 13px; padding: 7px 0; outline: none; font-family: inherit; margin-bottom: 10px; }
+.img-prev { width: 100%; max-height: 160px; object-fit: cover; display: none; border: 2px solid #000; margin-bottom: 10px; }
+.mixed-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.mixed-btn { flex: 1; padding: 9px 4px; background: transparent; border: 2px solid #000; font-size: 11px; font-weight: 700; cursor: pointer; font-family: inherit; text-align: center; line-height: 1.5; transition: background 0.15s, color 0.15s; }
+.mixed-btn.on { background: #000; color: #fff; }
+.blk-item { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1.5px solid rgba(0,0,0,0.1); }
+.blk-badge { font-size: 10px; font-weight: 800; color: rgba(0,0,0,0.5); border: 1.5px solid rgba(0,0,0,0.3); padding: 2px 5px; flex-shrink: 0; }
+.blk-prev { flex: 1; font-size: 12px; color: #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.blk-acts { display: flex; gap: 3px; flex-shrink: 0; }
+.b-btn { width: 28px; height: 28px; background: transparent; border: 1.5px solid #000; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit; }
+.b-btn:active { background: #000; color: #fff; }
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="login-view">
+  <div class="login-card">
+    <div class="login-logo">LMP 관리자</div>
+    <div class="login-sub">승인된 계정으로만 접근 가능합니다</div>
+    <button class="google-btn" onclick="signIn()">
+      <svg width="18" height="18" viewBox="0 0 18 18">
+        <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.657 14.013 17.64 11.708 17.64 9.2z"/>
+        <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/>
+        <path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/>
+        <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/>
+      </svg>
+      Google 계정으로 로그인
+    </button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- 관리자 화면 -->
+<div id="admin-view">
+  <div class="admin-header">
+    <div class="admin-title">LMP 관리자</div>
+    <div class="admin-user" id="admin-user-email"></div>
+    <button class="logout-btn" onclick="doSignOut()">로그아웃</button>
+  </div>
+  <div class="tab-nav">
+    <button class="tab-btn on" id="tab-proj"  onclick="switchTab('proj')">프로젝트</button>
+    <button class="tab-btn"    id="tab-guide" onclick="switchTab('guide')">안내</button>
+  </div>
+  <div class="admin-body">
+
+    <!-- 프로젝트 탭 -->
+    <div class="panel on" id="panel-proj">
+      <div id="proj-list-view">
+        <div id="proj-list"><div class="empty-msg">불러오는 중…</div></div>
+        <button class="add-btn" onclick="startNewProject()">+ 프로젝트 추가</button>
+      </div>
+      <div id="proj-edit-view" style="display:none;">
+        <div class="ed-top">
+          <span class="back-btn" onclick="backToProjects()">←</span>
+          <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,0.4);">프로젝트 편집</span>
+          <div style="flex:1;"></div>
+          <button class="save-btn" onclick="saveProject()">저장</button>
+          <button class="del-btn" id="proj-del" onclick="deleteProject()" style="display:none;">삭제</button>
+        </div>
+
+        <div class="ed-sect">
+          <div class="ed-lbl">프로젝트 ID <span style="font-weight:400;opacity:0.55;">(URL·코드에서 참조)</span></div>
+          <input class="fi" id="p-id" placeholder="예: gmbf_poc">
+        </div>
+        <div class="ed-sect">
+          <div class="ed-lbl">프로젝트 이름</div>
+          <input class="fi" id="p-name" placeholder="예: GMBF 플리마켓">
+        </div>
+        <div class="ed-sect">
+          <div class="ed-lbl">🖼 배경 이미지 URL (최대 5개 · 비우면 기본 이미지)</div>
+          <input class="fi-sm" id="p-bg0" placeholder="배경 이미지 1 URL">
+          <input class="fi-sm" id="p-bg1" placeholder="배경 이미지 2 URL">
+          <input class="fi-sm" id="p-bg2" placeholder="배경 이미지 3 URL">
+          <input class="fi-sm" id="p-bg3" placeholder="배경 이미지 4 URL">
+          <input class="fi-sm" id="p-bg4" placeholder="배경 이미지 5 URL">
+        </div>
+        <div class="ed-sect">
+          <div class="ed-lbl">로고 위 문구</div>
+          <input class="fi" id="p-edition" placeholder="예: 제3회">
+        </div>
+        <div class="ed-sect">
+          <div class="ed-lbl">메인 로고</div>
+          <div class="toggle-row" style="margin-bottom:10px;">
+            <button class="tgl-btn on" id="logo-t-img" onclick="setLogoType('image')">이미지 URL</button>
+            <button class="tgl-btn"    id="logo-t-txt" onclick="setLogoType('text')">텍스트</button>
+          </div>
+          <div id="logo-img-sec">
+            <input class="fi-sm" id="p-logo-url" placeholder="로고 이미지 URL (투명 PNG 권장)">
+          </div>
+          <div id="logo-txt-sec" style="display:none;">
+            <input class="fi-sm" id="p-logo-txt" placeholder="로고 텍스트 (예: 게으러서&#10;못열뻔한&#10;플리마켓)">
+          </div>
+        </div>
+        <div class="ed-sect">
+          <div class="ed-lbl">상세화면 열기 아이콘 URL <span style="font-weight:400;opacity:0.55;">(투명 PNG · 비우면 기본)</span></div>
+          <input class="fi" id="p-cta-icon" placeholder="https://…">
+        </div>
+        <div class="ed-sect">
+          <div class="ed-lbl">상세화면 열기 버튼 문구</div>
+          <input class="fi" id="p-cta-text" placeholder="예: 내 마켓 준비하기">
+        </div>
+        <div class="ed-sect">
+          <div class="ed-lbl">스테이지 (박스) 목록</div>
+          <div id="stage-list"></div>
+          <button class="add-btn" style="margin-top:10px;" onclick="addStage()">+ 스테이지 추가</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 안내 탭 -->
+    <div class="panel" id="panel-guide">
+      <div id="guide-list-view">
+        <div id="guide-list"><div class="empty-msg">불러오는 중…</div></div>
+        <button class="add-btn" onclick="startNewGuide()">+ 안내 추가</button>
+      </div>
+      <div id="guide-edit-view" style="display:none;">
+        <div class="ed-top">
+          <span class="back-btn" onclick="backToGuides()">←</span>
+          <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,0.4);">안내 편집</span>
+          <div style="flex:1;"></div>
+          <button class="save-btn" onclick="saveGuide()">저장</button>
+          <button class="del-btn" id="guide-del" onclick="deleteGuide()" style="display:none;">삭제</button>
+        </div>
+        <div class="ed-sect">
+          <div class="ed-lbl">안내 ID <span style="font-weight:400;opacity:0.55;">(스테이지에서 연결할 때 사용)</span></div>
+          <input class="fi" id="g-id" placeholder="예: guide_stage1" style="font-size:14px;">
+        </div>
+        <div class="ed-sect">
+          <div class="ed-lbl">제목</div>
+          <input class="fi" id="g-title" placeholder="안내 제목">
+        </div>
+        <div class="ed-sect">
+          <div class="ed-lbl">전시 방법</div>
+          <div class="toggle-row">
+            <button class="tgl-btn on" id="tog-scroll" onclick="setGuideType('scroll')">스크롤형</button>
+            <button class="tgl-btn"    id="tog-slide"  onclick="setGuideType('slide')">슬라이드형</button>
+          </div>
+        </div>
+        <div class="ed-sect">
+          <div class="ed-lbl">블록</div>
+          <div id="block-list"></div>
+          <button class="add-btn" style="margin-top:10px;" onclick="openBlockModal(null)">+ 블록 추가</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 블록 에디터 -->
+<div id="block-modal">
+  <div class="bm-top">
+    <span class="back-btn" onclick="closeBlockModal()" style="font-size:20px;">←</span>
+    <span style="font-size:14px;font-weight:800;flex:1;" id="bm-title">블록 추가</span>
+    <button class="save-btn" onclick="saveBlock()">완료</button>
+  </div>
+  <div class="bm-body">
+    <div class="blk-tabs">
+      <button class="blk-tab on" id="btab-text"  onclick="switchBlkTab('text')">텍스트</button>
+      <button class="blk-tab"    id="btab-image" onclick="switchBlkTab('image')">이미지</button>
+      <button class="blk-tab"    id="btab-mixed" onclick="switchBlkTab('mixed')">혼합</button>
+    </div>
+
+    <div id="bpanel-text">
+      <div class="fmt-bar">
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtCmd('text','bold')"><b>B</b></button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtSz('text',13)">S</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtSz('text',16)">M</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtSz('text',20)">L</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtSz('text',26)">XL</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtAlign('text','left')">←</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtAlign('text','center')">≡</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtAlign('text','right')">→</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('text','#000')" style="background:#000;color:#fff;border-color:#000;">●</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('text','#fff')" style="background:#fff;border-color:#ccc;">○</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('text','#F95548')" style="background:#F95548;color:#fff;border-color:#F95548;">●</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('text','#0BC6FF')" style="background:#0BC6FF;border-color:#0BC6FF;">●</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('text','#FFF100')" style="background:#FFF100;border-color:#FFF100;">●</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('text','#00CE6B')" style="background:#00CE6B;color:#fff;border-color:#00CE6B;">●</button>
+      </div>
+      <div class="ced" id="ced-text" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)"></div>
+    </div>
+
+    <div id="bpanel-image" style="display:none;">
+      <div class="ed-lbl" style="margin-bottom:8px;">이미지 URL</div>
+      <input class="img-inp" id="img-url" type="url" placeholder="https://…" oninput="prevImg('img-prev',this.value)">
+      <img id="img-prev" class="img-prev">
+      <div style="font-size:11px;color:rgba(0,0,0,0.4);margin-top:4px;">Imgur, Google Drive 등에 올린 뒤 URL 붙여넣기</div>
+    </div>
+
+    <div id="bpanel-mixed" style="display:none;">
+      <div class="ed-lbl" style="margin-bottom:8px;">레이아웃</div>
+      <div class="mixed-row">
+        <button class="mixed-btn on" id="ml-overlay" onclick="setMixedLayout('overlay')">오버레이형<br><small style="font-weight:400;">이미지+텍스트 겹침</small></button>
+        <button class="mixed-btn"    id="ml-split"   onclick="setMixedLayout('split')">분리형<br><small style="font-weight:400;">이미지 위 · 텍스트 아래</small></button>
+      </div>
+      <div class="ed-lbl" style="margin-bottom:8px;">이미지 URL</div>
+      <input class="img-inp" id="mixed-img-url" type="url" placeholder="https://…" oninput="prevImg('mixed-img-prev',this.value)">
+      <img id="mixed-img-prev" class="img-prev">
+      <div class="ed-lbl" style="margin-top:10px;margin-bottom:8px;">텍스트</div>
+      <div class="fmt-bar">
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtCmd('mixed','bold')"><b>B</b></button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtSz('mixed',13)">S</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtSz('mixed',16)">M</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtSz('mixed',20)">L</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtAlign('mixed','left')">←</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtAlign('mixed','center')">≡</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtAlign('mixed','right')">→</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('mixed','#000')" style="background:#000;color:#fff;border-color:#000;">●</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('mixed','#fff')" style="background:#fff;border-color:#ccc;">○</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('mixed','#F95548')" style="background:#F95548;color:#fff;border-color:#F95548;">●</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('mixed','#0BC6FF')" style="background:#0BC6FF;border-color:#0BC6FF;">●</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('mixed','#FFF100')" style="background:#FFF100;border-color:#FFF100;">●</button>
+        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('mixed','#00CE6B')" style="background:#00CE6B;color:#fff;border-color:#00CE6B;">●</button>
+      </div>
+      <div class="ced" id="ced-mixed" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
+  authDomain: "beyhome-admin.firebaseapp.com",
+  projectId: "beyhome-admin",
+  storageBucket: "beyhome-admin.firebasestorage.app",
+  messagingSenderId: "849320781553",
+  appId: "1:849320781553:web:9d844044e85995c0aa2b50"
+});
+const db  = firebase.firestore();
+const auth = firebase.auth();
+const ALLOWED = ['baekeun0@gmail.com', 'itsbeybusiness@gmail.com'];
+
+/* ── Auth ── */
+auth.onAuthStateChanged(user => {
+  if (user && ALLOWED.includes(user.email)) {
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('admin-user-email').textContent = user.email;
+    document.getElementById('admin-view').classList.add('on');
+    loadProjects(); loadGuides();
+  } else {
+    if (user) auth.signOut();
+    document.getElementById('login-view').style.display = '';
+    document.getElementById('admin-view').classList.remove('on');
+  }
+});
+function signIn() {
+  document.getElementById('login-err').textContent = '';
+  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => {
+    document.getElementById('login-err').textContent = '로그인 실패: ' + e.message;
+  });
+}
+function doSignOut() { auth.signOut(); }
+
+/* ── 탭 ── */
+function switchTab(t) {
+  ['proj','guide'].forEach(k => {
+    document.getElementById('tab-'+k).classList.toggle('on', k===t);
+    document.getElementById('panel-'+k).classList.toggle('on', k===t);
+  });
+}
+
+/* ── 유틸 ── */
+function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
+function epd(e) { e.preventDefault(); }
+
+/* ────── 프로젝트 ────── */
+let curProjId = null, curStages = [], curLogoType = 'image';
+
+async function loadProjects() {
+  const el = document.getElementById('proj-list');
+  el.innerHTML = '<div class="empty-msg">불러오는 중…</div>';
+  try {
+    const snap = await db.collection('cms_projects').orderBy('updatedAt','desc').get();
+    if (snap.empty) { el.innerHTML = '<div class="empty-msg">아직 프로젝트가 없어요.</div>'; return; }
+    el.innerHTML = snap.docs.map(d => `
+      <div class="list-item" onclick="editProject('${d.id}')">
+        <div class="li-title">${d.data().name||'(이름 없음)'}</div>
+        <div class="li-badge">${d.id}</div>
+        <div class="li-arrow">›</div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = '<div class="empty-msg">불러오기 실패</div>'; }
+}
+function showProjView(v) {
+  document.getElementById('proj-list-view').style.display = v==='list' ? 'block' : 'none';
+  document.getElementById('proj-edit-view').style.display = v==='edit' ? 'block' : 'none';
+}
+function backToProjects() { showProjView('list'); curProjId=null; curStages=[]; }
+function startNewProject() {
+  curProjId=null; curStages=[]; curLogoType='image';
+  ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text',
+   'p-bg0','p-bg1','p-bg2','p-bg3','p-bg4'].forEach(id => { document.getElementById(id).value=''; });
+  document.getElementById('proj-del').style.display = 'none';
+  setLogoType('image'); renderStageList(); showProjView('edit');
+}
+async function editProject(id) {
+  showProjView('edit');
+  try {
+    const doc = await db.collection('cms_projects').doc(id).get();
+    if (!doc.exists) return;
+    const d = doc.data();
+    curProjId = id; curStages = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
+    document.getElementById('p-id').value        = id;
+    document.getElementById('p-name').value      = d.name||'';
+    document.getElementById('p-edition').value   = d.editionText||'';
+    document.getElementById('p-logo-url').value  = d.logoImageUrl||'';
+    document.getElementById('p-logo-txt').value  = d.logoText||'';
+    document.getElementById('p-cta-icon').value  = d.ctaIconUrl||'';
+    document.getElementById('p-cta-text').value  = d.ctaText||'';
+    (d.bgImages||[]).forEach((u,i) => { const el=document.getElementById('p-bg'+i); if(el) el.value=u||''; });
+    document.getElementById('proj-del').style.display = 'block';
+    setLogoType(d.logoType||'image'); renderStageList();
+  } catch(e) {}
+}
+function setLogoType(t) {
+  curLogoType = t;
+  document.getElementById('logo-t-img').classList.toggle('on', t==='image');
+  document.getElementById('logo-t-txt').classList.toggle('on', t==='text');
+  document.getElementById('logo-img-sec').style.display = t==='image' ? 'block' : 'none';
+  document.getElementById('logo-txt-sec').style.display = t==='text'  ? 'block' : 'none';
+}
+async function saveProject() {
+  const id   = document.getElementById('p-id').value.trim();
+  const name = document.getElementById('p-name').value.trim();
+  if (!id)   { alert('프로젝트 ID를 입력해주세요.'); return; }
+  if (!name) { alert('프로젝트 이름을 입력해주세요.'); return; }
+  const bgImages = [0,1,2,3,4].map(i=>document.getElementById('p-bg'+i).value.trim()).filter(Boolean);
+  try {
+    await db.collection('cms_projects').doc(id).set({
+      name, logoType: curLogoType,
+      logoImageUrl: document.getElementById('p-logo-url').value.trim(),
+      logoText:     document.getElementById('p-logo-txt').value.trim(),
+      editionText:  document.getElementById('p-edition').value.trim(),
+      ctaIconUrl:   document.getElementById('p-cta-icon').value.trim(),
+      ctaText:      document.getElementById('p-cta-text').value.trim(),
+      bgImages,
+      stages: curStages.map((s,i)=>({...s,order:i})),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    curProjId = id;
+    document.getElementById('proj-del').style.display = 'block';
+    alert('저장했어요!'); loadProjects();
+  } catch(e) { alert('저장 실패: '+e.message); }
+}
+async function deleteProject() {
+  if (!curProjId || !confirm('이 프로젝트를 삭제할까요?')) return;
+  try { await db.collection('cms_projects').doc(curProjId).delete(); backToProjects(); loadProjects(); }
+  catch(e) { alert('삭제 실패'); }
+}
+
+/* ── 스테이지 ── */
+function renderStageList() {
+  const el = document.getElementById('stage-list');
+  if (!curStages.length) { el.innerHTML = '<div class="empty-msg" style="padding:12px 0;">스테이지가 없어요.</div>'; return; }
+  const opts = '<option value="">-- 안내 없음 --</option>' +
+    cachedGuides.map(g=>`<option value="${g.id}">${g.title||g.id}</option>`).join('');
+  el.innerHTML = curStages.map((s,i) => `
+    <div class="stage-item">
+      <div class="stage-row1">
+        <input class="stage-inp" value="${(s.title||'').replace(/"/g,'&quot;')}" placeholder="스테이지 제목"
+               oninput="curStages[${i}].title=this.value">
+        <div class="stage-acts">
+          ${i>0?`<button class="s-btn" onclick="mvStage(${i},-1)">↑</button>`:'<div style="width:28px;"></div>'}
+          ${i<curStages.length-1?`<button class="s-btn" onclick="mvStage(${i},1)">↓</button>`:'<div style="width:28px;"></div>'}
+          <button class="s-btn" onclick="rmStage(${i})">✕</button>
+        </div>
+      </div>
+      <select class="stage-sel" onchange="curStages[${i}].guideId=this.value">${opts}</select>
+    </div>`).join('');
+  curStages.forEach((s,i) => {
+    const sel = document.querySelectorAll('.stage-sel')[i];
+    if (sel && s.guideId) sel.value = s.guideId;
+  });
+}
+function addStage()    { curStages.push({id:uid(),title:'',guideId:'',order:curStages.length}); renderStageList(); }
+function mvStage(i,d)  { const j=i+d; if(j<0||j>=curStages.length) return; [curStages[i],curStages[j]]=[curStages[j],curStages[i]]; renderStageList(); }
+function rmStage(i)    { curStages.splice(i,1); renderStageList(); }
+
+/* ────── 안내 CMS ────── */
+let cachedGuides = [];
+let curGuideId = null, curBlocks = [], curGuideDispType = 'scroll';
+
+async function loadGuides() {
+  const el = document.getElementById('guide-list');
+  el.innerHTML = '<div class="empty-msg">불러오는 중…</div>';
+  try {
+    const snap = await db.collection('cms_guides').orderBy('updatedAt','desc').get();
+    cachedGuides = snap.docs.map(d=>({id:d.id, title:d.data().title||''}));
+    if (snap.empty) { el.innerHTML = '<div class="empty-msg">아직 안내가 없어요.</div>'; return; }
+    el.innerHTML = snap.docs.map(d => `
+      <div class="list-item" onclick="editGuide('${d.id}')">
+        <div class="li-title">${d.data().title||'(제목 없음)'}</div>
+        <div class="li-badge">${d.data().displayType==='slide'?'슬라이드':'스크롤'}</div>
+        <div class="li-badge" style="opacity:0.5;">${d.id}</div>
+        <div class="li-arrow">›</div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = '<div class="empty-msg">불러오기 실패</div>'; }
+}
+function showGuideView(v) {
+  document.getElementById('guide-list-view').style.display = v==='list' ? 'block' : 'none';
+  document.getElementById('guide-edit-view').style.display = v==='edit' ? 'block' : 'none';
+}
+function backToGuides() { showGuideView('list'); curGuideId=null; curBlocks=[]; }
+function startNewGuide() {
+  curGuideId=null; curBlocks=[]; curGuideDispType='scroll';
+  document.getElementById('g-id').value='';
+  document.getElementById('g-title').value='';
+  document.getElementById('guide-del').style.display='none';
+  setGuideType('scroll'); renderBlockList(); showGuideView('edit');
+}
+async function editGuide(id) {
+  showGuideView('edit');
+  try {
+    const doc = await db.collection('cms_guides').doc(id).get();
+    if (!doc.exists) return;
+    const d = doc.data();
+    curGuideId=id; curBlocks=(d.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
+    curGuideDispType=d.displayType||'scroll';
+    document.getElementById('g-id').value    = id;
+    document.getElementById('g-title').value = d.title||'';
+    document.getElementById('guide-del').style.display = 'block';
+    setGuideType(curGuideDispType); renderBlockList();
+  } catch(e) {}
+}
+function setGuideType(t) {
+  curGuideDispType=t;
+  document.getElementById('tog-scroll').classList.toggle('on',t==='scroll');
+  document.getElementById('tog-slide').classList.toggle('on',t==='slide');
+}
+async function saveGuide() {
+  const id    = document.getElementById('g-id').value.trim();
+  const title = document.getElementById('g-title').value.trim();
+  if (!id)    { alert('안내 ID를 입력해주세요.'); return; }
+  if (!title) { alert('제목을 입력해주세요.'); return; }
+  try {
+    await db.collection('cms_guides').doc(id).set({
+      title, displayType: curGuideDispType,
+      blocks: curBlocks.map((b,i)=>({...b,order:i})),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+    curGuideId = id;
+    document.getElementById('guide-del').style.display = 'block';
+    alert('저장했어요!'); loadGuides();
+  } catch(e) { alert('저장 실패: '+e.message); }
+}
+async function deleteGuide() {
+  if (!curGuideId || !confirm('이 안내를 삭제할까요?')) return;
+  try { await db.collection('cms_guides').doc(curGuideId).delete(); backToGuides(); loadGuides(); }
+  catch(e) { alert('삭제 실패'); }
+}
+function renderBlockList() {
+  const el = document.getElementById('block-list');
+  if (!curBlocks.length) { el.innerHTML = '<div class="empty-msg" style="padding:10px 0;">블록이 없어요.</div>'; return; }
+  el.innerHTML = curBlocks.map((b,i) => {
+    const tl = b.type==='text'?'텍스트':b.type==='image'?'이미지':'혼합';
+    const pv = b.type==='text' ? (b.textContent||'').replace(/<[^>]+>/g,'').slice(0,32) :
+               b.type==='image' ? (b.imageUrl?'[이미지]':'(URL 없음)') :
+               '['+(b.mixedLayout==='split'?'분리':'오버레이')+'] '+(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,22);
+    return `<div class="blk-item">
+      <div class="blk-badge">${tl}</div>
+      <div class="blk-prev">${pv||'(내용 없음)'}</div>
+      <div class="blk-acts">
+        ${i>0?`<button class="b-btn" onclick="mvBlk(${i},-1)">↑</button>`:'<div style="width:28px;"></div>'}
+        ${i<curBlocks.length-1?`<button class="b-btn" onclick="mvBlk(${i},1)">↓</button>`:'<div style="width:28px;"></div>'}
+        <button class="b-btn" onclick="openBlockModal(${i})">✎</button>
+        <button class="b-btn" onclick="rmBlk(${i})">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function mvBlk(i,d){ const j=i+d; if(j<0||j>=curBlocks.length) return; [curBlocks[i],curBlocks[j]]=[curBlocks[j],curBlocks[i]]; renderBlockList(); }
+function rmBlk(i)  { curBlocks.splice(i,1); renderBlockList(); }
+
+/* ── 블록 에디터 ── */
+let curBlkIdx=null, curBlkType='text', curMixedLayout='overlay', savedRange=null;
+
+function saveRange(el){ const sel=window.getSelection(); if(sel.rangeCount) savedRange={el,range:sel.getRangeAt(0).cloneRange()}; }
+function restoreRange(el){ if(savedRange&&savedRange.el===el){ const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(savedRange.range); } }
+
+function openBlockModal(idx) {
+  curBlkIdx=idx;
+  document.getElementById('bm-title').textContent = idx===null?'블록 추가':'블록 편집';
+  const b = idx!==null ? curBlocks[idx] : {type:'text',textContent:'',imageUrl:'',mixedLayout:'overlay'};
+  curBlkType=b.type||'text'; curMixedLayout=b.mixedLayout||'overlay';
+  switchBlkTab(curBlkType);
+  document.getElementById('ced-text').innerHTML       = b.type==='text'  ?(b.textContent||''):'';
+  document.getElementById('img-url').value             = b.type==='image' ?(b.imageUrl||''):'';
+  document.getElementById('mixed-img-url').value       = b.type==='mixed' ?(b.imageUrl||''):'';
+  document.getElementById('ced-mixed').innerHTML       = b.type==='mixed' ?(b.textContent||''):'';
+  prevImg('img-prev', document.getElementById('img-url').value);
+  prevImg('mixed-img-prev', document.getElementById('mixed-img-url').value);
+  setMixedLayout(curMixedLayout); savedRange=null;
+  document.getElementById('block-modal').classList.add('on');
+}
+function closeBlockModal() { document.getElementById('block-modal').classList.remove('on'); }
+function saveBlock() {
+  let b = {id:uid(), type:curBlkType};
+  if (curBlkType==='text')       b.textContent = document.getElementById('ced-text').innerHTML;
+  else if (curBlkType==='image') b.imageUrl    = document.getElementById('img-url').value.trim();
+  else { b.imageUrl=document.getElementById('mixed-img-url').value.trim(); b.textContent=document.getElementById('ced-mixed').innerHTML; b.mixedLayout=curMixedLayout; }
+  if (curBlkIdx!==null) curBlocks[curBlkIdx]={...curBlocks[curBlkIdx],...b};
+  else curBlocks.push(b);
+  renderBlockList(); closeBlockModal();
+}
+function switchBlkTab(t) {
+  curBlkType=t;
+  ['text','image','mixed'].forEach(k=>{
+    document.getElementById('btab-'+k).classList.toggle('on',k===t);
+    document.getElementById('bpanel-'+k).style.display=k===t?'block':'none';
+  });
+}
+function setMixedLayout(l) {
+  curMixedLayout=l;
+  document.getElementById('ml-overlay').classList.toggle('on',l==='overlay');
+  document.getElementById('ml-split').classList.toggle('on',l==='split');
+}
+function getEd(ctx) { return document.getElementById(ctx==='text'?'ced-text':'ced-mixed'); }
+function focusEd(ctx){ const ed=getEd(ctx); ed.focus(); restoreRange(ed); }
+function fmtCmd(ctx,cmd)   { focusEd(ctx); document.execCommand(cmd,false,null); }
+function fmtSz(ctx,px)     { focusEd(ctx); document.execCommand('fontSize',false,'7'); getEd(ctx).querySelectorAll('font[size="7"]').forEach(el=>{el.removeAttribute('size');el.style.fontSize=px+'px';}); }
+function fmtAlign(ctx,dir) { focusEd(ctx); document.execCommand('justify'+dir.charAt(0).toUpperCase()+dir.slice(1),false,null); }
+function fmtClr(ctx,clr)   { focusEd(ctx); document.execCommand('foreColor',false,clr); }
+function prevImg(id,url)   { const el=document.getElementById(id); if(url&&url.startsWith('http')){ el.src=url; el.style.display='block'; } else el.style.display='none'; }
+</script>
+</body>
+</html>
