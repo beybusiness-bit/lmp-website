@@ -49,7 +49,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .fi::placeholder{color:rgba(0,0,0,.28);font-weight:400;}
 .fi-sm{width:100%;background:#fff;border:1.5px solid rgba(0,0,0,.25);font-size:13px;color:#000;padding:7px 10px;outline:none;font-family:inherit;margin-bottom:7px;}
 .fi-sm:focus{border-color:#000;}
-.save-btn{padding:9px 18px;background:#000;border:2px solid #000;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.save-btn{padding:9px 18px;background:#000;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 .del-btn{padding:9px 14px;background:transparent;border:2px solid #000;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 .toggle-row{display:flex;}
 .tgl-btn{flex:1;padding:9px 0;background:transparent;border:2px solid #000;border-right:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s,color .15s;}
@@ -134,13 +134,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .sect-head{font-size:10px;font-weight:900;letter-spacing:.9px;text-transform:uppercase;background:rgba(0,0,0,.08);color:rgba(0,0,0,.5);padding:5px 16px;margin:20px -16px 14px;display:block;}
 .ip-first-sect{margin-top:2px;}
 /* preview */
-#preview-wrap{position:fixed;right:16px;top:72px;z-index:90;}
-#preview-phone{border:3px solid #000;border-radius:18px;overflow:hidden;position:relative;background:#f5f5f5;box-shadow:0 6px 24px rgba(0,0,0,.2);}
-#guide-preview-wrap{position:fixed;right:16px;top:72px;z-index:90;}
-#guide-preview-phone{border:3px solid #000;border-radius:18px;overflow:hidden;position:relative;background:#fff;box-shadow:0 6px 24px rgba(0,0,0,.2);}
-.prev-sz-btn{padding:2px 7px;background:transparent;border:1.5px solid #000;color:#000;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;line-height:1.4;border-radius:3px;}
-.prev-sz-btn:hover{background:#000;color:#fff;}
-.prev-btn{padding:9px 14px;background:transparent;border:2px solid #000;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+#preview-wrap{position:fixed;right:16px;top:72px;z-index:90;width:196px;}
+#preview-phone{width:196px;height:348px;border:3px solid #000;border-radius:18px;overflow:hidden;position:relative;background:#f5f5f5;box-shadow:0 6px 24px rgba(0,0,0,.2);}
+.prev-btn{padding:5px 10px;background:#f4f4f4;border:1.5px solid rgba(0,0,0,.25);color:#000;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
 .prev-btn:hover{background:#000;color:#fff;}
 .switch-row{display:flex;align-items:center;gap:10px;}
 .switch{width:40px;height:22px;background:#ccc;border-radius:11px;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s;}
@@ -176,10 +172,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <button class="hdr-btn" onclick="managePAT()" id="pat-btn">토큰 ●</button>
     <button class="hdr-btn" onclick="doSignOut()">로그아웃</button>
   </div>
-  <div class="tab-nav">
-    <button class="tab-btn on" id="tab-proj"  onclick="switchTab('proj')">프로젝트</button>
-    <button class="tab-btn"    id="tab-guide" onclick="switchTab('guide')">내용</button>
-  </div>
+  <div class="tab-nav" style="display:none;"></div>
   <div class="admin-body">
 
     <!-- 프로젝트 탭 -->
@@ -217,7 +210,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <input class="fi" id="p-name" placeholder="예: GMBF 플리마켓">
           </div>
           <div class="ed-sect">
-            <div class="ed-lbl">문구</div>
+            <div class="ed-lbl">로고 위 문구</div>
             <input class="fi" id="p-edition" placeholder="예: 제3회">
           </div>
           <div class="sect-head">D-Day</div>
@@ -245,13 +238,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
         <!-- 디자인 -->
         <div class="inner-panel" id="ip-design">
-          <div class="sect-head ip-first-sect">키컬러</div>
-          <div class="ed-sect">
-            <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:10px;line-height:1.6;">배경색·텍스트·아이콘 색상으로 사용됩니다. 배경 슬라이드 전환 시 순서대로 순환합니다. <b>최소 2개 필요</b></div>
-            <div id="key-color-list"></div>
-            <button class="add-btn" style="margin-top:8px;" onclick="addKeyColor()">+ 색상 추가</button>
-          </div>
-          <div class="sect-head">화면 구성</div>
+          <div class="sect-head ip-first-sect">화면 구성</div>
           <div class="ed-sect">
             <div class="toggle-row" style="margin-bottom:8px;">
               <button class="tgl-btn on" id="lt-sep" onclick="setLayoutType('separate')">메인화면 별도</button>
@@ -267,7 +254,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div id="bg-list"></div>
             <button class="add-btn" onclick="addBgImage()">+ 배경 이미지 추가</button>
             <input type="file" id="bg-file-input" accept="image/*" style="display:none;" onchange="onBgFileSelected(event)">
-            <input type="file" id="stage-img-file-input" accept="image/*" style="display:none;" onchange="onStageImgFileSelected(event)">
           </div>
           <div class="sect-head">로고</div>
           <div class="ed-sect">
@@ -277,17 +263,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             </div>
             <div id="logo-img-sec">
               <input class="fi-sm" id="p-logo-url" placeholder="로고 이미지 URL (투명 PNG 권장)">
-              <button class="bg-up-btn" onclick="document.getElementById('logo-file-inp').click()" style="margin-top:4px;">📁 업로드</button>
-              <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:4px;">⚠️ 배경이 투명한 PNG만 업로드하세요 — 색상 자동 적용됩니다</div>
-              <input type="file" id="logo-file-inp" accept="image/png" style="display:none;" onchange="uploadSingleImage(event,'p-logo-url','cms_projects/logo',true)">
-              <div style="margin-top:8px;">
-                <div class="ed-lbl">너비 (%)</div>
-                <input class="fi-sm" type="number" id="p-logo-img-w" value="76" min="10" max="100" step="5" placeholder="76" style="margin-bottom:0;" oninput="curLogoImgW=Math.min(100,+this.value||76);schedulePreviewUpdate()">
-                <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:3px;">화면 가로 대비 비율 — 높이는 이미지 비율에 맞게 자동</div>
-              </div>
+              <button class="bg-up-btn" onclick="document.getElementById('logo-file-inp').click()" style="margin-top:4px;">📁 직접 업로드</button>
+              <input type="file" id="logo-file-inp" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'p-logo-url','cms_projects/logo')">
             </div>
             <div id="logo-txt-sec" style="display:none;">
-              <textarea class="fi-sm" id="p-logo-txt" placeholder="로고 텍스트 (줄바꿈: Enter)" rows="3" oninput="schedulePreviewUpdate()" style="resize:vertical;line-height:1.5;"></textarea>
+              <input class="fi-sm" id="p-logo-txt" placeholder="로고 텍스트" oninput="schedulePreviewUpdate()">
               <div style="display:flex;gap:6px;margin-top:4px;">
                 <select class="fi-sm" id="p-logo-txt-size" style="flex:1;margin-bottom:0;" onchange="schedulePreviewUpdate()">
                   <option value="18">작게 (18px)</option>
@@ -308,9 +288,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div class="ed-sect">
               <div class="ed-lbl">아이콘 <span style="font-weight:400;opacity:.55;">(투명 PNG)</span></div>
               <input class="fi-sm" id="p-cta-icon" placeholder="https://…">
-              <button class="bg-up-btn" onclick="document.getElementById('cta-icon-file-inp').click()" style="margin-top:4px;">📁 업로드</button>
-              <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:4px;">⚠️ 배경이 투명한 PNG만 업로드하세요 — 색상 자동 적용됩니다</div>
-              <input type="file" id="cta-icon-file-inp" accept="image/png" style="display:none;" onchange="uploadSingleImage(event,'p-cta-icon','cms_projects/cta',true)">
+              <button class="bg-up-btn" onclick="document.getElementById('cta-icon-file-inp').click()" style="margin-top:4px;">📁 직접 업로드</button>
+              <input type="file" id="cta-icon-file-inp" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'p-cta-icon','cms_projects/cta')">
             </div>
             <div class="ed-sect">
               <div class="ed-lbl">버튼 문구</div>
@@ -381,61 +360,68 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       </div>
     </div>
 
-    <!-- 안내 탭 -->
-    <div class="panel" id="panel-guide">
-      <div id="guide-list-view">
-        <div id="guide-list"><div class="empty-msg">불러오는 중…</div></div>
-        <button class="add-btn" onclick="startNewGuide()">+ 내용 추가</button>
-      </div>
-      <div id="guide-edit-view" style="display:none;">
-        <div class="ed-top">
-          <span class="back-btn" onclick="backToGuides()">←</span>
-          <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">내용 편집</span>
-          <div style="flex:1;"></div>
-          <button class="prev-btn" onclick="toggleGuidePreview()">미리보기</button>
-          <button class="save-btn" onclick="saveGuide()">저장</button>
-          <button class="del-btn" id="guide-del" onclick="deleteGuide()" style="display:none;">삭제</button>
-        </div>
-        <div class="ed-sect">
-          <div class="ed-lbl">내용 ID</div>
-          <input class="fi" id="g-id" placeholder="예: guide_stage1" style="font-size:14px;">
-        </div>
-        <div class="ed-sect">
-          <div class="ed-lbl">제목</div>
-          <input class="fi" id="g-title" placeholder="내용 제목">
-        </div>
-        <div class="ed-sect">
-          <div class="ed-lbl">전시 방법</div>
-          <div class="toggle-row">
-            <button class="tgl-btn on" id="tog-scroll" onclick="setGuideType('scroll')">스크롤형</button>
-            <button class="tgl-btn"    id="tog-slide"  onclick="setGuideType('slide')">슬라이드형</button>
-          </div>
-        </div>
-        <div class="ed-sect">
-          <div class="ed-lbl">블록</div>
-          <div id="block-list"></div>
-          <button class="add-btn" style="margin-top:10px;" onclick="openBlockModal(null)">+ 블록 추가</button>
-        </div>
+  </div>
+</div>
+
+<!-- 스테이지 내용 편집 오버레이 -->
+<div id="stage-content-overlay" style="display:none;position:fixed;inset:0;z-index:200;background:#f4f4f4;overflow-y:auto;">
+  <div class="ed-top" style="position:sticky;top:0;z-index:5;background:#f4f4f4;border-bottom:1.5px solid #000;">
+    <span class="back-btn" onclick="backFromStageContent()">←</span>
+    <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">스테이지 내용</span>
+    <span id="sco-stage-title" style="font-size:12px;font-weight:800;margin-left:4px;color:#000;"></span>
+    <div style="flex:1;"></div>
+    <button class="prev-btn" onclick="toggleGuidePreview()" style="margin-right:4px;">미리보기</button>
+    <button class="prev-btn" onclick="openCopyModal()" style="margin-right:4px;">복제</button>
+    <button class="save-btn" onclick="saveStageContent()">저장</button>
+  </div>
+  <div style="padding:16px;">
+    <div class="ed-sect" style="margin-bottom:14px;">
+      <div class="ed-lbl">전시 방법</div>
+      <div class="toggle-row">
+        <button class="tgl-btn on" id="tog-scroll" onclick="setGuideType('scroll')">스크롤형</button>
+        <button class="tgl-btn"    id="tog-slide"  onclick="setGuideType('slide')">슬라이드형</button>
       </div>
     </div>
+    <div id="var-hint" style="display:none;margin-bottom:14px;padding:10px 12px;background:#fff;border:1.5px solid rgba(0,0,0,.15);font-size:12px;line-height:1.7;">
+      <div style="font-weight:800;margin-bottom:6px;">사용 가능한 변수 (텍스트 블록에서 클릭해 삽입)</div>
+      <div id="var-chips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      <div style="margin-top:6px;opacity:.55;font-size:11px;"><code>{{fieldKey}}</code> → 로그인한 사용자 값으로 자동 치환</div>
+    </div>
+    <div class="ed-lbl">블록</div>
+    <div id="block-list"></div>
+    <button class="add-btn" style="margin-top:10px;" onclick="openBlockModal(null)">+ 블록 추가</button>
   </div>
 </div>
 
 <!-- 내용 미리보기 패널 -->
-<div id="guide-preview-wrap" style="display:none;">
+<div id="guide-preview-wrap" style="display:none;position:fixed;right:16px;top:72px;z-index:300;width:196px;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
     <span style="font-size:11px;font-weight:900;color:#000;">실시간 미리보기</span>
-    <div style="display:flex;align-items:center;gap:4px;">
-      <button class="prev-sz-btn" onclick="setPreviewSize(-50)" title="작게">−</button>
-      <button class="prev-sz-btn" onclick="setPreviewSize(+50)" title="크게">+</button>
-      <button onclick="toggleGuidePreview()" style="background:transparent;border:none;font-size:16px;cursor:pointer;line-height:1;padding:2px 4px;">✕</button>
-    </div>
+    <button onclick="toggleGuidePreview()" style="background:transparent;border:none;font-size:16px;cursor:pointer;line-height:1;padding:2px 4px;">✕</button>
   </div>
-  <div id="guide-preview-phone">
+  <div id="guide-preview-phone" style="border:3px solid #000;border-radius:18px;overflow:hidden;position:relative;background:#fff;box-shadow:0 6px 24px rgba(0,0,0,.2);width:196px;height:348px;">
     <div id="gprev-header" style="position:absolute;top:0;left:0;right:0;z-index:2;background:#fff;border-bottom:1.5px solid #000;"></div>
     <div id="gprev-content" style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;"></div>
   </div>
   <div style="font-size:9px;color:rgba(0,0,0,.35);text-align:center;margin-top:5px;">실제 화면과 다를 수 있어요</div>
+</div>
+
+<!-- 복제 모달 -->
+<div class="modal-ov" id="copy-modal">
+  <div class="modal-box">
+    <div class="modal-ttl">다른 스테이지에서 복제</div>
+    <div class="modal-scroll">
+      <div class="ed-lbl" style="margin-bottom:6px;">프로젝트 선택</div>
+      <select class="fi-sm" id="copy-proj-sel" style="cursor:pointer;margin-bottom:14px;" onchange="loadCopyStages()"></select>
+      <div class="ed-lbl" style="margin-bottom:6px;">스테이지 선택</div>
+      <select class="fi-sm" id="copy-stage-sel" style="cursor:pointer;margin-bottom:0;"></select>
+      <div style="font-size:11px;color:rgba(0,0,0,.45);margin-top:6px;">현재 블록은 모두 교체됩니다.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="mbtn-cancel" onclick="closeModal('copy-modal')">취소</button>
+      <button class="mbtn-ok" onclick="doCopyFromStage()">복제하기</button>
+    </div>
+  </div>
 </div>
 
 <!-- 블록 에디터 -->
@@ -467,8 +453,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('text','#fff')" style="background:#fff;border-color:#ccc;">○</button>
         <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('text','#F95548')" style="background:#F95548;color:#fff;border-color:#F95548;">●</button>
         <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('text','#0BC6FF')" style="background:#0BC6FF;border-color:#0BC6FF;">●</button>
-        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('text','#FFF100')" style="background:#FFF100;border-color:#FFF100;">●</button>
-        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('text','#00CE6B')" style="background:#00CE6B;color:#fff;border-color:#00CE6B;">●</button>
+        <span id="fmt-kc-text" style="display:contents;"></span>
       </div>
       <div class="ced" id="ced-text" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)"></div>
       <div style="margin-top:10px;">
@@ -479,7 +464,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <div id="bpanel-image" style="display:none;">
       <div class="ed-lbl" style="margin-bottom:8px;">이미지</div>
       <input class="img-inp" id="img-url" type="url" placeholder="https://…" oninput="prevImg('img-prev',this.value)">
-      <button class="bg-up-btn" onclick="document.getElementById('blk-img-file').click()" style="margin-bottom:8px;">📁 업로드</button>
+      <button class="bg-up-btn" onclick="document.getElementById('blk-img-file').click()" style="margin-bottom:8px;">📁 직접 업로드</button>
       <input type="file" id="blk-img-file" accept="image/*" style="display:none;" onchange="uploadBlockImage(event,'img-url','img-prev')">
       <img id="img-prev" class="img-prev">
       <div style="margin-top:6px;">
@@ -505,23 +490,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <span style="font-size:11px;">지금은 <b>임베드</b>로 Tally 폼을 직접 연결해주세요.</span>
       </div>
     </div>
-    <!-- 공통 스타일 (모든 블록 타입) -->
-    <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
-      <div class="ed-lbl">배경색</div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-        <input type="color" id="blk-bg-color" value="#ffffff" oninput="onBlkBgPick(this.value)" style="width:32px;height:32px;border:2px solid #000;padding:0;cursor:pointer;flex-shrink:0;">
-        <input class="fi-sm" id="blk-bg-hex" placeholder="#FFFFFF" style="width:84px;margin-bottom:0;" oninput="onBlkBgHex(this.value)">
-        <button onclick="clearBlkBg()" style="padding:4px 9px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">없음</button>
-        <div id="blk-kc-bg" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"></div>
-      </div>
-      <div class="ed-lbl">텍스트 컬러 <span style="font-weight:400;opacity:.55;">(블록 전체 기본값)</span></div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <input type="color" id="blk-txt-color" value="#000000" oninput="onBlkTxtPick(this.value)" style="width:32px;height:32px;border:2px solid #000;padding:0;cursor:pointer;flex-shrink:0;">
-        <input class="fi-sm" id="blk-txt-hex" placeholder="#000000" style="width:84px;margin-bottom:0;" oninput="onBlkTxtHex(this.value)">
-        <button onclick="clearBlkTxt()" style="padding:4px 9px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">없음</button>
-        <div id="blk-kc-txt" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"></div>
-      </div>
-    </div>
     <div id="bpanel-mixed" style="display:none;">
       <div class="ed-lbl" style="margin-bottom:8px;">레이아웃</div>
       <div class="mixed-row">
@@ -530,7 +498,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       </div>
       <div class="ed-lbl" style="margin-bottom:8px;">이미지</div>
       <input class="img-inp" id="mixed-img-url" type="url" placeholder="https://…" oninput="prevImg('mixed-img-prev',this.value)">
-      <button class="bg-up-btn" onclick="document.getElementById('blk-mixed-file').click()" style="margin-bottom:8px;">📁 업로드</button>
+      <button class="bg-up-btn" onclick="document.getElementById('blk-mixed-file').click()" style="margin-bottom:8px;">📁 직접 업로드</button>
       <input type="file" id="blk-mixed-file" accept="image/*" style="display:none;" onchange="uploadBlockImage(event,'mixed-img-url','mixed-img-prev')">
       <img id="mixed-img-prev" class="img-prev">
       <div class="ed-lbl" style="margin-top:10px;margin-bottom:8px;">텍스트</div>
@@ -546,10 +514,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('mixed','#fff')" style="background:#fff;border-color:#ccc;">○</button>
         <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('mixed','#F95548')" style="background:#F95548;color:#fff;border-color:#F95548;">●</button>
         <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('mixed','#0BC6FF')" style="background:#0BC6FF;border-color:#0BC6FF;">●</button>
-        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('mixed','#FFF100')" style="background:#FFF100;border-color:#FFF100;">●</button>
-        <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('mixed','#00CE6B')" style="background:#00CE6B;color:#fff;border-color:#00CE6B;">●</button>
+        <span id="fmt-kc-mixed" style="display:contents;"></span>
       </div>
       <div class="ced" id="ced-mixed" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)"></div>
+    </div>
+    <!-- 공통: 배경색 + 마진 -->
+    <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
+      <div class="ed-lbl">배경색</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <input type="color" id="blk-bg-color" value="#ffffff" oninput="onBlkBgPick(this.value)" style="width:32px;height:32px;border:2px solid #000;padding:0;cursor:pointer;flex-shrink:0;">
+        <input class="fi-sm" id="blk-bg-hex" placeholder="#FFFFFF" style="width:84px;margin-bottom:0;" oninput="onBlkBgHex(this.value)">
+        <button onclick="clearBlkBg()" style="padding:4px 9px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">없음</button>
+        <div id="blk-kc-bg" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"></div>
+      </div>
+      <div class="ed-lbl">마진 (px)</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
+          <span style="font-size:10px;color:rgba(0,0,0,.45);font-weight:700;">상하</span>
+          <input class="fi-sm" id="blk-margin-v" type="number" min="0" max="120" placeholder="0" style="margin-bottom:0;text-align:center;">
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
+          <span style="font-size:10px;color:rgba(0,0,0,.45);font-weight:700;">좌우</span>
+          <input class="fi-sm" id="blk-margin-h" type="number" min="0" max="120" placeholder="0" style="margin-bottom:0;text-align:center;">
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -625,11 +613,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 <div id="preview-wrap" style="display:none;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
     <span style="font-size:11px;font-weight:900;color:#000;">실시간 미리보기</span>
-    <div style="display:flex;align-items:center;gap:4px;">
-      <button class="prev-sz-btn" onclick="setPreviewSize(-50)" title="작게">−</button>
-      <button class="prev-sz-btn" onclick="setPreviewSize(+50)" title="크게">+</button>
-      <button onclick="togglePreview()" style="background:transparent;border:none;font-size:16px;cursor:pointer;line-height:1;padding:2px 4px;">✕</button>
-    </div>
+    <button onclick="togglePreview()" style="background:transparent;border:none;font-size:16px;cursor:pointer;line-height:1;padding:2px;">✕</button>
   </div>
   <div id="preview-phone">
     <div id="prev-bg" style="position:absolute;inset:0;background-size:cover;background-position:center;transition:background .3s;"></div>
@@ -665,7 +649,7 @@ auth.onAuthStateChanged(user => {
     document.getElementById('login-view').style.display = 'none';
     document.getElementById('admin-user-email').textContent = user.email;
     document.getElementById('admin-view').classList.add('on');
-    loadProjects(); loadGuides(); loadPATFromFirestore();
+    loadProjects(); loadPATFromFirestore();
   } else {
     if (user) auth.signOut();
     document.getElementById('login-view').style.display = '';
@@ -681,12 +665,7 @@ function signIn() {
 function doSignOut() { auth.signOut(); }
 
 /* ── Tabs ── */
-function switchTab(t) {
-  ['proj','guide'].forEach(k => {
-    document.getElementById('tab-'+k).classList.toggle('on', k===t);
-    document.getElementById('panel-'+k).classList.toggle('on', k===t);
-  });
-}
+function switchTab(t) { /* 탭이 단일화되어 미사용 */ }
 function switchInnerTab(t) {
   document.querySelectorAll('.inner-tab').forEach((el,i) => {
     el.classList.toggle('on', ['basic','design','auth','stages'][i] === t);
@@ -745,23 +724,17 @@ let curAuthEnabled = false;
 let curAuthFields = [];        // [{key, label, type, required}]
 let curAuthKeyField = '';
 let curStages = [];
+let curKeyColors = ['#00CE6B','#FFF100','#F95548','#0BC6FF'];
 let curStats = [];             // [{id, label, collection, countType, unit, enabled}]
-let curKeyColors = ['#00CE6B']; // project key colors (cycling palette)
 let curElementOrder = ['edition','logo','dday','stats']; // order of main screen elements
 let curUsers = [];
 let curEditingFieldIdx = null;
 let curEditingUserId = null;
 let pendingBgUploadIdx = null;
-let pendingStageUploadIdx = null;
 let fmReqOn = false;
-let curLogoBase64 = ''; // base64 data URL of logo PNG (used for CSS mask to avoid CORS)
-let curLogoImgRatio = null; // natural width/height ratio — auto-detected on upload
-let curLogoImgH = 80;  // fallback height (px) for old projects without ratio
-let curLogoImgW = 76;  // logo image width (% of container)
 let curLogoTextSize = '24';
 let curLogoTextAlign = 'center';
 let previewTimer = null;
-let previewWidth = parseInt(localStorage.getItem('adminPreviewWidth') || '196');
 
 /* ── URL Preview ── */
 function updateUrlPreview() {
@@ -818,40 +791,8 @@ function setLogoAlign(a) {
   schedulePreviewUpdate();
 }
 
-/* ── Key colors ── */
-function renderKeyColorList() {
-  const el = document.getElementById('key-color-list');
-  if (!el) return;
-  if (!curKeyColors.length) { el.innerHTML = '<div class="empty-msg" style="padding:8px 0;">색상 없음</div>'; return; }
-  el.innerHTML = curKeyColors.map((c, i) => `
-    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1.5px solid rgba(0,0,0,.1);">
-      <input type="color" id="kcp-${i}" value="${c}" style="width:36px;height:32px;border:1.5px solid #000;padding:1px;cursor:pointer;flex-shrink:0;" oninput="onKcPick(${i},this.value)">
-      <input id="kch-${i}" class="fi-sm" value="${c.toUpperCase()}" style="flex:1;margin-bottom:0;text-transform:uppercase;" oninput="onKcHex(${i},this.value)">
-      ${curKeyColors.length > 2 ? `<button class="rm-btn2" onclick="removeKeyColor(${i})">✕</button>` : ''}
-    </div>`).join('');
-}
-function onKcPick(i, v) {
-  curKeyColors[i] = v;
-  const hex = document.getElementById('kch-'+i);
-  if (hex) hex.value = v.toUpperCase();
-  schedulePreviewUpdate();
-}
-function onKcHex(i, v) {
-  if (/^#[0-9a-fA-F]{6}$/.test(v)) {
-    curKeyColors[i] = v;
-    const p = document.getElementById('kcp-'+i);
-    if (p) p.value = v;
-    schedulePreviewUpdate();
-  }
-}
-function addKeyColor() { curKeyColors.push('#000000'); renderKeyColorList(); schedulePreviewUpdate(); }
-function removeKeyColor(i) {
-  if (curKeyColors.length <= 2) { alert('최소 2개 색상이 필요해요.'); return; }
-  curKeyColors.splice(i, 1); renderKeyColorList(); schedulePreviewUpdate();
-}
-
 /* ── Stats (realtime counters) ── */
-const ELEM_LABELS = {edition:'문구',logo:'로고',dday:'D-Day',stats:'카운터'};
+const ELEM_LABELS = {edition:'로고 위 문구',logo:'로고',dday:'D-Day',stats:'카운터'};
 function renderStatList() {
   const el = document.getElementById('stats-list');
   if (!curStats.length) { el.innerHTML = '<div class="empty-msg" style="padding:8px 0;">카운터 없음</div>'; return; }
@@ -927,7 +868,7 @@ function renderBgImages() {
           <div class="bg-url-row">
             <input class="bg-url-inp" value="${(bg.url||'').replace(/"/g,'&quot;')}" placeholder="이미지 URL 또는 업로드"
               oninput="curBgImages[${i}].url=this.value;updateBgThumb(${i},this.value)">
-            <button class="bg-up-btn" onclick="openBgUpload(${i},this)">📁 업로드</button>
+            <button class="bg-up-btn" onclick="openBgUpload(${i})">📁 업로드</button>
           </div>
           <div class="bg-timing">
             <div class="timing-wrap">
@@ -952,79 +893,28 @@ function renderBgImages() {
 }
 function addBgImage() {
   curBgImages.push({url:'', holdTime:10, transitionTime:2});
-  renderBgImages(); schedulePreviewUpdate();
+  renderBgImages();
 }
-function removeBg(i) { curBgImages.splice(i,1); renderBgImages(); schedulePreviewUpdate(); }
+function removeBg(i) { curBgImages.splice(i,1); renderBgImages(); }
 function moveBg(i,d) {
   const j=i+d;
   if(j<0||j>=curBgImages.length) return;
   [curBgImages[i],curBgImages[j]]=[curBgImages[j],curBgImages[i]];
-  renderBgImages(); schedulePreviewUpdate();
+  renderBgImages();
 }
 function updateBgThumb(i, url) {
   const img = document.getElementById('bgt-'+i);
   if (!img) return;
   if (url) { img.src=url; img.style.opacity=1; } else img.style.opacity=0;
 }
-let pendingUploadBtn = null; // shared: stores the button that triggered the upload
-function openBgUpload(i, btn) {
+function openBgUpload(i) {
   pendingBgUploadIdx = i;
-  pendingUploadBtn = btn || null;
   document.getElementById('bg-file-input').click();
 }
-async function checkPngTransparency(file) {
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.min(img.width, 120); canvas.height = Math.min(img.height, 120);
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-        for (let i = 3; i < d.length; i += 4) { if (d[i] < 250) { resolve(true); return; } }
-        resolve(false);
-      };
-      img.onerror = () => resolve(null); /* 알 수 없음 */
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-async function uploadSingleImage(event, fieldId, storagePath, checkTransparency=false) {
+async function uploadSingleImage(event, fieldId, storagePath) {
   const file = event.target.files[0];
   event.target.value = '';
   if (!file) return;
-  // 업로드 버튼 피드백 — file input의 id로 연결된 버튼 찾기
-  const fileId = event.target.id;
-  const btn = fileId ? document.querySelector(`[onclick*="${fileId}"]`) : null;
-  const origTxt = btn ? btn.textContent : '';
-  if (btn) { btn.textContent = '⏳ 업로드 중…'; btn.disabled = true; }
-  if (checkTransparency) {
-    const isTransparent = await checkPngTransparency(file);
-    if (isTransparent === false) {
-      const ok = confirm('배경이 투명하지 않은 PNG인 것 같아요.\n배경이 있으면 로고가 색상 사각형으로 보일 수 있어요.\n그래도 계속할까요?');
-      if (!ok) return;
-    }
-  }
-  // 로고 이미지는 base64로도 저장 (CSS mask에 사용 → CORS 우회) + 자연 비율 감지
-  const isLogo = fieldId === 'p-logo-url';
-  let base64 = '';
-  if (isLogo) {
-    base64 = await new Promise(res => {
-      const r = new FileReader();
-      r.onload = e => res(e.target.result);
-      r.readAsDataURL(file);
-    });
-    // 이미지 가로세로 비율 자동 감지
-    curLogoImgRatio = await new Promise(res => {
-      const img = new Image();
-      img.onload = () => res(img.naturalWidth && img.naturalHeight ? img.naturalWidth / img.naturalHeight : null);
-      img.onerror = () => res(null);
-      img.src = base64;
-    });
-  }
   const projId = document.getElementById('p-id').value.trim() || 'tmp';
   const ext = file.name.split('.').pop();
   const path = `${storagePath}/${projId}/${Date.now()}.${ext}`;
@@ -1033,11 +923,7 @@ async function uploadSingleImage(event, fieldId, storagePath, checkTransparency=
     await ref.put(file);
     const url = await ref.getDownloadURL();
     document.getElementById(fieldId).value = url;
-    if (isLogo) { curLogoBase64 = base64; }
-    schedulePreviewUpdate();
-    if (btn) { btn.textContent = '✅ 완료'; btn.disabled = false; setTimeout(()=>{ btn.textContent = origTxt; }, 2000); }
   } catch(err) {
-    if (btn) { btn.textContent = origTxt; btn.disabled = false; }
     alert('업로드 실패: ' + err.message + '\n\nFirebase Storage 규칙에서 인증된 쓰기를 허용해야 해요.');
   }
 }
@@ -1045,37 +931,23 @@ async function uploadBlockImage(event, urlFieldId, prevId) {
   const file = event.target.files[0];
   event.target.value = '';
   if (!file) return;
-  // 업로드 중 버튼 피드백: 연결된 file input 바로 앞 bg-up-btn 찾기
-  const fileInp = document.getElementById(
-    urlFieldId === 'img-url' ? 'blk-img-file' : 'blk-mixed-file'
-  );
-  const btn = fileInp ? fileInp.previousElementSibling : null;
-  const origTxt = btn ? btn.textContent : '';
-  if (btn) { btn.textContent = '⏳ 업로드 중…'; btn.disabled = true; }
-  const guideId = document.getElementById('g-id').value.trim() || 'tmp';
+  const stageId = (curEditingStageIdx !== null ? curStages[curEditingStageIdx]?.id : null) || 'tmp';
   const ext = file.name.split('.').pop();
-  const path = `cms_guides/${guideId}/blocks/${Date.now()}.${ext}`;
+  const path = `cms_projects/${curProjId||'tmp'}/stage_content/${stageId}/blocks/${Date.now()}.${ext}`;
   try {
     const ref = storage.ref(path);
     await ref.put(file);
     const url = await ref.getDownloadURL();
     document.getElementById(urlFieldId).value = url;
     prevImg(prevId, url);
-    if (btn) { btn.textContent = '✅ 완료'; btn.disabled = false; setTimeout(()=>{ btn.textContent = origTxt; }, 2000); }
-  } catch(err) {
-    if (btn) { btn.textContent = origTxt; btn.disabled = false; }
-    alert('업로드 실패: ' + err.message + '\n\nFirebase Storage 규칙을 확인해주세요.');
-  }
+  } catch(err) { alert('업로드 실패: ' + err.message); }
 }
 async function onBgFileSelected(e) {
   const file = e.target.files[0];
   e.target.value = '';
   if (!file || pendingBgUploadIdx === null) return;
   const i = pendingBgUploadIdx;
-  const btn = pendingUploadBtn;
-  pendingBgUploadIdx = null; pendingUploadBtn = null;
-  const origTxt = btn ? btn.textContent : '';
-  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  pendingBgUploadIdx = null;
   const projId = document.getElementById('p-id').value.trim() || 'tmp';
   const ext = file.name.split('.').pop();
   const path = `cms_projects/${projId}/bg/${Date.now()}.${ext}`;
@@ -1084,38 +956,8 @@ async function onBgFileSelected(e) {
     await ref.put(file);
     const url = await ref.getDownloadURL();
     curBgImages[i].url = url;
-    renderBgImages(); // re-render shows the URL — button is gone after this
+    renderBgImages();
   } catch(err) {
-    if (btn) { btn.textContent = origTxt; btn.disabled = false; }
-    alert('업로드 실패: ' + err.message + '\n\nFirebase Storage 규칙에서 인증된 쓰기를 허용해야 해요.');
-  }
-}
-
-function openStageImageUpload(i, btn) {
-  pendingStageUploadIdx = i;
-  pendingUploadBtn = btn || null;
-  document.getElementById('stage-img-file-input').click();
-}
-async function onStageImgFileSelected(e) {
-  const file = e.target.files[0];
-  e.target.value = '';
-  if (!file || pendingStageUploadIdx === null) return;
-  const i = pendingStageUploadIdx;
-  const btn = pendingUploadBtn;
-  pendingStageUploadIdx = null; pendingUploadBtn = null;
-  const origTxt = btn ? btn.textContent : '';
-  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
-  const projId = document.getElementById('p-id').value.trim() || 'tmp';
-  const ext = file.name.split('.').pop();
-  const path = `cms_projects/${projId}/stages/${Date.now()}.${ext}`;
-  try {
-    const ref = storage.ref(path);
-    await ref.put(file);
-    const url = await ref.getDownloadURL();
-    curStages[i].stageImageUrl = url;
-    renderStageList(); // re-render shows the image preview
-  } catch(err) {
-    if (btn) { btn.textContent = origTxt; btn.disabled = false; }
     alert('업로드 실패: ' + err.message + '\n\nFirebase Storage 규칙에서 인증된 쓰기를 허용해야 해요.');
   }
 }
@@ -1298,8 +1140,6 @@ async function saveBulkUsers() {
 function renderStageList() {
   const el = document.getElementById('stage-list');
   if (!curStages.length) { el.innerHTML = '<div class="empty-msg" style="padding:12px 0;">스테이지가 없어요.</div>'; return; }
-  const opts = '<option value="">-- 내용 없음 --</option>' +
-    cachedGuides.map(g=>`<option value="${g.id}">${g.title||g.id}</option>`).join('');
   el.innerHTML = curStages.map((s,i) => `
     <div class="stage-item">
       <div class="stage-row1">
@@ -1311,24 +1151,17 @@ function renderStageList() {
           <button class="s-btn" onclick="rmStage(${i})">✕</button>
         </div>
       </div>
-      <select class="stage-sel" onchange="curStages[${i}].guideId=this.value">${opts}</select>
-      <div style="display:flex;gap:6px;margin-top:6px;align-items:center;">
+      <button class="add-btn" style="margin-bottom:6px;font-size:11px;padding:5px 0;" onclick="openStageContent(${i})">✏️ 내용 편집</button>
+      <div style="display:flex;gap:6px;align-items:center;">
         <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);white-space:nowrap;">카드 형태</div>
         <div class="toggle-row" style="flex:1;">
           <button class="tgl-btn${(s.displayType||'text')==='text'?' on':''}" onclick="curStages[${i}].displayType='text';renderStageList();" style="font-size:11px;padding:5px 0;">텍스트형</button>
           <button class="tgl-btn${s.displayType==='image'?' on':''}" onclick="curStages[${i}].displayType='image';renderStageList();" style="font-size:11px;padding:5px 0;">이미지형</button>
         </div>
       </div>
-      ${s.displayType==='image'?`<div style="display:flex;gap:4px;margin-top:5px;align-items:center;">
-        <input class="fi-sm" style="flex:1;margin-bottom:0;" placeholder="카드 배경 이미지 URL" value="${(s.stageImageUrl||'').replace(/"/g,'&quot;')}" oninput="curStages[${i}].stageImageUrl=this.value">
-        <button class="bg-up-btn" onclick="openStageImageUpload(${i},this)" style="flex-shrink:0;">📁 업로드</button>
-      </div>`:''}</div>`).join('');
-  curStages.forEach((s,i) => {
-    const sel = document.querySelectorAll('.stage-sel')[i];
-    if (sel && s.guideId) sel.value = s.guideId;
-  });
+      ${s.displayType==='image'?`<input class="fi-sm" style="margin-top:5px;" placeholder="카드 배경 이미지 URL" value="${(s.stageImageUrl||'').replace(/"/g,'&quot;')}" oninput="curStages[${i}].stageImageUrl=this.value">`:''}</div>`).join('');
 }
-function addStage()   { curStages.push({id:uid(),title:'',guideId:'',displayType:'text',stageImageUrl:'',order:curStages.length}); renderStageList(); }
+function addStage()   { curStages.push({id:uid(),title:'',displayType:'text',stageImageUrl:'',order:curStages.length}); renderStageList(); }
 function mvStage(i,d) { const j=i+d; if(j<0||j>=curStages.length) return; [curStages[i],curStages[j]]=[curStages[j],curStages[i]]; renderStageList(); }
 function rmStage(i)   { curStages.splice(i,1); renderStageList(); }
 
@@ -1356,18 +1189,17 @@ function showProjView(v) {
 function backToProjects() { showProjView('list'); curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[]; curUsers=[]; }
 function startNewProject() {
   curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}];
-  curAuthKeyField='name'; curUsers=[]; curLogoBase64=''; curLogoImgRatio=null; curLogoImgW=76; curLogoTextSize='24'; curLogoTextAlign='center';
-  curStats=[]; curKeyColors=['#00CE6B','#FFF100']; curElementOrder=['edition','logo','dday','stats'];
+  curAuthKeyField='name'; curUsers=[]; curLogoTextSize='24'; curLogoTextAlign='center';
+  curStats=[]; curElementOrder=['edition','logo','dday','stats'];
   ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-col','p-auth-title','p-auth-desc']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   const szEl = document.getElementById('p-logo-txt-size'); if(szEl) szEl.value='24';
-  const wEl = document.getElementById('p-logo-img-w'); if(wEl) wEl.value='76';
   document.getElementById('proj-del').style.display = 'none';
   const urlPrev = document.getElementById('p-url-preview');
   urlPrev.textContent = ''; urlPrev.href = '#'; urlPrev.style.display = 'none';
   setLogoAlign('center');
   setLogoType('image'); setLayoutType('separate'); setDday(false); setAuth(false);
-  renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList(); renderKeyColorList();
+  renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList();
   switchInnerTab('basic'); showProjView('edit');
 }
 async function editProject(id) {
@@ -1389,14 +1221,9 @@ async function editProject(id) {
     document.getElementById('p-edition').value    = d.editionText||'';
     document.getElementById('p-logo-url').value   = d.logoImageUrl||'';
     document.getElementById('p-logo-txt').value   = d.logoText||'';
-    curLogoBase64    = d.logoBase64 || '';
-    curLogoImgRatio  = d.logoImgRatio || null;
-    curLogoImgH      = d.logoImgH || 80; // fallback for old projects
-    curLogoImgW      = d.logoImgW || 76;
     curLogoTextSize  = d.logoTextSize  || '24';
     curLogoTextAlign = d.logoTextAlign || 'center';
     const szEl = document.getElementById('p-logo-txt-size'); if(szEl) szEl.value = curLogoTextSize;
-    const wEl = document.getElementById('p-logo-img-w'); if(wEl) wEl.value = curLogoImgW;
     setLogoAlign(curLogoTextAlign);
     document.getElementById('p-cta-icon').value   = d.ctaIconUrl||'';
     document.getElementById('p-cta-text').value   = d.ctaText||'';
@@ -1404,7 +1231,6 @@ async function editProject(id) {
     document.getElementById('p-auth-col').value   = d.authCollection||'';
     document.getElementById('p-auth-title').value = d.authTitle||'';
     document.getElementById('p-auth-desc').value  = d.authDesc||'';
-    curKeyColors = (d.keyColors && d.keyColors.length) ? d.keyColors : (d.keyColor ? [d.keyColor] : ['#00CE6B']);
 
     document.getElementById('proj-del').style.display = 'block';
     updateUrlPreview();
@@ -1412,7 +1238,7 @@ async function editProject(id) {
     setLayoutType(d.layoutType||'separate');
     setDday(d.ddayEnabled||false);
     setAuth(d.authEnabled||false);
-    renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList(); renderKeyColorList();
+    renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList();
     if (d.authEnabled) await loadUsers();
     switchInnerTab('basic'); showProjView('edit');
   } catch(e) { alert('불러오기 실패: '+e.message); }
@@ -1431,11 +1257,7 @@ async function saveProject() {
     editionText:  document.getElementById('p-edition').value.trim(),
     logoType:      curLogoType,
     logoImageUrl:  document.getElementById('p-logo-url').value.trim(),
-    logoBase64:    curLogoBase64 || '',
-    logoImgRatio:  curLogoImgRatio,
-    logoImgH:      curLogoImgH, // kept for backward compat
-    logoImgW:      curLogoImgW,
-    logoText:      document.getElementById('p-logo-txt').value,
+    logoText:      document.getElementById('p-logo-txt').value.trim(),
     logoTextSize:  document.getElementById('p-logo-txt-size')?.value || '24',
     logoTextAlign: curLogoTextAlign,
     ctaIconUrl:   document.getElementById('p-cta-icon').value.trim(),
@@ -1448,7 +1270,6 @@ async function saveProject() {
     authKeyField: curAuthKeyField,
     authTitle:    document.getElementById('p-auth-title').value.trim(),
     authDesc:     document.getElementById('p-auth-desc').value.trim(),
-    keyColors:    curKeyColors.length ? curKeyColors : ['#00CE6B'],
     bgImages:     curBgImages,
     stages:       curStages.map((s,i)=>({...s,order:i})),
     stats:        curStats,
@@ -1507,75 +1328,114 @@ async function deployProjectPage(slug) {
 }
 
 /* ══════════════════════════════════════
-   Guide CMS (unchanged)
+   Stage Content CMS
+   저장 경로: cms_projects/{projId}/stage_content/{stageId}
 ══════════════════════════════════════ */
-let cachedGuides = [];
-let curGuideId = null, curBlocks = [], curGuideDispType = 'scroll';
+let curBlocks = [], curGuideDispType = 'scroll';
+let curEditingStageIdx = null;
 
-async function loadGuides() {
-  const el = document.getElementById('guide-list');
-  el.innerHTML = '<div class="empty-msg">불러오는 중…</div>';
+async function openStageContent(i) {
+  if (!curProjId) { alert('먼저 프로젝트를 저장해주세요.'); return; }
+  curEditingStageIdx = i;
+  curBlocks = []; curGuideDispType = 'scroll';
+  const stage = curStages[i];
+  const titleEl = document.getElementById('sco-stage-title');
+  if (titleEl) titleEl.textContent = stage.title ? `— ${stage.title}` : '';
+  setGuideType('scroll'); renderBlockList();
+  const authEnabled = curAuthEnabled;
+  const varHint = document.getElementById('var-hint');
+  const varChips = document.getElementById('var-chips');
+  if (varHint && varChips) {
+    if (authEnabled && curAuthFields.length) {
+      varChips.innerHTML = curAuthFields.map(f =>
+        `<button onclick="insertVar('${f.key}')" style="padding:4px 9px;background:#000;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:2px;">{{${f.key}}}<span style="opacity:.6;font-weight:400;"> ${f.label}</span></button>`
+      ).join('');
+      varHint.style.display = '';
+    } else {
+      varHint.style.display = 'none';
+    }
+  }
+  document.getElementById('stage-content-overlay').style.display = '';
+  window.scrollTo(0,0);
   try {
-    const snap = await db.collection('cms_guides').orderBy('updatedAt','desc').get();
-    cachedGuides = snap.docs.map(d=>({id:d.id,title:d.data().title||''}));
-    if (snap.empty) { el.innerHTML = '<div class="empty-msg">아직 내용이 없어요.</div>'; return; }
-    el.innerHTML = snap.docs.map(d=>`
-      <div class="list-item" onclick="editGuide('${d.id}')">
-        <div class="li-title">${d.data().title||'(제목 없음)'}</div>
-        <div class="li-badge">${d.data().displayType==='slide'?'슬라이드':'스크롤'}</div>
-        <div class="li-badge" style="opacity:.5;">${d.id}</div>
-        <div class="li-arrow">›</div>
-      </div>`).join('');
-  } catch(e) { el.innerHTML = '<div class="empty-msg">불러오기 실패</div>'; }
-}
-function showGuideView(v) {
-  document.getElementById('guide-list-view').style.display = v==='list'?'':'none';
-  document.getElementById('guide-edit-view').style.display = v==='edit'?'':'none';
-}
-function backToGuides() { showGuideView('list'); curGuideId=null; curBlocks=[]; }
-function startNewGuide() {
-  curGuideId=null; curBlocks=[]; curGuideDispType='scroll';
-  document.getElementById('g-id').value=''; document.getElementById('g-title').value='';
-  document.getElementById('guide-del').style.display='none';
-  setGuideType('scroll'); renderBlockList(); showGuideView('edit');
-}
-async function editGuide(id) {
-  showGuideView('edit');
-  try {
-    const doc = await db.collection('cms_guides').doc(id).get();
-    if (!doc.exists) return;
-    const d = doc.data();
-    curGuideId=id; curBlocks=(d.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
-    curGuideDispType=d.displayType||'scroll';
-    document.getElementById('g-id').value=id; document.getElementById('g-title').value=d.title||'';
-    document.getElementById('guide-del').style.display='block';
-    setGuideType(curGuideDispType); renderBlockList();
+    const doc = await db.collection('cms_projects').doc(curProjId)
+      .collection('stage_content').doc(stage.id).get();
+    if (doc.exists) {
+      const d = doc.data();
+      curBlocks = (d.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
+      curGuideDispType = d.displayType||'scroll';
+      setGuideType(curGuideDispType); renderBlockList();
+    }
   } catch(e) {}
 }
+function backFromStageContent() {
+  document.getElementById('stage-content-overlay').style.display = 'none';
+  const gpw = document.getElementById('guide-preview-wrap');
+  if (gpw) gpw.style.display = 'none';
+  curEditingStageIdx = null; curBlocks = [];
+}
 function setGuideType(t) {
-  curGuideDispType=t;
-  document.getElementById('tog-scroll').classList.toggle('on',t==='scroll');
-  document.getElementById('tog-slide').classList.toggle('on',t==='slide');
+  curGuideDispType = t;
+  document.getElementById('tog-scroll').classList.toggle('on', t==='scroll');
+  document.getElementById('tog-slide').classList.toggle('on', t==='slide');
   scheduleGuidePreviewUpdate();
 }
-async function saveGuide() {
-  const id=document.getElementById('g-id').value.trim();
-  const title=document.getElementById('g-title').value.trim();
-  if(!id||!title){alert('ID와 제목을 입력해주세요.');return;}
+async function saveStageContent() {
+  if (curEditingStageIdx === null || !curProjId) { alert('저장할 수 없어요.'); return; }
+  const stage = curStages[curEditingStageIdx];
   try {
-    await db.collection('cms_guides').doc(id).set({
-      title,displayType:curGuideDispType,
-      blocks:curBlocks.map((b,i)=>({...b,order:i})),
-      updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
-    },{merge:true});
-    curGuideId=id; document.getElementById('guide-del').style.display='block';
-    alert('저장했어요!'); loadGuides();
+    await db.collection('cms_projects').doc(curProjId)
+      .collection('stage_content').doc(stage.id).set({
+        displayType: curGuideDispType,
+        blocks: curBlocks.map((b,i)=>({...b,order:i})),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      }, {merge:true});
+    alert('저장했어요!');
   } catch(e) { alert('저장 실패: '+e.message); }
 }
-async function deleteGuide() {
-  if(!curGuideId||!confirm('삭제할까요?')) return;
-  try { await db.collection('cms_guides').doc(curGuideId).delete(); backToGuides(); loadGuides(); }
-  catch(e) { alert('삭제 실패'); }
+function insertVar(key) {
+  const activeTag = document.activeElement?.id;
+  const ctx = activeTag === 'ced-mixed' ? 'mixed' : 'text';
+  focusEd(ctx);
+  document.execCommand('insertText', false, `{{${key}}}`);
+}
+
+/* ── 복제 모달 ── */
+let copyAllProjects = [];
+async function openCopyModal() {
+  const sel = document.getElementById('copy-proj-sel');
+  sel.innerHTML = '<option value="">불러오는 중…</option>';
+  document.getElementById('copy-stage-sel').innerHTML = '';
+  document.getElementById('copy-modal').classList.add('on');
+  try {
+    const snap = await db.collection('cms_projects').orderBy('updatedAt','desc').get();
+    copyAllProjects = snap.docs.map(d=>({id:d.id,name:d.data().name||d.id,stages:d.data().stages||[]}));
+    sel.innerHTML = copyAllProjects.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+    loadCopyStages();
+  } catch(e) { sel.innerHTML = '<option>불러오기 실패</option>'; }
+}
+function loadCopyStages() {
+  const projId = document.getElementById('copy-proj-sel').value;
+  const proj = copyAllProjects.find(p=>p.id===projId);
+  const stages = proj?.stages||[];
+  document.getElementById('copy-stage-sel').innerHTML =
+    stages.length ? stages.map(s=>`<option value="${s.id}">${s.title||s.id}</option>`).join('')
+                  : '<option value="">스테이지 없음</option>';
+}
+async function doCopyFromStage() {
+  const projId = document.getElementById('copy-proj-sel').value;
+  const stageId = document.getElementById('copy-stage-sel').value;
+  if (!projId || !stageId) { alert('프로젝트와 스테이지를 선택해주세요.'); return; }
+  closeModal('copy-modal');
+  try {
+    const doc = await db.collection('cms_projects').doc(projId)
+      .collection('stage_content').doc(stageId).get();
+    if (!doc.exists) { alert('해당 스테이지에 내용이 없어요.'); return; }
+    const d = doc.data();
+    curBlocks = (d.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0)).map(b=>({...b,id:uid()}));
+    curGuideDispType = d.displayType||'scroll';
+    setGuideType(curGuideDispType); renderBlockList(); scheduleGuidePreviewUpdate();
+  } catch(e) { alert('복제 실패: '+e.message); }
 }
 function renderBlockList() {
   const el=document.getElementById('block-list');
@@ -1603,47 +1463,37 @@ function mvBlk(i,d){const j=i+d;if(j<0||j>=curBlocks.length)return;[curBlocks[i]
 function rmBlk(i){if(!confirm('이 블록을 삭제할까요?'))return;curBlocks.splice(i,1);renderBlockList();scheduleGuidePreviewUpdate();}
 
 /* ── Block editor ── */
-let guidePreviewTimer = null;
-let gprevSlideIdx = 0;
-function gprevGoTo(i){ gprevSlideIdx=i; renderGuidePreview(); }
 let curBlkIdx=null,curBlkType='text',curMixedLayout='overlay',savedRange=null;
-let curBlkBgColor='', curBlkTxtColor='';
-
+let curBlkBgColor='';
+function saveRange(el){const sel=window.getSelection();if(sel.rangeCount)savedRange={el,range:sel.getRangeAt(0).cloneRange()};}
+function restoreRange(el){if(savedRange&&savedRange.el===el){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}}
 function renderBlkKeyColors(){
-  ['bg','txt'].forEach(t=>{
-    const el=document.getElementById('blk-kc-'+t);
-    if(!el) return;
-    el.innerHTML=(curKeyColors.length?curKeyColors:['#00CE6B','#FFF100']).map(c=>{
-      const fn=t==='bg'?'onBlkBgPick':'onBlkTxtPick';
+  const kc = curKeyColors.length ? curKeyColors : ['#00CE6B','#FFF100'];
+  const bgEl = document.getElementById('blk-kc-bg');
+  if(bgEl){
+    bgEl.innerHTML = kc.map(c=>{
       const border=c.toLowerCase()==='#ffffff'?'#ccc':'#000';
-      return `<div onclick="${fn}('${c}')" title="${c}" style="width:22px;height:22px;background:${c};border:2px solid ${border};cursor:pointer;flex-shrink:0;border-radius:2px;"></div>`;
+      return `<div onclick="onBlkBgPick('${c}')" title="${c}" style="width:22px;height:22px;background:${c};border:2px solid ${border};cursor:pointer;flex-shrink:0;border-radius:2px;"></div>`;
+    }).join('');
+  }
+  ['text','mixed'].forEach(ctx=>{
+    const fmtEl = document.getElementById('fmt-kc-'+ctx);
+    if(!fmtEl) return;
+    fmtEl.innerHTML = kc.map(c=>{
+      const border=c.toLowerCase()==='#ffffff'?'#ccc':'#000';
+      const txtClr=isLight(c)?'#000':'#fff';
+      return `<button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtClr('${ctx}','${c}')" style="background:${c};color:${txtClr};border-color:${border};">●</button>`;
     }).join('');
   });
 }
+function isLight(hex){try{const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return(r*299+g*587+b*114)/1000>128;}catch(e){return true;}}
 function onBlkBgPick(v){
   curBlkBgColor=v;
   const h=document.getElementById('blk-bg-hex'); if(h) h.value=v.toUpperCase();
   const p=document.getElementById('blk-bg-color'); if(p) p.value=v;
 }
 function onBlkBgHex(v){ if(/^#[0-9a-fA-F]{6}$/.test(v)) onBlkBgPick(v); }
-function clearBlkBg(){
-  curBlkBgColor='';
-  const h=document.getElementById('blk-bg-hex'); if(h) h.value='';
-  const p=document.getElementById('blk-bg-color'); if(p) p.value='#ffffff';
-}
-function onBlkTxtPick(v){
-  curBlkTxtColor=v;
-  const h=document.getElementById('blk-txt-hex'); if(h) h.value=v.toUpperCase();
-  const p=document.getElementById('blk-txt-color'); if(p) p.value=v;
-}
-function onBlkTxtHex(v){ if(/^#[0-9a-fA-F]{6}$/.test(v)) onBlkTxtPick(v); }
-function clearBlkTxt(){
-  curBlkTxtColor='';
-  const h=document.getElementById('blk-txt-hex'); if(h) h.value='';
-  const p=document.getElementById('blk-txt-color'); if(p) p.value='#000000';
-}
-function saveRange(el){const sel=window.getSelection();if(sel.rangeCount)savedRange={el,range:sel.getRangeAt(0).cloneRange()};}
-function restoreRange(el){if(savedRange&&savedRange.el===el){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}}
+function clearBlkBg(){ curBlkBgColor=''; const h=document.getElementById('blk-bg-hex'); if(h) h.value=''; const p=document.getElementById('blk-bg-color'); if(p) p.value='#ffffff'; }
 function openBlockModal(idx){
   curBlkIdx=idx;
   document.getElementById('bm-title').textContent=idx===null?'블록 추가':'블록 편집';
@@ -1661,12 +1511,11 @@ function openBlockModal(idx){
   prevImg('img-prev',document.getElementById('img-url').value);
   prevImg('mixed-img-prev',document.getElementById('mixed-img-url').value);
   setMixedLayout(curMixedLayout);savedRange=null;
-  // 색상 로드
-  curBlkBgColor=b.bgColor||''; curBlkTxtColor=b.txtColor||'';
+  curBlkBgColor=b.bgColor||'';
   const bgP=document.getElementById('blk-bg-color'); if(bgP) bgP.value=curBlkBgColor||'#ffffff';
   const bgH=document.getElementById('blk-bg-hex');  if(bgH) bgH.value=(curBlkBgColor||'').toUpperCase();
-  const txP=document.getElementById('blk-txt-color');if(txP) txP.value=curBlkTxtColor||'#000000';
-  const txH=document.getElementById('blk-txt-hex'); if(txH) txH.value=(curBlkTxtColor||'').toUpperCase();
+  const mv=document.getElementById('blk-margin-v'); if(mv) mv.value=b.marginV??'';
+  const mh=document.getElementById('blk-margin-h'); if(mh) mh.value=b.marginH??'';
   renderBlkKeyColors();
   document.getElementById('block-modal').classList.add('on');
 }
@@ -1690,7 +1539,10 @@ function saveBlock(){
     b.embedHeight=parseInt(document.getElementById('embed-height').value)||500;
   }
   if(curBlkBgColor) b.bgColor=curBlkBgColor;
-  if(curBlkTxtColor) b.txtColor=curBlkTxtColor;
+  const _mv=parseInt(document.getElementById('blk-margin-v')?.value)||0;
+  const _mh=parseInt(document.getElementById('blk-margin-h')?.value)||0;
+  if(_mv) b.marginV=_mv; else delete b.marginV;
+  if(_mh) b.marginH=_mh; else delete b.marginH;
   /* form type: no extra fields */
   if(curBlkIdx!==null)curBlocks[curBlkIdx]={...curBlocks[curBlkIdx],...b};
   else curBlocks.push(b);
@@ -1712,27 +1564,62 @@ function fmtAlign(ctx,dir){focusEd(ctx);document.execCommand('justify'+dir.charA
 function fmtClr(ctx,clr){focusEd(ctx);document.execCommand('foreColor',false,clr);}
 function prevImg(id,url){const el=document.getElementById(id);if(url&&url.startsWith('http')){el.src=url;el.style.display='block';}else el.style.display='none';}
 
+/* ── 내용 미리보기 ── */
+let guidePreviewTimer=null, gprevSlideIdx=0;
+function gprevGoTo(i){gprevSlideIdx=i;renderGuidePreview();}
+function scheduleGuidePreviewUpdate(){
+  const wrap=document.getElementById('guide-preview-wrap');
+  if(!wrap||wrap.style.display==='none') return;
+  clearTimeout(guidePreviewTimer);
+  guidePreviewTimer=setTimeout(renderGuidePreview,280);
+}
+function toggleGuidePreview(){
+  const wrap=document.getElementById('guide-preview-wrap');
+  if(!wrap) return;
+  const showing=wrap.style.display!=='none';
+  wrap.style.display=showing?'none':'';
+  if(!showing) renderGuidePreview();
+}
+function renderGuidePreview(){
+  const header=document.getElementById('gprev-header');
+  const content=document.getElementById('gprev-content');
+  if(!header||!content) return;
+  const title=(curEditingStageIdx!==null?curStages[curEditingStageIdx]?.title:null)||'내용';
+  const S=196/430;
+  const hh=Math.round(38*S);
+  header.style.height=hh+'px';
+  header.innerHTML=`<div style="display:flex;align-items:center;height:${hh}px;padding:0 ${Math.round(16*S)}px;gap:${Math.round(10*S)}px;"><span style="font-size:${Math.round(20*S)}px;font-weight:900;">←</span><span style="flex:1;font-size:${Math.round(15*S)}px;font-weight:800;text-align:center;">${title}</span><span style="width:${Math.round(20*S)}px;"></span></div>`;
+  content.style.paddingTop=hh+'px';
+  if(!curBlocks.length){content.innerHTML=`<div style="padding:${Math.round(20*S)}px;text-align:center;color:rgba(0,0,0,.35);font-size:${Math.round(12*S)}px;">블록 없음</div>`;return;}
+  if(curGuideDispType==='slide'){
+    gprevSlideIdx=Math.min(gprevSlideIdx,curBlocks.length-1);
+    const idx=gprevSlideIdx;
+    const dots=curBlocks.map((_,i)=>`<div onclick="gprevGoTo(${i})" style="width:${Math.round(7*S)}px;height:${Math.round(7*S)}px;border-radius:50%;background:${i===idx?'#000':'rgba(0,0,0,.22)'};cursor:pointer;flex-shrink:0;"></div>`).join('');
+    const aS=`cursor:pointer;font-size:${Math.round(18*S)}px;padding:0 ${Math.round(8*S)}px;font-weight:900;user-select:none;`;
+    content.innerHTML=gBlockHtml(curBlocks[idx],S)+`<div style="display:flex;justify-content:center;align-items:center;gap:${Math.round(5*S)}px;padding:${Math.round(8*S)}px 0;"><span onclick="gprevGoTo(${Math.max(0,idx-1)})" style="${aS}opacity:${idx>0?1:.2};">‹</span>${dots}<span onclick="gprevGoTo(${Math.min(curBlocks.length-1,idx+1)})" style="${aS}opacity:${idx<curBlocks.length-1?1:.2};">›</span></div>`;
+  }else{
+    content.innerHTML=curBlocks.map(b=>gBlockHtml(b,S)).join('');
+  }
+}
+function gBlockHtml(b,S){
+  const pad=`padding:${Math.round(10*S)}px`;
+  const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
+  const txS=b.txtColor?`color:${b.txtColor};`:'';
+  const mv=b.marginV?Math.round(b.marginV*S):0, mh=b.marginH?Math.round(b.marginH*S):0;
+  const mS=(mv||mh)?`margin:${mv}px ${mh}px;`:'';
+  if(b.type==='text') return `<div style="${mS}${bgS}${pad};font-size:${Math.round(13*S)}px;line-height:1.6;word-break:break-word;overflow:hidden;box-sizing:border-box;width:calc(100% - ${mh*2}px);${txS}">${b.textContent||''}</div>`;
+  if(b.type==='image') return `<div style="${mS}${bgS}"><img src="${b.imageUrl||''}" style="width:100%;display:block;" alt=""></div>`;
+  if(b.type==='mixed'){
+    if(b.mixedLayout==='split') return `<div style="${mS}${bgS}${pad}"><img src="${b.imageUrl||''}" style="width:100%;display:block;margin-bottom:${Math.round(6*S)}px;" alt=""><div style="${txS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div></div>`;
+    return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="width:100%;display:block;" alt=""><div style="position:absolute;inset:0;display:flex;align-items:flex-end;${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;">${b.textContent||''}</div></div></div>`;
+  }
+  if(b.type==='embed') return `<div style="${mS}${bgS}${pad};text-align:center;font-size:${Math.round(11*S)}px;color:rgba(0,0,0,.4);">[임베드: ${b.embedUrl||'URL 없음'}]</div>`;
+  return '';
+}
+
 /* ══════════════════════════════════════
    실시간 미리보기
 ══════════════════════════════════════ */
-function applyPreviewSize() {
-  const h = Math.round(previewWidth * 1.776); // phone aspect ratio
-  ['preview-wrap','guide-preview-wrap'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.width = previewWidth + 'px';
-  });
-  ['preview-phone','guide-preview-phone'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.style.width = previewWidth + 'px'; el.style.height = h + 'px'; }
-  });
-}
-function setPreviewSize(delta) {
-  previewWidth = Math.max(140, Math.min(380, previewWidth + delta));
-  localStorage.setItem('adminPreviewWidth', previewWidth);
-  applyPreviewSize();
-  schedulePreviewUpdate();
-  scheduleGuidePreviewUpdate();
-}
 function schedulePreviewUpdate() {
   const wrap = document.getElementById('preview-wrap');
   if (!wrap || wrap.style.display === 'none') return;
@@ -1753,18 +1640,24 @@ function renderPreview() {
   const content = document.getElementById('prev-content');
   if (!bg) return;
 
-  /* ── key color ── */
-  const KC = curKeyColors[0] || '#00CE6B';
-
   /* ── background ── */
   const firstBg = curBgImages[0];
   const hasBg   = firstBg && firstBg.url;
   bg.style.backgroundImage = hasBg ? `url(${firstBg.url})` : '';
-  bg.style.backgroundColor = hasBg ? '' : KC;
+  bg.style.backgroundColor = hasBg ? '' : '#00CE6B'; /* player default color */
   overlay.style.display    = hasBg ? '' : 'none';
+  const tc = '#fff'; /* player text always on colored/image bg */
 
-  /* hide absolute dday element — rendered in content flow now */
-  ddayEl.style.display = 'none';
+  /* ── D-day ── */
+  if (curDdayEnabled) {
+    const dv = document.getElementById('p-dday-date')?.value;
+    if (dv) {
+      const t=new Date(); t.setHours(0,0,0,0);
+      const n=Math.ceil((new Date(dv+'T00:00:00')-t)/86400000);
+      ddayEl.textContent = n>0?'D-'+n:n===0?'D-Day':'D+'+Math.abs(n);
+      ddayEl.style.color='#00CE6B'; ddayEl.style.display='';
+    } else ddayEl.style.display='none';
+  } else ddayEl.style.display='none';
 
   /* ── helpers ── */
   const edition = document.getElementById('p-edition')?.value.trim();
@@ -1775,44 +1668,32 @@ function renderPreview() {
   const ctaTxt  = document.getElementById('p-cta-text')?.value.trim();
 
   /* scale: preview is 196px wide vs 430px player → ~0.456x */
-  const S = previewWidth / 430;
+  const S = 0.456;
 
   /* ── SEPARATE layout ── */
   if (curLayoutType === 'separate') {
-    /* top-group: built in curElementOrder order */
+    /* top-group: edition + logo + dday(via CSS) + stats placeholder */
     let topHtml = '';
-    curElementOrder.forEach(key => {
-      if (key === 'edition' && edition) {
-        topHtml += `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:${KC};margin-bottom:-4px;">${edition}</div>`;
-      } else if (key === 'logo') {
-        if (curLogoType==='image' && logoUrl) {
-          const maskSrc = curLogoBase64 || logoUrl;
-          const sizeStyle = curLogoImgRatio
-            ? `aspect-ratio:${curLogoImgRatio};`
-            : `height:${Math.round(curLogoImgH*S)}px;`;
-          topHtml += `<div style="width:${curLogoImgW}%;${sizeStyle}background-color:${KC};-webkit-mask-image:url('${maskSrc}');mask-image:url('${maskSrc}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;margin:0 auto;"></div>`;
-        } else if (curLogoType==='text' && logoTxt) {
-          topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:${KC};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;white-space:pre-line;">${logoTxt}</div>`;
-        } else {
-          topHtml += `<div style="font-size:${Math.round(20*S)}px;font-weight:900;color:${KC};">준비 포털</div>`;
-        }
-      } else if (key === 'dday' && curDdayEnabled) {
-        const dv = document.getElementById('p-dday-date')?.value;
-        if (dv) {
-          const t=new Date(); t.setHours(0,0,0,0);
-          const n=Math.ceil((new Date(dv+'T00:00:00')-t)/86400000);
-          topHtml += `<div style="font-size:${Math.round(32*S)}px;font-weight:900;color:${KC};">${n>0?'D-'+n:n===0?'D-Day':'D+'+Math.abs(n)}</div>`;
-        }
-      } else if (key === 'stats' && curStats && curStats.some(s=>s.enabled)) {
-        const labels = curStats.filter(s=>s.enabled).map(s=>`${s.label} …${s.unit||''}`).join(' · ');
-        topHtml += `<div style="font-size:${Math.round(21*S)}px;font-weight:400;color:${KC};">${labels}</div>`;
-      }
-    });
+    if (edition) topHtml += `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:#00CE6B;margin-bottom:-4px;">${edition}</div>`;
+    /* logo */
+    if (curLogoType==='image' && logoUrl) {
+      /* replicate CSS mask: colored div with mask */
+      topHtml += `<div style="width:76%;max-width:${Math.round(300*S)}px;aspect-ratio:835/700;background-color:#00CE6B;-webkit-mask-image:url(${logoUrl});mask-image:url(${logoUrl});-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>`;
+    } else if (curLogoType==='text' && logoTxt) {
+      topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:#00CE6B;text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
+    } else {
+      topHtml += `<div style="font-size:${Math.round(20*S)}px;font-weight:900;color:#00CE6B;">준비 포털</div>`;
+    }
+    /* visitor-line placeholder (counters) */
+    if (curStats && curStats.some(s=>s.enabled)) {
+      const labels = curStats.filter(s=>s.enabled).map(s=>`${s.label} …${s.unit||''}`).join(' · ');
+      topHtml += `<div style="font-size:${Math.round(21*S)}px;font-weight:400;color:#00CE6B;">${labels}</div>`;
+    }
     /* CTA */
     let botHtml = '';
     if (ctaIcon || ctaTxt) {
-      const icoDiv = ctaIcon ? `<div style="width:${Math.round(72*S)}px;height:${Math.round(72*S)}px;background-color:${KC};-webkit-mask-image:url(${ctaIcon});mask-image:url(${ctaIcon});-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>` : '';
-      const txtDiv = ctaTxt ? `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:${KC};">${ctaTxt}</div>` : '';
+      const icoDiv = ctaIcon ? `<div style="width:${Math.round(72*S)}px;height:${Math.round(72*S)}px;background-color:#00CE6B;-webkit-mask-image:url(${ctaIcon});mask-image:url(${ctaIcon});-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>` : '';
+      const txtDiv = ctaTxt ? `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:#00CE6B;">${ctaTxt}</div>` : '';
       botHtml = `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">${icoDiv}${txtDiv}</div>`;
     }
     content.style.justifyContent = 'space-between';
@@ -1849,88 +1730,10 @@ function renderPreview() {
   }
 }
 
-/* ══════════════════════════════════════
-   내용(Guide) 미리보기
-══════════════════════════════════════ */
-function scheduleGuidePreviewUpdate() {
-  const wrap = document.getElementById('guide-preview-wrap');
-  if (!wrap || wrap.style.display === 'none') return;
-  clearTimeout(guidePreviewTimer);
-  guidePreviewTimer = setTimeout(renderGuidePreview, 280);
-}
-function toggleGuidePreview() {
-  const wrap = document.getElementById('guide-preview-wrap');
-  if (!wrap) return;
-  const showing = wrap.style.display !== 'none';
-  wrap.style.display = showing ? 'none' : '';
-  if (!showing) renderGuidePreview();
-}
-function renderGuidePreview() {
-  const header  = document.getElementById('gprev-header');
-  const content = document.getElementById('gprev-content');
-  if (!header || !content) return;
-  const title = document.getElementById('g-title')?.value.trim() || '내용';
-  const S = previewWidth / 430;
-  const hh = Math.round(38 * S); /* header height px */
-  header.style.height = hh + 'px';
-  header.innerHTML = `<div style="display:flex;align-items:center;height:${hh}px;padding:0 ${Math.round(16*S)}px;gap:${Math.round(10*S)}px;">
-    <span style="font-size:${Math.round(20*S)}px;font-weight:900;">←</span>
-    <span style="flex:1;font-size:${Math.round(15*S)}px;font-weight:800;text-align:center;">${title}</span>
-    <span style="width:${Math.round(20*S)}px;"></span>
-  </div>`;
-  content.style.paddingTop = hh + 'px';
-  if (!curBlocks.length) {
-    content.innerHTML = `<div style="padding:${Math.round(20*S)}px;text-align:center;color:rgba(0,0,0,.35);font-size:${Math.round(12*S)}px;">블록 없음</div>`;
-    return;
-  }
-  if (curGuideDispType === 'slide') {
-    gprevSlideIdx = Math.min(gprevSlideIdx, curBlocks.length - 1);
-    const idx = gprevSlideIdx;
-    const dots = curBlocks.map((_,i)=>`<div onclick="gprevGoTo(${i})" style="width:${Math.round(7*S)}px;height:${Math.round(7*S)}px;border-radius:50%;background:${i===idx?'#000':'rgba(0,0,0,.22)'};cursor:pointer;flex-shrink:0;"></div>`).join('');
-    const arrowStyle = `cursor:pointer;font-size:${Math.round(18*S)}px;padding:0 ${Math.round(8*S)}px;font-weight:900;user-select:none;`;
-    content.innerHTML = gBlockHtml(curBlocks[idx], S) +
-      `<div style="display:flex;justify-content:center;align-items:center;gap:${Math.round(5*S)}px;padding:${Math.round(8*S)}px 0;">
-        <span onclick="gprevGoTo(${Math.max(0,idx-1)})" style="${arrowStyle}opacity:${idx>0?1:.2};">‹</span>
-        ${dots}
-        <span onclick="gprevGoTo(${Math.min(curBlocks.length-1,idx+1)})" style="${arrowStyle}opacity:${idx<curBlocks.length-1?1:.2};">›</span>
-      </div>`;
-  } else {
-    content.innerHTML = curBlocks.map(b => gBlockHtml(b, S)).join('');
-  }
-}
-function gBlockHtml(b, S) {
-  const pad = `padding:${Math.round(14*S)}px`;
-  const bgS = b.bgColor  ? `background-color:${b.bgColor};`  : '';
-  const txS = b.txtColor ? `color:${b.txtColor};`            : '';
-  if (b.type === 'text') {
-    return `<div style="${bgS}${txS}${pad};font-size:${Math.round(14*S)}px;line-height:1.6;word-break:break-word;overflow-wrap:break-word;overflow:hidden;box-sizing:border-box;width:100%;">${b.textContent||''}</div>`;
-  } else if (b.type === 'image') {
-    const img = b.imageUrl
-      ? `<img src="${b.imageUrl}" style="width:100%;display:block;max-height:${Math.round(130*S)}px;object-fit:cover;">`
-      : `<div style="height:${Math.round(60*S)}px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:9px;color:#aaa;">[이미지]</div>`;
-    return bgS ? `<div style="${bgS}">${img}</div>` : img;
-  } else if (b.type === 'mixed') {
-    const imgPart = b.imageUrl
-      ? `<img src="${b.imageUrl}" style="width:100%;max-height:${Math.round(80*S)}px;object-fit:cover;display:block;">`
-      : `<div style="height:${Math.round(50*S)}px;background:#eee;"></div>`;
-    const txtPart = `<div style="${txS}${pad};font-size:${Math.round(12*S)}px;line-height:1.5;">${(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,80)}</div>`;
-    if (b.mixedLayout === 'overlay') {
-      return `<div style="position:relative;${bgS}">${imgPart}<div style="position:absolute;inset:0;background:rgba(0,0,0,.42);display:flex;align-items:flex-end;">${txtPart.replace(pad,`padding:${Math.round(8*S)}px;${txS||'color:#fff;'}`)}</div></div>`;
-    }
-    return `<div style="${bgS}">${imgPart}${txtPart}</div>`;
-  } else if (b.type === 'embed') {
-    return `<div style="${bgS}margin:${Math.round(8*S)}px;${pad};background:${b.bgColor?b.bgColor:'#f0f0f0'};border:1px dashed rgba(0,0,0,.2);text-align:center;font-size:${Math.round(10*S)}px;${txS||'color:rgba(0,0,0,.5);'}">[임베드] ${(b.embedUrl||'URL없음').slice(0,30)}</div>`;
-  }
-  return `<div style="${bgS}margin:${Math.round(8*S)}px;${pad};background:#f0f0f0;border:1px dashed rgba(0,0,0,.2);text-align:center;font-size:${Math.round(10*S)}px;color:rgba(0,0,0,.5);">[폼 준비 중]</div>`;
-}
-
 window.addEventListener('load', () => {
   updatePATBtn();
-  applyPreviewSize(); // restore saved preview size
   const pev = document.getElementById('proj-edit-view');
   if (pev) { pev.addEventListener('input', schedulePreviewUpdate); pev.addEventListener('change', schedulePreviewUpdate); }
-  const gev = document.getElementById('guide-edit-view');
-  if (gev) { gev.addEventListener('input', scheduleGuidePreviewUpdate); gev.addEventListener('change', scheduleGuidePreviewUpdate); }
 });
 </script>
 </body>

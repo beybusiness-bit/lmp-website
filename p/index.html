@@ -25,7 +25,7 @@ body{background:var(--c);transition:background-color 1s ease;display:flex;justif
 .top-group{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;}
 .bottom-group{display:flex;flex-direction:column;align-items:center;gap:6px;}
 .edition-text{font-size:18px;font-weight:900;color:var(--c);letter-spacing:-.3px;transition:color 1s ease;margin-bottom:-14px;}
-.logo-wrap{width:100%;display:flex;justify-content:center;}
+.logo-wrap{width:76%;max-width:300px;}
 .logo-mask{width:100%;aspect-ratio:835/700;background-color:var(--c);-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;transition:background-color 1s ease;}
 .logo-fallback{font-size:20px;font-weight:900;color:var(--c);text-align:center;line-height:1.3;transition:color 1s ease;display:none;white-space:pre-line;}
 .dday-num{font-size:32px;font-weight:300;color:var(--c);line-height:1;letter-spacing:-1px;transition:color 1s ease;text-align:center;}
@@ -232,7 +232,8 @@ const db = firebase.firestore();
 
 /* ── URL에서 프로젝트 ID ── */
 const PROJECT_ID = new URLSearchParams(location.search).get('id') || '';
-let KEY_COLORS = ['#00CE6B']; // overwritten from project data in applySettings()
+const COLORS     = ['#00CE6B','#FFF100','#F95548','#0BC6FF','#FFFFFF'];
+const KEY_COLORS = ['#00CE6B','#FFF100','#F95548','#0BC6FF'];
 
 /* project settings */
 let LAYOUT_TYPE    = 'separate';
@@ -245,10 +246,6 @@ let AUTH_KEY_FIELD = '';
 let STAGES         = [];
 let STATS          = [];   // [{id, label, collection, countType, unit, enabled}]
 let ELEMENT_ORDER  = ['edition','logo','dday','stats'];
-let LOGO_BASE64    = ''; // base64 data URL for CSS mask (avoids CORS)
-let LOGO_IMG_RATIO = null; // natural width/height ratio (auto height)
-let LOGO_IMG_H     = 80;  // fallback height for old projects
-let LOGO_IMG_W     = 76;
 
 /* slideshow */
 let bgImages   = [];   // [{url, holdTime, transitionTime}]
@@ -289,14 +286,6 @@ async function loadProjectSettings(){
   }catch(e){ showError('연결에 실패했어요.','잠시 후 다시 시도해주세요.'); }
 }
 function applySettings(d){
-  /* apply project key colors */
-  KEY_COLORS = (d.keyColors && d.keyColors.length) ? d.keyColors : (d.keyColor ? [d.keyColor] : ['#00CE6B']);
-  setCss('--c', KEY_COLORS[0]);
-
-  LOGO_BASE64     = d.logoBase64     || '';
-  LOGO_IMG_RATIO  = d.logoImgRatio  || null;
-  LOGO_IMG_H      = d.logoImgH      || 80;
-  LOGO_IMG_W      = d.logoImgW      || 76;
   LAYOUT_TYPE     = d.layoutType     || 'separate';
   DDAY_ENABLED    = d.ddayEnabled    || false;
   DDAY_DATE       = d.ddayDate       || '';
@@ -305,7 +294,7 @@ function applySettings(d){
   AUTH_FIELDS     = d.authFields     || [{key:'name',label:'이름',type:'string',required:true}];
   AUTH_KEY_FIELD  = d.authKeyField   || (AUTH_FIELDS[0]?.key||'name');
   STAGES = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0)).map(s=>({
-    id:s.id||'',guideId:s.guideId||'',title:s.title||'',status:s.status||'시작 전',
+    id:s.id||'',title:s.title||'',status:s.status||'시작 전',
     progress:s.progress||0,displayType:s.displayType||'text',stageImageUrl:s.stageImageUrl||''
   }));
   STATS = (d.stats||[]).filter(s=>s.enabled);
@@ -365,16 +354,22 @@ function renderTopGroup(d){
     } else if(key==='logo'){
       const wrap=document.createElement('div');
       wrap.className='logo-wrap';
-      if(d.logoType==='text'&&d.logoText){
-        wrap.innerHTML=`<div class="logo-fallback" id="logo-fallback" style="display:block;font-size:${d.logoTextSize||'20'}px;text-align:${d.logoTextAlign||'center'};">${d.logoText}</div>`;
-      } else if(d.logoImageUrl){
-        const maskSrc = LOGO_BASE64 || d.logoImageUrl;
-        const logoSizeStyle = LOGO_IMG_RATIO ? `aspect-ratio:${LOGO_IMG_RATIO};` : `height:${LOGO_IMG_H}px;`;
-        wrap.innerHTML=`<div id="logo-img" style="width:${LOGO_IMG_W}%;${logoSizeStyle}background-color:var(--c);-webkit-mask-image:url('${maskSrc}');mask-image:url('${maskSrc}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;margin:0 auto;transition:background-color 1s ease;"></div>`;
-      } else {
-        wrap.innerHTML=`<div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>`;
-      }
+      wrap.innerHTML=`<div class="logo-mask" id="logo-mask" style="display:none;"></div>
+        <div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>`;
       tg.appendChild(wrap);
+      /* re-apply logo settings now that DOM exists */
+      if(d.logoType==='text'&&d.logoText){
+        document.getElementById('logo-mask').style.display='none';
+        const fb=document.getElementById('logo-fallback');
+        fb.textContent=d.logoText;
+        fb.style.fontSize=(d.logoTextSize||'20')+'px';
+        fb.style.textAlign=d.logoTextAlign||'center';
+        fb.style.display='block';
+      } else if(d.logoImageUrl){
+        setMaskUrl('#logo-mask',d.logoImageUrl);
+        document.getElementById('logo-mask').style.display='';
+        document.getElementById('logo-fallback').style.display='none';
+      }
     } else if(key==='dday'){
       const el=document.createElement('div');
       el.className='dday-num'; el.id='dday-num';
@@ -416,28 +411,14 @@ function initSlides(){
     container.appendChild(div);
   });
   slideIdx=0;
-  syncColorTransDur(bgImages[0]?.transitionTime||2);
   scheduleNextSlide();
 }
-function nextColor(){
-  if(KEY_COLORS.length===1){ colorIdx=0; return KEY_COLORS[0]; }
-  let i; do{i=Math.floor(Math.random()*KEY_COLORS.length);}while(i===colorIdx);
-  colorIdx=i; return KEY_COLORS[i];
-}
+function nextColor(){ let i; do{i=Math.floor(Math.random()*COLORS.length);}while(i===colorIdx); colorIdx=i; return COLORS[i]; }
 function scheduleNextSlide(){
   if(slideTimer) clearTimeout(slideTimer);
   const cur=bgImages[slideIdx];
   const hold=(cur?.holdTime||10)*1000;
   slideTimer=setTimeout(()=>{ advanceSlide(); scheduleNextSlide(); }, hold);
-}
-function syncColorTransDur(dur){
-  /* Set transition-duration on all --c driven elements so they match the slide fade */
-  const t=dur+'s';
-  document.body.style.transitionDuration=t;
-  document.querySelectorAll('.edition-text,.logo-mask,.logo-fallback,.dday-num,.visitor-line,.basket-mask,.basket-text')
-    .forEach(el=>el.style.transitionDuration=t);
-  const li=document.getElementById('logo-img');
-  if(li) li.style.transitionDuration=t;
 }
 function advanceSlide(){
   if(!bgImages.length) return;
@@ -446,12 +427,11 @@ function advanceSlide(){
   slides[slideIdx].classList.remove('on');
   slideIdx=(slideIdx+1)%bgImages.length;
   const next=slides[slideIdx];
-  const transSec=bgImages[slideIdx]?.transitionTime||2;
   if(next){
-    next.style.transition='opacity '+transSec+'s ease-in-out';
+    const trans=(bgImages[slideIdx]?.transitionTime||2)+'s';
+    next.style.transition='opacity '+trans+' ease-in-out';
     next.classList.add('on');
   }
-  syncColorTransDur(transSec);
   setCss('--c',nextColor());
 }
 
@@ -514,7 +494,7 @@ function onCtaClick(){
 
 /* ── Auth ── */
 function openAuthModal(){
-  const c=pickOther(KEY_COLORS[colorIdx]||KEY_COLORS[0],KEY_COLORS);
+  const c=pickOther(COLORS[colorIdx]||'',KEY_COLORS);
   const box=document.getElementById('auth-box');
   box.style.background=c; box.style.setProperty('--modal-bg',c);
   document.getElementById('auth-key-input').value='';
@@ -548,7 +528,7 @@ async function confirmAuth(){
 
 /* ── Prep screen (separate) ── */
 function openPrep(){
-  prepBg=pickOther(KEY_COLORS[colorIdx]||KEY_COLORS[0], KEY_COLORS);
+  prepBg=KEY_COLORS[Math.floor(Math.random()*KEY_COLORS.length)];
   sessionStorage.setItem('prepBgColor',prepBg);
   setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
   renderSeparateStages();
@@ -589,18 +569,19 @@ function goToStage(i){
   if(!stage) return;
   if(LAYOUT_TYPE!=='merged') document.getElementById('topbar-title').textContent=stage.title;
   closeMenu();
-  if(stage.guideId) openGuide(stage.guideId,stage.title);
+  openStageContent(stage);
 }
 
 /* ── Guide viewer ── */
 let gSlideIdx=0,gSlideTotal=0,gTouchX=0;
-async function openGuide(guideId,title){
-  document.getElementById('guide-title-bar').textContent=title||'안내';
+async function openStageContent(stage){
+  document.getElementById('guide-title-bar').textContent=stage.title||'안내';
   document.getElementById('guide-scroll-body').style.display='none';
   document.getElementById('guide-slide-body').style.display='none';
   document.getElementById('guide-screen').classList.add('open');
   try{
-    const doc=await db.collection('cms_guides').doc(guideId).get();
+    const doc=await db.collection('cms_projects').doc(PROJECT_ID)
+      .collection('stage_content').doc(stage.id).get();
     if(!doc.exists){ showGuideEmpty('안내 내용이 아직 준비되지 않았어요.'); return; }
     const g=doc.data();
     const blocks=(g.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
@@ -610,24 +591,31 @@ async function openGuide(guideId,title){
 }
 function closeGuide(){ document.getElementById('guide-screen').classList.remove('open'); }
 function showGuideEmpty(msg){ document.getElementById('guide-scroll-blocks').innerHTML='<div class="guide-empty">'+msg+'</div>'; document.getElementById('guide-scroll-body').style.display='block'; }
+/* 변수 치환: {{key}} → 로그인 사용자 값 */
+function applyVars(html){
+  try{const u=JSON.parse(sessionStorage.getItem('userSession')||'{}');return html.replace(/\{\{(\w+)\}\}/g,(_,k)=>u[k]??`{{${k}}}`);}catch(e){return html;}
+}
 function blockHtml(b){
   const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
   const txS=b.txtColor?`color:${b.txtColor};`:'';
+  const mS=(b.marginV||b.marginH)?`margin:${b.marginV||0}px ${b.marginH||0}px;`:'';
   if(b.type==='text'){
-    const inner=`<div class="g-block-text" style="${bgS}"><div class="g-block-text-inner" style="${txS}">`+(b.textContent||'')+'</div></div>';
+    const html=applyVars(b.textContent||'');
+    const inner=`<div class="g-block-text" style="${mS}${bgS}"><div class="g-block-text-inner" style="${txS}">${html}</div></div>`;
     return b.linkUrl?`<a href="${b.linkUrl}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit;">${inner}</a>`:inner;
   }
   if(b.type==='image'){
-    const img=`<div class="g-block-image" style="${bgS}"><img src="${b.imageUrl||''}" alt="" loading="lazy"></div>`;
+    const img=`<div class="g-block-image" style="${mS}${bgS}"><img src="${b.imageUrl||''}" alt="" loading="lazy"></div>`;
     return b.linkUrl?`<a href="${b.linkUrl}" target="_blank" rel="noopener" style="display:block;">${img}</a>`:img;
   }
   if(b.type==='mixed'){
+    const html=applyVars(b.textContent||'');
     if(b.mixedLayout==='split')
-      return `<div class="g-block-mixed-split" style="${bgS}"><div class="g-split-img"><img src="${b.imageUrl||''}" alt="" loading="lazy"></div><div class="g-split-text" style="${txS}">${b.textContent||''}</div></div>`;
-    return `<div class="g-block-mixed-overlay" style="${bgS}"><img src="${b.imageUrl||''}" alt="" loading="lazy"><div class="g-overlay-text"><div class="g-overlay-text-inner" style="${txS}">${b.textContent||''}</div></div></div>`;
+      return `<div class="g-block-mixed-split" style="${mS}${bgS}"><div class="g-split-img"><img src="${b.imageUrl||''}" alt="" loading="lazy"></div><div class="g-split-text" style="${txS}">${html}</div></div>`;
+    return `<div class="g-block-mixed-overlay" style="${mS}${bgS}"><img src="${b.imageUrl||''}" alt="" loading="lazy"><div class="g-overlay-text"><div class="g-overlay-text-inner" style="${txS}">${html}</div></div></div>`;
   }
   if(b.type==='embed' && b.embedUrl){
-    return `<div class="g-block-embed" style="${bgS}"><iframe src="${b.embedUrl}" width="100%" height="${b.embedHeight||500}" frameborder="0" allowfullscreen style="display:block;border:none;"></iframe></div>`;
+    return `<div class="g-block-embed" style="${mS}${bgS}"><iframe src="${b.embedUrl}" width="100%" height="${b.embedHeight||500}" frameborder="0" allowfullscreen style="display:block;border:none;"></iframe></div>`;
   }
   return '';
 }
