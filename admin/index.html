@@ -186,6 +186,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <div id="proj-list-view">
         <div id="proj-list"><div class="empty-msg">불러오는 중…</div></div>
         <button class="add-btn" onclick="startNewProject()">+ 프로젝트 추가</button>
+        <button class="add-btn" onclick="seedTestData()" style="margin-top:8px;border-color:rgba(0,0,0,.3);color:rgba(0,0,0,.45);font-size:12px;">🧪 블록 기능 테스트 프로젝트 추가</button>
       </div>
       <div id="proj-edit-view" style="display:none;">
         <div class="ed-top">
@@ -1408,6 +1409,169 @@ async function deleteProject() {
   if (!curProjId || !confirm('이 프로젝트를 삭제할까요?')) return;
   try { await db.collection('cms_projects').doc(curProjId).delete(); backToProjects(); loadProjects(); }
   catch(e) { alert('삭제 실패'); }
+}
+
+/* ══════════════════════════════════════
+   🧪 블록 기능 테스트 더미데이터
+══════════════════════════════════════ */
+async function seedTestData() {
+  if (!confirm('블록 기능 테스트용 더미 프로젝트를 추가할까요?\n\n이미 있으면 덮어씁니다.')) return;
+  const PID = 'block-test-demo';
+  const stages = [
+    { id: 's-text',  title: '텍스트 블록', displayType: 'text',  stageImageUrl: '', order: 0 },
+    { id: 's-image', title: '이미지 블록', displayType: 'text',  stageImageUrl: '', order: 1 },
+    { id: 's-mixed', title: '혼합형 블록', displayType: 'text',  stageImageUrl: '', order: 2 },
+    { id: 's-embed', title: '임베드 블록', displayType: 'text',  stageImageUrl: '', order: 3 },
+    { id: 's-slide', title: '슬라이드 모드', displayType: 'text', stageImageUrl: '', order: 4 },
+  ];
+  const proj = {
+    name: '블록 기능 테스트',
+    layoutType: 'separate',
+    editionText: 'DEMO',
+    logoType: 'text',
+    logoImageUrl: '',
+    logoText: 'BLOCK TEST',
+    logoTextSize: '22',
+    logoTextAlign: 'center',
+    logoImgW: 76,
+    ctaIconUrl: '',
+    ctaText: '시작하기',
+    ddayEnabled: true,
+    ddayDate: '2025-12-31',
+    authEnabled: false,
+    authCollection: 'cms_users_block-test-demo',
+    authFields: [],
+    authKeyField: '',
+    authTitle: '',
+    authDesc: '',
+    bgImages: [],
+    stages,
+    stats: [],
+    elementOrder: ['logo','dday','stats','cta'],
+    keyColors: ['#FF6B35','#004E89','#1A936F','#F4D35E'],
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+  };
+
+  /* 스테이지별 블록 목록 */
+  const stageBlocks = {
+    's-text': {
+      displayType: 'scroll',
+      blocks: [
+        { id: uid(), type:'text', order:0,
+          textContent: '<div style="text-align:left;"><span style="font-size:13px;">S (13px) · 왼쪽 정렬 기본 텍스트입니다. 이 크기는 본문 설명에 적합합니다.</span></div>',
+          bgColor:'', marginV:0, marginH:0 },
+        { id: uid(), type:'text', order:1,
+          textContent: '<div style="text-align:center;"><b><span style="font-size:20px;">L (20px) · 가운데 정렬 볼드 텍스트</span></b></div>',
+          bgColor:'', marginV:8, marginH:0 },
+        { id: uid(), type:'text', order:2,
+          textContent: '<div style="text-align:right;"><span style="font-size:26px;">XL (26px) · 오른쪽 정렬</span></div>',
+          bgColor:'', marginV:0, marginH:0 },
+        { id: uid(), type:'text', order:3,
+          textContent: '<div><span style="color:#FF6B35;font-size:16px;">키컬러(#FF6B35)로 색상을 입힌 M 사이즈 텍스트입니다.</span></div>',
+          bgColor:'', marginV:0, marginH:0 },
+        { id: uid(), type:'text', order:4,
+          textContent: '<div><span style="font-size:13px;">배경색이 있는 텍스트 블록. 여백(상하 16px · 좌우 12px)도 적용됩니다.</span></div>',
+          bgColor:'#F4D35E', marginV:16, marginH:12 },
+        { id: uid(), type:'text', order:5,
+          textContent: '<div style="text-align:center;"><span style="font-size:16px;">링크가 달린 텍스트 블록 (블록 전체가 링크)</span></div>',
+          bgColor:'#004E89', marginV:0, marginH:0,
+          linkUrl:'https://lazymaxpotential.kr' },
+        { id: uid(), type:'text', order:6,
+          textContent: '<div><span style="font-size:13px;">여러 스타일 혼합: </span><b><span style="font-size:16px;">볼드</span></b><span style="font-size:13px;"> · </span><span style="font-size:13px;color:#1A936F;">초록색</span><span style="font-size:13px;"> · </span><span style="font-size:20px;">크게</span><span style="font-size:13px;"> · 일반 크기 순서로 이어짐.</span></div>',
+          bgColor:'', marginV:0, marginH:0 },
+      ]
+    },
+    's-image': {
+      displayType: 'scroll',
+      blocks: [
+        { id: uid(), type:'image', order:0,
+          imageUrl:'https://picsum.photos/seed/block1/430/300',
+          bgColor:'', marginV:0, marginH:0, linkUrl:'' },
+        { id: uid(), type:'image', order:1,
+          imageUrl:'https://picsum.photos/seed/block2/430/200',
+          bgColor:'', marginV:12, marginH:0,
+          linkUrl:'https://lazymaxpotential.kr' },
+        { id: uid(), type:'image', order:2,
+          imageUrl:'https://picsum.photos/seed/block3/430/430',
+          bgColor:'#F4D35E', marginV:8, marginH:20, linkUrl:'' },
+        { id: uid(), type:'image', order:3,
+          imageUrl:'',
+          bgColor:'#004E89', marginV:0, marginH:0, linkUrl:'' },
+      ]
+    },
+    's-mixed': {
+      displayType: 'scroll',
+      blocks: [
+        { id: uid(), type:'mixed', order:0, mixedLayout:'overlay',
+          imageUrl:'https://picsum.photos/seed/mix1/430/320',
+          textContent:'<div style="text-align:left;"><span style="font-size:20px;color:#fff;">오버레이형 · 이미지 위에 텍스트</span></div>',
+          bgColor:'', marginV:0, marginH:0 },
+        { id: uid(), type:'mixed', order:1, mixedLayout:'split',
+          imageUrl:'https://picsum.photos/seed/mix2/430/240',
+          textContent:'<div style="text-align:center;"><b><span style="font-size:16px;">분리형 · 이미지 위 / 텍스트 아래</span></b><br><span style="font-size:13px;">이미지와 텍스트가 위아래로 나뉩니다.</span></div>',
+          bgColor:'', marginV:0, marginH:0 },
+        { id: uid(), type:'mixed', order:2, mixedLayout:'overlay',
+          imageUrl:'https://picsum.photos/seed/mix3/430/280',
+          textContent:'<div style="text-align:center;"><span style="font-size:16px;color:#F4D35E;">배경색 + 오버레이 혼합</span></div>',
+          bgColor:'#1A936F', marginV:8, marginH:0 },
+        { id: uid(), type:'mixed', order:3, mixedLayout:'split',
+          imageUrl:'',
+          textContent:'<div><span style="font-size:13px;">이미지 URL이 없는 혼합형 블록 — 텍스트만 표시됩니다.</span></div>',
+          bgColor:'#FF6B35', marginV:0, marginH:0 },
+      ]
+    },
+    's-embed': {
+      displayType: 'scroll',
+      blocks: [
+        { id: uid(), type:'text', order:0,
+          textContent:'<div style="text-align:center;"><b><span style="font-size:16px;">임베드 블록 테스트</span></b></div>',
+          bgColor:'', marginV:0, marginH:0 },
+        { id: uid(), type:'embed', order:1,
+          embedUrl:'https://www.youtube.com/embed/dQw4w9WgXcQ',
+          embedHeight:220, bgColor:'', marginV:0, marginH:0 },
+        { id: uid(), type:'text', order:2,
+          textContent:'<div><span style="font-size:13px;">아래는 Tally 폼 임베드 예시 (실제 폼 ID가 없어 빈 화면으로 보임)</span></div>',
+          bgColor:'', marginV:8, marginH:0 },
+        { id: uid(), type:'embed', order:3,
+          embedUrl:'https://tally.so/embed/XXXXXX',
+          embedHeight:400, bgColor:'#f9f9f9', marginV:0, marginH:0 },
+      ]
+    },
+    's-slide': {
+      displayType: 'slide',
+      blocks: [
+        { id: uid(), type:'text', order:0,
+          textContent:'<div style="text-align:center;"><b><span style="font-size:20px;">슬라이드 1</span></b><br><span style="font-size:13px;">상단 표시 모드를 "슬라이드"로 설정하면 블록 하나씩 넘겨봅니다.</span></div>',
+          bgColor:'#FF6B35', marginV:0, marginH:0 },
+        { id: uid(), type:'image', order:1,
+          imageUrl:'https://picsum.photos/seed/slide2/430/350',
+          bgColor:'', marginV:0, marginH:0 },
+        { id: uid(), type:'mixed', order:2, mixedLayout:'overlay',
+          imageUrl:'https://picsum.photos/seed/slide3/430/350',
+          textContent:'<div style="text-align:center;"><span style="font-size:26px;color:#fff;">슬라이드 3</span></div>',
+          bgColor:'', marginV:0, marginH:0 },
+        { id: uid(), type:'text', order:3,
+          textContent:'<div style="text-align:center;"><span style="font-size:16px;">슬라이드 4 · 마지막</span></div>',
+          bgColor:'#004E89', marginV:0, marginH:0 },
+      ]
+    },
+  };
+
+  try {
+    await db.collection('cms_projects').doc(PID).set(proj, {merge:true});
+    for (const [sid, content] of Object.entries(stageBlocks)) {
+      await db.collection('cms_projects').doc(PID)
+        .collection('stage_content').doc(sid).set({
+          ...content,
+          blocks: content.blocks.map((b,i)=>({...b,order:i})),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        }, {merge:true});
+    }
+    alert('✅ 테스트 프로젝트 추가 완료!\n\n목록에서 "블록 기능 테스트"를 열어 확인해보세요.\n\n스테이지별 내용:\n- 텍스트 블록: 크기·정렬·색상·배경·링크·혼합\n- 이미지 블록: 기본·링크·여백·URL 없음\n- 혼합형 블록: 오버레이·분리·배경색·이미지 없음\n- 임베드 블록: 유튜브·Tally\n- 슬라이드 모드: 4장 슬라이드');
+    loadProjects();
+  } catch(e) {
+    alert('실패: ' + e.message);
+  }
 }
 
 /* ══════════════════════════════════════
