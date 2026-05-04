@@ -25,7 +25,7 @@ body{background:var(--c);transition:background-color 1s ease;display:flex;justif
 .top-group{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;}
 .bottom-group{display:flex;flex-direction:column;align-items:center;gap:6px;}
 .edition-text{font-size:18px;font-weight:900;color:var(--c);letter-spacing:-.3px;transition:color 1s ease;margin-bottom:-14px;}
-.logo-wrap{width:76%;max-width:300px;}
+.logo-wrap{width:100%;display:flex;justify-content:center;}
 .logo-mask{width:100%;aspect-ratio:835/700;background-color:var(--c);-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;transition:background-color 1s ease;}
 .logo-fallback{font-size:20px;font-weight:900;color:var(--c);text-align:center;line-height:1.3;transition:color 1s ease;display:none;white-space:pre-line;}
 .dday-num{font-size:32px;font-weight:300;color:var(--c);line-height:1;letter-spacing:-1px;transition:color 1s ease;text-align:center;}
@@ -246,6 +246,8 @@ let STAGES         = [];
 let STATS          = [];   // [{id, label, collection, countType, unit, enabled}]
 let ELEMENT_ORDER  = ['edition','logo','dday','stats'];
 let LOGO_BASE64    = ''; // base64 data URL for CSS mask (avoids CORS)
+let LOGO_IMG_H     = 80;
+let LOGO_IMG_W     = 76;
 
 /* slideshow */
 let bgImages   = [];   // [{url, holdTime, transitionTime}]
@@ -291,6 +293,8 @@ function applySettings(d){
   setCss('--c', KEY_COLORS[0]);
 
   LOGO_BASE64     = d.logoBase64     || '';
+  LOGO_IMG_H      = d.logoImgH      || 80;
+  LOGO_IMG_W      = d.logoImgW      || 76;
   LAYOUT_TYPE     = d.layoutType     || 'separate';
   DDAY_ENABLED    = d.ddayEnabled    || false;
   DDAY_DATE       = d.ddayDate       || '';
@@ -363,7 +367,7 @@ function renderTopGroup(d){
         wrap.innerHTML=`<div class="logo-fallback" id="logo-fallback" style="display:block;font-size:${d.logoTextSize||'20'}px;text-align:${d.logoTextAlign||'center'};">${d.logoText}</div>`;
       } else if(d.logoImageUrl){
         const maskSrc = LOGO_BASE64 || d.logoImageUrl;
-        wrap.innerHTML=`<div id="logo-img" style="width:100%;height:80px;background-color:var(--c);-webkit-mask-image:url('${maskSrc}');mask-image:url('${maskSrc}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>`;
+        wrap.innerHTML=`<div id="logo-img" style="width:${LOGO_IMG_W}%;height:${LOGO_IMG_H}px;background-color:var(--c);-webkit-mask-image:url('${maskSrc}');mask-image:url('${maskSrc}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;margin:0 auto;transition:background-color 1s ease;"></div>`;
       } else {
         wrap.innerHTML=`<div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>`;
       }
@@ -409,6 +413,7 @@ function initSlides(){
     container.appendChild(div);
   });
   slideIdx=0;
+  syncColorTransDur(bgImages[0]?.transitionTime||2);
   scheduleNextSlide();
 }
 function nextColor(){
@@ -422,6 +427,15 @@ function scheduleNextSlide(){
   const hold=(cur?.holdTime||10)*1000;
   slideTimer=setTimeout(()=>{ advanceSlide(); scheduleNextSlide(); }, hold);
 }
+function syncColorTransDur(dur){
+  /* Set transition-duration on all --c driven elements so they match the slide fade */
+  const t=dur+'s';
+  document.body.style.transitionDuration=t;
+  document.querySelectorAll('.edition-text,.logo-mask,.logo-fallback,.dday-num,.visitor-line,.basket-mask,.basket-text')
+    .forEach(el=>el.style.transitionDuration=t);
+  const li=document.getElementById('logo-img');
+  if(li) li.style.transitionDuration=t;
+}
 function advanceSlide(){
   if(!bgImages.length) return;
   const slides=document.querySelectorAll('.slide');
@@ -429,11 +443,12 @@ function advanceSlide(){
   slides[slideIdx].classList.remove('on');
   slideIdx=(slideIdx+1)%bgImages.length;
   const next=slides[slideIdx];
+  const transSec=bgImages[slideIdx]?.transitionTime||2;
   if(next){
-    const trans=(bgImages[slideIdx]?.transitionTime||2)+'s';
-    next.style.transition='opacity '+trans+' ease-in-out';
+    next.style.transition='opacity '+transSec+'s ease-in-out';
     next.classList.add('on');
   }
+  syncColorTransDur(transSec);
   setCss('--c',nextColor());
 }
 
