@@ -153,6 +153,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .form-submit-btn{width:100%;padding:16px 0;background:#000;border:2px solid #000;color:#fff;font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;margin-top:20px;-webkit-tap-highlight-color:transparent;letter-spacing:-.3px;}
 .form-submit-btn:disabled{opacity:.5;}
 .form-done-screen{padding:32px 20px;text-align:center;}
+.ff-form-title{font-size:20px;font-weight:900;letter-spacing:-.5px;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #000;}
 </style>
 </head>
 <body>
@@ -690,9 +691,10 @@ function blockHtml(b){
   if(b.type==='form' && b.formId){
     formBlockData[b.formId]={formFields:b.formFields||[],formConfig:b.formConfig||{}};
     const config=b.formConfig||{};
+    const titleHtml=config.formTitle?`<div class="ff-form-title">${config.formTitle}</div>`:'';
     const fieldsHtml=(b.formFields||[]).map(f=>renderFormField(f)).join('');
     return `<div class="g-block-form" style="${mS}${bgS}">
-      <div id="form-body-${b.formId}">${fieldsHtml}<div class="ff-err" id="form-err-${b.formId}"></div><button class="form-submit-btn" onclick="submitForm('${b.formId}')">${config.submitBtnText||'제출하기'}</button></div>
+      <div id="form-body-${b.formId}">${titleHtml}${fieldsHtml}<div class="ff-err" id="form-err-${b.formId}"></div><button class="form-submit-btn" onclick="submitForm('${b.formId}')">${config.submitBtnText||'제출하기'}</button></div>
       <div id="form-done-${b.formId}" class="form-done-screen" style="display:none;">${config.postSubmitImage?`<img src="${config.postSubmitImage}" style="width:100%;display:block;margin-bottom:16px;" loading="lazy">`:''}<div>${config.postSubmitHtml||'제출되었어요!'}</div></div>
     </div>`;
   }
@@ -806,9 +808,14 @@ async function submitForm(formId){
     document.getElementById('form-done-'+formId).style.display='';
     if(formConfig.sheetId){
       try{
-        const headers=formFields.map(f=>f.label);
-        const row=formFields.map(f=>result[f.key]??'');
-        await fetch(GAS_URL+'?action=submitForm&sheetId='+encodeURIComponent(formConfig.sheetId)+'&headers='+encodeURIComponent(JSON.stringify(headers))+'&row='+encodeURIComponent(JSON.stringify(row)));
+        const ts=new Date().toLocaleString('ko');
+        const user=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+        const userVal=user[AUTH_KEY_FIELD]||'';
+        const headers=['제출일시',...(AUTH_ENABLED?['사용자']:[]),...formFields.map(f=>f.label)];
+        const vals=formFields.map(f=>{const v=result[f.key];return Array.isArray(v)?v.join(', '):(v??'');});
+        const row=AUTH_ENABLED?[ts,userVal,...vals]:[ts,...vals];
+        await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({action:'submitForm',sheetId:formConfig.sheetId,headers,row})});
       }catch(e){}
     }
   }catch(e){

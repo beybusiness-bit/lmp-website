@@ -65,6 +65,16 @@ function doPost(e) {
     const data   = JSON.parse(e.postData.contents);
     const action = data.action || '';
 
+    if (action === 'bulkAppend') {
+      const sheetId = data.sheetId;
+      const rows    = data.rows || [];
+      if (!sheetId) return json({ success: false, error: 'sheetId 없음' });
+      const ss    = SpreadsheetApp.openById(sheetId);
+      const sheet = ss.getSheetByName('응답') || ss.getActiveSheet();
+      rows.forEach(row => sheet.appendRow(row));
+      return json({ success: true, count: rows.length });
+    }
+
     if (action === 'submitForm') {
       const sheetId = data.sheetId;
       const row     = data.row     || [];
