@@ -389,7 +389,7 @@ function applySettings(d){
   DDAY_ENABLED    = d.ddayEnabled    || false;
   DDAY_DATE       = d.ddayDate       || '';
   AUTH_ENABLED    = d.authEnabled    || false;
-  AUTH_COLLECTION = d.authCollection || ('cms_users_'+PROJECT_ID);
+  AUTH_COLLECTION = 'cms_users_' + PROJECT_ID;
   AUTH_FIELDS     = d.authFields     || [{key:'name',label:'이름',type:'string',required:true}];
   AUTH_KEY_FIELD  = d.authKeyField   || (AUTH_FIELDS[0]?.key||'name');
   STAGES = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0)).map(s=>({

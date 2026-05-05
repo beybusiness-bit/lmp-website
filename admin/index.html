@@ -211,7 +211,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <div class="sect-head ip-first-sect">기본 정보</div>
           <div class="ed-sect">
             <div class="ed-lbl">슬러그 (ID) — URL 주소가 됩니다</div>
-            <input class="fi" id="p-id" placeholder="예: gmbf" oninput="updateUrlPreview()">
+            <input class="fi" id="p-id" placeholder="예: gmbf" oninput="updateUrlPreview();updateAuthColDisplay();">
             <a class="url-preview" id="p-url-preview" target="_blank"></a>
           </div>
           <div class="ed-sect">
@@ -340,8 +340,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <div id="auth-fields-wrap" style="display:none;">
             <div class="sect-head">컬렉션 · 필드</div>
             <div class="ed-sect">
-              <div class="ed-lbl">사용자 컬렉션 이름 <span style="font-weight:400;opacity:.55;">(Firestore 컬렉션)</span></div>
-              <input class="fi" id="p-auth-col" placeholder="자동: cms_users_슬러그">
+              <div class="ed-lbl" style="font-size:12px;opacity:.6;">사용자 데이터 저장 위치: <span id="p-auth-col-display" style="font-family:monospace;">cms_users_{슬러그}</span></div>
+              <input id="p-auth-col" type="hidden">
             </div>
             <div class="ed-sect">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
@@ -1301,9 +1301,13 @@ function saveField() {
    Users
 ══════════════════════════════════════ */
 function getAuthCol() {
-  return curAuthCollection ||
-         document.getElementById('p-auth-col').value.trim() ||
-         'cms_users_' + (document.getElementById('p-id').value.trim() || 'default');
+  const id = curProjId || document.getElementById('p-id').value.trim() || 'default';
+  return 'cms_users_' + id;
+}
+function updateAuthColDisplay() {
+  const id = document.getElementById('p-id').value.trim() || '{슬러그}';
+  const el = document.getElementById('p-auth-col-display');
+  if (el) el.textContent = 'cms_users_' + id;
 }
 async function loadUsers() {
   if (!curProjId) { document.getElementById('user-table-wrap').innerHTML = '<div class="empty-msg">프로젝트를 먼저 저장하면 사용자를 관리할 수 있어요.</div>'; return; }
@@ -1559,8 +1563,9 @@ function startNewProject() {
   curAuthKeyField='name'; curUsers=[]; curAuthCollection=''; curLogoTextSize='24'; curLogoTextAlign='center'; curLogoImgW=76;
   curStats=[]; curElementOrder=['edition','logo','dday','stats'];
   curKeyColors=[{color:'#00CE6B',holdTime:8,transitionTime:2},{color:'#FFF100',holdTime:8,transitionTime:2},{color:'#F95548',holdTime:8,transitionTime:2},{color:'#0BC6FF',holdTime:8,transitionTime:2}];
-  ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-col','p-auth-title','p-auth-desc']
+  ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-title','p-auth-desc']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  updateAuthColDisplay();
   const szEl = document.getElementById('p-logo-txt-size'); if(szEl) szEl.value='24';
   document.getElementById('proj-del').style.display = 'none';
   const urlPrev = document.getElementById('p-url-preview');
@@ -1601,8 +1606,9 @@ async function editProject(id) {
     document.getElementById('p-cta-icon-size').value = d.ctaIconSize||72;
     document.getElementById('p-cta-text').value       = d.ctaText||'';
     document.getElementById('p-dday-date').value  = d.ddayDate||'';
-    document.getElementById('p-auth-col').value   = d.authCollection||'';
-    curAuthCollection = d.authCollection || ('cms_users_' + id);
+    curAuthCollection = 'cms_users_' + id;
+    document.getElementById('p-auth-col').value = curAuthCollection;
+    updateAuthColDisplay();
     document.getElementById('p-auth-title').value = d.authTitle||'';
     document.getElementById('p-auth-desc').value  = d.authDesc||'';
 
@@ -1623,7 +1629,7 @@ async function saveProject(deploy=true) {
   if (!id)   { alert('슬러그(ID)를 입력해주세요.'); return; }
   if (!name) { alert('프로젝트 이름을 입력해주세요.'); return; }
 
-  const authCol = document.getElementById('p-auth-col').value.trim() || ('cms_users_'+id);
+  const authCol = 'cms_users_' + id;
 
   const data = {
     name,
