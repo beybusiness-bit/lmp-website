@@ -578,12 +578,13 @@ function buildPbarHtml(pct,opts){
   opts=opts||{};
   if(pct===0) return '';
   const isMerged=opts.merged||false;
-  const extraStyle=opts.image?'position:relative;z-index:1;':'';
-  const fillCls='stage-pbar-fill'+(isMerged?' merged':'');
+  const isImage=opts.image||false;
+  const extraStyle=isImage?'position:absolute;bottom:0;left:0;right:0;z-index:1;':'';
+  const fillCls='stage-pbar-fill'+((isMerged||isImage)?' merged':'');
+  const outCls='stage-pct-out'+((isMerged||isImage)?' merged':'');
   const label=pct+'%';
   const pbarOpen=`<div class="stage-pbar"${extraStyle?` style="${extraStyle}"`:''}>`;
   if(pct<10){
-    const outCls='stage-pct-out'+(isMerged?' merged':'');
     return `${pbarOpen}<div class="${fillCls}" style="width:${pct}%;height:100%;"></div><span class="${outCls}">${label}</span></div>`;
   }
   return `${pbarOpen}<div class="${fillCls}" style="width:${pct}%;"><span class="stage-pct-txt">${label}</span></div></div>`;
@@ -598,11 +599,11 @@ function renderSeparateStages(){
     const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
     const dotHtml=s.trackProgress?`<div class="status-dot">${statusTxt}</div>`:'';
     if(s.displayType==='image' && s.stageImageUrl){
-      const imgDotHtml=s.trackProgress?`<div class="status-dot" style="background:rgba(255,255,255,.9);color:#000;">${statusTxt}</div>`:'';
+      const imgDotHtml=s.trackProgress?`<div class="status-dot" style="background:rgba(255,255,255,.9);color:#000;flex-shrink:0;">${statusTxt}</div>`:'';
       const imgPbarHtml=s.trackProgress?buildPbarHtml(pct,{image:true}):'';
-      return `<div class="stage-card" onclick="goToStage(${i})" style="overflow:hidden;position:relative;min-height:100px;background:url(${s.stageImageUrl}) center/cover no-repeat;">
-        <div style="position:absolute;inset:0;background:rgba(0,0,0,.45);"></div>
-        <div class="stage-card-body" style="position:relative;z-index:1;">${imgDotHtml}<div class="stage-title" style="color:#fff;">${s.title}</div></div>
+      return `<div class="stage-card" onclick="goToStage(${i})" style="overflow:hidden;position:relative;">
+        <img src="${s.stageImageUrl}" style="width:100%;height:auto;display:block;">
+        <div style="position:absolute;top:0;left:0;right:0;background:#000;display:flex;align-items:center;gap:8px;padding:10px 14px;z-index:1;">${imgDotHtml}<div class="stage-title" style="color:#fff;">${s.title}</div></div>
         ${imgPbarHtml}
       </div>`;
     }
@@ -622,11 +623,11 @@ function renderMergedStages(){
     const pct=calcPct(s);
     const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
     if(s.displayType==='image' && s.stageImageUrl){
-      const imgDotHtml=s.trackProgress?`<div class="status-dot merged">${statusTxt}</div>`:'';
+      const imgDotHtml=s.trackProgress?`<div class="status-dot merged" style="background:rgba(255,255,255,.9);color:#000;flex-shrink:0;">${statusTxt}</div>`:'';
       const imgPbarHtml=s.trackProgress?buildPbarHtml(pct,{merged:true,image:true}):'';
-      return `<div class="stage-card merged" onclick="goToStage(${i})" style="overflow:hidden;position:relative;background:url(${s.stageImageUrl}) center/cover no-repeat;border-color:rgba(255,255,255,.7);">
-        <div style="position:absolute;inset:0;background:rgba(0,0,0,.5);"></div>
-        <div class="stage-card-body" style="position:relative;z-index:1;">${imgDotHtml}<div class="stage-title merged">${s.title}</div></div>
+      return `<div class="stage-card merged" onclick="goToStage(${i})" style="overflow:hidden;position:relative;border-color:rgba(255,255,255,.7);">
+        <img src="${s.stageImageUrl}" style="width:100%;height:auto;display:block;">
+        <div style="position:absolute;top:0;left:0;right:0;background:#000;display:flex;align-items:center;gap:8px;padding:10px 14px;z-index:1;">${imgDotHtml}<div class="stage-title merged" style="color:#fff;">${s.title}</div></div>
         ${imgPbarHtml}
       </div>`;
     }
@@ -893,7 +894,7 @@ function refreshStageProgress(){
   const existingPbar=card.querySelector('.stage-pbar');
   if(existingPbar) existingPbar.remove();
   const isMerged=LAYOUT_TYPE==='merged';
-  const isImage=!!(card.style.backgroundImage||card.style.background?.includes('url'));
+  const isImage=!!card.querySelector('img');
   const html=buildPbarHtml(pct,{merged:isMerged,image:isImage});
   if(html) card.insertAdjacentHTML('beforeend',html);
 }
