@@ -1463,12 +1463,12 @@ async function saveBulkUsers() {
 ══════════════════════════════════════ */
 function renderStageList() {
   const el = document.getElementById('stage-list');
-  if (!curStages.length) { el.innerHTML = '<div class="empty-msg" style="padding:12px 0;">스테이지가 없어요.</div>'; return; }
+  if (!curStages.length) { el.innerHTML = '<div class="empty-msg" style="padding:12px 0;">스테이지가 없어요.</div>'; schedulePreviewUpdate(); return; }
   el.innerHTML = curStages.map((s,i) => `
     <div class="stage-item">
       <div class="stage-row1">
         <input class="stage-inp" value="${(s.title||'').replace(/"/g,'&quot;')}" placeholder="스테이지 제목"
-               oninput="curStages[${i}].title=this.value">
+               oninput="curStages[${i}].title=this.value;schedulePreviewUpdate()">
         <div class="stage-acts">
           ${i>0?`<button class="s-btn" onclick="mvStage(${i},-1)">↑</button>`:'<div style="width:28px;"></div>'}
           ${i<curStages.length-1?`<button class="s-btn" onclick="mvStage(${i},1)">↓</button>`:'<div style="width:28px;"></div>'}
@@ -1492,9 +1492,9 @@ function renderStageList() {
       </div>
     </div>`).join('');
 }
-function addStage()   { curStages.push({id:uid(),title:'',displayType:'text',stageImageUrl:'',order:curStages.length}); renderStageList(); }
-function mvStage(i,d) { const j=i+d; if(j<0||j>=curStages.length) return; [curStages[i],curStages[j]]=[curStages[j],curStages[i]]; renderStageList(); }
-function rmStage(i)   { curStages.splice(i,1); renderStageList(); }
+function addStage()   { curStages.push({id:uid(),title:'',displayType:'text',stageImageUrl:'',order:curStages.length}); renderStageList(); schedulePreviewUpdate(); }
+function mvStage(i,d) { const j=i+d; if(j<0||j>=curStages.length) return; [curStages[i],curStages[j]]=[curStages[j],curStages[i]]; renderStageList(); schedulePreviewUpdate(); }
+function rmStage(i)   { curStages.splice(i,1); renderStageList(); schedulePreviewUpdate(); }
 function openStageImageUpload(i, btn) {
   pendingStageUploadIdx = i;
   pendingUploadBtn = btn || null;
@@ -2666,7 +2666,7 @@ function renderPreview() {
     if (edition) topHtml += `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:${tc};margin-bottom:-4px;">${edition}</div>`;
     /* logo */
     if (curLogoType==='image' && logoUrl) {
-      topHtml += `<div style="width:${curLogoImgW}%;max-width:${Math.round(300*S)}px;min-height:30px;background-image:url('${logoUrl}');background-size:contain;background-repeat:no-repeat;background-position:center;"></div>`;
+      topHtml += `<div style="width:${curLogoImgW}%;max-width:${Math.round(300*S)}px;height:${Math.round(72*S)}px;background-image:url('${logoUrl}');background-size:contain;background-repeat:no-repeat;background-position:center;"></div>`;
     } else if (curLogoType==='text' && logoTxt) {
       topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:${tc};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
     } else {
