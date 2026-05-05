@@ -313,6 +313,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <input type="file" id="cta-icon-file-inp" accept="image/png" style="display:none;" onchange="uploadSingleImage(event,'p-cta-icon','cms_projects/cta',true)">
             </div>
             <div class="ed-sect">
+              <div class="ed-lbl">아이콘 크기 <span style="font-weight:400;opacity:.55;">(px, 기본 72)</span></div>
+              <input class="fi-sm" type="number" id="p-cta-icon-size" value="72" min="24" max="200" step="4" placeholder="72" oninput="schedulePreviewUpdate()">
+            </div>
+            <div class="ed-sect">
               <div class="ed-lbl">버튼 문구</div>
               <input class="fi" id="p-cta-text" placeholder="예: 내 마켓 준비하기">
             </div>
@@ -1465,8 +1469,9 @@ async function editProject(id) {
     const szEl = document.getElementById('p-logo-txt-size'); if(szEl) szEl.value = curLogoTextSize;
     const wEl  = document.getElementById('p-logo-img-w');    if(wEl)  wEl.value  = curLogoImgW;
     setLogoAlign(curLogoTextAlign);
-    document.getElementById('p-cta-icon').value   = d.ctaIconUrl||'';
-    document.getElementById('p-cta-text').value   = d.ctaText||'';
+    document.getElementById('p-cta-icon').value      = d.ctaIconUrl||'';
+    document.getElementById('p-cta-icon-size').value = d.ctaIconSize||72;
+    document.getElementById('p-cta-text').value       = d.ctaText||'';
     document.getElementById('p-dday-date').value  = d.ddayDate||'';
     document.getElementById('p-auth-col').value   = d.authCollection||'';
     document.getElementById('p-auth-title').value = d.authTitle||'';
@@ -1502,6 +1507,7 @@ async function saveProject() {
     logoTextAlign: curLogoTextAlign,
     logoImgW:      curLogoImgW,
     ctaIconUrl:   document.getElementById('p-cta-icon').value.trim(),
+    ctaIconSize:  parseInt(document.getElementById('p-cta-icon-size').value)||72,
     ctaText:      document.getElementById('p-cta-text').value.trim(),
     ddayEnabled:  curDdayEnabled,
     ddayDate:     document.getElementById('p-dday-date').value.trim(),
@@ -1562,6 +1568,7 @@ async function seedTestData() {
     logoTextAlign: 'center',
     logoImgW: 76,
     ctaIconUrl: '',
+    ctaIconSize: 72,
     ctaText: '시작하기',
     ddayEnabled: true,
     ddayDate: '2025-12-31',
@@ -2413,8 +2420,9 @@ function renderPreview() {
   const logoUrl = document.getElementById('p-logo-url')?.value.trim();
   const logoTxt = document.getElementById('p-logo-txt')?.value.trim();
   const logoSz  = Math.round((+(document.getElementById('p-logo-txt-size')?.value||24)) * 0.46);
-  const ctaIcon = document.getElementById('p-cta-icon')?.value.trim();
-  const ctaTxt  = document.getElementById('p-cta-text')?.value.trim();
+  const ctaIcon     = document.getElementById('p-cta-icon')?.value.trim();
+  const ctaTxt      = document.getElementById('p-cta-text')?.value.trim();
+  const ctaIconSize = parseInt(document.getElementById('p-cta-icon-size')?.value)||72;
 
   /* scale: preview is 196px wide vs 430px player → ~0.456x */
   const S = 0.456;
@@ -2441,7 +2449,8 @@ function renderPreview() {
     /* CTA */
     let botHtml = '';
     if (ctaIcon || ctaTxt) {
-      const icoDiv = ctaIcon ? `<div style="width:${Math.round(72*S)}px;height:${Math.round(72*S)}px;background-color:#00CE6B;-webkit-mask-image:url(${ctaIcon});mask-image:url(${ctaIcon});-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>` : '';
+      const icoSizePx = Math.round(ctaIconSize * S);
+      const icoDiv = ctaIcon ? `<div style="width:${icoSizePx}px;height:${icoSizePx}px;background-color:#00CE6B;-webkit-mask-image:url(${ctaIcon});mask-image:url(${ctaIcon});-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>` : '';
       const txtDiv = ctaTxt ? `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:#00CE6B;">${ctaTxt}</div>` : '';
       botHtml = `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">${icoDiv}${txtDiv}</div>`;
     }

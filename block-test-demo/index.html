@@ -32,7 +32,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .visitor-line{font-size:21px;font-weight:400;color:var(--c);line-height:1;letter-spacing:-.5px;transition:color 1s ease;text-align:center;}
 .basket-btn{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .basket-btn:active{opacity:.75;transform:scale(.97);}
-.basket-mask{width:72px;height:72px;background-color:var(--c);-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;transition:background-color 1s ease;}
+.basket-mask{width:var(--cta-icon-size,72px);height:var(--cta-icon-size,72px);background-color:var(--c);-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;transition:background-color 1s ease;}
 .basket-text{font-size:18px;font-weight:900;color:var(--c);letter-spacing:-.3px;transition:color 1s ease;}
 /* ── MERGED layout ── */
 #merged-content{display:none;position:relative;z-index:10;min-height:100vh;flex-direction:column;}
@@ -137,20 +137,22 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .guide-slide-item .g-block-image,.guide-slide-item .g-block-mixed-overlay{flex:1;min-height:0;}
 .guide-slide-item .g-block-image img,.guide-slide-item .g-block-mixed-overlay img{height:100%;object-fit:cover;}
 /* form block */
-.g-block-form{padding:20px;}
-.ff-wrap{margin-bottom:16px;}
-.ff-label{display:block;font-size:12px;font-weight:800;margin-bottom:4px;}
-.ff-desc{font-size:11px;color:rgba(0,0,0,.5);margin-bottom:5px;line-height:1.5;}
-.ff-inp{width:100%;background:transparent;border:none;border-bottom:1.5px solid rgba(0,0,0,.3);font-size:14px;padding:7px 0;outline:none;font-family:inherit;color:#000;}
-.ff-textarea{width:100%;border:1.5px solid rgba(0,0,0,.2);font-size:14px;padding:8px;outline:none;font-family:inherit;color:#000;resize:vertical;min-height:80px;background:transparent;}
-.ff-sel{width:100%;border:1.5px solid rgba(0,0,0,.2);font-size:14px;padding:8px;outline:none;font-family:inherit;color:#000;background:#fff;}
-.ff-sel-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
-.ff-sel-btn{padding:7px 12px;background:transparent;border:1.5px solid rgba(0,0,0,.3);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#000;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s;}
-.ff-sel-btn.on{background:#000;color:#fff;border-color:#000;}
-.ff-err{font-size:12px;color:#c00;margin-top:8px;min-height:16px;}
-.form-submit-btn{width:100%;padding:12px 0;background:#000;border:2px solid #000;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:16px;-webkit-tap-highlight-color:transparent;}
+.g-block-form{padding:24px 20px;}
+.ff-wrap{margin-bottom:22px;}
+.ff-label{display:block;font-size:13px;font-weight:900;margin-bottom:6px;letter-spacing:-.2px;}
+.ff-desc{font-size:12px;color:rgba(0,0,0,.5);margin-bottom:8px;line-height:1.6;}
+.ff-inp{width:100%;background:transparent;border:none;border-bottom:2px solid #000;font-size:16px;font-weight:600;padding:9px 0;outline:none;font-family:inherit;color:#000;box-sizing:border-box;}
+.ff-inp::placeholder{color:rgba(0,0,0,.3);font-weight:400;}
+.ff-textarea{width:100%;border:2px solid #000;font-size:15px;font-weight:500;padding:12px;outline:none;font-family:inherit;color:#000;resize:vertical;min-height:100px;background:transparent;box-sizing:border-box;line-height:1.6;}
+.ff-textarea::placeholder{color:rgba(0,0,0,.3);font-weight:400;}
+.ff-sel{width:100%;border:2px solid #000;font-size:15px;font-weight:600;padding:11px 10px;outline:none;font-family:inherit;color:#000;background:#fff;appearance:none;-webkit-appearance:none;box-sizing:border-box;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23000' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+.ff-sel-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+.ff-sel-btn{padding:10px 16px;background:transparent;border:2px solid #000;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:#000;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s;letter-spacing:-.2px;}
+.ff-sel-btn.on{background:#000;color:#fff;}
+.ff-err{font-size:13px;font-weight:700;color:#c00;margin-top:10px;min-height:18px;}
+.form-submit-btn{width:100%;padding:16px 0;background:#000;border:2px solid #000;color:#fff;font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;margin-top:20px;-webkit-tap-highlight-color:transparent;letter-spacing:-.3px;}
 .form-submit-btn:disabled{opacity:.5;}
-.form-done-screen{padding:24px 20px;text-align:center;}
+.form-done-screen{padding:32px 20px;text-align:center;}
 </style>
 </head>
 <body>
@@ -354,6 +356,7 @@ function applySettings(d){
 
   /* CTA */
   if(d.ctaIconUrl){ setMaskUrl('#cta-icon',d.ctaIconUrl); setMaskUrl('#prep-cta-icon',d.ctaIconUrl); }
+  if(d.ctaIconSize) setCss('--cta-icon-size',(d.ctaIconSize)+'px');
   if(d.ctaText) document.getElementById('cta-text').textContent=d.ctaText;
 
   /* auth modal text */
@@ -784,8 +787,11 @@ async function submitForm(formId){
       if(f.required&&!val){ if(errEl) errEl.textContent=f.label+'을(를) 선택해주세요.'; return; }
     } else {
       const inp=document.getElementById('ff-'+f.key); val=inp?inp.value.trim():'';
-      if(f.type==='number') val=parseFloat(val)||0;
-      if(f.required&&!val){ if(errEl) errEl.textContent=f.label+'을(를) 입력해주세요.'; return; }
+      if(f.type==='number'){
+        if(val!==''&&isNaN(Number(val))){ if(errEl) errEl.textContent=f.label+'에 숫자만 입력할 수 있어요.'; inp&&inp.focus(); return; }
+        val=val===''?null:Number(val);
+      }
+      if(f.required&&(val===''||val===null||val===undefined)){ if(errEl) errEl.textContent=f.label+'을(를) 입력해주세요.'; return; }
     }
     result[f.key]=val;
   }
@@ -806,8 +812,10 @@ async function submitForm(formId){
       }catch(e){}
     }
   }catch(e){
+    console.error('[submitForm]',e);
     if(btn){btn.disabled=false;btn.textContent=formConfig.submitBtnText||'제출하기';}
-    if(errEl) errEl.textContent='제출에 실패했어요. 다시 시도해주세요.';
+    const msg=e?.code==='permission-denied'?'저장 권한이 없어요. 관리자에게 문의해주세요.':'제출에 실패했어요. 다시 시도해주세요.';
+    if(errEl) errEl.textContent=msg;
   }
 }
 
