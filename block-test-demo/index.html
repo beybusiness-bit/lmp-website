@@ -58,7 +58,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 /* topbar */
 .topbar{flex-shrink:0;display:flex;align-items:center;padding:14px 20px;border-bottom:2px solid #000;}
 #prep-topbar{background:var(--prep-bg);}
-#guide-topbar{background:#fff;}
+#guide-topbar{background:var(--body-bg,#fff);}
 .topbar-left{display:flex;align-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
 .basket-icon-wrap{width:32px;height:32px;position:relative;}
 .basket-layer{position:absolute;inset:0;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;}
@@ -94,9 +94,9 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 /* guide viewer */
 .guide-scroll-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .guide-slide-body{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-.guide-slide-track{flex:1;display:flex;overflow:hidden;transition:transform .4s cubic-bezier(.32,.72,0,1);}
-.guide-slide-item{flex-shrink:0;overflow-y:auto;}
-.guide-dots{flex-shrink:0;display:flex;justify-content:center;align-items:center;gap:8px;padding:10px 0;background:#fff;border-top:1.5px solid rgba(0,0,0,.08);}
+.guide-slide-track{flex:1;display:flex;overflow:hidden;transition:transform .4s cubic-bezier(.32,.72,0,1);align-items:stretch;}
+.guide-slide-item{flex-shrink:0;overflow-y:auto;height:100%;display:flex;flex-direction:column;justify-content:center;}
+.guide-dots{flex-shrink:0;display:flex;justify-content:center;align-items:center;gap:8px;padding:10px 0;background:var(--body-bg,#fff);border-top:1.5px solid rgba(0,0,0,.08);}
 .guide-dot{width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,.2);transition:background .2s;cursor:pointer;}
 .guide-dot.on{background:var(--guide-pager,#000);}
 .g-block-text{padding:24px 20px;}
@@ -131,8 +131,26 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .no-bg-img #merged-dday{color:#000!important;}
 .no-bg-img .stage-card.merged{border-color:#000!important;background:transparent!important;}
 .no-bg-img .stage-title.merged{color:#000!important;}
-.no-bg-img .status-dot.merged{background:#000!important;color:var(--c)!important;}
+.no-bg-img .status-dot.merged{background:#000!important;color:var(--body-bg,#fff)!important;}
 .no-bg-img .stage-pbar-fill.merged{background:#000!important;}
+/* slide full-height image/mixed */
+.guide-slide-item .g-block-image,.guide-slide-item .g-block-mixed-overlay{flex:1;min-height:0;}
+.guide-slide-item .g-block-image img,.guide-slide-item .g-block-mixed-overlay img{height:100%;object-fit:cover;}
+/* form block */
+.g-block-form{padding:20px;}
+.ff-wrap{margin-bottom:16px;}
+.ff-label{display:block;font-size:12px;font-weight:800;margin-bottom:4px;}
+.ff-desc{font-size:11px;color:rgba(0,0,0,.5);margin-bottom:5px;line-height:1.5;}
+.ff-inp{width:100%;background:transparent;border:none;border-bottom:1.5px solid rgba(0,0,0,.3);font-size:14px;padding:7px 0;outline:none;font-family:inherit;color:#000;}
+.ff-textarea{width:100%;border:1.5px solid rgba(0,0,0,.2);font-size:14px;padding:8px;outline:none;font-family:inherit;color:#000;resize:vertical;min-height:80px;background:transparent;}
+.ff-sel{width:100%;border:1.5px solid rgba(0,0,0,.2);font-size:14px;padding:8px;outline:none;font-family:inherit;color:#000;background:#fff;}
+.ff-sel-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.ff-sel-btn{padding:7px 12px;background:transparent;border:1.5px solid rgba(0,0,0,.3);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#000;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s;}
+.ff-sel-btn.on{background:#000;color:#fff;border-color:#000;}
+.ff-err{font-size:12px;color:#c00;margin-top:8px;min-height:16px;}
+.form-submit-btn{width:100%;padding:12px 0;background:#000;border:2px solid #000;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:16px;-webkit-tap-highlight-color:transparent;}
+.form-submit-btn:disabled{opacity:.5;}
+.form-done-screen{padding:24px 20px;text-align:center;}
 </style>
 </head>
 <body>
@@ -247,6 +265,8 @@ const db = firebase.firestore();
 /* ── URL에서 프로젝트 ID ── */
 const PROJECT_ID = 'block-test-demo';
 const COLORS     = ['#00CE6B','#FFF100','#F95548','#0BC6FF','#FFFFFF'];
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1weS1u1eML_R8nKpMXSP6U-IDGDsazUg-duw/exec';
+const formBlockData = {};
 const KEY_COLORS = ['#00CE6B','#FFF100','#F95548','#0BC6FF'];
 
 /* project settings */
@@ -664,6 +684,15 @@ function blockHtml(b){
   if(b.type==='embed' && b.embedUrl){
     return `<div class="g-block-embed" style="${mS}${bgS}"><iframe src="${b.embedUrl}" width="100%" height="${b.embedHeight||500}" frameborder="0" allowfullscreen style="display:block;border:none;"></iframe></div>`;
   }
+  if(b.type==='form' && b.formId){
+    formBlockData[b.formId]={formFields:b.formFields||[],formConfig:b.formConfig||{}};
+    const config=b.formConfig||{};
+    const fieldsHtml=(b.formFields||[]).map(f=>renderFormField(f)).join('');
+    return `<div class="g-block-form" style="${mS}${bgS}">
+      <div id="form-body-${b.formId}">${fieldsHtml}<div class="ff-err" id="form-err-${b.formId}"></div><button class="form-submit-btn" onclick="submitForm('${b.formId}')">${config.submitBtnText||'제출하기'}</button></div>
+      <div id="form-done-${b.formId}" class="form-done-screen" style="display:none;">${config.postSubmitImage?`<img src="${config.postSubmitImage}" style="width:100%;display:block;margin-bottom:16px;" loading="lazy">`:''}<div>${config.postSubmitHtml||'제출되었어요!'}</div></div>
+    </div>`;
+  }
   return '';
 }
 function renderGuideScroll(blocks){ document.getElementById('guide-scroll-blocks').innerHTML=blocks.map(blockHtml).join(''); document.getElementById('guide-scroll-body').style.display='block'; }
@@ -671,15 +700,116 @@ function renderGuideSlide(blocks){
   gSlideIdx=0; gSlideTotal=blocks.length;
   const track=document.getElementById('guide-slide-track');
   const N=blocks.length||1;
-  track.innerHTML=blocks.map(b=>'<div class="guide-slide-item" style="width:'+(100/N)+'%">'+blockHtml(b)+'</div>').join('');
+  track.innerHTML=blocks.map(b=>{
+    const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
+    const mS=(b.marginV||b.marginH)?`padding:${b.marginV||0}px ${b.marginH||0}px;`:'';
+    const bStripped={...b,bgColor:'',marginV:0,marginH:0};
+    return `<div class="guide-slide-item" style="width:${100/N}%;${bgS}${mS}">${blockHtml(bStripped)}</div>`;
+  }).join('');
   track.style.width=(N*100)+'%';
   updateDots(); document.getElementById('guide-slide-body').style.display='flex';
   const sb=document.getElementById('guide-slide-body');
   sb.ontouchstart=e=>{ gTouchX=e.touches[0].clientX; };
   sb.ontouchend  =e=>{ const dx=e.changedTouches[0].clientX-gTouchX; if(Math.abs(dx)>40) goSlide(gSlideIdx+(dx<0?1:-1)); };
+  let mStartX=0,mDragging=false;
+  sb.onmousedown =e=>{ mDragging=true; mStartX=e.clientX; };
+  sb.onmousemove =e=>{ if(mDragging) e.preventDefault(); };
+  sb.onmouseup   =e=>{ if(!mDragging) return; mDragging=false; const dx=e.clientX-mStartX; if(Math.abs(dx)>40) goSlide(gSlideIdx+(dx<0?1:-1)); };
+  sb.onmouseleave=()=>{ mDragging=false; };
 }
-function updateDots(){ document.getElementById('guide-dots').innerHTML=Array.from({length:gSlideTotal},(_,i)=>'<div class="guide-dot'+(i===gSlideIdx?' on':'')+'" onclick="goSlide('+i+')"></div>').join(''); }
+function updateDots(){
+  const prev=gSlideIdx>0, next=gSlideIdx<gSlideTotal-1;
+  const aS='font-size:20px;font-weight:900;cursor:pointer;padding:0 10px;user-select:none;-webkit-tap-highlight-color:transparent;';
+  const dots=Array.from({length:gSlideTotal},(_,i)=>`<div class="guide-dot${i===gSlideIdx?' on':''}" onclick="goSlide(${i})"></div>`).join('');
+  document.getElementById('guide-dots').innerHTML=
+    `<span onclick="goSlide(${gSlideIdx-1})" style="${aS}opacity:${prev?1:.2};">‹</span>${dots}<span onclick="goSlide(${gSlideIdx+1})" style="${aS}opacity:${next?1:.2};">›</span>`;
+}
 function goSlide(i){ gSlideIdx=Math.max(0,Math.min(i,gSlideTotal-1)); document.getElementById('guide-slide-track').style.transform='translateX('+(-gSlideIdx*(100/gSlideTotal))+'%)'; updateDots(); }
+
+/* ── Form block ── */
+function renderFormField(f){
+  const req=f.required?'<span style="color:#c00;">*</span>':'';
+  const desc=f.description?`<div class="ff-desc">${f.description}</div>`:'';
+  if(f.type==='string')
+    return `<div class="ff-wrap"><label class="ff-label">${f.label}${req}</label>${desc}<input class="ff-inp" id="ff-${f.key}" type="text" placeholder="${f.placeholder||''}"></div>`;
+  if(f.type==='textarea')
+    return `<div class="ff-wrap"><label class="ff-label">${f.label}${req}</label>${desc}<textarea class="ff-textarea" id="ff-${f.key}" placeholder="${f.placeholder||''}"></textarea></div>`;
+  if(f.type==='number')
+    return `<div class="ff-wrap"><label class="ff-label">${f.label}${req}</label>${desc}<input class="ff-inp" id="ff-${f.key}" type="number" placeholder="${f.placeholder||''}"></div>`;
+  if(f.type==='select'&&f.selectMode==='dropdown'){
+    const opts=(f.options||[]).map(o=>`<option value="${o}">${o}</option>`).join('');
+    const otherOpt=f.allowOther?`<option value="__other__">기타</option>`:'';
+    const otherInp=f.allowOther?`<input class="ff-inp" id="ff-${f.key}-other" placeholder="기타 입력" style="display:none;margin-top:6px;">`:'' ;
+    return `<div class="ff-wrap"><label class="ff-label">${f.label}${req}</label>${desc}<select class="ff-sel" id="ff-${f.key}" onchange="onSelChange('${f.key}',${!!f.allowOther})"><option value="">선택해주세요</option>${opts}${otherOpt}</select>${otherInp}</div>`;
+  }
+  if(f.type==='select'&&f.selectMode==='buttons'){
+    const max=f.maxSelect||99;
+    const btns=(f.options||[]).map(o=>`<button type="button" class="ff-sel-btn" data-value="${o}" onclick="toggleSelBtn(this,'${f.key}',${max})">${o}</button>`).join('');
+    const otherBtn=f.allowOther?`<button type="button" class="ff-sel-btn" data-value="__other__" onclick="toggleSelBtn(this,'${f.key}',${max})">기타</button>`:'';
+    const otherInp=f.allowOther?`<input class="ff-inp" id="ff-${f.key}-other" placeholder="기타 입력" style="display:none;margin-top:6px;">`:'' ;
+    return `<div class="ff-wrap"><label class="ff-label">${f.label}${req}</label>${desc}<div class="ff-sel-btns" id="ff-${f.key}">${btns}${otherBtn}</div>${otherInp}</div>`;
+  }
+  return '';
+}
+function onSelChange(key,allowOther){
+  const sel=document.getElementById('ff-'+key);
+  const oth=document.getElementById('ff-'+key+'-other');
+  if(oth) oth.style.display=(sel&&sel.value==='__other__')?'':'none';
+}
+function toggleSelBtn(btn,key,maxSelect){
+  const container=document.getElementById('ff-'+key);
+  if(!container) return;
+  const isOn=btn.classList.contains('on');
+  const selected=container.querySelectorAll('.ff-sel-btn.on');
+  if(!isOn&&selected.length>=maxSelect) selected[0].classList.remove('on');
+  btn.classList.toggle('on');
+  const oth=document.getElementById('ff-'+key+'-other');
+  if(oth){ const ob=container.querySelector('[data-value="__other__"]'); oth.style.display=ob?.classList.contains('on')?'':'none'; }
+}
+async function submitForm(formId){
+  const data=formBlockData[formId]; if(!data) return;
+  const {formFields,formConfig}=data;
+  const result={};
+  const errEl=document.getElementById('form-err-'+formId); if(errEl) errEl.textContent='';
+  for(const f of formFields){
+    let val;
+    if(f.type==='select'&&f.selectMode==='buttons'){
+      const c=document.getElementById('ff-'+f.key);
+      const sel=[...c.querySelectorAll('.ff-sel-btn.on')].map(b=>b.dataset.value==='__other__'?(document.getElementById('ff-'+f.key+'-other')?.value.trim()||'기타'):b.dataset.value);
+      if(f.required&&(!sel.length||(f.minSelect&&sel.length<f.minSelect))){ if(errEl) errEl.textContent=f.label+'을(를) 선택해주세요.'; return; }
+      val=sel.length===1?sel[0]:sel;
+    } else if(f.type==='select'){
+      const s=document.getElementById('ff-'+f.key); val=s?s.value:'';
+      if(val==='__other__'){ const oi=document.getElementById('ff-'+f.key+'-other'); val=oi?.value.trim()||'기타'; }
+      if(f.required&&!val){ if(errEl) errEl.textContent=f.label+'을(를) 선택해주세요.'; return; }
+    } else {
+      const inp=document.getElementById('ff-'+f.key); val=inp?inp.value.trim():'';
+      if(f.type==='number') val=parseFloat(val)||0;
+      if(f.required&&!val){ if(errEl) errEl.textContent=f.label+'을(를) 입력해주세요.'; return; }
+    }
+    result[f.key]=val;
+  }
+  const btn=document.querySelector(`#form-body-${formId} .form-submit-btn`);
+  if(btn){btn.disabled=true;btn.textContent='제출 중…';}
+  try{
+    const user=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+    const docData={...result,submittedAt:firebase.firestore.FieldValue.serverTimestamp()};
+    if(user[AUTH_KEY_FIELD]) docData._user=user[AUTH_KEY_FIELD];
+    await db.collection('cms_form_responses').doc(formId).collection('responses').add(docData);
+    document.getElementById('form-body-'+formId).style.display='none';
+    document.getElementById('form-done-'+formId).style.display='';
+    if(formConfig.sheetId){
+      try{
+        const headers=formFields.map(f=>f.label);
+        const row=formFields.map(f=>result[f.key]??'');
+        await fetch(GAS_URL+'?action=submitForm&sheetId='+encodeURIComponent(formConfig.sheetId)+'&headers='+encodeURIComponent(JSON.stringify(headers))+'&row='+encodeURIComponent(JSON.stringify(row)));
+      }catch(e){}
+    }
+  }catch(e){
+    if(btn){btn.disabled=false;btn.textContent=formConfig.submitBtnText||'제출하기';}
+    if(errEl) errEl.textContent='제출에 실패했어요. 다시 시도해주세요.';
+  }
+}
 
 /* ── Init ── */
 async function init(){
