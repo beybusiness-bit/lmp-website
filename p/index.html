@@ -599,11 +599,11 @@ function renderSeparateStages(){
     const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
     const dotHtml=s.trackProgress?`<div class="status-dot">${statusTxt}</div>`:'';
     if(s.displayType==='image' && s.stageImageUrl){
-      const imgDotHtml=s.trackProgress?`<div class="status-dot" style="background:var(--body-bg);color:#000;flex-shrink:0;">${statusTxt}</div>`:'';
+      const imgDotHtml=s.trackProgress?`<div class="status-dot" style="background:var(--prep-bg);color:#000;flex-shrink:0;">${statusTxt}</div>`:'';
       const imgPbarHtml=s.trackProgress?buildPbarHtml(pct,{image:true}):'';
       return `<div class="stage-card" onclick="goToStage(${i})" style="overflow:hidden;position:relative;">
         <img src="${s.stageImageUrl}" style="width:100%;height:auto;display:block;">
-        <div style="position:absolute;top:0;left:0;right:0;background:#000;display:flex;align-items:center;gap:14px;padding:18px 16px 14px;z-index:1;">${imgDotHtml}<div class="stage-title" style="color:var(--body-bg);">${s.title}</div></div>
+        <div style="position:absolute;top:0;left:0;right:0;background:#000;display:flex;align-items:center;gap:14px;padding:18px 16px 14px;z-index:1;">${imgDotHtml}<div class="stage-title" style="color:var(--prep-bg);">${s.title}</div></div>
         ${imgPbarHtml}
       </div>`;
     }
