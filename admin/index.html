@@ -787,7 +787,7 @@ auth.onAuthStateChanged(user => {
     document.getElementById('login-view').style.display = 'none';
     document.getElementById('admin-user-email').textContent = user.email;
     document.getElementById('admin-view').classList.add('on');
-    loadProjects(); loadPATFromFirestore();
+    loadProjects().then(() => restoreFromHash()); loadPATFromFirestore();
   } else {
     if (user) auth.signOut();
     document.getElementById('login-view').style.display = '';
@@ -811,6 +811,7 @@ function switchInnerTab(t) {
   ['basic','design','auth','stages'].forEach(k => {
     document.getElementById('ip-'+k).classList.toggle('on', k===t);
   });
+  if (curProjId) history.replaceState(null,'','#edit/'+curProjId+'/'+t);
 }
 
 /* ── Util ── */
@@ -1444,11 +1445,19 @@ async function loadProjects() {
       </div>`).join('');
   } catch(e) { el.innerHTML = '<div class="empty-msg">불러오기 실패</div>'; }
 }
+async function restoreFromHash() {
+  const parts = location.hash.replace('#','').split('/');
+  if (parts[0]==='edit' && parts[1]) {
+    await editProject(parts[1]);
+    const tab = parts[2];
+    if (tab && ['basic','design','auth','stages'].includes(tab)) switchInnerTab(tab);
+  }
+}
 function showProjView(v) {
   document.getElementById('proj-list-view').style.display = v==='list'?'':'none';
   document.getElementById('proj-edit-view').style.display = v==='edit'?'':'none';
 }
-function backToProjects() { showProjView('list'); curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[]; curUsers=[]; }
+function backToProjects() { history.replaceState(null,'','#list'); showProjView('list'); curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[]; curUsers=[]; }
 function startNewProject() {
   curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}];
   curAuthKeyField='name'; curUsers=[]; curLogoTextSize='24'; curLogoTextAlign='center'; curLogoImgW=76;
