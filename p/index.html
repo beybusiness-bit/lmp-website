@@ -79,7 +79,6 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .stage-pbar{height:10px;background:transparent;}
 .stage-pbar-fill{height:100%;background:#000;display:flex;align-items:center;justify-content:flex-end;}
 .stage-pbar-fill.merged{background:rgba(255,255,255,.7);}
-.stage-pct-txt{font-size:8px;font-weight:800;color:var(--prep-bg);padding-right:4px;white-space:nowrap;}
 /* side menu */
 #side-menu{position:absolute;inset:0;background:var(--menu-bg);transform:translateX(-100%);transition:transform .35s cubic-bezier(.32,.72,0,1);z-index:80;display:flex;flex-direction:column;}
 #side-menu.open{transform:translateX(0);}
@@ -154,6 +153,11 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .form-submit-btn:disabled{opacity:.5;}
 .form-done-screen{padding:32px 20px;text-align:center;}
 .ff-form-title{font-size:20px;font-weight:900;letter-spacing:-.5px;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #000;}
+/* block check */
+.blk-check-wrap{padding:10px 20px 4px;display:flex;justify-content:flex-end;}
+.blk-check-btn{padding:8px 18px;background:transparent;border:2px solid rgba(0,0,0,.3);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.45);-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s,border-color .15s;letter-spacing:-.2px;}
+.blk-check-btn.on{background:#000;color:#fff;border-color:#000;}
+.stage-pct-txt{font-size:8px;font-weight:800;color:#fff;padding-right:4px;white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -270,6 +274,10 @@ const PROJECT_ID = new URLSearchParams(location.search).get('id') || '';
 const COLORS     = ['#00CE6B','#FFF100','#F95548','#0BC6FF','#FFFFFF'];
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1weS1u1eML_R8nKpMXSP6U-IDGDsazUg-duw/exec';
 const formBlockData = {};
+let USER_DOC_ID = '';
+let userProgress = {}; // {stageId: Set<blockId>}
+let curStageIdx = -1;
+let curStageId = '';
 const KEY_COLORS = ['#00CE6B','#FFF100','#F95548','#0BC6FF'];
 
 /* project settings */
@@ -334,8 +342,9 @@ function applySettings(d){
   AUTH_FIELDS     = d.authFields     || [{key:'name',label:'이름',type:'string',required:true}];
   AUTH_KEY_FIELD  = d.authKeyField   || (AUTH_FIELDS[0]?.key||'name');
   STAGES = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0)).map(s=>({
-    id:s.id||'',title:s.title||'',status:s.status||'시작 전',
-    progress:s.progress||0,displayType:s.displayType||'text',stageImageUrl:s.stageImageUrl||''
+    id:s.id||'',title:s.title||'',
+    trackProgress:!!s.trackProgress,checkableCount:s.checkableCount||0,
+    displayType:s.displayType||'text',stageImageUrl:s.stageImageUrl||''
   }));
   STATS = (d.stats||[]).filter(s=>s.enabled);
   ELEMENT_ORDER = d.elementOrder || ['edition','logo','dday','stats'];
@@ -511,22 +520,22 @@ function renderSeparateStages(){
   const el=document.getElementById('stage-list');
   if(!STAGES.length){ el.innerHTML='<div style="padding:40px 20px;text-align:center;color:rgba(0,0,0,.4);font-size:14px;">준비된 단계가 없어요.</div>'; return; }
   el.innerHTML=STAGES.map((s,i)=>{
+    const pct=calcPct(s);
+    const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
+    const dotHtml=s.trackProgress?`<div class="status-dot">${statusTxt}</div>`:'';
+    const pbarHtml=s.trackProgress?`<div class="stage-pbar"><div class="stage-pbar-fill" style="width:${pct}%">${pct>0?'<span class="stage-pct-txt">'+pct+'%</span>':''}</div></div>`:'';
     if(s.displayType==='image' && s.stageImageUrl){
+      const imgDotHtml=s.trackProgress?`<div class="status-dot" style="background:rgba(255,255,255,.9);color:#000;">${statusTxt}</div>`:'';
+      const imgPbarHtml=s.trackProgress?`<div class="stage-pbar" style="position:relative;z-index:1;"><div class="stage-pbar-fill" style="background:rgba(255,255,255,.7);width:${pct}%">${pct>0?'<span class="stage-pct-txt" style="color:#000;">'+pct+'%</span>':''}</div></div>`:'';
       return `<div class="stage-card" onclick="goToStage(${i})" style="overflow:hidden;position:relative;min-height:100px;background:url(${s.stageImageUrl}) center/cover no-repeat;">
         <div style="position:absolute;inset:0;background:rgba(0,0,0,.45);"></div>
-        <div class="stage-card-body" style="position:relative;z-index:1;">
-          <div class="status-dot" style="background:rgba(255,255,255,.9);color:#000;">${s.status}</div>
-          <div class="stage-title" style="color:#fff;">${s.title}</div>
-        </div>
-        <div class="stage-pbar" style="position:relative;z-index:1;"><div class="stage-pbar-fill" style="background:rgba(255,255,255,.7);width:${s.progress}%">${s.progress>0?'<span class="stage-pct-txt" style="color:#000;">'+s.progress+'%</span>':''}</div></div>
+        <div class="stage-card-body" style="position:relative;z-index:1;">${imgDotHtml}<div class="stage-title" style="color:#fff;">${s.title}</div></div>
+        ${imgPbarHtml}
       </div>`;
     }
     return `<div class="stage-card" onclick="goToStage(${i})">
-      <div class="stage-card-body">
-        <div class="status-dot">${s.status}</div>
-        <div class="stage-title">${s.title}</div>
-      </div>
-      <div class="stage-pbar"><div class="stage-pbar-fill" style="width:${s.progress}%">${s.progress>0?'<span class="stage-pct-txt">'+s.progress+'%</span>':''}</div></div>
+      <div class="stage-card-body">${dotHtml}<div class="stage-title">${s.title}</div></div>
+      ${pbarHtml}
     </div>`;
   }).join('');
 }
@@ -536,22 +545,22 @@ function renderMergedStages(){
   const el=document.getElementById('merged-stage-list');
   if(!STAGES.length){ el.innerHTML='<div style="padding:40px 20px;text-align:center;color:rgba(255,255,255,.6);font-size:14px;">준비된 단계가 없어요.</div>'; return; }
   el.innerHTML=STAGES.map((s,i)=>{
+    const pct=calcPct(s);
+    const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
     if(s.displayType==='image' && s.stageImageUrl){
+      const imgDotHtml=s.trackProgress?`<div class="status-dot merged">${statusTxt}</div>`:'';
+      const imgPbarHtml=s.trackProgress?`<div class="stage-pbar" style="position:relative;z-index:1;"><div class="stage-pbar-fill merged" style="width:${pct}%">${pct>0?'<span class="stage-pct-txt" style="color:#000;">'+pct+'%</span>':''}</div></div>`:'';
       return `<div class="stage-card merged" onclick="goToStage(${i})" style="overflow:hidden;position:relative;background:url(${s.stageImageUrl}) center/cover no-repeat;border-color:rgba(255,255,255,.7);">
         <div style="position:absolute;inset:0;background:rgba(0,0,0,.5);"></div>
-        <div class="stage-card-body" style="position:relative;z-index:1;">
-          <div class="status-dot merged">${s.status}</div>
-          <div class="stage-title merged">${s.title}</div>
-        </div>
-        <div class="stage-pbar" style="position:relative;z-index:1;"><div class="stage-pbar-fill merged" style="width:${s.progress}%">${s.progress>0?'<span class="stage-pct-txt" style="color:#000;">'+s.progress+'%</span>':''}</div></div>
+        <div class="stage-card-body" style="position:relative;z-index:1;">${imgDotHtml}<div class="stage-title merged">${s.title}</div></div>
+        ${imgPbarHtml}
       </div>`;
     }
+    const dotHtml=s.trackProgress?`<div class="status-dot merged">${statusTxt}</div>`:'';
+    const pbarHtml=s.trackProgress?`<div class="stage-pbar"><div class="stage-pbar-fill merged" style="width:${pct}%">${pct>0?'<span class="stage-pct-txt" style="color:#000;">'+pct+'%</span>':''}</div></div>`:'';
     return `<div class="stage-card merged" onclick="goToStage(${i})">
-      <div class="stage-card-body">
-        <div class="status-dot merged">${s.status}</div>
-        <div class="stage-title merged">${s.title}</div>
-      </div>
-      <div class="stage-pbar"><div class="stage-pbar-fill merged" style="width:${s.progress}%">${s.progress>0?'<span class="stage-pct-txt" style="color:#000;">'+s.progress+'%</span>':''}</div></div>
+      <div class="stage-card-body">${dotHtml}<div class="stage-title merged">${s.title}</div></div>
+      ${pbarHtml}
     </div>`;
   }).join('');
 }
@@ -587,7 +596,9 @@ async function confirmAuth(){
     btn.textContent='확인'; btn.disabled=false;
     if(!snap.empty){
       const u=snap.docs[0].data();
-      sessionStorage.setItem('userSession',JSON.stringify({...u,project:PROJECT_ID}));
+      USER_DOC_ID=snap.docs[0].id;
+      sessionStorage.setItem('userSession',JSON.stringify({...u,project:PROJECT_ID,_docId:USER_DOC_ID}));
+      loadUserProgress(u);
       closeModal('auth-modal');
       if(LAYOUT_TYPE==='merged') { /* already showing stages */ }
       else openPrep();
@@ -638,6 +649,7 @@ function closeMenu(){ document.getElementById('side-menu').classList.remove('ope
 function goToStage(i){
   const stage=STAGES[i];
   if(!stage) return;
+  curStageIdx=i; curStageId=stage.id;
   if(LAYOUT_TYPE!=='merged') document.getElementById('topbar-title').textContent=stage.title;
   closeMenu();
   openStageContent(stage);
@@ -700,7 +712,17 @@ function blockHtml(b){
   }
   return '';
 }
-function renderGuideScroll(blocks){ document.getElementById('guide-scroll-blocks').innerHTML=blocks.map(blockHtml).join(''); document.getElementById('guide-scroll-body').style.display='block'; }
+function renderGuideScroll(blocks){
+  document.getElementById('guide-scroll-blocks').innerHTML=blocks.map(b=>{
+    let h=blockHtml(b);
+    if(b.checkable&&AUTH_ENABLED&&USER_DOC_ID){
+      const checked=(userProgress[curStageId]||new Set()).has(b.id);
+      h+=`<div class="blk-check-wrap"><button id="chk-${b.id}" class="blk-check-btn${checked?' on':''}" onclick="toggleBlockCheck('${b.id}')">${checked?'✓ 확인 완료':'확인하기'}</button></div>`;
+    }
+    return h;
+  }).join('');
+  document.getElementById('guide-scroll-body').style.display='block';
+}
 function renderGuideSlide(blocks){
   gSlideIdx=0; gSlideTotal=blocks.length;
   const track=document.getElementById('guide-slide-track');
@@ -709,7 +731,12 @@ function renderGuideSlide(blocks){
     const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
     const mS=(b.marginV||b.marginH)?`padding:${b.marginV||0}px ${b.marginH||0}px;`:'';
     const bStripped={...b,bgColor:'',marginV:0,marginH:0};
-    return `<div class="guide-slide-item" style="width:${100/N}%;${bgS}${mS}">${blockHtml(bStripped)}</div>`;
+    let inner=blockHtml(bStripped);
+    if(b.checkable&&AUTH_ENABLED&&USER_DOC_ID){
+      const checked=(userProgress[curStageId]||new Set()).has(b.id);
+      inner+=`<div class="blk-check-wrap"><button id="chk-${b.id}" class="blk-check-btn${checked?' on':''}" onclick="toggleBlockCheck('${b.id}')">${checked?'✓ 확인 완료':'확인하기'}</button></div>`;
+    }
+    return `<div class="guide-slide-item" style="width:${100/N}%;${bgS}${mS}">${inner}</div>`;
   }).join('');
   track.style.width=(N*100)+'%';
   updateDots(); document.getElementById('guide-slide-body').style.display='flex';
@@ -730,6 +757,63 @@ function updateDots(){
     `<span onclick="goSlide(${gSlideIdx-1})" style="${aS}opacity:${prev?1:.2};">‹</span>${dots}<span onclick="goSlide(${gSlideIdx+1})" style="${aS}opacity:${next?1:.2};">›</span>`;
 }
 function goSlide(i){ gSlideIdx=Math.max(0,Math.min(i,gSlideTotal-1)); document.getElementById('guide-slide-track').style.transform='translateX('+(-gSlideIdx*(100/gSlideTotal))+'%)'; updateDots(); }
+
+/* ── Block check & progress ── */
+function loadUserProgress(userData){
+  const u=userData||JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  if(u._docId) USER_DOC_ID=u._docId;
+  const prog=u.stageProgress||{};
+  userProgress={};
+  Object.keys(prog).forEach(sid=>{ userProgress[sid]=new Set(Array.isArray(prog[sid])?prog[sid]:[]); });
+}
+function calcPct(stage){
+  if(!stage.trackProgress||!stage.checkableCount) return 0;
+  const checked=(userProgress[stage.id]||new Set()).size;
+  return Math.min(100,Math.round(checked/stage.checkableCount*100));
+}
+function refreshStageProgress(){
+  if(curStageIdx<0) return;
+  const s=STAGES[curStageIdx];
+  if(!s||!s.trackProgress) return;
+  const pct=calcPct(s);
+  const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
+  const listId=LAYOUT_TYPE==='merged'?'merged-stage-list':'stage-list';
+  const cards=document.querySelectorAll('#'+listId+' .stage-card');
+  const card=cards[curStageIdx];
+  if(!card) return;
+  const dot=card.querySelector('.status-dot');
+  if(dot) dot.textContent=statusTxt;
+  const fill=card.querySelector('.stage-pbar-fill');
+  if(fill){ fill.style.width=pct+'%'; fill.innerHTML=pct>0?'<span class="stage-pct-txt">'+pct+'%</span>':''; }
+}
+async function toggleBlockCheck(blockId){
+  if(!AUTH_ENABLED||!USER_DOC_ID) return;
+  const stageId=curStageId;
+  if(!userProgress[stageId]) userProgress[stageId]=new Set();
+  const prog=userProgress[stageId];
+  const wasChecked=prog.has(blockId);
+  if(wasChecked) prog.delete(blockId); else prog.add(blockId);
+  const btn=document.getElementById('chk-'+blockId);
+  if(btn){btn.classList.toggle('on',!wasChecked);btn.textContent=!wasChecked?'✓ 확인 완료':'확인하기';}
+  refreshStageProgress();
+  const u=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  if(!u.stageProgress) u.stageProgress={};
+  u.stageProgress[stageId]=[...prog];
+  sessionStorage.setItem('userSession',JSON.stringify(u));
+  try{
+    await db.collection(AUTH_COLLECTION).doc(USER_DOC_ID).update({
+      ['stageProgress.'+stageId]:wasChecked
+        ?firebase.firestore.FieldValue.arrayRemove(blockId)
+        :firebase.firestore.FieldValue.arrayUnion(blockId)
+    });
+  }catch(e){
+    console.error('[toggleBlockCheck]',e);
+    if(wasChecked) prog.add(blockId); else prog.delete(blockId);
+    const btn2=document.getElementById('chk-'+blockId);
+    if(btn2){btn2.classList.toggle('on',wasChecked);btn2.textContent=wasChecked?'✓ 확인 완료':'확인하기';}
+    refreshStageProgress();
+  }
+}
 
 /* ── Form block ── */
 function renderFormField(f){
@@ -830,6 +914,7 @@ async function submitForm(formId){
 async function init(){
   setCss('--c',nextColor());
   await loadProjectSettings();
+  loadUserProgress();
   /* merged + auth: show modal immediately */
   if(LAYOUT_TYPE==='merged'&&AUTH_ENABLED){
     const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
