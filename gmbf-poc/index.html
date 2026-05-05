@@ -107,7 +107,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .g-overlay-text-inner{color:#fff;font-size:15px;line-height:1.6;overflow-y:auto;white-space:pre-wrap;word-break:break-word;}
 .g-block-mixed-split{display:flex;flex-direction:column;}
 .g-split-img img{width:100%;display:block;max-height:260px;object-fit:cover;}
-.g-split-text{padding:16px 20px;border-top:2px solid #000;font-size:15px;line-height:1.6;white-space:pre-wrap;word-break:break-word;}
+.g-split-text{padding:16px 20px;font-size:15px;line-height:1.6;white-space:pre-wrap;word-break:break-word;}
 .guide-empty{padding:60px 20px;text-align:center;color:rgba(0,0,0,.4);font-size:14px;}
 .g-block-embed{width:100%;}
 /* modal */
@@ -586,8 +586,11 @@ function renderMergedStages(){
 /* ── CTA ── */
 function onCtaClick(){
   if(document.getElementById('error-screen').classList.contains('on')) return;
-  if(AUTH_ENABLED) openAuthModal();
-  else openPrep();
+  if(AUTH_ENABLED){
+    const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+    if(saved.project===PROJECT_ID) reopenPrep();
+    else openAuthModal();
+  } else openPrep();
 }
 
 /* ── Auth ── */
