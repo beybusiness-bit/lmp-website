@@ -395,6 +395,14 @@ URL: https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1w
   - 스테이지 카드: `trackProgress: true`일 때만 진행률 바(%) + 상태 표시
   - `checkableCount` 비정규화로 stage_content 전체 로드 없이 진행률 계산
 - **테스트 더미데이터**: block-test-demo 프로젝트 (8 스테이지, 다양한 trackProgress/checkable 조합)
+- **이미지 카드 디자인 개편** (플레이어 3개 파일: p/, gmbf-poc/, block-test-demo/)
+  - 어두운 오버레이 제거, CSS background-image → `<img>` 태그 (자연 비율 유지)
+  - 카드 헤더 바 (position:absolute;top:0): 검은 배경 + 상태 뱃지 + 제목
+  - 분리형: 뱃지·제목 색 = `--prep-bg` (홈 배경색) / 병합형: `--body-bg` (앱 배경색)
+  - 진행률 바: position:absolute;bottom:0, rgba(0,0,0,.4) 배경으로 가시성 확보
+- **사이드바 메뉴 뱃지 수정**: `s.status`(undefined) → `calcPct` 기반 상태값, trackProgress:true인 스테이지에만 표시
+- **상태 뱃지·메뉴 뱃지 텍스트**: 9px → 11px
+- **CLAUDE.md 명칭 사전**: 컬러·레이아웃·화면·카드 용어 통일 (📖 UI 명칭 사전 섹션)
 
 **미확인/이슈 🔶**
 - GAS `bulkAppend` 코드: `apps-script/Code.gs`에 추가됐으나 **GAS 편집기에서 재배포 필요**
