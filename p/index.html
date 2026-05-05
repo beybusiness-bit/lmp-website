@@ -76,10 +76,11 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .status-dot.merged{background:rgba(255,255,255,.9);color:#000;}
 .stage-title{font-size:15px;font-weight:800;color:#000;letter-spacing:-.3px;line-height:1.35;}
 .stage-title.merged{color:#fff;}
-.stage-pbar{height:10px;background:rgba(0,0,0,.1);}
-.stage-pbar.merged-track{background:rgba(255,255,255,.2);}
-.stage-pbar-fill{height:100%;background:#000;display:flex;align-items:center;justify-content:flex-end;}
+.stage-pbar{height:15px;background:transparent;display:flex;align-items:center;}
+.stage-pbar-fill{height:100%;background:#000;display:flex;align-items:center;justify-content:flex-end;flex-shrink:0;}
 .stage-pbar-fill.merged{background:rgba(255,255,255,.7);}
+.stage-pct-out{font-size:8px;font-weight:800;color:#000;margin-left:4px;white-space:nowrap;}
+.stage-pct-out.merged{color:rgba(255,255,255,.85);}
 /* side menu */
 #side-menu{position:absolute;inset:0;background:var(--menu-bg);transform:translateX(-100%);transition:transform .35s cubic-bezier(.32,.72,0,1);z-index:80;display:flex;flex-direction:column;}
 #side-menu.open{transform:translateX(0);}
@@ -572,6 +573,22 @@ function scheduleNextKc(){
   kcTimer=setTimeout(advanceKc,hold);
 }
 
+/* ── Progress bar HTML builder ── */
+function buildPbarHtml(pct,opts){
+  opts=opts||{};
+  if(pct===0) return '';
+  const isMerged=opts.merged||false;
+  const extraStyle=opts.image?'position:relative;z-index:1;':'';
+  const fillCls='stage-pbar-fill'+(isMerged?' merged':'');
+  const label=pct===100?'완료':pct+'%';
+  const pbarOpen=`<div class="stage-pbar"${extraStyle?` style="${extraStyle}"`:''}>`;
+  if(pct<10){
+    const outCls='stage-pct-out'+(isMerged?' merged':'');
+    return `${pbarOpen}<div class="${fillCls}" style="width:${pct}%;height:100%;"></div><span class="${outCls}">${label}</span></div>`;
+  }
+  return `${pbarOpen}<div class="${fillCls}" style="width:${pct}%;"><span class="stage-pct-txt">${label}</span></div></div>`;
+}
+
 /* ── SEPARATE layout ── */
 function renderSeparateStages(){
   const el=document.getElementById('stage-list');
@@ -580,16 +597,16 @@ function renderSeparateStages(){
     const pct=calcPct(s);
     const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
     const dotHtml=s.trackProgress?`<div class="status-dot">${statusTxt}</div>`:'';
-    const pbarHtml=s.trackProgress?`<div class="stage-pbar"><div class="stage-pbar-fill" style="width:${pct}%">${pct>0?'<span class="stage-pct-txt">'+pct+'%</span>':''}</div></div>`:'';
     if(s.displayType==='image' && s.stageImageUrl){
       const imgDotHtml=s.trackProgress?`<div class="status-dot" style="background:rgba(255,255,255,.9);color:#000;">${statusTxt}</div>`:'';
-      const imgPbarHtml=s.trackProgress?`<div class="stage-pbar" style="position:relative;z-index:1;"><div class="stage-pbar-fill" style="background:rgba(255,255,255,.7);width:${pct}%">${pct>0?'<span class="stage-pct-txt" style="color:#000;">'+pct+'%</span>':''}</div></div>`:'';
+      const imgPbarHtml=s.trackProgress?buildPbarHtml(pct,{image:true}):'';
       return `<div class="stage-card" onclick="goToStage(${i})" style="overflow:hidden;position:relative;min-height:100px;background:url(${s.stageImageUrl}) center/cover no-repeat;">
         <div style="position:absolute;inset:0;background:rgba(0,0,0,.45);"></div>
         <div class="stage-card-body" style="position:relative;z-index:1;">${imgDotHtml}<div class="stage-title" style="color:#fff;">${s.title}</div></div>
         ${imgPbarHtml}
       </div>`;
     }
+    const pbarHtml=s.trackProgress?buildPbarHtml(pct):'';
     return `<div class="stage-card" onclick="goToStage(${i})">
       <div class="stage-card-body">${dotHtml}<div class="stage-title">${s.title}</div></div>
       ${pbarHtml}
@@ -606,7 +623,7 @@ function renderMergedStages(){
     const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
     if(s.displayType==='image' && s.stageImageUrl){
       const imgDotHtml=s.trackProgress?`<div class="status-dot merged">${statusTxt}</div>`:'';
-      const imgPbarHtml=s.trackProgress?`<div class="stage-pbar merged-track" style="position:relative;z-index:1;"><div class="stage-pbar-fill merged" style="width:${pct}%">${pct>0?'<span class="stage-pct-txt" style="color:#000;">'+pct+'%</span>':''}</div></div>`:'';
+      const imgPbarHtml=s.trackProgress?buildPbarHtml(pct,{merged:true,image:true}):'';
       return `<div class="stage-card merged" onclick="goToStage(${i})" style="overflow:hidden;position:relative;background:url(${s.stageImageUrl}) center/cover no-repeat;border-color:rgba(255,255,255,.7);">
         <div style="position:absolute;inset:0;background:rgba(0,0,0,.5);"></div>
         <div class="stage-card-body" style="position:relative;z-index:1;">${imgDotHtml}<div class="stage-title merged">${s.title}</div></div>
@@ -614,7 +631,7 @@ function renderMergedStages(){
       </div>`;
     }
     const dotHtml=s.trackProgress?`<div class="status-dot merged">${statusTxt}</div>`:'';
-    const pbarHtml=s.trackProgress?`<div class="stage-pbar merged-track"><div class="stage-pbar-fill merged" style="width:${pct}%">${pct>0?'<span class="stage-pct-txt" style="color:#000;">'+pct+'%</span>':''}</div></div>`:'';
+    const pbarHtml=s.trackProgress?buildPbarHtml(pct,{merged:true}):'';
     return `<div class="stage-card merged" onclick="goToStage(${i})">
       <div class="stage-card-body">${dotHtml}<div class="stage-title merged">${s.title}</div></div>
       ${pbarHtml}
@@ -874,8 +891,13 @@ function refreshStageProgress(){
   if(!card) return;
   const dot=card.querySelector('.status-dot');
   if(dot) dot.textContent=statusTxt;
-  const fill=card.querySelector('.stage-pbar-fill');
-  if(fill){ fill.style.width=pct+'%'; fill.innerHTML=pct>0?'<span class="stage-pct-txt">'+pct+'%</span>':''; }
+  /* pbar 요소 통째로 교체 (0%↔비0% 전환, 텍스트 안/밖 전환 모두 처리) */
+  const existingPbar=card.querySelector('.stage-pbar');
+  if(existingPbar) existingPbar.remove();
+  const isMerged=LAYOUT_TYPE==='merged';
+  const isImage=!!(card.style.backgroundImage||card.style.background?.includes('url'));
+  const html=buildPbarHtml(pct,{merged:isMerged,image:isImage});
+  if(html) card.insertAdjacentHTML('beforeend',html);
 }
 async function toggleBlockCheck(blockId){
   if(!AUTH_ENABLED||!USER_DOC_ID) return;
