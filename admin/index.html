@@ -2619,6 +2619,13 @@ function togglePreview() {
   wrap.style.display = showing ? 'none' : '';
   if (!showing) renderPreview();
 }
+function hexToColorMatrix(hex){
+  if(!hex||hex[0]!=='#'||hex.length<7) return '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0';
+  const r=parseInt(hex.slice(1,3),16)/255;
+  const g=parseInt(hex.slice(3,5),16)/255;
+  const b=parseInt(hex.slice(5,7),16)/255;
+  return `0 0 0 0 ${r}  0 0 0 0 ${g}  0 0 0 0 ${b}  0 0 0 1 0`;
+}
 function renderPreview() {
   const bg      = document.getElementById('prev-bg');
   const overlay = document.getElementById('prev-overlay');
@@ -2666,7 +2673,9 @@ function renderPreview() {
     if (edition) topHtml += `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:${tc};margin-bottom:-4px;">${edition}</div>`;
     /* logo */
     if (curLogoType==='image' && logoUrl) {
-      topHtml += `<div style="width:${curLogoImgW}%;height:${Math.round(72*S)}px;background-image:url('${logoUrl}');background-size:contain;background-repeat:no-repeat;background-position:center;"></div>`;
+      const mat=hexToColorMatrix(tc);
+      topHtml += `<svg style="position:absolute;width:0;height:0;overflow:hidden"><defs><filter id="prev-logo-f" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${mat}"/></filter></defs></svg>`;
+      topHtml += `<div style="width:${curLogoImgW}%;height:${Math.round(72*S)}px;"><img src="${logoUrl}" style="width:100%;height:100%;object-fit:contain;filter:url(#prev-logo-f);display:block;"></div>`;
     } else if (curLogoType==='text' && logoTxt) {
       topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:${tc};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
     } else {
