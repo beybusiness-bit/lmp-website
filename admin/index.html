@@ -2584,7 +2584,7 @@ function gBlockHtml(b,S){
    실시간 미리보기
 ══════════════════════════════════════ */
 function applyPreviewSize() {
-  const BASE_W = 196, BASE_H = 348;
+  const BASE_W = 430, BASE_H = 763; /* 플레이어 좌표계: 430×763 → scale로 축소 */
   const scale = previewWidth / BASE_W;
   [['preview-phone','preview-wrap'],['guide-preview-phone','guide-preview-wrap']].forEach(([phoneId,wrapId])=>{
     const pp = document.getElementById(phoneId);
@@ -2654,76 +2654,73 @@ function renderPreview() {
     } else ddayEl.style.display='none';
   } else ddayEl.style.display='none';
 
-  /* ── helpers ── */
+  /* ── helpers (플레이어 좌표계 — scale 없음) ── */
   const edition = document.getElementById('p-edition')?.value.trim();
   const logoUrl = document.getElementById('p-logo-url')?.value.trim();
   const logoTxt = document.getElementById('p-logo-txt')?.value.trim();
-  const logoSz  = Math.round((+(document.getElementById('p-logo-txt-size')?.value||24)) * 0.46);
+  const logoSz  = +(document.getElementById('p-logo-txt-size')?.value||24);
   const ctaIcon     = document.getElementById('p-cta-icon')?.value.trim();
   const ctaTxt      = document.getElementById('p-cta-text')?.value.trim();
   const ctaIconSize = parseInt(document.getElementById('p-cta-icon-size')?.value)||72;
 
-  /* scale: preview is 196px wide vs 430px player → ~0.456x */
-  const S = 0.456;
-
   /* ── SEPARATE layout ── */
   if (curLayoutType === 'separate') {
-    /* top-group: edition + logo + dday(via CSS) + stats placeholder */
     let topHtml = '';
-    if (edition) topHtml += `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:${tc};margin-bottom:-4px;">${edition}</div>`;
+    if (edition) topHtml += `<div style="font-size:18px;font-weight:900;color:${tc};margin-bottom:-14px;letter-spacing:-.3px;">${edition}</div>`;
     /* logo */
     if (curLogoType==='image' && logoUrl) {
       const mat=hexToColorMatrix(tc);
       topHtml += `<svg style="position:absolute;width:0;height:0;overflow:hidden"><defs><filter id="prev-logo-f" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${mat}"/></filter></defs></svg>`;
-      topHtml += `<div style="width:${curLogoImgW}%;"><img src="${logoUrl}" style="width:100%;max-height:${Math.round(160*S)}px;object-fit:contain;filter:url(#prev-logo-f);display:block;"></div>`;
+      topHtml += `<div style="width:${curLogoImgW}%;"><img src="${logoUrl}" style="width:100%;max-height:160px;object-fit:contain;filter:url(#prev-logo-f);display:block;"></div>`;
     } else if (curLogoType==='text' && logoTxt) {
       topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:${tc};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
     } else {
-      topHtml += `<div style="font-size:${Math.round(20*S)}px;font-weight:900;color:${tc};">준비 포털</div>`;
+      topHtml += `<div style="font-size:20px;font-weight:900;color:${tc};">준비 포털</div>`;
     }
-    /* visitor-line placeholder (counters) */
+    /* visitor-line placeholder */
     if (curStats && curStats.some(s=>s.enabled)) {
       const labels = curStats.filter(s=>s.enabled).map(s=>`${s.label} …${s.unit||''}`).join(' · ');
-      topHtml += `<div style="font-size:${Math.round(21*S)}px;font-weight:400;color:${tc};">${labels}</div>`;
+      topHtml += `<div style="font-size:21px;font-weight:400;color:${tc};letter-spacing:-.5px;">${labels}</div>`;
     }
     /* CTA */
     let botHtml = '';
     if (ctaIcon || ctaTxt) {
-      const icoSizePx = Math.round(ctaIconSize * S);
-      const icoDiv = ctaIcon ? `<div style="width:${icoSizePx}px;height:${icoSizePx}px;background-color:${tc};-webkit-mask-image:url("${ctaIcon}");mask-image:url("${ctaIcon}");-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>` : '';
-      const txtDiv = ctaTxt ? `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:${tc};">${ctaTxt}</div>` : '';
-      botHtml = `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">${icoDiv}${txtDiv}</div>`;
+      const icoDiv = ctaIcon ? `<div style="width:${ctaIconSize}px;height:${ctaIconSize}px;background-color:${tc};-webkit-mask-image:url('${ctaIcon}');mask-image:url('${ctaIcon}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>` : '';
+      const txtDiv = ctaTxt ? `<div style="font-size:18px;font-weight:900;color:${tc};letter-spacing:-.3px;">${ctaTxt}</div>` : '';
+      botHtml = `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">${icoDiv}${txtDiv}</div>`;
     }
     content.style.justifyContent = 'space-between';
-    content.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:${Math.round(20*S)}px;width:100%;">${topHtml}</div>${botHtml}`;
+    content.style.padding = '80px 32px 100px';
+    content.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;">${topHtml}</div>${botHtml}`;
 
   /* ── MERGED layout ── */
   } else {
     const projName = document.getElementById('p-name')?.value.trim() || '준비';
-    let topbar = `<div style="display:flex;align-items:center;padding:${Math.round(14*S)}px ${Math.round(20*S)}px;border-bottom:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.25);">
-      <div style="font-size:10px;font-weight:900;color:#fff;">☰</div>
-      <div style="flex:1;text-align:center;font-size:${Math.round(15*S)}px;font-weight:800;color:#fff;">${projName}</div>
+    let topbar = `<div style="display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.25);">
+      <div style="font-size:22px;font-weight:900;color:#fff;">☰</div>
+      <div style="flex:1;text-align:center;font-size:15px;font-weight:800;color:#fff;">${projName}</div>
     </div>`;
     let inner = '';
-    if (edition) inner += `<div style="font-size:${Math.round(14*S)}px;font-weight:800;color:rgba(255,255,255,.8);margin-bottom:3px;">${edition}</div>`;
+    if (edition) inner += `<div style="font-size:14px;font-weight:800;color:rgba(255,255,255,.8);margin-bottom:6px;">${edition}</div>`;
     if (curDdayEnabled && document.getElementById('p-dday-date')?.value) {
       const t=new Date();t.setHours(0,0,0,0);
       const n=Math.ceil((new Date(document.getElementById('p-dday-date').value+'T00:00:00')-t)/86400000);
-      inner += `<div style="font-size:${Math.round(28*S)}px;font-weight:300;color:#fff;margin-bottom:8px;">${n>0?'D-'+n:n===0?'D-Day':'D+'+Math.abs(n)}</div>`;
+      inner += `<div style="font-size:28px;font-weight:300;color:#fff;margin-bottom:20px;">${n>0?'D-'+n:n===0?'D-Day':'D+'+Math.abs(n)}</div>`;
     }
     inner += curStages.slice(0,4).map(s=>`
-      <div style="border:1px solid rgba(255,255,255,.7);background:rgba(0,0,0,.25);margin-bottom:4px;padding:${Math.round(14*S)}px ${Math.round(12*S)}px;">
-        <div style="display:flex;align-items:center;gap:6px;">
-          <div style="width:${Math.round(42*S)}px;height:${Math.round(42*S)}px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:800;flex-shrink:0;">${s.status||'시작 전'}</div>
-          <div style="font-size:${Math.round(15*S)}px;font-weight:800;color:#fff;">${s.title||'스테이지'}</div>
+      <div style="border:2px solid rgba(255,255,255,.7);background:rgba(0,0,0,.25);margin-bottom:16px;padding:18px 16px 14px;">
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;">${s.status||'시작 전'}</div>
+          <div style="font-size:15px;font-weight:800;color:#fff;">${s.title||'스테이지'}</div>
         </div>
-        ${s.progress>0?`<div style="height:${Math.round(10*S)}px;background:transparent;margin-top:4px;"><div style="height:100%;width:${s.progress}%;background:rgba(255,255,255,.7);"></div></div>`:''}
+        ${s.progress>0?`<div style="height:10px;background:transparent;margin-top:4px;"><div style="height:100%;width:${s.progress}%;background:rgba(255,255,255,.7);"></div></div>`:''}
       </div>`).join('');
-    if (curStages.length>4) inner += `<div style="font-size:7px;color:rgba(255,255,255,.55);">+${curStages.length-4}개 더</div>`;
+    if (curStages.length>4) inner += `<div style="font-size:12px;color:rgba(255,255,255,.55);padding:4px 0;">+${curStages.length-4}개 더</div>`;
     content.style.justifyContent = 'flex-start';
+    content.style.padding = '0';
     content.innerHTML = `<div style="width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden;">
       ${topbar}
-      <div style="flex:1;overflow:hidden;padding:${Math.round(16*S)}px;">${inner}</div>
+      <div style="flex:1;overflow:hidden;padding:20px 16px 60px;">${inner}</div>
     </div>`;
   }
 }

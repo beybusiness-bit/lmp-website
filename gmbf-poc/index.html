@@ -26,7 +26,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .bottom-group{display:flex;flex-direction:column;align-items:center;gap:6px;}
 .edition-text{font-size:18px;font-weight:900;color:var(--c);letter-spacing:-.3px;transition:color 1s ease;margin-bottom:-14px;}
 .logo-wrap{width:76%;}
-.logo-mask{width:100%;max-height:160px;object-fit:contain;display:block;opacity:0;transition:opacity 0.4s ease;}
+.logo-mask{width:100%;max-height:160px;object-fit:contain;display:block;}
 .logo-fallback{font-size:20px;font-weight:900;color:var(--c);text-align:center;line-height:1.3;transition:color 1s ease;display:none;white-space:pre-line;}
 .dday-num{font-size:32px;font-weight:300;color:var(--c);line-height:1;letter-spacing:-1px;transition:color 1s ease;text-align:center;}
 .visitor-line{font-size:21px;font-weight:400;color:var(--c);line-height:1;letter-spacing:-.5px;transition:color 1s ease;text-align:center;}
@@ -360,8 +360,6 @@ function calcDDay(d){
 function setMaskUrl(selector,url){
   document.querySelectorAll(selector).forEach(el=>{
     if(el.id==='logo-mask'||el.classList.contains('logo-mask')){
-      el.style.opacity='0';
-      el.onload=()=>{ el.style.opacity='1'; };
       el.src=url;
     } else {
       el.style.webkitMaskImage=`url("${url}")`;
@@ -383,10 +381,10 @@ async function loadProjectSettings(){
   try{
     const doc=await db.collection('cms_projects').doc(PROJECT_ID).get();
     if(!doc.exists){ showError('프로젝트를 찾을 수 없어요.','관리자에게 문의해주세요.'); return; }
-    applySettings(doc.data());
+    await applySettings(doc.data());
   }catch(e){ showError('연결에 실패했어요.','잠시 후 다시 시도해주세요.'); }
 }
-function applySettings(d){
+async function applySettings(d){
   LAYOUT_TYPE     = d.layoutType     || 'separate';
   DDAY_ENABLED    = d.ddayEnabled    || false;
   DDAY_DATE       = d.ddayDate       || '';
@@ -433,6 +431,16 @@ function applySettings(d){
   const rawBgs = d.bgImages||[];
   bgImages = rawBgs.map(b=>typeof b==='string'?{url:b,holdTime:10,transitionTime:2}:b);
   initSlides();
+
+  /* 로고 이미지 preload — 다른 요소와 동시에 나타나도록 */
+  if(d.logoType!=='text' && d.logoImageUrl){
+    await new Promise(resolve=>{
+      const img=new Image();
+      img.onload=img.onerror=resolve;
+      img.src=d.logoImageUrl;
+      setTimeout(resolve,3000);
+    });
+  }
 
   /* element order: rebuild top-group in order */
   renderTopGroup(d);
