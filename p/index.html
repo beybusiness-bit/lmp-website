@@ -616,13 +616,16 @@ function openPrep(){
   renderSeparateStages();
   document.getElementById('prep-screen').classList.add('open');
   hideReturnBtn();
+  history.replaceState(null,'','#prep');
 }
 function reopenPrep(){
   setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
   document.getElementById('prep-screen').classList.add('open'); hideReturnBtn();
+  history.replaceState(null,'','#prep');
 }
 function closePrep(){
   document.getElementById('prep-screen').classList.remove('open'); closeMenu();
+  history.replaceState(null,'','#');
   if(sessionStorage.getItem('userSession')) showReturnBtn();
 }
 function showReturnBtn(){ const b=document.getElementById('return-btn'); b.style.display='flex'; b.style.background=prepBg; }
@@ -662,6 +665,7 @@ async function openStageContent(stage){
   document.getElementById('guide-scroll-body').style.display='none';
   document.getElementById('guide-slide-body').style.display='none';
   document.getElementById('guide-screen').classList.add('open');
+  history.replaceState(null,'','#stage/'+stage.id);
   try{
     const doc=await db.collection('cms_projects').doc(PROJECT_ID)
       .collection('stage_content').doc(stage.id).get();
@@ -672,7 +676,10 @@ async function openStageContent(stage){
     else renderGuideScroll(blocks);
   }catch(e){ console.error('stage_content load error:',e); showGuideEmpty('불러오기에 실패했어요.'+(e.code?'\n('+e.code+')':'')); }
 }
-function closeGuide(){ document.getElementById('guide-screen').classList.remove('open'); }
+function closeGuide(){
+  document.getElementById('guide-screen').classList.remove('open');
+  history.replaceState(null,'','#prep');
+}
 function showGuideEmpty(msg){ document.getElementById('guide-scroll-blocks').innerHTML='<div class="guide-empty">'+msg+'</div>'; document.getElementById('guide-scroll-body').style.display='block'; }
 /* 변수 치환: {{key}} → 로그인 사용자 값 */
 function applyVars(html){
@@ -898,7 +905,7 @@ async function submitForm(formId){
         const headers=['제출일시',...(AUTH_ENABLED?['사용자']:[]),...formFields.map(f=>f.label)];
         const vals=formFields.map(f=>{const v=result[f.key];return Array.isArray(v)?v.join(', '):(v??'');});
         const row=AUTH_ENABLED?[ts,userVal,...vals]:[ts,...vals];
-        await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+        await fetch(GAS_URL,{method:'POST',
           body:JSON.stringify({action:'submitForm',sheetId:formConfig.sheetId,headers,row})});
       }catch(e){}
     }
@@ -915,18 +922,42 @@ async function init(){
   setCss('--c',nextColor());
   await loadProjectSettings();
   loadUserProgress();
+  const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  const loggedIn=saved.project===PROJECT_ID;
   /* merged + auth: show modal immediately */
   if(LAYOUT_TYPE==='merged'&&AUTH_ENABLED){
-    const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
-    if(!saved.project||saved.project!==PROJECT_ID) openAuthModal();
+    if(!loggedIn) openAuthModal();
+    else await restoreFromHash(saved);
   }
   /* separate: restore session */
   if(LAYOUT_TYPE==='separate'){
-    const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
-    if(saved.project===PROJECT_ID){
+    if(loggedIn){
       prepBg=sessionStorage.getItem('prepBgColor')||KEY_COLORS[0];
-      showReturnBtn();
+      await restoreFromHash(saved);
     }
+  }
+}
+async function restoreFromHash(saved){
+  const parts=location.hash.replace('#','').split('/');
+  if(parts[0]==='stage'&&parts[1]){
+    const stage=STAGES.find(s=>s.id===parts[1]);
+    if(stage){
+      if(LAYOUT_TYPE==='separate'){
+        prepBg=sessionStorage.getItem('prepBgColor')||KEY_COLORS[0];
+        setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
+        renderSeparateStages();
+        document.getElementById('prep-screen').classList.add('open');
+      }
+      await openStageContent(stage);
+    }
+  } else if(parts[0]==='prep'&&LAYOUT_TYPE==='separate'){
+    prepBg=sessionStorage.getItem('prepBgColor')||KEY_COLORS[0];
+    setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
+    renderSeparateStages();
+    document.getElementById('prep-screen').classList.add('open');
+    hideReturnBtn();
+  } else if(saved&&saved.project===PROJECT_ID){
+    showReturnBtn();
   }
 }
 window.addEventListener('load',init);

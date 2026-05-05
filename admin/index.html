@@ -2167,7 +2167,7 @@ async function createRespSheet() {
         const vals = fieldKeys.map(k=>{ const v=resp[k]; return Array.isArray(v)?v.join(', '):(v??''); });
         return userVal!==null ? [ts, userVal, ...vals] : [ts, ...vals];
       });
-      await fetch(GAS_URL, {method:'POST', headers:{'Content-Type':'application/json'},
+      await fetch(GAS_URL, {method:'POST',
         body: JSON.stringify({action:'bulkAppend', sheetId:data.sheetId, rows})});
     }
     updateRespSheetStatus();
