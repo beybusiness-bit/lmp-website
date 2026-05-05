@@ -133,8 +133,6 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .no-bg-img .stage-card.merged{border-color:#000!important;background:transparent!important;}
 .no-bg-img .stage-title.merged{color:var(--prep-bg)!important;}
 .no-bg-img .status-dot.merged{background:var(--prep-bg)!important;color:#000!important;}
-.no-bg-img .img-card-dot{background:var(--body-bg)!important;color:#000!important;}
-.no-bg-img .img-card-title{color:var(--body-bg)!important;}
 .no-bg-img .stage-pbar-fill.merged{background:#000!important;}
 /* slide full-height image/overlay */
 .guide-slide-item .g-block-image,.guide-slide-item .g-block-mixed-overlay{flex:1;min-height:0;}
@@ -568,6 +566,7 @@ function advanceKc(){
   const kc=KEY_COLORS_DATA[kcIdx];
   setCss('--body-bg',kc.color);
   setCss('--c',pickOther(kc.color,KEY_COLORS)||KEY_COLORS[(kcIdx+1)%KEY_COLORS.length]);
+  if(LAYOUT_TYPE==='merged') setCss('--prep-bg',kc.color);
   scheduleNextKc();
 }
 function scheduleNextKc(){
@@ -627,11 +626,11 @@ function renderMergedStages(){
     const pct=calcPct(s);
     const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
     if(s.displayType==='image' && s.stageImageUrl){
-      const imgDotHtml=s.trackProgress?`<div class="status-dot merged img-card-dot" style="background:var(--prep-bg);color:#000;flex-shrink:0;">${statusTxt}</div>`:'';
+      const imgDotHtml=s.trackProgress?`<div class="status-dot merged" style="background:var(--prep-bg);color:#000;flex-shrink:0;">${statusTxt}</div>`:'';
       const imgPbarHtml=s.trackProgress?buildPbarHtml(pct,{merged:true,image:true}):'';
       return `<div class="stage-card merged" onclick="goToStage(${i})" style="overflow:hidden;position:relative;border-color:rgba(255,255,255,.7);">
         <img src="${s.stageImageUrl}" style="width:100%;height:auto;display:block;">
-        <div style="position:absolute;top:0;left:0;right:0;background:#000;display:flex;align-items:center;gap:14px;padding:18px 16px 14px;z-index:1;">${imgDotHtml}<div class="stage-title merged img-card-title" style="color:var(--prep-bg);">${s.title}</div></div>
+        <div style="position:absolute;top:0;left:0;right:0;background:#000;display:flex;align-items:center;gap:14px;padding:18px 16px 14px;z-index:1;">${imgDotHtml}<div class="stage-title merged" style="color:var(--prep-bg);">${s.title}</div></div>
         ${imgPbarHtml}
       </div>`;
     }
