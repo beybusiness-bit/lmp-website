@@ -252,11 +252,13 @@ lmp-website/
 cms_projects/{projectId}
   name, layoutType, editionText
   logoType, logoImageUrl, logoText, logoTextSize, logoTextAlign, logoImgW
-  ctaIconUrl, ctaText
+  ctaIconUrl, ctaText, ctaIconSize  ← ctaIconSize: 24~200px (새로 추가)
   ddayEnabled, ddayDate
   authEnabled, authCollection, authFields, authKeyField, authTitle, authDesc
   bgImages: [{url, overlay, timing}]
-  stages: [{id, title, displayType, stageImageUrl, order}]
+  stages: [{id, title, displayType, stageImageUrl, order,
+            trackProgress: boolean,    ← 진행률 표시 ON/OFF
+            checkableCount: number}]   ← 체크 가능한 블록 수 (비정규화)
   stats: [{id, label, collection, countType, unit, enabled}]
   elementOrder: string[]
   keyColors: string[]
@@ -268,17 +270,32 @@ cms_projects/{projectId}/stage_content/{stageId}
     id, type ('text'|'image'|'mixed'|'embed'|'form'), order,
     textContent, imageUrl, mixedLayout, embedUrl, embedHeight,
     bgColor, marginV, marginH, linkUrl,
-    formId  ← 폼 블록 전용
+    formId,        ← 폼 블록 전용
+    formTitle,     ← 폼 블록 제목 (시트명에도 사용: "{formTitle}의 응답")
+    checkable,     ← 사용자 체크 가능 여부 (boolean)
+    sheetId        ← 연결된 Google Sheet ID (폼 응답 저장용)
   }]
 
 cms_users_{projectId}/{userId}
   (프로젝트별 authFields에 따라 자유 구조)
+  stageProgress: {stageId: [blockId, blockId, ...]}  ← 체크된 블록 ID 목록
 
-cms_form_configs/{formId}          ← 폼 빌더 (구현 예정)
-cms_form_responses/{formId}/responses/{responseId}  ← 폼 응답
+cms_form_configs/{formId}
+  fields: [{id, label, type ('text'|'textarea'|'number'|'select'|'file'),
+            required, options (선택형 전용), order}]
+  submitMsg: string  ← 제출 완료 메시지
+
+cms_form_responses/{formId}/responses/{responseId}
+  submittedAt, userId (인증 시), ...fieldValues
 
 cms_admin_settings/github
   pat: string
+```
+
+#### Firestore 보안 규칙 (현재 적용된 것 기준)
+```
+match /cms_form_responses/{document=**} { allow write: if true; allow read: if request.auth != null; }
+match /{col}/{doc} { allow read, write: if col.matches('cms_users_.*'); }
 ```
 
 #### 외부 연동
@@ -296,7 +313,9 @@ URL: https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1w
 액션:
   - doGet?action=createSheet&title=xxx&headers=[...] → 새 스프레드시트 생성
   - doPost {action:'submitForm', sheetId, headers, row} → 응답 행 추가
+  - doPost {action:'bulkAppend', sheetId, rows:[[],[],[]]} → 여러 행 일괄 추가 (기존 응답 백필용)
 코드: apps-script/Code.gs
+⚠️ GAS 재배포 필요 시: bulkAppend 코드가 추가됐으므로 GAS 편집기에서 '기존 배포 편집 → 새 버전' 으로 재배포해야 함
 ```
 
 ---
@@ -311,12 +330,34 @@ URL: https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1w
 - admin-link 우하단 스타일 (gmbf/po-c)
 - 블록 기능 테스트 더미데이터 시드
 - Apps Script 배포 완료 (GAS_URL 등록)
+- **CTA 아이콘 크기 조정** (admin에서 24~200px 슬라이더, CSS var(--cta-icon-size))
+- **폼 블록 빌더** (관리자)
+  - 항목 추가: 단문/장문/숫자/파일/선택, 필수여부, 순서
+  - 폼 제목 필드 (시트명 `{formTitle}의 응답`에 사용)
+  - 체크 가능(checkable) 토글 — 사용자 체크 여부 추적용
+- **폼 렌더링 + 제출** (플레이어)
+  - 숫자 필드: 비숫자 입력 차단
+  - 제출 → Firestore(`cms_form_responses`) + Google Sheets(POST) 저장
+  - `submitForm` GAS 호출: GET → POST로 수정 완료
+- **응답 관리 모달** (관리자)
+  - 응답 목록 보기 + CSV 다운로드
+  - Google Sheet 연결/생성 (기존 응답 백필 옵션)
+- **블록 체크 진행률 시스템** (플레이어)
+  - 인증 사용자: 블록별 체크/해제 → Firestore `stageProgress` 저장
+  - 스테이지 카드: `trackProgress: true`일 때만 진행률 바(%) + 상태 표시
+  - `checkableCount` 비정규화로 stage_content 전체 로드 없이 진행률 계산
+- **테스트 더미데이터**: block-test-demo 프로젝트 (8 스테이지, 다양한 trackProgress/checkable 조합)
+
+**미확인/이슈 🔶**
+- GAS `bulkAppend` 코드: `apps-script/Code.gs`에 추가됐으나 **GAS 편집기에서 재배포 필요**
+  → 재배포 안 하면 시트 생성 시 "Failed to fetch" 또는 기존 응답 백필 실패
+  → 방법: script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
 
 **진행 예정 🔲**
-- 폼 블록 빌더 (블록 편집 모달 "폼" 탭 구현)
-  - 관리자: 항목 추가(단문/장문/숫자/파일/선택), 필수여부, 순서, 활성화 토글, 제출 후 화면
-  - 사용자: 폼 렌더링, 유효성 검사, 제출 → Firestore + Google Sheets 저장
-  - 응답 보기 + 구글 시트 연결
+- GAS 재배포 확인 후 시트 생성 + 백필 기능 end-to-end 테스트
+- 블록 체크 진행률 시스템 end-to-end 테스트 (실제 사용자 로그인 후)
+- 폼 블록: 파일 업로드 타입 구현 (현재 미구현)
+- 폼 블록: 제출 완료 후 화면(submitMsg) 커스터마이즈
 
 ---
 
