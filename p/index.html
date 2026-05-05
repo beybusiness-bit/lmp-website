@@ -167,10 +167,10 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .ff-form-title{font-size:20px;font-weight:900;letter-spacing:-.5px;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #000;}
 /* block check */
 .blk-check-wrap{padding:10px 20px 4px;display:flex;justify-content:flex-end;}
-.blk-check-btn{padding:8px 18px;background:transparent;border:2px solid rgba(0,0,0,.3);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.45);-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s,border-color .15s;letter-spacing:-.2px;}
-.blk-check-btn.on{background:#000;color:#fff;border-color:#000;}
-.blk-check-box{width:26px;height:26px;border:2.5px solid rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;-webkit-tap-highlight-color:transparent;transition:border-color .15s;}
-.blk-check-box.on{border-color:#000;color:#000;}
+.blk-check-btn{padding:8px 18px;background:transparent;border:2px solid #000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:#000;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s,border-color .15s;letter-spacing:-.2px;}
+.blk-check-btn.on{background:#000;color:var(--prep-bg);border-color:#000;}
+.blk-check-box{width:26px;height:26px;border:2.5px solid #000;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;-webkit-tap-highlight-color:transparent;transition:border-color .15s,background .15s,color .15s;}
+.blk-check-box.on{background:#000;border-color:#000;color:var(--prep-bg);}
 .stage-pct-txt{font-size:10px;font-weight:800;color:var(--prep-bg,#fff);padding-right:4px;white-space:nowrap;}
 .stage-pbar-fill.merged .stage-pct-txt{color:#000;}
 </style>
@@ -858,7 +858,7 @@ function renderCheckEl(b,checked){
   const after=b.checkAfterText||'';
   const useBox=!before&&!after;
   if(useBox){
-    return `<div class="blk-check-wrap"><div id="chk-${b.id}" class="blk-check-box${checked?' on':''}" onclick="toggleBlockCheck('${b.id}')" data-before="" data-after="">${checked?'☑':'☐'}</div></div>`;
+    return `<div class="blk-check-wrap"><div id="chk-${b.id}" class="blk-check-box${checked?' on':''}" onclick="toggleBlockCheck('${b.id}')" data-before="" data-after="">${checked?'✓':''}</div></div>`;
   }
   const txt=checked?(after||'✓ 확인 완료'):(before||'확인하기');
   return `<div class="blk-check-wrap"><button id="chk-${b.id}" class="blk-check-btn${checked?' on':''}" onclick="toggleBlockCheck('${b.id}')" data-before="${before.replace(/"/g,'&quot;')}" data-after="${after.replace(/"/g,'&quot;')}">${txt}</button></div>`;
@@ -869,7 +869,7 @@ function updateCheckEl(id,checked){
   const before=el.dataset.before||'';
   const after=el.dataset.after||'';
   const useBox=!before&&!after;
-  if(useBox){el.classList.toggle('on',checked);el.textContent=checked?'☑':'☐';}
+  if(useBox){el.classList.toggle('on',checked);el.textContent=checked?'✓':'';}
   else{el.classList.toggle('on',checked);el.textContent=checked?(after||'✓ 확인 완료'):(before||'확인하기');}
 }
 
