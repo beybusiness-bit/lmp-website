@@ -410,6 +410,8 @@ function applySettings(d){
   }
   setCss('--guide-pager', KEY_COLORS[Math.floor(Math.random()*KEY_COLORS.length)]);
   setCss('--body-bg', KEY_COLORS[0]);
+  prepBg = KEY_COLORS[0];
+  setCss('--prep-bg', prepBg);
 
   /* title */
   if(d.name) document.title = d.name;
