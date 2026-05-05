@@ -398,7 +398,7 @@ URL: https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1w
 - **이미지 카드 디자인 개편** (플레이어 3개 파일: p/, gmbf-poc/, block-test-demo/)
   - 어두운 오버레이 제거, CSS background-image → `<img>` 태그 (자연 비율 유지)
   - 카드 헤더 바 (position:absolute;top:0): 검은 배경 + 상태 뱃지 + 제목
-  - 분리형: 뱃지·제목 색 = `--prep-bg` (홈 배경색) / 병합형: `--body-bg` (앱 배경색)
+  - 분리형: 뱃지·제목 색 = JS변수 `prepBg` 직접 주입 (CSS 변수 지연 문제 방지) / 병합형: `var(--body-bg)`
   - 진행률 바: position:absolute;bottom:0, rgba(0,0,0,.4) 배경으로 가시성 확보
 - **사이드바 메뉴 뱃지 수정**: `s.status`(undefined) → `calcPct` 기반 상태값, trackProgress:true인 스테이지에만 표시
 - **상태 뱃지·메뉴 뱃지 텍스트**: 9px → 11px
