@@ -535,11 +535,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <span class="switch-lbl">중복 제출 허용 (같은 사용자가 여러 번 제출 가능)</span>
         </div>
       </div>
-      <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
-        <div class="ed-lbl">구글 시트 연동</div>
-        <div id="form-sheet-status" style="font-size:12px;margin-bottom:8px;color:rgba(0,0,0,.5);">연동 없음</div>
-        <button onclick="createFormSheet()" style="padding:7px 12px;background:transparent;border:1.5px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">📊 새 시트 생성</button>
-      </div>
     </div>
     <div id="bpanel-mixed" style="display:none;">
       <div class="ed-lbl" style="margin-bottom:8px;">레이아웃</div>
@@ -720,7 +715,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <div class="modal-scroll" id="form-resp-scroll">
       <div class="empty-msg">불러오는 중…</div>
     </div>
-    <div class="modal-footer">
+    <div style="padding:10px 0 0;border-top:1.5px solid rgba(0,0,0,.1);margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span id="resp-sheet-status" style="font-size:12px;flex:1;min-width:120px;color:rgba(0,0,0,.5);">구글 시트: 미연동</span>
+      <button id="resp-sheet-btn" onclick="createRespSheet()" style="padding:6px 12px;background:transparent;border:1.5px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📊 새 시트 생성</button>
+    </div>
+    <div class="modal-footer" style="margin-top:8px;">
       <button class="mbtn-cancel" onclick="closeModal('form-resp-modal')">닫기</button>
       <button class="mbtn-ok" onclick="exportRespCsv()">CSV 내보내기</button>
     </div>
@@ -870,6 +869,7 @@ let ffOtherOn = false;
 let ffSelectMode = 'dropdown';
 let curRespFormId = null;
 let curRespData = [];
+let curRespFormBlock = null;
 
 /* ── URL Preview ── */
 function updateUrlPreview() {
@@ -2040,8 +2040,10 @@ async function createFormSheet() {
 /* ── 폼 응답 보기 ── */
 async function viewFormResponses(formId) {
   curRespFormId = formId; curRespData = [];
+  curRespFormBlock = curBlocks.find(b=>b.formId===formId)||null;
   document.getElementById('form-resp-scroll').innerHTML = '<div class="empty-msg">불러오는 중…</div>';
   document.getElementById('form-resp-modal').classList.add('on');
+  updateRespSheetStatus();
   try {
     const snap = await db.collection('cms_form_responses').doc(formId).collection('responses')
       .orderBy('submittedAt','desc').limit(100).get();
@@ -2049,6 +2051,53 @@ async function viewFormResponses(formId) {
     renderRespTable();
   } catch(e) {
     document.getElementById('form-resp-scroll').innerHTML = '<div class="empty-msg">불러오기 실패: '+e.message+'</div>';
+  }
+}
+function updateRespSheetStatus() {
+  const cfg = curRespFormBlock?.formConfig||{};
+  const statusEl = document.getElementById('resp-sheet-status');
+  const btn = document.getElementById('resp-sheet-btn');
+  if(!statusEl) return;
+  if(cfg.sheetUrl) {
+    statusEl.innerHTML = `구글 시트: <a href="${cfg.sheetUrl}" target="_blank" style="color:#000;font-weight:700;">시트 열기 ↗</a>`;
+    if(btn) btn.textContent = '📊 시트 재생성';
+  } else {
+    statusEl.textContent = '구글 시트: 미연동';
+    if(btn) btn.textContent = '📊 새 시트 생성';
+  }
+}
+async function createRespSheet() {
+  const block = curRespFormBlock;
+  if(!block) { alert('폼 블록을 찾을 수 없어요.'); return; }
+  if(!block.formFields?.length) { alert('필드를 먼저 추가해주세요.'); return; }
+  const title = (document.getElementById('p-name')?.value.trim()||'폼') + ' 응답';
+  const headers = ['제출일시', ...(curAuthEnabled?['사용자']:[]), ...block.formFields.map(f=>f.label)];
+  const statusEl = document.getElementById('resp-sheet-status');
+  const btn = document.getElementById('resp-sheet-btn');
+  if(statusEl) statusEl.textContent = '시트 생성 중…';
+  if(btn) btn.disabled = true;
+  try {
+    const url = GAS_URL + '?action=createSheet&title=' + encodeURIComponent(title) + '&headers=' + encodeURIComponent(JSON.stringify(headers));
+    const r = await fetch(url);
+    const data = await r.json();
+    if(data.success) {
+      block.formConfig = {...(block.formConfig||{}), sheetId:data.sheetId, sheetUrl:data.url};
+      const idx = curBlocks.findIndex(b=>b.formId===curRespFormId);
+      if(idx>=0) curBlocks[idx] = block;
+      const stageId = curEditingStageIdx!==null ? curStages[curEditingStageIdx]?.id : null;
+      if(stageId && curProjId) {
+        await db.collection('cms_projects').doc(curProjId)
+          .collection('stage_content').doc(stageId)
+          .set({blocks: curBlocks.map((b,i)=>({...b,order:i})), updatedAt:firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+      }
+      updateRespSheetStatus();
+    } else {
+      if(statusEl) statusEl.textContent = '생성 실패: ' + (data.error||'오류');
+      if(btn) btn.disabled = false;
+    }
+  } catch(e) {
+    if(statusEl) statusEl.textContent = '생성 실패: ' + e.message;
+    if(btn) btn.disabled = false;
   }
 }
 function renderRespTable() {
