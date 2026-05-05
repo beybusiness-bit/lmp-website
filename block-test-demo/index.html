@@ -397,6 +397,21 @@ function applySettings(d){
   /* element order: rebuild top-group in order */
   renderTopGroup(d);
 
+  /* logo — applySettings에서 처리 (basket icon과 동일 패턴) */
+  const _logoMask = document.getElementById('logo-mask');
+  const _logoFb   = document.getElementById('logo-fallback');
+  if(_logoMask && d.logoType!=='text' && d.logoImageUrl){
+    setMaskUrl('#logo-mask', d.logoImageUrl);
+    _logoMask.style.display = 'block';
+    if(_logoFb) _logoFb.style.display = 'none';
+  } else if(_logoFb && d.logoType==='text' && d.logoText){
+    if(_logoMask) _logoMask.style.display = 'none';
+    _logoFb.textContent = d.logoText;
+    _logoFb.style.fontSize = (d.logoTextSize||'20')+'px';
+    _logoFb.style.textAlign = d.logoTextAlign||'center';
+    _logoFb.style.display = 'block';
+  }
+
   /* layout */
   if(LAYOUT_TYPE==='merged'){
     document.getElementById('main-content').style.display='none';
@@ -427,26 +442,9 @@ function renderTopGroup(d){
       const wrap=document.createElement('div');
       wrap.className='logo-wrap';
       if(d.logoImgW) wrap.style.width=d.logoImgW+'%';
+      wrap.innerHTML=`<div class="logo-mask" id="logo-mask" style="display:none;"></div>
+        <div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>`;
       tg.appendChild(wrap);
-      if(d.logoType==='text'&&d.logoText){
-        const fb=document.createElement('div');
-        fb.className='logo-fallback'; fb.id='logo-fallback';
-        fb.textContent=d.logoText;
-        fb.style.fontSize=(d.logoTextSize||'20')+'px';
-        fb.style.textAlign=d.logoTextAlign||'center';
-        fb.style.display='block';
-        wrap.appendChild(fb);
-      } else if(d.logoImageUrl){
-        const m=document.createElement('div');
-        m.className='logo-mask'; m.id='logo-mask';
-        wrap.appendChild(m);
-        setMaskUrl('#logo-mask',d.logoImageUrl);
-      } else {
-        const fb=document.createElement('div');
-        fb.className='logo-fallback'; fb.id='logo-fallback';
-        fb.textContent='준비 포털'; fb.style.display='block';
-        wrap.appendChild(fb);
-      }
     } else if(key==='dday'){
       const el=document.createElement('div');
       el.className='dday-num'; el.id='dday-num';
