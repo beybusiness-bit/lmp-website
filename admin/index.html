@@ -2675,7 +2675,7 @@ function renderPreview() {
     if (curLogoType==='image' && logoUrl) {
       const mat=hexToColorMatrix(tc);
       topHtml += `<svg style="position:absolute;width:0;height:0;overflow:hidden"><defs><filter id="prev-logo-f" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${mat}"/></filter></defs></svg>`;
-      topHtml += `<div style="width:${curLogoImgW}%;height:${Math.round(72*S)}px;"><img src="${logoUrl}" style="width:100%;height:100%;object-fit:contain;filter:url(#prev-logo-f);display:block;"></div>`;
+      topHtml += `<div style="width:${curLogoImgW}%;"><img src="${logoUrl}" style="width:100%;max-height:${Math.round(160*S)}px;object-fit:contain;filter:url(#prev-logo-f);display:block;"></div>`;
     } else if (curLogoType==='text' && logoTxt) {
       topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:${tc};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
     } else {

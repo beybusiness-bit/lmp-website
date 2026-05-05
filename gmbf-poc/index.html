@@ -26,7 +26,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .bottom-group{display:flex;flex-direction:column;align-items:center;gap:6px;}
 .edition-text{font-size:18px;font-weight:900;color:var(--c);letter-spacing:-.3px;transition:color 1s ease;margin-bottom:-14px;}
 .logo-wrap{width:76%;}
-.logo-mask{width:100%;max-height:160px;object-fit:contain;display:block;}
+.logo-mask{width:100%;max-height:160px;object-fit:contain;display:block;opacity:0;transition:opacity 0.4s ease;}
 .logo-fallback{font-size:20px;font-weight:900;color:var(--c);text-align:center;line-height:1.3;transition:color 1s ease;display:none;white-space:pre-line;}
 .dday-num{font-size:32px;font-weight:300;color:var(--c);line-height:1;letter-spacing:-1px;transition:color 1s ease;text-align:center;}
 .visitor-line{font-size:21px;font-weight:400;color:var(--c);line-height:1;letter-spacing:-.5px;transition:color 1s ease;text-align:center;}
@@ -360,6 +360,8 @@ function calcDDay(d){
 function setMaskUrl(selector,url){
   document.querySelectorAll(selector).forEach(el=>{
     if(el.id==='logo-mask'||el.classList.contains('logo-mask')){
+      el.style.opacity='0';
+      el.onload=()=>{ el.style.opacity='1'; };
       el.src=url;
     } else {
       el.style.webkitMaskImage=`url("${url}")`;
