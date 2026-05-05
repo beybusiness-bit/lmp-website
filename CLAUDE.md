@@ -209,6 +209,16 @@ git push -u origin main
 - push 즉시 Vercel이 자동 배포 시작
 - feature 브랜치(claude/...)는 무시하고 사용하지 않음
 
+#### ⚠️ 기존 생성 프로젝트 파일 동기화 필수
+
+`p/index.html`은 새 프로젝트 배포 시 복사되는 **템플릿**이다.
+기존에 이미 생성된 프로젝트 파일들(`block-test-demo/index.html`, `gmbf-poc/index.html` 등)은 **템플릿 수정 시 자동으로 갱신되지 않는다.**
+
+**`p/index.html`에 플레이어 동작에 영향을 주는 수정을 했을 때는 반드시:**
+1. `git ls-files | grep index.html` 로 존재하는 프로젝트 파일 목록 확인
+2. 동일한 수정을 각 프로젝트 파일에도 적용
+3. 세 파일 모두 함께 커밋
+
 ---
 
 ### 🔑 PAT(Personal Access Token) 설정 프로토콜
