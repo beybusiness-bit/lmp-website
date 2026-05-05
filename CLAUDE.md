@@ -21,15 +21,14 @@ const REPO = {
   GITHUB_URL: 'https://github.com/beybusiness-bit/lmp-website',
   LOCAL_PATH: '~/projects/lmp-website',
   DEPLOY_PATH: 'gmbf/index.html', // 기존 사이트에 이 경로로 추가
-  DEPLOY_METHOD: 'GitHub Pages', // ⚠️ Vercel 아님. GitHub Pages로 배포
-  LIVE_URL: 'https://lazymaxpotential.kr/gmbf/',
-  NOTE: '.nojekyll 파일 필수 (없으면 404 발생)',
+  DEPLOY_METHOD: 'Vercel', // push → main → Vercel 자동 배포 (~1분 소요)
+  LIVE_URL: 'https://lazymaxpotential.kr/',
 };
 ```
 
 ### 앱 아키텍처 요약
 - **앱 성격**: 플리마켓 셀러 준비 포털 + 방문객 행사 안내 — 단일 HTML 파일(`gmbf/index.html`)로 기존 사이트에 추가
-- **배포 방식**: ⚠️ GitHub Pages (Vercel 아님). push → main 브랜치 → 자동 배포. `.nojekyll` 파일 루트에 필수.
+- **배포 방식**: Vercel. push → main 브랜치 → 자동 배포 (~1분 소요).
 - **UI 구조**: 하단 탭 (모바일 최적화), 영역별 페이지 전환
 - **로그인**: 공개 영역(누구나) + 셀러 영역(이름+연락처) + 관리자 영역(비밀번호)
 - **반응형 전략**: 모바일 우선 개발. 데스크탑에서 열어도 스마트폰 화면처럼 세로형으로 표시 (폰 프레임 레이아웃). 모든 기능 완성 후 여유 생기면 데스크탑 반응형 추가.
@@ -122,13 +121,12 @@ body {
   git fetch origin main
   git log HEAD..origin/main --oneline
   ```
-  origin/main이 현재 브랜치보다 앞서 있으면(새 커밋이 있으면) 사용자에게 알리고:
+  항상 main으로 전환하고 최신화한다:
   ```bash
   git checkout main
   git pull origin main
   ```
-  을 실행한다. 이후 작업 브랜치가 있으면 그 브랜치로 이동한다.
-  **⚠️ 이 단계를 생략하면 나중에 머지할 때 이전 세션 변경사항이 유실될 수 있다.**
+  **⚠️ 이 단계 필수. 이후 모든 작업은 main에서 직접 수행한다. feature 브랜치로 이동하지 않는다.**
 
 #### Step 1-L. Local 세션 (💻 환경)
 
@@ -185,19 +183,31 @@ claude
 
 ### ⚠️ 브랜치 운영 규칙
 
-Claude Code 세션은 자동으로 기능 브랜치(claude/...)에서 시작된다.
-**모든 커밋 후 즉시 main에 머지·push한다. 사용자가 요청하지 않아도 자동으로 수행.**
+**⚠️ Claude Code 세션은 자동으로 feature 브랜치(claude/...)를 생성하지만, 이 프로젝트에서는 main에 직접 작업한다.**
+
+이유: 관리자 패널이 GitHub API로 main에 직접 커밋하기 때문에, feature 브랜치와 머지할 때 충돌이 발생해 기능이 원복되는 문제가 반복됨.
+
+#### 세션 시작 시 main으로 즉시 전환
 
 ```bash
-# 커밋 후 항상 실행
+# 세션 시작 직후 항상 실행
 git checkout main
 git pull origin main
-git merge [기능브랜치] --no-edit
-git push origin main
-git checkout [기능브랜치]  # 다시 작업 브랜치로 복귀
+# 이후 모든 작업은 main에서 직접 수행
 ```
 
-사용자는 머지를 별도로 요청할 필요가 없다.
+#### 커밋·push 방식
+
+```bash
+# feature 브랜치 없이 main에서 직접
+git add [변경 파일]
+git commit -m "설명"
+git push -u origin main
+```
+
+- 머지 단계 없음 → 충돌 없음
+- push 즉시 Vercel이 자동 배포 시작
+- feature 브랜치(claude/...)는 무시하고 사용하지 않음
 
 ---
 
@@ -219,9 +229,9 @@ git checkout [기능브랜치]  # 다시 작업 브랜치로 복귀
 
 ### 🔵 수정 후 자동 배포
 
-수정 요청 → 코드 수정 → commit + push → main 머지 → 안내:
+수정 요청 → 코드 수정 → commit + push origin main → Vercel 자동 배포 → 안내:
 ```
-✅ 푸시 완료. GitHub Pages 반영까지 ~1분 소요.
+✅ 푸시 완료. Vercel 배포까지 ~1분 소요.
 브라우저에서 Ctrl+Shift+R (Mac: Cmd+Shift+R) 하드 리프레시 해주세요.
 ```
 
