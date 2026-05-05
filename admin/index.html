@@ -195,7 +195,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">프로젝트 편집</span>
           <div style="flex:1;"></div>
           <button class="prev-btn" onclick="togglePreview()">미리보기</button>
-          <button class="save-btn" onclick="saveProject()">저장 + 배포</button>
+          <button class="save-btn" onclick="saveProject(false)">저장</button>
+          <button class="save-btn" onclick="saveProject(true)" id="deploy-btn">배포</button>
           <button class="del-btn" id="proj-del" onclick="deleteProject()" style="display:none;">삭제</button>
         </div>
         <div class="inner-tab-nav">
@@ -896,6 +897,7 @@ let curKeyColors = [{color:'#00CE6B',holdTime:8,transitionTime:2},{color:'#FFF10
 let curStats = [];             // [{id, label, collection, countType, unit, enabled}]
 let curElementOrder = ['edition','logo','dday','stats']; // order of main screen elements
 let curUsers = [];
+let curAuthCollection = '';
 let selectedUserIds = new Set();
 let curEditingFieldIdx = null;
 let curEditingUserId = null;
@@ -1299,7 +1301,8 @@ function saveField() {
    Users
 ══════════════════════════════════════ */
 function getAuthCol() {
-  return document.getElementById('p-auth-col').value.trim() ||
+  return curAuthCollection ||
+         document.getElementById('p-auth-col').value.trim() ||
          'cms_users_' + (document.getElementById('p-id').value.trim() || 'default');
 }
 async function loadUsers() {
@@ -1550,10 +1553,10 @@ function showProjView(v) {
   document.getElementById('proj-list-view').style.display = v==='list'?'':'none';
   document.getElementById('proj-edit-view').style.display = v==='edit'?'':'none';
 }
-function backToProjects() { history.replaceState(null,'','#list'); showProjView('list'); curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[]; curUsers=[]; }
+function backToProjects() { history.replaceState(null,'','#list'); showProjView('list'); curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[]; curUsers=[]; curAuthCollection=''; }
 function startNewProject() {
   curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}];
-  curAuthKeyField='name'; curUsers=[]; curLogoTextSize='24'; curLogoTextAlign='center'; curLogoImgW=76;
+  curAuthKeyField='name'; curUsers=[]; curAuthCollection=''; curLogoTextSize='24'; curLogoTextAlign='center'; curLogoImgW=76;
   curStats=[]; curElementOrder=['edition','logo','dday','stats'];
   curKeyColors=[{color:'#00CE6B',holdTime:8,transitionTime:2},{color:'#FFF100',holdTime:8,transitionTime:2},{color:'#F95548',holdTime:8,transitionTime:2},{color:'#0BC6FF',holdTime:8,transitionTime:2}];
   ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-col','p-auth-title','p-auth-desc']
@@ -1599,6 +1602,7 @@ async function editProject(id) {
     document.getElementById('p-cta-text').value       = d.ctaText||'';
     document.getElementById('p-dday-date').value  = d.ddayDate||'';
     document.getElementById('p-auth-col').value   = d.authCollection||'';
+    curAuthCollection = d.authCollection || ('cms_users_' + id);
     document.getElementById('p-auth-title').value = d.authTitle||'';
     document.getElementById('p-auth-desc').value  = d.authDesc||'';
 
@@ -1613,7 +1617,7 @@ async function editProject(id) {
     switchInnerTab('basic'); showProjView('edit');
   } catch(e) { alert('불러오기 실패: '+e.message); }
 }
-async function saveProject() {
+async function saveProject(deploy=true) {
   const id   = document.getElementById('p-id').value.trim();
   const name = document.getElementById('p-name').value.trim();
   if (!id)   { alert('슬러그(ID)를 입력해주세요.'); return; }
@@ -1656,10 +1660,14 @@ async function saveProject() {
     document.getElementById('proj-del').style.display = 'block';
     if (curAuthEnabled) await loadUsers();
     loadProjects();
-    const deployed = await deployProjectPage(id);
-    alert(deployed
-      ? '저장 + 배포 완료!\n\nlazymaxpotential.kr/'+id+'\n\n(GitHub Pages 반영 ~1분)'
-      : '저장 완료. GitHub 토큰 없어 배포 건너뜀.\n\n토큰 설정 후 다시 저장하면 자동 배포돼요.');
+    if (deploy) {
+      const deployed = await deployProjectPage(id);
+      alert(deployed
+        ? '저장 + 배포 완료!\n\nlazymaxpotential.kr/'+id+'\n\n(GitHub Pages 반영 ~1분)'
+        : '저장 완료. GitHub 토큰 없어 배포 건너뜀.\n\n토큰 설정 후 배포 버튼을 누르면 자동 배포돼요.');
+    } else {
+      alert('저장 완료!');
+    }
   } catch(e) { alert('저장 실패: '+e.message); }
 }
 async function deleteProject() {
@@ -2622,9 +2630,11 @@ function renderPreview() {
   const firstBg = curBgImages[0];
   const hasBg   = firstBg && firstBg.url;
   bg.style.backgroundImage = hasBg ? `url("${firstBg.url}")` : '';
-  bg.style.backgroundColor = hasBg ? '' : '#fff';
+  const bgColor1 = curKeyColors[0]?.color || '#00CE6B';
+  const bgColor2 = curKeyColors.find(k=>k.color!==bgColor1)?.color || curKeyColors[1]?.color || '#FFF100';
+  bg.style.backgroundColor = hasBg ? '' : bgColor1;
   overlay.style.display    = hasBg ? '' : 'none';
-  const tc = curKeyColors[0]?.color || '#00CE6B';
+  const tc = hasBg ? bgColor1 : bgColor2;
 
   /* ── D-day ── */
   if (curDdayEnabled) {
