@@ -95,6 +95,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .user-table tr:last-child td{border-bottom:none;}
 .u-btn{padding:3px 7px;background:transparent;border:1px solid #000;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;}
 .u-btn:active{background:#000;color:#fff;}
+.u-row-selected td{background:#f5f5f5;}
 /* modals */
 .modal-ov{display:none;position:fixed;inset:0;z-index:400;justify-content:center;align-items:flex-end;background:rgba(0,0,0,.45);}
 .modal-ov.on{display:flex;}
@@ -659,6 +660,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   </div>
 </div>
 
+<!-- 사용자 일괄 수정 모달 -->
+<div class="modal-ov" id="bulk-edit-modal">
+  <div class="modal-box">
+    <div class="modal-ttl">선택 사용자 일괄 수정</div>
+    <div class="modal-scroll">
+      <div style="font-size:13px;color:rgba(0,0,0,.6);margin-bottom:16px;"><span id="bulk-edit-count">0</span>명의 사용자를 수정합니다.</div>
+      <div class="ed-lbl">수정할 필드</div>
+      <select id="bulk-edit-field" class="fi-sm" style="margin-bottom:14px;"></select>
+      <div class="ed-lbl">새 값</div>
+      <input class="fi-sm" id="bulk-edit-value" placeholder="모든 선택 사용자에게 적용됩니다" style="margin-bottom:0;">
+    </div>
+    <div class="modal-footer">
+      <button class="mbtn-cancel" onclick="closeModal('bulk-edit-modal')">취소</button>
+      <button class="mbtn-ok" onclick="saveBulkEditField()">저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- 폼 필드 추가/편집 모달 -->
 <div class="modal-ov" id="form-field-modal">
   <div class="modal-box">
@@ -867,6 +886,7 @@ let curKeyColors = [{color:'#00CE6B',holdTime:8,transitionTime:2},{color:'#FFF10
 let curStats = [];             // [{id, label, collection, countType, unit, enabled}]
 let curElementOrder = ['edition','logo','dday','stats']; // order of main screen elements
 let curUsers = [];
+let selectedUserIds = new Set();
 let curEditingFieldIdx = null;
 let curEditingUserId = null;
 let pendingBgUploadIdx = null;
@@ -1279,15 +1299,72 @@ function renderUserTable() {
   const wrap = document.getElementById('user-table-wrap');
   if (!curAuthFields.length) { wrap.innerHTML = '<div class="empty-msg">필드를 먼저 정의해주세요.</div>'; return; }
   if (!curUsers.length) { wrap.innerHTML = '<div class="empty-msg">사용자가 없어요.</div>'; return; }
-  const headers = curAuthFields.map(f=>`<th>${f.label}</th>`).join('')+'<th></th>';
+  selectedUserIds = new Set([...selectedUserIds].filter(id => curUsers.some(u=>u._id===id)));
+  const allChecked = curUsers.length > 0 && curUsers.every(u=>selectedUserIds.has(u._id));
+  const selCount = selectedUserIds.size;
+  const bulkBar = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+    <span style="font-size:12px;color:rgba(0,0,0,.5);">${selCount > 0 ? selCount+'명 선택됨' : '사용자 '+curUsers.length+'명'}</span>
+    ${selCount > 0 ? `
+      <button class="u-btn" style="background:#000;color:#fff;" onclick="deleteSelectedUsers()">선택 삭제 (${selCount})</button>
+      <button class="u-btn" onclick="openBulkEditFieldModal()">선택 일괄 수정</button>
+    ` : ''}
+  </div>`;
+  const chkTh = `<th style="width:32px;"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleSelectAll(this.checked)" style="cursor:pointer;"></th>`;
+  const headers = chkTh + curAuthFields.map(f=>`<th>${f.label}</th>`).join('') + '<th></th>';
   const rows = curUsers.map(u => {
-    const cells = curAuthFields.map(f=>`<td>${u[f.key]||''}</td>`).join('');
-    return `<tr>${cells}<td><div style="display:flex;gap:4px;">
-      <button class="u-btn" onclick="openUserModal('${u._id}')">편집</button>
-      <button class="u-btn" onclick="deleteUser('${u._id}')">삭제</button>
-    </div></td></tr>`;
+    const checked = selectedUserIds.has(u._id);
+    const cells = curAuthFields.map(f=>`<td>${u[f.key]??''}</td>`).join('');
+    return `<tr class="${checked?'u-row-selected':''}">
+      <td><input type="checkbox" ${checked?'checked':''} onchange="toggleSelectUser('${u._id}',this.checked)" style="cursor:pointer;"></td>
+      ${cells}
+      <td><div style="display:flex;gap:4px;">
+        <button class="u-btn" onclick="openUserModal('${u._id}')">편집</button>
+        <button class="u-btn" onclick="deleteUser('${u._id}')">삭제</button>
+      </div></td>
+    </tr>`;
   }).join('');
-  wrap.innerHTML = `<div class="user-table-wrap"><table class="user-table"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  wrap.innerHTML = bulkBar + `<div class="user-table-wrap"><table class="user-table"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function toggleSelectUser(id, checked) {
+  if (checked) selectedUserIds.add(id); else selectedUserIds.delete(id);
+  renderUserTable();
+}
+function toggleSelectAll(checked) {
+  if (checked) curUsers.forEach(u=>selectedUserIds.add(u._id));
+  else selectedUserIds.clear();
+  renderUserTable();
+}
+async function deleteSelectedUsers() {
+  if (!selectedUserIds.size) return;
+  if (!confirm(`선택한 ${selectedUserIds.size}명을 삭제할까요?`)) return;
+  const col = getAuthCol();
+  for (const id of selectedUserIds) {
+    try { await db.collection(col).doc(id).delete(); } catch(e) {}
+  }
+  selectedUserIds.clear();
+  await loadUsers();
+}
+function openBulkEditFieldModal() {
+  if (!selectedUserIds.size) return;
+  document.getElementById('bulk-edit-count').textContent = selectedUserIds.size;
+  document.getElementById('bulk-edit-field').innerHTML = curAuthFields.map(f=>`<option value="${f.key}">${f.label}</option>`).join('');
+  document.getElementById('bulk-edit-value').value = '';
+  document.getElementById('bulk-edit-modal').classList.add('on');
+}
+async function saveBulkEditField() {
+  const fieldKey = document.getElementById('bulk-edit-field').value;
+  const val = document.getElementById('bulk-edit-value').value.trim();
+  const field = curAuthFields.find(f=>f.key===fieldKey);
+  if (!field) return;
+  const parsed = field.type==='number' ? (parseFloat(val)||0) : val;
+  const col = getAuthCol();
+  for (const id of selectedUserIds) {
+    try { await db.collection(col).doc(id).update({[fieldKey]: parsed}); } catch(e) {}
+  }
+  closeModal('bulk-edit-modal');
+  selectedUserIds.clear();
+  await loadUsers();
+  alert('수정 완료!');
 }
 function openUserModal(userId) {
   curEditingUserId = userId;
@@ -2524,10 +2601,10 @@ function renderPreview() {
   /* ── background ── */
   const firstBg = curBgImages[0];
   const hasBg   = firstBg && firstBg.url;
-  bg.style.backgroundImage = hasBg ? `url(${firstBg.url})` : '';
-  bg.style.backgroundColor = hasBg ? '' : '#00CE6B'; /* player default color */
+  bg.style.backgroundImage = hasBg ? `url("${firstBg.url}")` : '';
+  bg.style.backgroundColor = hasBg ? '' : '#fff';
   overlay.style.display    = hasBg ? '' : 'none';
-  const tc = '#fff'; /* player text always on colored/image bg */
+  const tc = hasBg ? '#fff' : '#00CE6B';
 
   /* ── D-day ── */
   if (curDdayEnabled) {
@@ -2556,27 +2633,26 @@ function renderPreview() {
   if (curLayoutType === 'separate') {
     /* top-group: edition + logo + dday(via CSS) + stats placeholder */
     let topHtml = '';
-    if (edition) topHtml += `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:#00CE6B;margin-bottom:-4px;">${edition}</div>`;
+    if (edition) topHtml += `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:${tc};margin-bottom:-4px;">${edition}</div>`;
     /* logo */
     if (curLogoType==='image' && logoUrl) {
-      /* replicate CSS mask: colored div with mask */
-      topHtml += `<div style="width:${curLogoImgW}%;max-width:${Math.round(300*S)}px;aspect-ratio:835/700;background-color:#00CE6B;-webkit-mask-image:url(${logoUrl});mask-image:url(${logoUrl});-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>`;
+      topHtml += `<div style="width:${curLogoImgW}%;max-width:${Math.round(300*S)}px;aspect-ratio:835/700;background-color:${tc};-webkit-mask-image:url("${logoUrl}");mask-image:url("${logoUrl}");-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>`;
     } else if (curLogoType==='text' && logoTxt) {
-      topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:#00CE6B;text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
+      topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:${tc};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
     } else {
-      topHtml += `<div style="font-size:${Math.round(20*S)}px;font-weight:900;color:#00CE6B;">준비 포털</div>`;
+      topHtml += `<div style="font-size:${Math.round(20*S)}px;font-weight:900;color:${tc};">준비 포털</div>`;
     }
     /* visitor-line placeholder (counters) */
     if (curStats && curStats.some(s=>s.enabled)) {
       const labels = curStats.filter(s=>s.enabled).map(s=>`${s.label} …${s.unit||''}`).join(' · ');
-      topHtml += `<div style="font-size:${Math.round(21*S)}px;font-weight:400;color:#00CE6B;">${labels}</div>`;
+      topHtml += `<div style="font-size:${Math.round(21*S)}px;font-weight:400;color:${tc};">${labels}</div>`;
     }
     /* CTA */
     let botHtml = '';
     if (ctaIcon || ctaTxt) {
       const icoSizePx = Math.round(ctaIconSize * S);
-      const icoDiv = ctaIcon ? `<div style="width:${icoSizePx}px;height:${icoSizePx}px;background-color:#00CE6B;-webkit-mask-image:url(${ctaIcon});mask-image:url(${ctaIcon});-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>` : '';
-      const txtDiv = ctaTxt ? `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:#00CE6B;">${ctaTxt}</div>` : '';
+      const icoDiv = ctaIcon ? `<div style="width:${icoSizePx}px;height:${icoSizePx}px;background-color:${tc};-webkit-mask-image:url("${ctaIcon}");mask-image:url("${ctaIcon}");-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>` : '';
+      const txtDiv = ctaTxt ? `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:${tc};">${ctaTxt}</div>` : '';
       botHtml = `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">${icoDiv}${txtDiv}</div>`;
     }
     content.style.justifyContent = 'space-between';

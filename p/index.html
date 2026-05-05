@@ -312,8 +312,8 @@ function calcDDay(d){
 }
 function setMaskUrl(selector,url){
   document.querySelectorAll(selector).forEach(el=>{
-    el.style.webkitMaskImage='url('+url+')';
-    el.style.maskImage='url('+url+')';
+    el.style.webkitMaskImage=`url("${url}")`;
+    el.style.maskImage=`url("${url}")`;
   });
 }
 function showError(msg,sub){
