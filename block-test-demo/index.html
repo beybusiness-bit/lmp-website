@@ -1051,6 +1051,8 @@ async function restoreFromHash(saved){
   if(parts[0]==='stage'&&parts[1]){
     const stage=STAGES.find(s=>s.id===parts[1]);
     if(stage){
+      curStageIdx=STAGES.findIndex(s=>s.id===stage.id);
+      curStageId=stage.id;
       if(LAYOUT_TYPE==='separate'){
         prepBg=sessionStorage.getItem('prepBgColor')||KEY_COLORS[0];
         setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
