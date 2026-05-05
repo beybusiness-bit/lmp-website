@@ -2646,16 +2646,8 @@ function renderPreview() {
   overlay.style.display    = hasBg ? '' : 'none';
   const tc = hasBg ? bgColor1 : bgColor2;
 
-  /* ── D-day ── */
-  if (curDdayEnabled) {
-    const dv = document.getElementById('p-dday-date')?.value;
-    if (dv) {
-      const t=new Date(); t.setHours(0,0,0,0);
-      const n=Math.ceil((new Date(dv+'T00:00:00')-t)/86400000);
-      ddayEl.textContent = n>0?'D-'+n:n===0?'D-Day':'D+'+Math.abs(n);
-      ddayEl.style.color='#00CE6B'; ddayEl.style.display='';
-    } else ddayEl.style.display='none';
-  } else ddayEl.style.display='none';
+  /* prev-dday는 더 이상 사용 안 함 — D-day를 content 흐름 안에 렌더링 */
+  if (ddayEl) ddayEl.style.display = 'none';
 
   /* ── helpers (플레이어 좌표계 — scale 없음) ── */
   const edition = document.getElementById('p-edition')?.value.trim();
@@ -2666,25 +2658,42 @@ function renderPreview() {
   const ctaTxt      = document.getElementById('p-cta-text')?.value.trim();
   const ctaIconSize = parseInt(document.getElementById('p-cta-icon-size')?.value)||72;
 
+  /* ── D-day 계산 (공통) ── */
+  let ddayTxt = '';
+  if (curDdayEnabled) {
+    const dv = document.getElementById('p-dday-date')?.value;
+    if (dv) {
+      const t=new Date(); t.setHours(0,0,0,0);
+      const n=Math.ceil((new Date(dv+'T00:00:00')-t)/86400000);
+      ddayTxt = n>0?'D-'+n:n===0?'D-Day':'D+'+Math.abs(n);
+    }
+  }
+
   /* ── SEPARATE layout ── */
   if (curLayoutType === 'separate') {
+    /* curElementOrder 순서대로 렌더링 (플레이어와 동일) */
+    const order = curElementOrder.length ? curElementOrder : ['edition','logo','dday','stats'];
     let topHtml = '';
-    if (edition) topHtml += `<div style="font-size:18px;font-weight:900;color:${tc};margin-bottom:-14px;letter-spacing:-.3px;">${edition}</div>`;
-    /* logo */
-    if (curLogoType==='image' && logoUrl) {
-      const mat=hexToColorMatrix(tc);
-      topHtml += `<svg style="position:absolute;width:0;height:0;overflow:hidden"><defs><filter id="prev-logo-f" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${mat}"/></filter></defs></svg>`;
-      topHtml += `<div style="width:${curLogoImgW}%;"><img src="${logoUrl}" style="width:100%;height:auto;object-fit:contain;filter:url(#prev-logo-f);display:block;"></div>`;
-    } else if (curLogoType==='text' && logoTxt) {
-      topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:${tc};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
-    } else {
-      topHtml += `<div style="font-size:20px;font-weight:900;color:${tc};">준비 포털</div>`;
-    }
-    /* visitor-line placeholder */
-    if (curStats && curStats.some(s=>s.enabled)) {
-      const labels = curStats.filter(s=>s.enabled).map(s=>`${s.label} …${s.unit||''}`).join(' · ');
-      topHtml += `<div style="font-size:21px;font-weight:400;color:${tc};letter-spacing:-.5px;">${labels}</div>`;
-    }
+    const mat = hexToColorMatrix(tc);
+    topHtml += `<svg style="position:absolute;width:0;height:0;overflow:hidden"><defs><filter id="prev-logo-f" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${mat}"/></filter></defs></svg>`;
+    order.forEach(key => {
+      if (key === 'edition' && edition) {
+        topHtml += `<div style="font-size:18px;font-weight:900;color:${tc};margin-bottom:-14px;letter-spacing:-.3px;">${edition}</div>`;
+      } else if (key === 'logo') {
+        if (curLogoType==='image' && logoUrl) {
+          topHtml += `<div style="width:${curLogoImgW}%;"><img src="${logoUrl}" style="width:100%;height:auto;object-fit:contain;filter:url(#prev-logo-f);display:block;"></div>`;
+        } else if (curLogoType==='text' && logoTxt) {
+          topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:${tc};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
+        } else {
+          topHtml += `<div style="font-size:20px;font-weight:900;color:${tc};">준비 포털</div>`;
+        }
+      } else if (key === 'dday' && ddayTxt) {
+        topHtml += `<div style="font-size:32px;font-weight:300;color:${tc};line-height:1;letter-spacing:-1px;text-align:center;">${ddayTxt}</div>`;
+      } else if (key === 'stats' && curStats && curStats.some(s=>s.enabled)) {
+        const labels = curStats.filter(s=>s.enabled).map(s=>`${s.label} …${s.unit||''}`).join(' · ');
+        topHtml += `<div style="font-size:21px;font-weight:400;color:${tc};letter-spacing:-.5px;">${labels}</div>`;
+      }
+    });
     /* CTA */
     let botHtml = '';
     if (ctaIcon || ctaTxt) {
