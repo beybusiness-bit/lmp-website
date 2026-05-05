@@ -6,6 +6,13 @@
 // 배포: 웹앱 → 다음 사용자로 실행: 나(본인) → 액세스: 모든 사용자(익명 포함)
 // ================================================================
 
+// ── 권한 부여용 테스트 함수 (GAS 편집기에서 한 번 실행 후 삭제해도 됨) ──
+function testCreateSheet() {
+  const ss = SpreadsheetApp.create('권한 테스트 (삭제하세요)');
+  Logger.log('OK: ' + ss.getUrl());
+  DriveApp.getFileById(ss.getId()).setTrashed(true); // 생성 후 바로 휴지통으로
+}
+
 // ── 공통 JSON 응답 ──
 function json(obj) {
   return ContentService
