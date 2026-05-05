@@ -199,7 +199,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
       <div class="edition-text" id="edition-text"></div>
       <div class="logo-wrap">
         <img class="logo-mask" id="logo-mask" src="" alt="" style="display:none;filter:url(#logo-colorize);">
-        <div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>
+        <div class="logo-fallback" id="logo-fallback" style="display:none;">준비 포털</div>
       </div>
       <div class="dday-num" id="dday-num"></div>
       <div class="visitor-line" id="visitor-line"></div>
@@ -476,7 +476,7 @@ function renderTopGroup(d){
       wrap.className='logo-wrap';
       if(d.logoImgW) wrap.style.width=d.logoImgW+'%';
       wrap.innerHTML=`<img class="logo-mask" id="logo-mask" src="" alt="" style="display:none;filter:url(#logo-colorize);">
-        <div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>`;
+        <div class="logo-fallback" id="logo-fallback" style="display:none;">준비 포털</div>`;
       tg.appendChild(wrap);
       if(d.logoType==='text'&&d.logoText){
         document.getElementById('logo-mask').style.display='none';
