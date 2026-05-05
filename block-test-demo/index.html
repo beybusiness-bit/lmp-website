@@ -582,7 +582,7 @@ function buildPbarHtml(pct,opts){
   if(pct===0) return '';
   const isMerged=opts.merged||false;
   const isImage=opts.image||false;
-  const extraStyle=isImage?'position:absolute;bottom:0;left:0;right:0;z-index:1;background:rgba(0,0,0,.4);':'';
+  const extraStyle=isImage?'position:absolute;bottom:0;left:0;right:0;z-index:1;':'';
   const fillCls='stage-pbar-fill'+(isMerged?' merged':'');
   const outCls='stage-pct-out'+((isMerged||isImage)?' merged':'');
   const label=pct+'%';
