@@ -2616,8 +2616,11 @@ function togglePreview() {
   const wrap = document.getElementById('preview-wrap');
   if (!wrap) return;
   const showing = wrap.style.display !== 'none';
+  if (!showing) {
+    applyPreviewSize();
+    renderPreview();
+  }
   wrap.style.display = showing ? 'none' : '';
-  if (!showing) renderPreview();
 }
 function hexToColorMatrix(hex){
   if(!hex||hex[0]!=='#'||hex.length<7) return '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0';
@@ -2671,7 +2674,7 @@ function renderPreview() {
     if (curLogoType==='image' && logoUrl) {
       const mat=hexToColorMatrix(tc);
       topHtml += `<svg style="position:absolute;width:0;height:0;overflow:hidden"><defs><filter id="prev-logo-f" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${mat}"/></filter></defs></svg>`;
-      topHtml += `<div style="width:${curLogoImgW}%;"><img src="${logoUrl}" style="width:100%;max-height:160px;object-fit:contain;filter:url(#prev-logo-f);display:block;"></div>`;
+      topHtml += `<div style="width:${curLogoImgW}%;"><img src="${logoUrl}" style="width:100%;height:auto;object-fit:contain;filter:url(#prev-logo-f);display:block;"></div>`;
     } else if (curLogoType==='text' && logoTxt) {
       topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:${tc};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
     } else {
