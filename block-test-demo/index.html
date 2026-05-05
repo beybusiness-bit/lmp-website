@@ -381,10 +381,10 @@ async function loadProjectSettings(){
   try{
     const doc=await db.collection('cms_projects').doc(PROJECT_ID).get();
     if(!doc.exists){ showError('프로젝트를 찾을 수 없어요.','관리자에게 문의해주세요.'); return; }
-    await applySettings(doc.data());
+    applySettings(doc.data());
   }catch(e){ showError('연결에 실패했어요.','잠시 후 다시 시도해주세요.'); }
 }
-async function applySettings(d){
+function applySettings(d){
   LAYOUT_TYPE     = d.layoutType     || 'separate';
   DDAY_ENABLED    = d.ddayEnabled    || false;
   DDAY_DATE       = d.ddayDate       || '';
@@ -432,16 +432,6 @@ async function applySettings(d){
   bgImages = rawBgs.map(b=>typeof b==='string'?{url:b,holdTime:10,transitionTime:2}:b);
   initSlides();
 
-  /* 로고 이미지 preload — 다른 요소와 동시에 나타나도록 */
-  if(d.logoType!=='text' && d.logoImageUrl){
-    await new Promise(resolve=>{
-      const img=new Image();
-      img.onload=img.onerror=resolve;
-      img.src=d.logoImageUrl;
-      setTimeout(resolve,3000);
-    });
-  }
-
   /* element order: rebuild top-group in order */
   renderTopGroup(d);
 
@@ -474,7 +464,10 @@ function renderTopGroup(d){
     } else if(key==='logo'){
       const wrap=document.createElement('div');
       wrap.className='logo-wrap';
-      if(d.logoImgW) wrap.style.width=d.logoImgW+'%';
+      if(d.logoImgW){
+        const pct=d.logoImgW;
+        wrap.style.width=`calc(${pct}% + ${(pct/100*64).toFixed(1)}px)`;
+      }
       wrap.innerHTML=`<img class="logo-mask" id="logo-mask" src="" alt="" style="display:none;filter:url(#logo-colorize);">
         <div class="logo-fallback" id="logo-fallback" style="display:none;">준비 포털</div>`;
       tg.appendChild(wrap);
