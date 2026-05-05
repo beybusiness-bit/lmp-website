@@ -568,6 +568,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div class="switch" id="blk-checkable-sw" onclick="this.classList.toggle('on')"></div>
         <span class="switch-lbl">체크 기능 활성화 <span style="font-weight:400;opacity:.6;">(사용자가 이 블록을 수행 완료로 체크 가능)</span></span>
       </div>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <div style="flex:1;">
+          <div class="ed-lbl" style="font-size:10px;">확인 전 텍스트 <span style="font-weight:400;opacity:.5;">(비우면 체크박스)</span></div>
+          <input class="fi-sm" id="blk-check-before" placeholder="확인하기" style="margin-bottom:0;">
+        </div>
+        <div style="flex:1;">
+          <div class="ed-lbl" style="font-size:10px;">확인 후 텍스트 <span style="font-weight:400;opacity:.5;">(비우면 체크박스)</span></div>
+          <input class="fi-sm" id="blk-check-after" placeholder="✓ 확인 완료" style="margin-bottom:0;">
+        </div>
+      </div>
     </div>
     <!-- 공통: 배경색 + 마진 -->
     <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
@@ -1179,6 +1189,9 @@ async function uploadBlockImage(event, urlFieldId, prevId) {
   const file = event.target.files[0];
   event.target.value = '';
   if (!file) return;
+  const urlField = document.getElementById(urlFieldId);
+  const origVal = urlField ? urlField.value : '';
+  if (urlField) urlField.value = '⏳ 업로드 중…';
   const stageId = (curEditingStageIdx !== null ? curStages[curEditingStageIdx]?.id : null) || 'tmp';
   const ext = file.name.split('.').pop();
   const path = `cms_projects/${curProjId||'tmp'}/stage_content/${stageId}/blocks/${Date.now()}.${ext}`;
@@ -1186,9 +1199,12 @@ async function uploadBlockImage(event, urlFieldId, prevId) {
     const ref = storage.ref(path);
     await ref.put(file);
     const url = await ref.getDownloadURL();
-    document.getElementById(urlFieldId).value = url;
+    if (urlField) urlField.value = url;
     prevImg(prevId, url);
-  } catch(err) { alert('업로드 실패: ' + err.message); }
+  } catch(err) {
+    if (urlField) urlField.value = origVal;
+    alert('업로드 실패: ' + err.message + '\n\nFirebase Console → Storage → Rules에서 인증된 쓰기를 허용해야 해요.\nallow write: if request.auth != null;');
+  }
 }
 async function onBgFileSelected(e) {
   const file = e.target.files[0];
@@ -2334,6 +2350,8 @@ function openBlockModal(idx){
   curBlkBgColor=b.bgColor||'';
   const bgP=document.getElementById('blk-bg-color'); if(bgP) bgP.value=curBlkBgColor||'#ffffff';
   const chkSw=document.getElementById('blk-checkable-sw'); if(chkSw) chkSw.classList.toggle('on',!!b.checkable);
+  const cbEl=document.getElementById('blk-check-before'); if(cbEl) cbEl.value=b.checkBeforeText||'';
+  const caEl=document.getElementById('blk-check-after');  if(caEl) caEl.value=b.checkAfterText||'';
   const bgH=document.getElementById('blk-bg-hex');  if(bgH) bgH.value=(curBlkBgColor||'').toUpperCase();
   const mv=document.getElementById('blk-margin-v'); if(mv) mv.value=b.marginV??'';
   const mh=document.getElementById('blk-margin-h'); if(mh) mh.value=b.marginH??'';
@@ -2376,6 +2394,8 @@ function saveBlock(){
   if(_mv) b.marginV=_mv; else delete b.marginV;
   if(_mh) b.marginH=_mh; else delete b.marginH;
   b.checkable=!!document.getElementById('blk-checkable-sw')?.classList.contains('on');
+  b.checkBeforeText=document.getElementById('blk-check-before')?.value.trim()||'';
+  b.checkAfterText=document.getElementById('blk-check-after')?.value.trim()||'';
   if(curBlkIdx!==null)curBlocks[curBlkIdx]={...curBlocks[curBlkIdx],...b};
   else curBlocks.push(b);
   renderBlockList();closeBlockModal();scheduleGuidePreviewUpdate();
@@ -2604,7 +2624,7 @@ function renderPreview() {
   bg.style.backgroundImage = hasBg ? `url("${firstBg.url}")` : '';
   bg.style.backgroundColor = hasBg ? '' : '#fff';
   overlay.style.display    = hasBg ? '' : 'none';
-  const tc = hasBg ? '#fff' : '#00CE6B';
+  const tc = curKeyColors[0]?.color || '#00CE6B';
 
   /* ── D-day ── */
   if (curDdayEnabled) {
@@ -2636,7 +2656,7 @@ function renderPreview() {
     if (edition) topHtml += `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:${tc};margin-bottom:-4px;">${edition}</div>`;
     /* logo */
     if (curLogoType==='image' && logoUrl) {
-      topHtml += `<div style="width:${curLogoImgW}%;max-width:${Math.round(300*S)}px;aspect-ratio:835/700;background-color:${tc};-webkit-mask-image:url("${logoUrl}");mask-image:url("${logoUrl}");-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>`;
+      topHtml += `<div style="width:${curLogoImgW}%;max-width:${Math.round(300*S)}px;min-height:30px;background-image:url("${logoUrl}");background-size:contain;background-repeat:no-repeat;background-position:center;"></div>`;
     } else if (curLogoType==='text' && logoTxt) {
       topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:${tc};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
     } else {
