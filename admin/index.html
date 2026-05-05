@@ -1119,14 +1119,14 @@ function renderBgImages() {
 }
 function addBgImage() {
   curBgImages.push({url:'', holdTime:10, transitionTime:2});
-  renderBgImages();
+  renderBgImages(); schedulePreviewUpdate();
 }
-function removeBg(i) { curBgImages.splice(i,1); renderBgImages(); }
+function removeBg(i) { curBgImages.splice(i,1); renderBgImages(); schedulePreviewUpdate(); }
 function moveBg(i,d) {
   const j=i+d;
   if(j<0||j>=curBgImages.length) return;
   [curBgImages[i],curBgImages[j]]=[curBgImages[j],curBgImages[i]];
-  renderBgImages();
+  renderBgImages(); schedulePreviewUpdate();
 }
 function updateBgThumb(i, url) {
   const img = document.getElementById('bgt-'+i);
@@ -2666,7 +2666,7 @@ function renderPreview() {
     if (edition) topHtml += `<div style="font-size:${Math.round(18*S)}px;font-weight:900;color:${tc};margin-bottom:-4px;">${edition}</div>`;
     /* logo */
     if (curLogoType==='image' && logoUrl) {
-      topHtml += `<div style="width:${curLogoImgW}%;max-width:${Math.round(300*S)}px;min-height:30px;background-image:url("${logoUrl}");background-size:contain;background-repeat:no-repeat;background-position:center;"></div>`;
+      topHtml += `<div style="width:${curLogoImgW}%;max-width:${Math.round(300*S)}px;min-height:30px;background-image:url('${logoUrl}');background-size:contain;background-repeat:no-repeat;background-position:center;"></div>`;
     } else if (curLogoType==='text' && logoTxt) {
       topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:${tc};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
     } else {

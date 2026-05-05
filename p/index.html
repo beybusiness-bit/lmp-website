@@ -26,7 +26,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .bottom-group{display:flex;flex-direction:column;align-items:center;gap:6px;}
 .edition-text{font-size:18px;font-weight:900;color:var(--c);letter-spacing:-.3px;transition:color 1s ease;margin-bottom:-14px;}
 .logo-wrap{width:76%;max-width:300px;}
-.logo-mask{width:100%;max-height:160px;background-size:contain;background-repeat:no-repeat;background-position:center;}
+.logo-mask{width:100%;max-height:160px;object-fit:contain;display:block;}
 .logo-fallback{font-size:20px;font-weight:900;color:var(--c);text-align:center;line-height:1.3;transition:color 1s ease;display:none;white-space:pre-line;}
 .dday-num{font-size:32px;font-weight:300;color:var(--c);line-height:1;letter-spacing:-1px;transition:color 1s ease;text-align:center;}
 .visitor-line{font-size:21px;font-weight:400;color:var(--c);line-height:1;letter-spacing:-.5px;transition:color 1s ease;text-align:center;}
@@ -189,7 +189,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
     <div class="top-group">
       <div class="edition-text" id="edition-text"></div>
       <div class="logo-wrap">
-        <div class="logo-mask" id="logo-mask" style="display:none;"></div>
+        <img class="logo-mask" id="logo-mask" src="" alt="" style="display:none;">
         <div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>
       </div>
       <div class="dday-num" id="dday-num"></div>
@@ -326,7 +326,7 @@ function calcDDay(d){
 function setMaskUrl(selector,url){
   document.querySelectorAll(selector).forEach(el=>{
     if(el.id==='logo-mask'||el.classList.contains('logo-mask')){
-      el.style.backgroundImage=`url("${url}")`;
+      el.src=url;
     } else {
       el.style.webkitMaskImage=`url("${url}")`;
       el.style.maskImage=`url("${url}")`;
@@ -431,7 +431,7 @@ function renderTopGroup(d){
       const wrap=document.createElement('div');
       wrap.className='logo-wrap';
       if(d.logoImgW) wrap.style.width=d.logoImgW+'%';
-      wrap.innerHTML=`<div class="logo-mask" id="logo-mask" style="display:none;"></div>
+      wrap.innerHTML=`<img class="logo-mask" id="logo-mask" src="" alt="" style="display:none;">
         <div class="logo-fallback" id="logo-fallback" style="display:block;">준비 포털</div>`;
       tg.appendChild(wrap);
       /* re-apply logo settings now that DOM exists */
@@ -618,7 +618,7 @@ async function confirmAuth(){
       sessionStorage.setItem('userSession',JSON.stringify({...u,project:PROJECT_ID,_docId:USER_DOC_ID}));
       loadUserProgress(u);
       closeModal('auth-modal');
-      if(LAYOUT_TYPE==='merged') { /* already showing stages */ }
+      if(LAYOUT_TYPE==='merged') renderMergedStages();
       else openPrep();
     } else {
       document.getElementById('auth-err').textContent='인증 정보를 찾을 수 없어요.';
@@ -964,7 +964,7 @@ async function init(){
   /* merged + auth: show modal immediately */
   if(LAYOUT_TYPE==='merged'&&AUTH_ENABLED){
     if(!loggedIn) openAuthModal();
-    else await restoreFromHash(saved);
+    else { renderMergedStages(); await restoreFromHash(saved); }
   }
   /* separate: restore session */
   if(LAYOUT_TYPE==='separate'){
