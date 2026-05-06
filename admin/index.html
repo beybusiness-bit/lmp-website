@@ -2017,7 +2017,7 @@ async function saveStageContent() {
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       }, {merge:true});
     /* sync checkableCount to project stages */
-    const checkableCount = curBlocks.filter(b=>b.checkable).length;
+    const checkableCount = curBlocks.filter(b=>b.checkable||b.type==='form').length;
     curStages[curEditingStageIdx].checkableCount = checkableCount;
     const updatedStages = curStages.map((s,i)=>({
       id:s.id, title:s.title||'', displayType:s.displayType||'text',
