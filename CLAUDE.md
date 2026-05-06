@@ -340,6 +340,44 @@ URL: https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1w
 
 ---
 
+### 🗂️ 전역 UI 패턴 (Global UI Patterns)
+
+재사용 가능한 UI 컴포넌트. 새 기능에 도움말이나 패널이 필요하면 아래 패턴을 그대로 활용한다.
+
+#### 왼쪽 도움말 패널 (Left Help Panel)
+
+`admin/index.html`에 전역으로 구현되어 있음. 어디서든 한 줄로 호출 가능.
+
+```javascript
+// 패널 열기
+openHelpPanel('제목 텍스트', '<p>내용 HTML</p>');
+
+// 패널 닫기 (X 버튼·backdrop 클릭 시 자동 닫힘)
+closeHelpPanel();
+```
+
+**구현 위치**: `admin/index.html`
+- HTML: `#help-panel`, `#help-panel-backdrop` (전역, body 직하위)
+- CSS: `#help-panel`, `#help-panel.open` (transform 슬라이드)
+- JS: `openHelpPanel()`, `closeHelpPanel()`
+
+**사용 규칙**:
+- 도움말·가이드 용도는 항상 이 패널 사용 (새 창·alert 금지)
+- 오른쪽 미리보기 패널(`.preview-side-panel`)과 구분: 도움말은 왼쪽, 미리보기는 오른쪽
+- 트리거 버튼: `?` 텍스트, `prev-btn` 스타일, 해당 기능 헤더 `actions` 영역에 배치
+- 내용 HTML에서 사용 가능한 스타일: `<h3>`, `<p>`, `<ul>`, `<code>`, `.badge`, `.badge.black`
+
+#### 오른쪽 미리보기 패널 (Right Preview Panel)
+
+```css
+/* 기존 클래스 재사용 */
+.preview-side-panel   /* 패널 컨테이너 */
+.preview-side-panel-header  /* 헤더 (크기조절 버튼 포함) */
+```
+`setPreviewSize(±30)` 로 크기 조절. 프로젝트·스테이지·블록 편집 화면에서 사용 중.
+
+---
+
 ### 📖 UI 명칭 사전 (통일 용어)
 
 #### 컬러 시스템
@@ -421,30 +459,29 @@ URL: https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1w
 - **사이드바 메뉴 뱃지 수정**: `s.status`(undefined) → `calcPct` 기반 상태값, trackProgress:true인 스테이지에만 표시
 - **상태 뱃지·메뉴 뱃지 텍스트**: 9px → 11px
 - **CLAUDE.md 명칭 사전**: 컬러·레이아웃·화면·카드 용어 통일 (📖 UI 명칭 사전 섹션)
-- **games/booth 부스 꾸미기 게임** (이번 세션에서 다수 개선 ✅)
+- **tools/booth 부스 꾸미기 도구** ✅
   - HTML Canvas + DOM 아이템 레이어 하이브리드, 이미지 추가·이동·회전·리사이즈·프레임·그리기·내보내기
-  - lmp 스타일 적용 (검정 테두리, 직각 버튼, 검정 슬라이더, 투명 배경)
-  - postMessage로 프로젝트 연동 (boothType → 배경 자동 선택, keyColors → 색상 피커)
-  - 배경 선택 모달: 무료 이미지 탭(picsum 24장) + 직접 업로드 탭
-  - vercel.json: /games/* Cache-Control no-store, X-Frame-Options SAMEORIGIN
-  - **게임 전체 투명 배경**: #toolbar, #bottom-panel background:#fff → transparent ✅
-  - **이미지 추가 원본 비율 유지**: naturalRatio 기반 초기 크기, 프레임 적용 시 정사각형 전환 ✅
-  - **프레임 패널 개편**: "원본" 버튼 추가(기본 활성), □ → frame-square 실제 정사각형 크롭 ✅
-  - **iOS Safari 레이아웃 수정**: viewport-fit=cover, 100svh, safe-area-inset-bottom 패딩 ✅
-  - **하단 패널 고정 높이(min-height:145px)**: 패널 전환 시 canvas-wrap 크기 불변 → 배경 비율 왜곡 방지 ✅
-  - **그리기 bounding box 크롭**: 전체 캔버스 대신 실제 그린 픽셀 영역만 아이템으로 생성 → 선택 핸들 위치 정확 ✅
-  - **캔버스 4:5 비율 고정**: aspect-ratio:4/5, flex:1 제거 (인스타그램 포스트용) ✅
-  - **내보내기 1080×1350 고정**: EXPORT_W/H 상수, 화면→출력 배율 변환 ✅
-  - **무료 배경 고해상도**: thumb(540×675) 로딩, url(1080×1350) 배경 적용 분리 ✅
-  - **배경 업로드 최소 해상도 경고**: 1080×1350 미만 시 confirm 경고 + "권장 최소" 안내 문구 ✅
+  - lmp 스타일 적용, postMessage 프로젝트 연동, 배경 선택 모달
+  - vercel.json: /tools/* Cache-Control no-store, X-Frame-Options SAMEORIGIN
 - **임베드 블록 높이 auto**: admin에서 "자동" 체크 → embedHeight=0 저장, 플레이어에서 min-height:60vh 적용
 - **배경 갤러리 UI 겹침 수정**: flex 레이아웃 분리, data-idx 이벤트 위임으로 URL 인코딩 문제 해결
-- **admin 게임 탭** (이번 세션 완료 ✅)
-  - /admin 상단에 "프로젝트 | 게임" 탭 추가, switchTab() 활성화
-  - 게임 목록 → 게임별 설정 화면 (현재: 부스 꾸미기)
-  - 부스 꾸미기 설정: 부스 종류 추가/삭제, 배경 이미지 업로드(Firebase Storage → game_configs/booth)
-  - 연결된 프로젝트·블록 목록: cms_projects 전체 순회 → embedUrl에 'games/booth' 포함된 블록 표시
-  - 각 연결 항목에서 "블록 편집"(admin #edit/{id}/stages) + "플레이어"(/{id}/) 링크 제공
+- **admin 도구 탭** ✅
+  - /admin 상단에 "프로젝트 | 도구" 탭, 도구 목록 → 도구별 설정 화면
+  - 부스 꾸미기: 부스 종류 추가/삭제, 배경 업로드(Firebase Storage → game_configs/booth)
+  - 연결된 프로젝트·블록 목록: embedUrl에 'tools/booth' 포함된 블록 표시
+- **game → tool 전면 리네임** ✅
+  - games/ → tools/, 탭명·ID·함수명·URL 전면 치환 (국문: 도구)
+  - vercel.json: /games/:path* → /tools/:path* 301 리다이렉트 추가
+  - Firestore game_configs 컬렉션명은 데이터 보존을 위해 유지
+- **계산기 생성기 도구** (`tools/guide/index.html`) ✅
+  - admin 도구 탭 안에서 빌더 동작 (새 창 없이 패널 내 화면 전환)
+  - 블록 3종: choice(객관식+태그), numeric(숫자+변수), result(조건+계산식)
+  - {{expr}} 템플릿 계산식 엔진 (ceil/floor/round 지원)
+  - Firestore: game_configs/guide/forms/{formId}
+- **전역 왼쪽 도움말 패널** (`#help-panel`) ✅
+  - openHelpPanel(title, html) / closeHelpPanel() 전역 함수
+  - 계산기 생성기 사용법 가이드 내장
+  - 🗂️ 전역 UI 패턴 섹션에 재사용 규칙 문서화
 
 **미확인/이슈 🔶**
 - GAS `bulkAppend` 코드: `apps-script/Code.gs`에 추가됐으나 **GAS 편집기에서 재배포 필요**
@@ -456,11 +493,11 @@ URL: https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1w
 - 블록 체크 진행률 시스템 end-to-end 테스트 (실제 사용자 로그인 후)
 - 폼 블록: 파일 업로드 타입 구현 (현재 미구현)
 - 폼 블록: 제출 완료 후 화면(submitMsg) 커스터마이즈
-- 블록 편집 미리보기 UX 개선 (현재 텍스트/이미지 기본 지원, embed는 URL 텍스트로 표시)
-- games/booth: 관리자 페이지에서 부스 종류 등록 + 배경 업로드 실제 테스트
+- tools/booth: 관리자 페이지에서 부스 종류 등록 + 배경 업로드 실제 테스트
+- 계산기 생성기: 실사용 후 UX 피드백 반영
 
 **다음 세션 시작점**
-- 사용자가 원하는 새 기능 추가 (admin 게임탭 실사용 후 피드백 반영 등)
+- 계산기 생성기 실사용 피드백 반영
 
 ---
 
