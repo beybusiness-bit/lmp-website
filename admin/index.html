@@ -462,7 +462,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   <div class="bm-top">
     <span class="back-btn" onclick="closeBlockModal()">←</span>
     <span style="font-size:14px;font-weight:800;flex:1;" id="bm-title">블록 추가</span>
+    <button class="fmt-btn" id="bm-prev-btn" onclick="toggleBmPreview()" title="미리보기" style="font-size:11px;padding:5px 9px;margin-right:4px;">미리보기</button>
     <button class="save-btn" onclick="saveBlock()">완료</button>
+  </div>
+  <!-- 블록 미리보기 패널 (토글) -->
+  <div id="bm-preview-bar" style="display:none;flex-shrink:0;padding:10px 16px;border-bottom:2px solid #000;background:#f4f4f4;gap:12px;align-items:flex-start;overflow-x:auto;">
+    <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.5);white-space:nowrap;padding-top:4px;flex-shrink:0;">미리보기</div>
+    <div id="bm-preview-phone" style="width:200px;flex-shrink:0;border:2px solid #000;overflow:hidden;background:#fff;min-height:40px;max-height:180px;overflow-y:auto;">
+      <div id="bm-preview-content"></div>
+    </div>
+    <div style="font-size:10px;color:rgba(0,0,0,.35);padding-top:4px;flex-shrink:0;">실제와<br>다를 수<br>있어요</div>
   </div>
   <div class="bm-body">
     <div class="blk-tabs">
@@ -505,8 +514,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         유튜브: 공유 → 삽입 → src 값 복사
       </div>
       <div style="margin-top:10px;">
-        <div class="ed-lbl" style="margin-bottom:4px;">높이 (px)</div>
-        <input class="img-inp" id="embed-height" type="number" placeholder="500" style="margin-bottom:0;width:120px;">
+        <div class="ed-lbl" style="margin-bottom:6px;">높이</div>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:700;margin-bottom:8px;">
+          <input type="checkbox" id="embed-height-auto" onchange="toggleEmbedHeightAuto(this.checked)" style="cursor:pointer;width:14px;height:14px;">
+          자동 (콘텐츠 높이에 맞춤)
+        </label>
+        <div id="embed-height-wrap" style="display:flex;align-items:center;gap:6px;">
+          <input class="img-inp" id="embed-height" type="number" placeholder="500" style="margin-bottom:0;width:100px;">
+          <span style="font-size:11px;color:rgba(0,0,0,.45);">px</span>
+        </div>
       </div>
     </div>
     <div id="bpanel-form" style="display:none;">
@@ -2535,7 +2551,10 @@ function openBlockModal(idx){
   document.getElementById('mixed-img-url').value=b.type==='mixed'?(b.imageUrl||''):'';
   document.getElementById('ced-mixed').innerHTML=b.type==='mixed'?(b.textContent||''):'';
   document.getElementById('embed-url').value=b.type==='embed'?(b.embedUrl||''):'';
+  const _isAutoH=b.type==='embed'&&(b.embedHeight===0);
+  document.getElementById('embed-height-auto').checked=_isAutoH;
   document.getElementById('embed-height').value=b.type==='embed'?(b.embedHeight||500):'500';
+  document.getElementById('embed-height-wrap').style.display=_isAutoH?'none':'';
   /* form — 항상 UI 초기화 후 기존 값 로드 */
   curFormFields = b.type==='form' ? JSON.parse(JSON.stringify(b.formFields||[])) : [];
   curFormConfig  = b.type==='form' ? {...{submitBtnText:'제출하기',postSubmitHtml:'',postSubmitImage:'',allowDuplicates:false}, ...b.formConfig} : {submitBtnText:'제출하기'};
@@ -2572,6 +2591,47 @@ function openBlockModal(idx){
   document.getElementById('block-modal').classList.add('on');
 }
 function closeBlockModal(){document.getElementById('block-modal').classList.remove('on');}
+/* ── 블록 모달 미리보기 ── */
+let bmPreviewOn=false, bmPreviewTimer=null;
+function toggleBmPreview(){
+  bmPreviewOn=!bmPreviewOn;
+  const bar=document.getElementById('bm-preview-bar');
+  const btn=document.getElementById('bm-prev-btn');
+  if(bar){bar.style.display=bmPreviewOn?'flex':'none';}
+  if(btn){btn.style.background=bmPreviewOn?'#000':'';btn.style.color=bmPreviewOn?'#fff':'';}
+  if(bmPreviewOn) updateBmPreview();
+}
+function scheduleBmPreview(){
+  if(!bmPreviewOn) return;
+  clearTimeout(bmPreviewTimer);
+  bmPreviewTimer=setTimeout(updateBmPreview,200);
+}
+function _buildCurrentBlock(){
+  const b={type:curBlkType,bgColor:curBlkBgColor||''};
+  if(curBlkType==='text'){b.textContent=document.getElementById('ced-text')?.innerHTML||'';}
+  else if(curBlkType==='image'){b.imageUrl=document.getElementById('img-url')?.value||'';}
+  else if(curBlkType==='mixed'){
+    b.imageUrl=document.getElementById('mixed-img-url')?.value||'';
+    b.textContent=document.getElementById('ced-mixed')?.innerHTML||'';
+    b.mixedLayout=curMixedLayout;
+  } else if(curBlkType==='embed'){
+    b.embedUrl=document.getElementById('embed-url')?.value||'';
+    b.embedHeight=document.getElementById('embed-height-auto')?.checked?0:(parseInt(document.getElementById('embed-height')?.value)||500);
+  } else if(curBlkType==='form'){
+    b.formFields=curFormFields||[];
+    b.formConfig={submitBtnText:document.getElementById('form-submit-text')?.value||'제출하기'};
+  }
+  const _mv=parseInt(document.getElementById('blk-margin-v')?.value)||0;
+  const _mh=parseInt(document.getElementById('blk-margin-h')?.value)||0;
+  if(_mv) b.marginV=_mv; if(_mh) b.marginH=_mh;
+  return b;
+}
+function updateBmPreview(){
+  const el=document.getElementById('bm-preview-content');
+  if(!el||!bmPreviewOn) return;
+  const S=200/430;
+  el.innerHTML=gBlockHtml(_buildCurrentBlock(),S);
+}
 function saveBlock(){
   const existingId=(curBlkIdx!==null&&curBlocks[curBlkIdx]?.id)||uid();
   let b={id:existingId,type:curBlkType};
@@ -2589,7 +2649,7 @@ function saveBlock(){
     b.mixedLayout=curMixedLayout;
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url').value.trim();
-    b.embedHeight=parseInt(document.getElementById('embed-height').value)||500;
+    b.embedHeight=document.getElementById('embed-height-auto').checked?0:(parseInt(document.getElementById('embed-height').value)||500);
   } else if(curBlkType==='form'){
     curFormConfig.formTitle       = document.getElementById('form-title-inp').value.trim();
     curFormConfig.submitBtnText   = document.getElementById('form-submit-text').value.trim()||'제출하기';
@@ -2625,6 +2685,8 @@ function switchBlkTab(t){
   if(chkSection) chkSection.style.display=t==='form'?'none':'';
 }
 function setMixedLayout(l){curMixedLayout=l;document.getElementById('ml-overlay').classList.toggle('on',l==='overlay');document.getElementById('ml-split').classList.toggle('on',l==='split');}
+function toggleEmbedHeightAuto(checked){document.getElementById('embed-height-wrap').style.display=checked?'none':'';}
+
 function getEd(ctx){
   if(ctx==='formpost') return document.getElementById('ced-formpost');
   return document.getElementById(ctx==='text'?'ced-text':'ced-mixed');
@@ -2795,18 +2857,20 @@ function gBlockHtml(b,S){
 function applyPreviewSize() {
   const BASE_W = 430, BASE_H = 763; /* 플레이어 좌표계: 430×763 → scale로 축소 */
   const scale = previewWidth / BASE_W;
-  [['preview-phone','preview-wrap'],['guide-preview-phone','guide-preview-wrap']].forEach(([phoneId,wrapId])=>{
-    const pp = document.getElementById(phoneId);
-    const pw = document.getElementById(wrapId);
-    if (pp) {
-      pp.style.width  = BASE_W + 'px';
-      pp.style.height = BASE_H + 'px';
-      pp.style.transform = `scale(${scale.toFixed(4)})`;
-      pp.style.transformOrigin = 'top left';
-      pp.style.marginBottom = Math.round((scale - 1) * BASE_H) + 'px';
-    }
-    if (pw) pw.style.width = Math.round(BASE_W * scale) + 'px';
-  });
+  /* 프로젝트 미리보기만 transform 스케일 적용 */
+  const pp = document.getElementById('preview-phone');
+  const pw = document.getElementById('preview-wrap');
+  if (pp) {
+    pp.style.width  = BASE_W + 'px';
+    pp.style.height = BASE_H + 'px';
+    pp.style.transform = `scale(${scale.toFixed(4)})`;
+    pp.style.transformOrigin = 'top left';
+    pp.style.marginBottom = Math.round((scale - 1) * BASE_H) + 'px';
+  }
+  if (pw) pw.style.width = Math.round(BASE_W * scale) + 'px';
+  /* 스테이지 내용 미리보기는 196px 고정 (transform 없음 → 스크롤 정상 동작) */
+  const gpp = document.getElementById('guide-preview-phone');
+  if (gpp) { gpp.style.width='196px'; gpp.style.height='348px'; gpp.style.transform='none'; }
 }
 function setPreviewSize(delta) {
   previewWidth = Math.max(140, Math.min(380, previewWidth + delta));
@@ -2963,6 +3027,11 @@ window.addEventListener('load', () => {
   if(sco) {
     sco.addEventListener('input', e => { if(!e.target.closest('#block-modal')) stageDirty=true; });
     sco.addEventListener('change', e => { if(!e.target.closest('#block-modal')) stageDirty=true; });
+  }
+  const bm = document.getElementById('block-modal');
+  if(bm) {
+    bm.addEventListener('input', () => scheduleBmPreview());
+    bm.addEventListener('change', () => scheduleBmPreview());
   }
   window.addEventListener('beforeunload', e => {
     if(projDirty || stageDirty) { e.preventDefault(); e.returnValue=''; }

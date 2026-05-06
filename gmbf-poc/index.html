@@ -795,7 +795,9 @@ function blockHtml(b){
     return `<div class="g-block-mixed-overlay" style="${mS}${bgS}"><img src="${b.imageUrl||''}" alt="" loading="lazy"><div class="g-overlay-text"><div class="g-overlay-text-inner" style="${txS}">${html}</div></div></div>`;
   }
   if(b.type==='embed' && b.embedUrl){
-    return `<div class="g-block-embed" style="${mS}${bgS}"><iframe src="${b.embedUrl}" width="100%" height="${b.embedHeight||500}" frameborder="0" allowfullscreen style="display:block;border:none;"></iframe></div>`;
+    const _eh=b.embedHeight===0?'100%':(b.embedHeight||500);
+    const _eStyle=b.embedHeight===0?'min-height:60vh;height:100%;':'';
+    return `<div class="g-block-embed" style="${mS}${bgS}${b.embedHeight===0?'min-height:60vh;':''}"><iframe src="${b.embedUrl}" width="100%" height="${_eh}" frameborder="0" allowfullscreen style="display:block;border:none;${_eStyle}"></iframe></div>`;
   }
   if(b.type==='form' && b.formId){
     formBlockData[b.formId]={formFields:b.formFields||[],formConfig:b.formConfig||{},blockId:b.id};

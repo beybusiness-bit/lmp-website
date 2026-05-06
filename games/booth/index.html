@@ -80,20 +80,22 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 /* ── 배경 선택 모달 ── */
 #bg-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-end;justify-content:center;}
 #bg-modal.on{display:flex;}
-#bg-modal-inner{background:#fff;border-top:2px solid #000;padding:16px;width:100%;max-width:480px;max-height:70vh;display:flex;flex-direction:column;gap:12px;}
-#bg-modal-inner .modal-title{display:flex;align-items:center;justify-content:space-between;}
-#bg-modal-inner .modal-title span{font-size:14px;font-weight:700;color:#000;}
-#bg-modal-inner .modal-title button{background:none;border:none;font-size:20px;cursor:pointer;color:#000;line-height:1;}
-#bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow-y:auto;}
-.bg-thumb{aspect-ratio:4/3;overflow:hidden;cursor:pointer;border:2px solid transparent;position:relative;}
+#bg-modal-inner{background:#fff;border-top:2px solid #000;padding:0;width:100%;max-width:480px;max-height:72vh;display:flex;flex-direction:column;overflow:hidden;}
+.bg-modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;flex-shrink:0;}
+.bg-modal-header span{font-size:14px;font-weight:700;color:#000;}
+.bg-modal-header button{background:none;border:none;font-size:20px;cursor:pointer;color:#000;line-height:1;padding:2px;}
+#bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.bg-thumb{aspect-ratio:4/3;overflow:hidden;cursor:pointer;border:2px solid transparent;position:relative;background:#f0f0f0;}
 .bg-thumb:hover,.bg-thumb.active{border-color:#000;}
 .bg-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.bg-thumb.broken{opacity:.35;}
 .bg-thumb .bg-label{position:absolute;bottom:0;left:0;right:0;font-size:10px;font-weight:700;color:#fff;text-align:center;padding:3px 4px;background:rgba(0,0,0,.55);}
 
 /* 배경 모달 탭 */
-.bg-tabs{display:flex;border-bottom:2px solid #000;margin-bottom:12px;}
+.bg-tabs{display:flex;border-bottom:2px solid #000;margin:10px 16px 0;flex-shrink:0;}
 .bg-tab{flex:1;padding:8px 0;background:transparent;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.2px;color:rgba(0,0,0,.4);border-bottom:2px solid transparent;margin-bottom:-2px;}
 .bg-tab.active{color:#000;border-bottom-color:#000;}
+.bg-tab-content{flex:1;overflow-y:auto;padding:12px 16px 16px;min-height:0;}
 .bg-tab-panel{display:none;}
 .bg-tab-panel.active{display:block;}
 #bg-upload-zone{border:2px dashed rgba(0,0,0,.3);padding:30px 16px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:rgba(0,0,0,.4);}
@@ -203,7 +205,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 <!-- 배경 선택 모달 -->
 <div id="bg-modal">
   <div id="bg-modal-inner">
-    <div class="modal-title">
+    <div class="bg-modal-header">
       <span>배경 선택</span>
       <button onclick="closeBgModal()">✕</button>
     </div>
@@ -211,16 +213,18 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
       <button class="bg-tab active" onclick="switchBgTab('free',this)">무료 이미지</button>
       <button class="bg-tab" onclick="switchBgTab('upload',this)">직접 업로드</button>
     </div>
-    <!-- 무료 이미지 탭 -->
-    <div id="bg-tab-free" class="bg-tab-panel active">
-      <div id="bg-grid"></div>
-    </div>
-    <!-- 직접 업로드 탭 -->
-    <div id="bg-tab-upload" class="bg-tab-panel">
-      <div id="bg-upload-zone" onclick="document.getElementById('bg-upload-input').click()">
-        탭하여 이미지 선택
+    <div class="bg-tab-content">
+      <!-- 무료 이미지 탭 -->
+      <div id="bg-tab-free" class="bg-tab-panel active">
+        <div id="bg-grid"></div>
       </div>
-      <input type="file" id="bg-upload-input" accept="image/*" onchange="onBgUpload(event)">
+      <!-- 직접 업로드 탭 -->
+      <div id="bg-tab-upload" class="bg-tab-panel">
+        <div id="bg-upload-zone" onclick="document.getElementById('bg-upload-input').click()">
+          탭하여 이미지 선택
+        </div>
+        <input type="file" id="bg-upload-input" accept="image/*" onchange="onBgUpload(event)">
+      </div>
     </div>
   </div>
 </div>
@@ -248,20 +252,36 @@ const FB_CFG = {
 firebase.initializeApp(FB_CFG);
 const db = firebase.firestore();
 
-// ── 무료 배경 이미지 (Unsplash 큐레이션) ──
+// ── 무료 배경 이미지 (picsum.photos — 안정적인 무료 이미지) ──
 const FREE_BG_IMAGES = [
-  {label:'파스텔 그라디언트', url:'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=800&q=80'},
-  {label:'보케 조명',         url:'https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?w=800&q=80'},
-  {label:'흰 벽돌',           url:'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80'},
-  {label:'우드 테이블',       url:'https://images.unsplash.com/photo-1541123437800-1bb1317badc2?w=800&q=80'},
-  {label:'핑크 꽃',           url:'https://images.unsplash.com/photo-1490750967868-88df5691cc62?w=800&q=80'},
-  {label:'하늘',              url:'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&q=80'},
-  {label:'크래프트 종이',     url:'https://images.unsplash.com/photo-1494887205043-c5f291293cf6?w=800&q=80'},
-  {label:'민트 배경',         url:'https://images.unsplash.com/photo-1557682224-5b8590cd9ec5?w=800&q=80'},
-  {label:'노을',              url:'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80'},
-  {label:'라벤더',            url:'https://images.unsplash.com/photo-1499002238440-d264edd596ec?w=800&q=80'},
-  {label:'빈티지 린넨',       url:'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=800&q=80'},
-  {label:'노란 꽃밭',         url:'https://images.unsplash.com/photo-1444930694458-01babf71abce?w=800&q=80'},
+  // 자연·풍경
+  {label:'숲 속 햇살', url:'https://picsum.photos/id/10/800/600'},
+  {label:'파란 하늘',  url:'https://picsum.photos/id/16/800/600'},
+  {label:'산 풍경',    url:'https://picsum.photos/id/29/800/600'},
+  {label:'바다 노을',  url:'https://picsum.photos/id/76/800/600'},
+  {label:'꽃밭',       url:'https://picsum.photos/id/145/800/600'},
+  {label:'호수',       url:'https://picsum.photos/id/177/800/600'},
+  // 인테리어·소품
+  {label:'우드 테이블', url:'https://picsum.photos/id/20/800/600'},
+  {label:'카페 감성',   url:'https://picsum.photos/id/30/800/600'},
+  {label:'흰 벽',       url:'https://picsum.photos/id/39/800/600'},
+  {label:'파스텔 방',   url:'https://picsum.photos/id/42/800/600'},
+  {label:'책상',        url:'https://picsum.photos/id/60/800/600'},
+  {label:'빈티지 소품', url:'https://picsum.photos/id/119/800/600'},
+  // 텍스처·패턴
+  {label:'크래프트 종이', url:'https://picsum.photos/id/25/800/600'},
+  {label:'린넨 패브릭',   url:'https://picsum.photos/id/65/800/600'},
+  {label:'돌 질감',       url:'https://picsum.photos/id/136/800/600'},
+  {label:'나무결',         url:'https://picsum.photos/id/168/800/600'},
+  // 색감·분위기
+  {label:'핑크 보케',   url:'https://picsum.photos/id/96/800/600'},
+  {label:'골든 아워',   url:'https://picsum.photos/id/159/800/600'},
+  {label:'파스텔 하늘', url:'https://picsum.photos/id/180/800/600'},
+  {label:'밤 도시',     url:'https://picsum.photos/id/161/800/600'},
+  {label:'초록 잎',     url:'https://picsum.photos/id/152/800/600'},
+  {label:'꽃 클로즈업', url:'https://picsum.photos/id/106/800/600'},
+  {label:'하얀 꽃',    url:'https://picsum.photos/id/116/800/600'},
+  {label:'봄 벚꽃',    url:'https://picsum.photos/id/167/800/600'},
 ];
 
 // ── 앱 상태 ──
@@ -345,12 +365,17 @@ async function loadBackgrounds() {
 function renderFreeBgGrid() {
   const grid = document.getElementById('bg-grid');
   if(!grid) return;
-  grid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow-y:auto;max-height:45vh;';
-  grid.innerHTML = FREE_BG_IMAGES.map(b=>`
-    <div class="bg-thumb" onclick="selectBgByUrl('${b.url}','${b.label}')">
-      <img src="${b.url}" loading="lazy">
+  grid.innerHTML = FREE_BG_IMAGES.map((b,i)=>`
+    <div class="bg-thumb" data-idx="${i}">
+      <img src="${b.url}" loading="lazy" onerror="this.parentElement.classList.add('broken')">
       <div class="bg-label">${b.label}</div>
     </div>`).join('');
+  grid.querySelectorAll('.bg-thumb').forEach(el => {
+    el.addEventListener('click', () => {
+      const i = +el.dataset.idx;
+      selectBgByUrl(FREE_BG_IMAGES[i].url, FREE_BG_IMAGES[i].label);
+    });
+  });
 }
 
 function switchBgTab(tab, btn) {
