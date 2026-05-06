@@ -421,15 +421,30 @@ URL: https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1w
 - **사이드바 메뉴 뱃지 수정**: `s.status`(undefined) → `calcPct` 기반 상태값, trackProgress:true인 스테이지에만 표시
 - **상태 뱃지·메뉴 뱃지 텍스트**: 9px → 11px
 - **CLAUDE.md 명칭 사전**: 컬러·레이아웃·화면·카드 용어 통일 (📖 UI 명칭 사전 섹션)
-- **games/booth 부스 꾸미기 게임** (Phase 1+2 완료)
+- **games/booth 부스 꾸미기 게임** (이번 세션에서 다수 개선 ✅)
   - HTML Canvas + DOM 아이템 레이어 하이브리드, 이미지 추가·이동·회전·리사이즈·프레임·그리기·내보내기
   - lmp 스타일 적용 (검정 테두리, 직각 버튼, 검정 슬라이더, 투명 배경)
   - postMessage로 프로젝트 연동 (boothType → 배경 자동 선택, keyColors → 색상 피커)
-  - 배경 선택 모달: 무료 이미지 탭(picsum 24장, onerror 처리) + 직접 업로드 탭
-  - games/booth/admin.html: 관리자 배경 이미지 관리
+  - 배경 선택 모달: 무료 이미지 탭(picsum 24장) + 직접 업로드 탭
   - vercel.json: /games/* Cache-Control no-store, X-Frame-Options SAMEORIGIN
+  - **게임 전체 투명 배경**: #toolbar, #bottom-panel background:#fff → transparent ✅
+  - **이미지 추가 원본 비율 유지**: naturalRatio 기반 초기 크기, 프레임 적용 시 정사각형 전환 ✅
+  - **프레임 패널 개편**: "원본" 버튼 추가(기본 활성), □ → frame-square 실제 정사각형 크롭 ✅
+  - **iOS Safari 레이아웃 수정**: viewport-fit=cover, 100svh, safe-area-inset-bottom 패딩 ✅
+  - **하단 패널 고정 높이(min-height:145px)**: 패널 전환 시 canvas-wrap 크기 불변 → 배경 비율 왜곡 방지 ✅
+  - **그리기 bounding box 크롭**: 전체 캔버스 대신 실제 그린 픽셀 영역만 아이템으로 생성 → 선택 핸들 위치 정확 ✅
+  - **캔버스 4:5 비율 고정**: aspect-ratio:4/5, flex:1 제거 (인스타그램 포스트용) ✅
+  - **내보내기 1080×1350 고정**: EXPORT_W/H 상수, 화면→출력 배율 변환 ✅
+  - **무료 배경 고해상도**: thumb(540×675) 로딩, url(1080×1350) 배경 적용 분리 ✅
+  - **배경 업로드 최소 해상도 경고**: 1080×1350 미만 시 confirm 경고 + "권장 최소" 안내 문구 ✅
 - **임베드 블록 높이 auto**: admin에서 "자동" 체크 → embedHeight=0 저장, 플레이어에서 min-height:60vh 적용
 - **배경 갤러리 UI 겹침 수정**: flex 레이아웃 분리, data-idx 이벤트 위임으로 URL 인코딩 문제 해결
+- **admin 게임 탭** (이번 세션 완료 ✅)
+  - /admin 상단에 "프로젝트 | 게임" 탭 추가, switchTab() 활성화
+  - 게임 목록 → 게임별 설정 화면 (현재: 부스 꾸미기)
+  - 부스 꾸미기 설정: 부스 종류 추가/삭제, 배경 이미지 업로드(Firebase Storage → game_configs/booth)
+  - 연결된 프로젝트·블록 목록: cms_projects 전체 순회 → embedUrl에 'games/booth' 포함된 블록 표시
+  - 각 연결 항목에서 "블록 편집"(admin #edit/{id}/stages) + "플레이어"(/{id}/) 링크 제공
 
 **미확인/이슈 🔶**
 - GAS `bulkAppend` 코드: `apps-script/Code.gs`에 추가됐으나 **GAS 편집기에서 재배포 필요**
@@ -441,12 +456,11 @@ URL: https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1w
 - 블록 체크 진행률 시스템 end-to-end 테스트 (실제 사용자 로그인 후)
 - 폼 블록: 파일 업로드 타입 구현 (현재 미구현)
 - 폼 블록: 제출 완료 후 화면(submitMsg) 커스터마이즈
-- games/booth: picsum 이미지 실제 로드 확인 (CORS 이슈 가능성)
 - 블록 편집 미리보기 UX 개선 (현재 텍스트/이미지 기본 지원, embed는 URL 텍스트로 표시)
+- games/booth: 관리자 페이지에서 부스 종류 등록 + 배경 업로드 실제 테스트
 
 **다음 세션 시작점**
-- admin 미리보기 수정 완료 후 첫 세션 → admin 패널 기능 검증 (실제 프로젝트 생성·저장·배포 테스트)
-- 또는 사용자가 원하는 새 기능 추가
+- 사용자가 원하는 새 기능 추가 (admin 게임탭 실사용 후 피드백 반영 등)
 
 ---
 
