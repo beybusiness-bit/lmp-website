@@ -490,17 +490,37 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       </div>
 
       <!-- 계산기 생성기 도구 설정 화면 -->
-      <div id="tool-guide-view" style="display:none;flex-direction:column;">
+      <div id="tool-guide-view" style="display:none;flex-direction:column;overflow:hidden;">
+        <!-- 상단 바 (뒤로가기 목적지가 화면에 따라 달라짐) -->
         <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
-          <span class="back-btn" onclick="closeTool()">←</span>
-          <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">계산기 생성기</span>
+          <span class="back-btn" id="gb-back-btn" onclick="gbBack()">←</span>
+          <span id="gb-header-title" style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">계산기 생성기</span>
+          <div style="flex:1;"></div>
+          <div id="gb-header-actions" style="display:flex;gap:6px;"></div>
         </div>
-        <div style="padding:20px 16px;overflow-y:auto;flex:1;">
-          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">질문·숫자입력·결과카드 블록을 조합해 맞춤 가이드를 만들어요. 빌더에서 계산기를 만들고, 링크를 공유하거나 embed 블록에 붙여넣으세요.</div>
-          <a id="guide-builder-link" href="/tools/guide?mode=builder" target="_blank" class="save-btn" style="display:inline-block;text-decoration:none;margin-bottom:24px;">빌더 열기 →</a>
 
-          <div class="sect-head" style="margin-bottom:8px;">생성된 계산기 목록</div>
-          <div id="guide-forms-list"><div class="empty-msg">불러오는 중…</div></div>
+        <!-- 계산기 목록 화면 -->
+        <div id="gb-list-screen" style="padding:16px;overflow-y:auto;flex:1;">
+          <button class="save-btn" onclick="gbCreateCalc()" style="width:100%;margin-bottom:16px;">+ 새 계산기 만들기</button>
+          <div id="gb-calc-list"><div class="empty-msg">불러오는 중…</div></div>
+        </div>
+
+        <!-- 계산기 편집 화면 -->
+        <div id="gb-edit-screen" style="display:none;overflow-y:auto;flex:1;padding:16px;">
+          <div style="margin-bottom:12px;">
+            <div class="ed-lbl" style="margin-bottom:4px;">계산기 제목</div>
+            <input class="fi" id="gb-calc-title" placeholder="예: 행사 참여 전략 가이드" oninput="gbState.curCalc&&(gbState.curCalc.title=this.value)" style="margin-bottom:0;">
+          </div>
+          <div style="margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:12px;font-weight:800;">블록 목록</span>
+            <div style="display:flex;gap:4px;">
+              <button class="prev-btn" onclick="gbAddBlock('choice')" style="font-size:11px;">+ 질문</button>
+              <button class="prev-btn" onclick="gbAddBlock('numeric')" style="font-size:11px;">+ 숫자</button>
+              <button class="prev-btn" onclick="gbAddBlock('result')" style="font-size:11px;">+ 결과</button>
+            </div>
+          </div>
+          <div id="gb-block-list"></div>
+          <div id="gb-block-empty" class="empty-msg" style="display:none;">블록이 없어요.</div>
         </div>
       </div>
     </div>
@@ -3149,7 +3169,7 @@ function openTool(toolId) {
   document.getElementById('tools-list-view').style.display = 'none';
   document.getElementById('tool-'+toolId+'-view').style.display = 'flex';
   if(toolId === 'booth') { loadBoothBgs(); loadBoothConnections(); }
-  if(toolId === 'guide') { loadGuideForms(); }
+  if(toolId === 'guide') { gbShowList(); }
 }
 
 function closeTool() {
@@ -3160,30 +3180,277 @@ function closeTool() {
   document.getElementById('tools-list-view').style.display = '';
 }
 
-async function loadGuideForms() {
-  const el = document.getElementById('guide-forms-list');
+/* ════════════════════════════════════════════
+   계산기 생성기 빌더 (gb = guideBuilder)
+════════════════════════════════════════════ */
+const gbRef = () => db.collection('game_configs').doc('guide').collection('forms');
+const gbState = { curCalcId: null, curCalc: null, editingBlock: null };
+
+function gbUID() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+/* 뒤로가기: 편집 중이면 목록으로, 목록이면 도구 목록으로 */
+function gbBack() {
+  if(document.getElementById('gb-edit-screen').style.display !== 'none') {
+    gbShowList();
+  } else {
+    closeTool();
+  }
+}
+
+/* ── 목록 화면 ── */
+async function gbShowList() {
+  document.getElementById('gb-list-screen').style.display = '';
+  document.getElementById('gb-edit-screen').style.display = 'none';
+  document.getElementById('gb-header-title').textContent = '계산기 생성기';
+  document.getElementById('gb-header-actions').innerHTML = '';
+  const el = document.getElementById('gb-calc-list');
   el.innerHTML = '<div class="empty-msg">불러오는 중…</div>';
   try {
-    const snap = await db.collection('tool_configs').doc('guide').collection('forms').orderBy('updatedAt','desc').get();
-    if(snap.empty) { el.innerHTML = '<div class="empty-msg">아직 만든 계산기가 없어요. 빌더를 열어 첫 번째 계산기를 만들어보세요.</div>'; return; }
+    const snap = await gbRef().orderBy('updatedAt','desc').get();
+    if(snap.empty) { el.innerHTML = '<div class="empty-msg">아직 만든 계산기가 없어요.<br>위 버튼으로 첫 번째 계산기를 만들어보세요.</div>'; return; }
     el.innerHTML = snap.docs.map(d => {
       const f = d.data();
-      const url = '/tools/guide?id=' + d.id;
-      return `<div class="proj-item" style="display:flex;align-items:center;justify-content:space-between;">
+      return `<div class="proj-item" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="gbOpenCalc('${d.id}')">
         <div>
-          <div class="pi-name">${f.title || '(제목 없음)'}</div>
+          <div class="pi-name">${gbEsc(f.title||'(제목 없음)')}</div>
           <div class="pi-meta">블록 ${(f.blocks||[]).length}개</div>
         </div>
-        <div style="display:flex;gap:8px;">
-          <a href="/tools/guide?mode=builder&id=${d.id}" target="_blank" class="save-btn" style="text-decoration:none;font-size:11px;padding:6px 10px;">편집</a>
-          <a href="${url}" target="_blank" class="save-btn" style="text-decoration:none;font-size:11px;padding:6px 10px;background:#fff;color:#000;">미리보기</a>
+        <div style="display:flex;gap:6px;" onclick="event.stopPropagation()">
+          <a href="/tools/guide?id=${d.id}" target="_blank" class="prev-btn" style="text-decoration:none;font-size:11px;">미리보기 ↗</a>
         </div>
       </div>`;
     }).join('');
-  } catch(e) {
-    el.innerHTML = '<div class="empty-msg">불러오기 실패: ' + e.message + '</div>';
-  }
+  } catch(e) { el.innerHTML = '<div class="empty-msg">불러오기 실패: ' + e.message + '</div>'; }
 }
+
+async function gbCreateCalc() {
+  const id = gbUID();
+  try {
+    await gbRef().doc(id).set({ title:'', blocks:[], createdAt:firebase.firestore.FieldValue.serverTimestamp(), updatedAt:firebase.firestore.FieldValue.serverTimestamp() });
+    gbState.curCalcId = id;
+    gbState.curCalc = { title:'', blocks:[] };
+    gbState.editingBlock = null;
+    gbShowEdit();
+  } catch(e) { alert('생성 실패: ' + e.message); }
+}
+
+async function gbOpenCalc(id) {
+  try {
+    const snap = await gbRef().doc(id).get();
+    if(!snap.exists) { alert('계산기를 찾을 수 없어요.'); return; }
+    gbState.curCalcId = id;
+    gbState.curCalc = snap.data();
+    if(!gbState.curCalc.blocks) gbState.curCalc.blocks = [];
+    gbState.editingBlock = null;
+    gbShowEdit();
+  } catch(e) { alert('불러오기 실패: ' + e.message); }
+}
+
+/* ── 편집 화면 ── */
+function gbShowEdit() {
+  document.getElementById('gb-list-screen').style.display = 'none';
+  document.getElementById('gb-edit-screen').style.display = '';
+  document.getElementById('gb-header-title').textContent = '계산기 편집';
+  document.getElementById('gb-header-actions').innerHTML = `
+    <button class="save-btn" onclick="gbSave()" style="font-size:11px;padding:6px 12px;">저장</button>
+    <button class="prev-btn" onclick="gbDelete()" style="font-size:11px;color:#c00;border-color:#c00;">삭제</button>`;
+  document.getElementById('gb-calc-title').value = gbState.curCalc.title || '';
+  gbRenderBlocks();
+}
+
+async function gbSave() {
+  try {
+    await gbRef().doc(gbState.curCalcId).set({ ...gbState.curCalc, updatedAt:firebase.firestore.FieldValue.serverTimestamp() });
+    alert('저장됐어요.');
+  } catch(e) { alert('저장 실패: ' + e.message); }
+}
+
+async function gbDelete() {
+  if(!confirm('이 계산기를 삭제할까요?')) return;
+  await gbRef().doc(gbState.curCalcId).delete();
+  gbShowList();
+}
+
+/* ── 블록 관리 ── */
+function gbAddBlock(type) {
+  const b = { id: gbUID(), type };
+  if(type==='choice')  Object.assign(b,{question:'',multiple:false,options:[]});
+  if(type==='numeric') Object.assign(b,{question:'',variable:'',unit:'',min:null,max:null});
+  if(type==='result')  Object.assign(b,{title:'',content:'',condition:{operator:'AND',tags:[]}});
+  gbState.curCalc.blocks.push(b);
+  gbState.editingBlock = b.id;
+  gbRenderBlocks();
+}
+
+function gbRemoveBlock(id) {
+  if(!confirm('이 블록을 삭제할까요?')) return;
+  gbState.curCalc.blocks = gbState.curCalc.blocks.filter(b=>b.id!==id);
+  if(gbState.editingBlock===id) gbState.editingBlock=null;
+  gbRenderBlocks();
+}
+
+function gbMoveBlock(id, dir) {
+  const arr = gbState.curCalc.blocks;
+  const i = arr.findIndex(b=>b.id===id);
+  if(dir===-1&&i===0||dir===1&&i===arr.length-1) return;
+  [arr[i],arr[i+dir]]=[arr[i+dir],arr[i]];
+  gbRenderBlocks();
+}
+
+function gbToggleEdit(id) {
+  gbState.editingBlock = gbState.editingBlock===id ? null : id;
+  gbRenderBlocks();
+}
+
+function gbSetField(id, field, value) {
+  const b = gbState.curCalc.blocks.find(x=>x.id===id);
+  if(b) b[field]=value;
+}
+
+/* ── 블록 렌더링 ── */
+function gbRenderBlocks() {
+  const blocks = gbState.curCalc.blocks;
+  const listEl = document.getElementById('gb-block-list');
+  const emptyEl = document.getElementById('gb-block-empty');
+  emptyEl.style.display = blocks.length ? 'none' : '';
+  listEl.innerHTML = blocks.map((b,i)=>gbBlockItemHTML(b,i,blocks.length)).join('');
+}
+
+function gbBlockItemHTML(b, i, total) {
+  const badge = {choice:'질문',numeric:'숫자',result:'결과'}[b.type]||b.type;
+  const badgeStyle = b.type==='numeric' ? 'background:#fff;color:#000;border:1.5px solid #000;' : 'background:#000;color:#fff;';
+  const preview = b.type==='result' ? (b.title||'(제목 없음)') : (b.question||'(질문 없음)');
+  const open = gbState.editingBlock===b.id;
+  return `<div style="border:1.5px solid #000;margin-bottom:8px;">
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;background:#fff;" onclick="gbToggleEdit('${b.id}')">
+      <span style="font-size:10px;font-weight:800;letter-spacing:.05em;padding:3px 7px;${badgeStyle}">${badge}</span>
+      <span style="font-size:13px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:rgba(0,0,0,.7);">${gbEsc(preview)}</span>
+      <span onclick="event.stopPropagation()" style="display:flex;gap:2px;">
+        ${i>0?`<button class="prev-btn" style="padding:4px 7px;font-size:12px;" onclick="gbMoveBlock('${b.id}',-1)">↑</button>`:''}
+        ${i<total-1?`<button class="prev-btn" style="padding:4px 7px;font-size:12px;" onclick="gbMoveBlock('${b.id}',1)">↓</button>`:''}
+        <button class="prev-btn" style="padding:4px 7px;font-size:12px;color:#c00;border-color:#c00;" onclick="gbRemoveBlock('${b.id}')">×</button>
+      </span>
+    </div>
+    ${open ? gbEditorHTML(b) : ''}
+  </div>`;
+}
+
+function gbEditorHTML(b) {
+  if(b.type==='choice')  return gbChoiceEditor(b);
+  if(b.type==='numeric') return gbNumericEditor(b);
+  if(b.type==='result')  return gbResultEditor(b);
+  return '';
+}
+
+function gbChoiceEditor(b) {
+  const opts = (b.options||[]).map((o,i)=>`
+    <div style="margin-bottom:6px;">
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
+        <input class="fi" value="${gbEsc(o.label||'')}" placeholder="선택지 텍스트" oninput="gbUpdateOpt('${b.id}',${i},'label',this.value)" style="flex:1;margin:0;">
+        <button class="prev-btn" style="padding:4px 8px;color:#c00;border-color:#c00;" onclick="gbRemoveOpt('${b.id}',${i})">×</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;padding-left:4px;">
+        ${(o.tags||[]).map((t,ti)=>`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border:1.5px solid #000;font-size:11px;font-weight:700;">${gbEsc(t)}<span style="cursor:pointer;font-size:13px;" onclick="gbRemoveOptTag('${b.id}',${i},${ti})">×</span></span>`).join('')}
+        <button class="prev-btn" style="font-size:10px;padding:2px 7px;" onclick="gbAddOptTag('${b.id}',${i})">+ 태그</button>
+      </div>
+    </div>`).join('');
+  return `<div style="padding:12px;border-top:1.5px solid #000;background:#fafafa;">
+    <div class="ed-lbl" style="margin-bottom:4px;">질문</div>
+    <input class="fi" value="${gbEsc(b.question||'')}" placeholder="질문을 입력하세요" oninput="gbSetField('${b.id}','question',this.value)" style="margin-bottom:10px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <span style="font-size:13px;font-weight:600;">복수 선택 허용</span>
+      <label style="position:relative;width:42px;height:24px;"><input type="checkbox" ${b.multiple?'checked':''} onchange="gbSetField('${b.id}','multiple',this.checked)" style="opacity:0;width:0;height:0;"><span style="position:absolute;inset:0;background:${b.multiple?'#000':'#ddd'};cursor:pointer;border:1.5px solid #000;transition:.2s;"><span style="position:absolute;width:16px;height:16px;left:${b.multiple?'19':'3'}px;bottom:2px;background:#fff;transition:.2s;"></span></span></label>
+    </div>
+    <div class="ed-lbl" style="margin-bottom:6px;">선택지</div>
+    <div id="gb-opts-${b.id}">${opts}</div>
+    <button class="prev-btn" onclick="gbAddOpt('${b.id}')" style="width:100%;margin-top:4px;">+ 선택지 추가</button>
+  </div>`;
+}
+
+function gbNumericEditor(b) {
+  return `<div style="padding:12px;border-top:1.5px solid #000;background:#fafafa;">
+    <div class="ed-lbl" style="margin-bottom:4px;">질문</div>
+    <input class="fi" value="${gbEsc(b.question||'')}" placeholder="예: 목표 매출은 얼마인가요?" oninput="gbSetField('${b.id}','question',this.value)" style="margin-bottom:10px;">
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <div style="flex:1;">
+        <div class="ed-lbl" style="margin-bottom:4px;">변수명 (영문)</div>
+        <input class="fi" value="${gbEsc(b.variable||'')}" placeholder="예: target_revenue" oninput="gbSetField('${b.id}','variable',this.value)" style="margin:0;">
+      </div>
+      <div style="flex:1;">
+        <div class="ed-lbl" style="margin-bottom:4px;">단위</div>
+        <input class="fi" value="${gbEsc(b.unit||'')}" placeholder="만원 / 개 / 명" oninput="gbSetField('${b.id}','unit',this.value)" style="margin:0;">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <div style="flex:1;"><div class="ed-lbl" style="margin-bottom:4px;">최솟값 (선택)</div><input class="fi" type="number" value="${b.min??''}" placeholder="0" oninput="gbSetField('${b.id}','min',this.value===''?null:Number(this.value))" style="margin:0;"></div>
+      <div style="flex:1;"><div class="ed-lbl" style="margin-bottom:4px;">최댓값 (선택)</div><input class="fi" type="number" value="${b.max??''}" placeholder="" oninput="gbSetField('${b.id}','max',this.value===''?null:Number(this.value))" style="margin:0;"></div>
+    </div>
+  </div>`;
+}
+
+function gbResultEditor(b) {
+  const cond = b.condition||{operator:'AND',tags:[]};
+  const tagPills = (cond.tags||[]).map((t,i)=>`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border:1.5px solid #000;font-size:11px;font-weight:700;">${gbEsc(t)}<span style="cursor:pointer;font-size:13px;" onclick="gbRemoveCondTag('${b.id}',${i})">×</span></span>`).join('');
+  return `<div style="padding:12px;border-top:1.5px solid #000;background:#fafafa;">
+    <div class="ed-lbl" style="margin-bottom:4px;">카드 제목</div>
+    <input class="fi" value="${gbEsc(b.title||'')}" placeholder="예: 매출 목표 달성 플랜" oninput="gbSetField('${b.id}','title',this.value)" style="margin-bottom:10px;">
+    <div class="ed-lbl" style="margin-bottom:4px;">본문 <span style="font-weight:400;opacity:.6;">(** 볼드 **, {{변수명}} 계산식)</span></div>
+    <textarea class="fi" placeholder="예: 목표 {{target_revenue}}만원 달성을 위해&#10;→ {{ceil(target_revenue / product_price)}}개 판매 필요" oninput="gbSetField('${b.id}','content',this.value)" style="margin-bottom:10px;min-height:80px;">${gbEsc(b.content||'')}</textarea>
+    <div class="ed-lbl" style="margin-bottom:6px;">노출 조건 <span style="font-weight:400;opacity:.6;">(해당 태그를 가진 사람에게만 표시, 없으면 항상 표시)</span></div>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+      <select class="fi" onchange="gbSetCondOp('${b.id}',this.value)" style="width:auto;flex:none;padding:6px 10px;margin:0;">
+        <option value="AND" ${cond.operator==='AND'?'selected':''}>모두 해당 (AND)</option>
+        <option value="OR" ${cond.operator==='OR'?'selected':''}>하나라도 해당 (OR)</option>
+      </select>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;">
+      ${tagPills}
+      <button class="prev-btn" style="font-size:10px;padding:2px 7px;" onclick="gbAddCondTag('${b.id}')">+ 태그</button>
+    </div>
+  </div>`;
+}
+
+/* ── 선택지 조작 ── */
+function gbAddOpt(blockId) {
+  const b=gbState.curCalc.blocks.find(x=>x.id===blockId);
+  if(b){if(!b.options)b.options=[];b.options.push({id:gbUID(),label:'',tags:[]});gbRenderBlocks();}
+}
+function gbRemoveOpt(blockId,idx) {
+  const b=gbState.curCalc.blocks.find(x=>x.id===blockId);
+  if(b){b.options.splice(idx,1);gbRenderBlocks();}
+}
+function gbUpdateOpt(blockId,idx,field,value) {
+  const b=gbState.curCalc.blocks.find(x=>x.id===blockId);
+  if(b&&b.options[idx])b.options[idx][field]=value;
+}
+function gbAddOptTag(blockId,optIdx) {
+  const tag=prompt('태그 이름 입력 (예: 매출집중, 초보)');
+  if(!tag||!tag.trim())return;
+  const b=gbState.curCalc.blocks.find(x=>x.id===blockId);
+  if(b&&b.options[optIdx]){if(!b.options[optIdx].tags)b.options[optIdx].tags=[];b.options[optIdx].tags.push(tag.trim());gbRenderBlocks();}
+}
+function gbRemoveOptTag(blockId,optIdx,tagIdx) {
+  const b=gbState.curCalc.blocks.find(x=>x.id===blockId);
+  if(b&&b.options[optIdx])b.options[optIdx].tags.splice(tagIdx,1);gbRenderBlocks();
+}
+
+/* ── 결과 조건 조작 ── */
+function gbSetCondOp(blockId,val) {
+  const b=gbState.curCalc.blocks.find(x=>x.id===blockId);
+  if(b){if(!b.condition)b.condition={operator:'AND',tags:[]};b.condition.operator=val;}
+}
+function gbAddCondTag(blockId) {
+  const tag=prompt('노출 조건 태그 입력');
+  if(!tag||!tag.trim())return;
+  const b=gbState.curCalc.blocks.find(x=>x.id===blockId);
+  if(b){if(!b.condition)b.condition={operator:'AND',tags:[]};if(!b.condition.tags)b.condition.tags=[];b.condition.tags.push(tag.trim());gbRenderBlocks();}
+}
+function gbRemoveCondTag(blockId,idx) {
+  const b=gbState.curCalc.blocks.find(x=>x.id===blockId);
+  if(b&&b.condition)b.condition.tags.splice(idx,1);gbRenderBlocks();
+}
+
+function gbEsc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 /* ── Booth Backgrounds ── */
 async function loadBoothBgs() {

@@ -127,7 +127,7 @@ const FIREBASE_CONFIG = {
 };
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
-const FORMS_REF = () => db.collection('tool_configs').doc('guide').collection('forms');
+const FORMS_REF = () => db.collection('game_configs').doc('guide').collection('forms');
 
 /* ────────────────────────────────────────────
    유틸리티
