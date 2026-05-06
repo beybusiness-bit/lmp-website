@@ -166,11 +166,15 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .form-done-screen{padding:32px 20px;text-align:center;}
 .ff-form-title{font-size:20px;font-weight:900;letter-spacing:-.5px;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #000;}
 /* block check */
+.blk-check-outer{position:relative;}
 .blk-check-wrap{padding:10px 20px 4px;display:flex;justify-content:flex-end;}
-.blk-check-btn{padding:8px 18px;background:transparent;border:2px solid rgba(0,0,0,.3);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.45);-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s,border-color .15s;letter-spacing:-.2px;}
-.blk-check-btn.on{background:#000;color:#fff;border-color:#000;}
-.blk-check-box{width:26px;height:26px;border:2.5px solid rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;-webkit-tap-highlight-color:transparent;transition:border-color .15s;}
-.blk-check-box.on{border-color:#000;color:#000;}
+.blk-check-wrap.align-left{justify-content:flex-start;}
+.blk-check-wrap.align-center{justify-content:center;}
+.blk-check-wrap.blk-check-mid{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);z-index:3;padding:0 20px;pointer-events:auto;}
+.blk-check-btn{padding:8px 18px;background:transparent;border:2px solid var(--chk-color,#000);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--chk-color,#000);-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s,border-color .15s;letter-spacing:-.2px;}
+.blk-check-btn.on{background:var(--chk-color,#000);color:var(--prep-bg);border-color:var(--chk-color,#000);}
+.blk-check-box{width:26px;height:26px;border:2.5px solid var(--chk-color,#000);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;-webkit-tap-highlight-color:transparent;transition:border-color .15s,background .15s,color .15s;}
+.blk-check-box.on{background:var(--chk-color,#000);border-color:var(--chk-color,#000);color:var(--prep-bg);}
 .stage-pct-txt{font-size:10px;font-weight:800;color:var(--prep-bg,#fff);padding-right:4px;white-space:nowrap;}
 .stage-pbar-fill.merged .stage-pct-txt{color:#000;}
 </style>
@@ -806,15 +810,18 @@ function blockHtml(b){
   }
   return '';
 }
+function attachCheck(h,b){
+  if(!b.checkable) return h;
+  const pos=b.checkPosition||'bottom-right';
+  const vPos=pos.split('-')[0];
+  const checked=(AUTH_ENABLED&&USER_DOC_ID)?(userProgress[curStageId]||new Set()).has(b.id):false;
+  const checkEl=renderCheckEl(b,checked,pos);
+  if(vPos==='middle') return `<div class="blk-check-outer">${h}${checkEl}</div>`;
+  if(vPos==='top') return checkEl+h;
+  return h+checkEl;
+}
 function renderGuideScroll(blocks){
-  document.getElementById('guide-scroll-blocks').innerHTML=blocks.map(b=>{
-    let h=blockHtml(b);
-    if(b.checkable&&AUTH_ENABLED&&USER_DOC_ID){
-      const checked=(userProgress[curStageId]||new Set()).has(b.id);
-      h+=renderCheckEl(b,checked);
-    }
-    return h;
-  }).join('');
+  document.getElementById('guide-scroll-blocks').innerHTML=blocks.map(b=>attachCheck(blockHtml(b),b)).join('');
   document.getElementById('guide-scroll-body').style.display='block';
 }
 function renderGuideSlide(blocks){
@@ -825,11 +832,7 @@ function renderGuideSlide(blocks){
     const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
     const mS=(b.marginV||b.marginH)?`padding:${b.marginV||0}px ${b.marginH||0}px;`:'';
     const bStripped={...b,bgColor:'',marginV:0,marginH:0};
-    let inner=blockHtml(bStripped);
-    if(b.checkable&&AUTH_ENABLED&&USER_DOC_ID){
-      const checked=(userProgress[curStageId]||new Set()).has(b.id);
-      inner+=renderCheckEl(b,checked);
-    }
+    const inner=attachCheck(blockHtml(bStripped),b);
     return `<div class="guide-slide-item" style="width:${100/N}%;${bgS}${mS}">${inner}</div>`;
   }).join('');
   track.style.width=(N*100)+'%';
@@ -853,15 +856,23 @@ function updateDots(){
 function goSlide(i){ gSlideIdx=Math.max(0,Math.min(i,gSlideTotal-1)); document.getElementById('guide-slide-track').style.transform='translateX('+(-gSlideIdx*(100/gSlideTotal))+'%)'; updateDots(); }
 
 /* ── Checkable block render helper ── */
-function renderCheckEl(b,checked){
+function renderCheckEl(b,checked,pos){
   const before=b.checkBeforeText||'';
   const after=b.checkAfterText||'';
   const useBox=!before&&!after;
+  const p=pos||b.checkPosition||'bottom-right';
+  const parts=p.split('-');
+  const vPos=parts[0];
+  const hPos=parts.slice(1).join('-');
+  const alignCls=hPos==='left'?' align-left':hPos==='center'?' align-center':'';
+  const midCls=vPos==='middle'?' blk-check-mid':'';
+  const wrapCls=`blk-check-wrap${alignCls}${midCls}`;
+  const colorStyle=b.checkColor?` style="--chk-color:${b.checkColor}"`:' ';
   if(useBox){
-    return `<div class="blk-check-wrap"><div id="chk-${b.id}" class="blk-check-box${checked?' on':''}" onclick="toggleBlockCheck('${b.id}')" data-before="" data-after="">${checked?'☑':'☐'}</div></div>`;
+    return `<div class="${wrapCls}"${colorStyle}><div id="chk-${b.id}" class="blk-check-box${checked?' on':''}" onclick="toggleBlockCheck('${b.id}')" data-before="" data-after="">${checked?'✓':''}</div></div>`;
   }
   const txt=checked?(after||'✓ 확인 완료'):(before||'확인하기');
-  return `<div class="blk-check-wrap"><button id="chk-${b.id}" class="blk-check-btn${checked?' on':''}" onclick="toggleBlockCheck('${b.id}')" data-before="${before.replace(/"/g,'&quot;')}" data-after="${after.replace(/"/g,'&quot;')}">${txt}</button></div>`;
+  return `<div class="${wrapCls}"${colorStyle}><button id="chk-${b.id}" class="blk-check-btn${checked?' on':''}" onclick="toggleBlockCheck('${b.id}')" data-before="${before.replace(/"/g,'&quot;')}" data-after="${after.replace(/"/g,'&quot;')}">${txt}</button></div>`;
 }
 function updateCheckEl(id,checked){
   const el=document.getElementById('chk-'+id);
@@ -869,7 +880,7 @@ function updateCheckEl(id,checked){
   const before=el.dataset.before||'';
   const after=el.dataset.after||'';
   const useBox=!before&&!after;
-  if(useBox){el.classList.toggle('on',checked);el.textContent=checked?'☑':'☐';}
+  if(useBox){el.classList.toggle('on',checked);el.textContent=checked?'✓':'';}
   else{el.classList.toggle('on',checked);el.textContent=checked?(after||'✓ 확인 완료'):(before||'확인하기');}
 }
 
@@ -907,7 +918,6 @@ function refreshStageProgress(){
   if(html) card.insertAdjacentHTML('beforeend',html);
 }
 async function toggleBlockCheck(blockId){
-  if(!AUTH_ENABLED||!USER_DOC_ID) return;
   const stageId=curStageId;
   if(!userProgress[stageId]) userProgress[stageId]=new Set();
   const prog=userProgress[stageId];
@@ -915,6 +925,7 @@ async function toggleBlockCheck(blockId){
   if(wasChecked) prog.delete(blockId); else prog.add(blockId);
   updateCheckEl(blockId,!wasChecked);
   refreshStageProgress();
+  if(!AUTH_ENABLED||!USER_DOC_ID) return;
   const u=JSON.parse(sessionStorage.getItem('userSession')||'{}');
   if(!u.stageProgress) u.stageProgress={};
   u.stageProgress[stageId]=[...prog];
@@ -1053,6 +1064,8 @@ async function restoreFromHash(saved){
   if(parts[0]==='stage'&&parts[1]){
     const stage=STAGES.find(s=>s.id===parts[1]);
     if(stage){
+      curStageIdx=STAGES.findIndex(s=>s.id===stage.id);
+      curStageId=stage.id;
       if(LAYOUT_TYPE==='separate'){
         prepBg=sessionStorage.getItem('prepBgColor')||KEY_COLORS[0];
         setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));

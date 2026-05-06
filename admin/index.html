@@ -151,6 +151,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .switch::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:2px;left:2px;transition:left .2s;}
 .switch.on::after{left:20px;}
 .switch-lbl{font-size:13px;font-weight:600;}
+.chk-pos-btn{width:100%;aspect-ratio:1;background:transparent;border:1.5px solid rgba(0,0,0,.2);font-size:14px;cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;}
+.chk-pos-btn.on{background:#000;color:#fff;border-color:#000;}
 </style>
 </head>
 <body>
@@ -566,17 +568,41 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <!-- 공통: 체크 기능 -->
     <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
       <div class="switch-row">
-        <div class="switch" id="blk-checkable-sw" onclick="this.classList.toggle('on')"></div>
+        <div class="switch" id="blk-checkable-sw" onclick="this.classList.toggle('on');document.getElementById('blk-check-opts').style.display=this.classList.contains('on')?'block':'none'"></div>
         <span class="switch-lbl">체크 기능 활성화 <span style="font-weight:400;opacity:.6;">(사용자가 이 블록을 수행 완료로 체크 가능)</span></span>
       </div>
-      <div style="margin-top:10px;display:flex;gap:8px;">
-        <div style="flex:1;">
-          <div class="ed-lbl" style="font-size:10px;">확인 전 텍스트 <span style="font-weight:400;opacity:.5;">(비우면 체크박스)</span></div>
-          <input class="fi-sm" id="blk-check-before" placeholder="확인하기" style="margin-bottom:0;">
+      <div id="blk-check-opts" style="display:none;">
+        <div style="margin-top:12px;">
+          <div class="ed-lbl" style="font-size:10px;margin-bottom:6px;">체크 위치</div>
+          <div id="blk-check-pos-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;max-width:180px;">
+            <button class="chk-pos-btn" data-pos="top-left"      onclick="setCheckPos('top-left')"      title="상단 좌">↖</button>
+            <button class="chk-pos-btn" data-pos="top-center"    onclick="setCheckPos('top-center')"    title="상단 중앙">↑</button>
+            <button class="chk-pos-btn" data-pos="top-right"     onclick="setCheckPos('top-right')"     title="상단 우">↗</button>
+            <button class="chk-pos-btn" data-pos="middle-left"   onclick="setCheckPos('middle-left')"   title="중앙 좌">←</button>
+            <button class="chk-pos-btn" data-pos="middle-center" onclick="setCheckPos('middle-center')" title="중앙">○</button>
+            <button class="chk-pos-btn" data-pos="middle-right"  onclick="setCheckPos('middle-right')"  title="중앙 우">→</button>
+            <button class="chk-pos-btn" data-pos="bottom-left"   onclick="setCheckPos('bottom-left')"   title="하단 좌">↙</button>
+            <button class="chk-pos-btn" data-pos="bottom-center" onclick="setCheckPos('bottom-center')" title="하단 중앙">↓</button>
+            <button class="chk-pos-btn on" data-pos="bottom-right"  onclick="setCheckPos('bottom-right')"  title="하단 우">↘</button>
+          </div>
         </div>
-        <div style="flex:1;">
-          <div class="ed-lbl" style="font-size:10px;">확인 후 텍스트 <span style="font-weight:400;opacity:.5;">(비우면 체크박스)</span></div>
-          <input class="fi-sm" id="blk-check-after" placeholder="✓ 확인 완료" style="margin-bottom:0;">
+        <div style="margin-top:10px;display:flex;gap:8px;">
+          <div style="flex:1;">
+            <div class="ed-lbl" style="font-size:10px;">확인 전 텍스트 <span style="font-weight:400;opacity:.5;">(비우면 체크박스)</span></div>
+            <input class="fi-sm" id="blk-check-before" placeholder="확인하기" style="margin-bottom:0;">
+          </div>
+          <div style="flex:1;">
+            <div class="ed-lbl" style="font-size:10px;">확인 후 텍스트 <span style="font-weight:400;opacity:.5;">(비우면 체크박스)</span></div>
+            <input class="fi-sm" id="blk-check-after" placeholder="✓ 확인 완료" style="margin-bottom:0;">
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <div class="ed-lbl" style="font-size:10px;">체크 색상 <span style="font-weight:400;opacity:.5;">(테두리·글씨·채움)</span></div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <input type="color" id="blk-check-color" value="#000000" oninput="onBlkCheckPick(this.value)" style="width:32px;height:32px;border:2px solid #000;padding:0;cursor:pointer;flex-shrink:0;">
+            <input class="fi-sm" id="blk-check-hex" placeholder="#000000" style="width:84px;margin-bottom:0;" oninput="onBlkCheckHex(this.value)">
+            <div id="blk-kc-check" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -2310,6 +2336,12 @@ function exportRespCsv() {
 /* ── Block editor ── */
 let curBlkIdx=null,curBlkType='text',curMixedLayout='overlay',savedRange=null;
 let curBlkBgColor='';
+let curBlkCheckColor='';
+let curCheckPos='bottom-right';
+function setCheckPos(pos){
+  curCheckPos=pos;
+  document.querySelectorAll('.chk-pos-btn').forEach(b=>{b.classList.toggle('on',b.dataset.pos===pos);});
+}
 function saveRange(el){const sel=window.getSelection();if(sel.rangeCount)savedRange={el,range:sel.getRangeAt(0).cloneRange()};}
 function restoreRange(el){if(savedRange&&savedRange.el===el){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}}
 function renderBlkKeyColors(){
@@ -2321,7 +2353,20 @@ function renderBlkKeyColors(){
       return `<div onclick="onBlkBgPick('${c}')" title="${c}" style="width:22px;height:22px;background:${c};border:2px solid ${border};cursor:pointer;flex-shrink:0;border-radius:2px;"></div>`;
     }).join('');
   }
+  const chkEl = document.getElementById('blk-kc-check');
+  if(chkEl){
+    chkEl.innerHTML = kc.map(c=>{
+      const border=c.toLowerCase()==='#ffffff'?'#ccc':'#000';
+      return `<div onclick="onBlkCheckPick('${c}')" title="${c}" style="width:22px;height:22px;background:${c};border:2px solid ${border};cursor:pointer;flex-shrink:0;border-radius:2px;"></div>`;
+    }).join('');
+  }
 }
+function onBlkCheckPick(v){
+  curBlkCheckColor=v;
+  const h=document.getElementById('blk-check-hex'); if(h) h.value=v.toUpperCase();
+  const p=document.getElementById('blk-check-color'); if(p) p.value=v;
+}
+function onBlkCheckHex(v){ if(/^#[0-9a-fA-F]{6}$/.test(v)) onBlkCheckPick(v); }
 function isLight(hex){try{const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return(r*299+g*587+b*114)/1000>128;}catch(e){return true;}}
 function onBlkBgPick(v){
   curBlkBgColor=v;
@@ -2364,8 +2409,13 @@ function openBlockModal(idx){
   curBlkBgColor=b.bgColor||'';
   const bgP=document.getElementById('blk-bg-color'); if(bgP) bgP.value=curBlkBgColor||'#ffffff';
   const chkSw=document.getElementById('blk-checkable-sw'); if(chkSw) chkSw.classList.toggle('on',!!b.checkable);
+  const chkOpts=document.getElementById('blk-check-opts'); if(chkOpts) chkOpts.style.display=b.checkable?'block':'none';
   const cbEl=document.getElementById('blk-check-before'); if(cbEl) cbEl.value=b.checkBeforeText||'';
   const caEl=document.getElementById('blk-check-after');  if(caEl) caEl.value=b.checkAfterText||'';
+  curBlkCheckColor=b.checkColor||'';
+  const chkP=document.getElementById('blk-check-color'); if(chkP) chkP.value=curBlkCheckColor||'#000000';
+  const chkH=document.getElementById('blk-check-hex');   if(chkH) chkH.value=(curBlkCheckColor||'').toUpperCase();
+  setCheckPos(b.checkPosition||'bottom-right');
   const bgH=document.getElementById('blk-bg-hex');  if(bgH) bgH.value=(curBlkBgColor||'').toUpperCase();
   const mv=document.getElementById('blk-margin-v'); if(mv) mv.value=b.marginV??'';
   const mh=document.getElementById('blk-margin-h'); if(mh) mh.value=b.marginH??'';
@@ -2410,6 +2460,8 @@ function saveBlock(){
   b.checkable=!!document.getElementById('blk-checkable-sw')?.classList.contains('on');
   b.checkBeforeText=document.getElementById('blk-check-before')?.value.trim()||'';
   b.checkAfterText=document.getElementById('blk-check-after')?.value.trim()||'';
+  if(curBlkCheckColor) b.checkColor=curBlkCheckColor; else delete b.checkColor;
+  if(b.checkable) b.checkPosition=curCheckPos; else delete b.checkPosition;
   if(curBlkIdx!==null)curBlocks[curBlkIdx]={...curBlocks[curBlkIdx],...b};
   else curBlocks.push(b);
   renderBlockList();closeBlockModal();scheduleGuidePreviewUpdate();
