@@ -85,7 +85,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .bg-modal-header span{font-size:14px;font-weight:700;color:#000;}
 .bg-modal-header button{background:none;border:none;font-size:20px;cursor:pointer;color:#000;line-height:1;padding:2px;}
 #bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-.bg-thumb{aspect-ratio:4/3;overflow:hidden;cursor:pointer;border:2px solid transparent;position:relative;background:#f0f0f0;}
+.bg-thumb{aspect-ratio:4/5;overflow:hidden;cursor:pointer;border:2px solid transparent;position:relative;background:#f0f0f0;}
 .bg-thumb:hover,.bg-thumb.active{border-color:#000;}
 .bg-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 .bg-thumb.broken{opacity:.35;}
@@ -223,6 +223,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
       <div id="bg-tab-upload" class="bg-tab-panel">
         <div id="bg-upload-zone" onclick="document.getElementById('bg-upload-input').click()">
           탭하여 이미지 선택
+          <div style="margin-top:8px;font-size:11px;font-weight:400;color:rgba(0,0,0,.4);">권장 최소 크기: 1080×1350px</div>
         </div>
         <input type="file" id="bg-upload-input" accept="image/*" onchange="onBgUpload(event)">
       </div>
@@ -254,36 +255,41 @@ firebase.initializeApp(FB_CFG);
 const db = firebase.firestore();
 
 // ── 무료 배경 이미지 (picsum.photos — 안정적인 무료 이미지) ──
+// thumb: 그리드 미리보기용 (540×675), url: 실제 배경용 1080×1350 (인스타 4:5)
 const FREE_BG_IMAGES = [
   // 자연·풍경
-  {label:'숲 속 햇살', url:'https://picsum.photos/id/10/800/600'},
-  {label:'파란 하늘',  url:'https://picsum.photos/id/16/800/600'},
-  {label:'산 풍경',    url:'https://picsum.photos/id/29/800/600'},
-  {label:'바다 노을',  url:'https://picsum.photos/id/76/800/600'},
-  {label:'꽃밭',       url:'https://picsum.photos/id/145/800/600'},
-  {label:'호수',       url:'https://picsum.photos/id/177/800/600'},
+  {label:'숲 속 햇살', thumb:'https://picsum.photos/id/10/540/675',  url:'https://picsum.photos/id/10/1080/1350'},
+  {label:'파란 하늘',  thumb:'https://picsum.photos/id/16/540/675',  url:'https://picsum.photos/id/16/1080/1350'},
+  {label:'산 풍경',    thumb:'https://picsum.photos/id/29/540/675',  url:'https://picsum.photos/id/29/1080/1350'},
+  {label:'바다 노을',  thumb:'https://picsum.photos/id/76/540/675',  url:'https://picsum.photos/id/76/1080/1350'},
+  {label:'꽃밭',       thumb:'https://picsum.photos/id/145/540/675', url:'https://picsum.photos/id/145/1080/1350'},
+  {label:'호수',       thumb:'https://picsum.photos/id/177/540/675', url:'https://picsum.photos/id/177/1080/1350'},
   // 인테리어·소품
-  {label:'우드 테이블', url:'https://picsum.photos/id/20/800/600'},
-  {label:'카페 감성',   url:'https://picsum.photos/id/30/800/600'},
-  {label:'흰 벽',       url:'https://picsum.photos/id/39/800/600'},
-  {label:'파스텔 방',   url:'https://picsum.photos/id/42/800/600'},
-  {label:'책상',        url:'https://picsum.photos/id/60/800/600'},
-  {label:'빈티지 소품', url:'https://picsum.photos/id/119/800/600'},
+  {label:'우드 테이블', thumb:'https://picsum.photos/id/20/540/675',  url:'https://picsum.photos/id/20/1080/1350'},
+  {label:'카페 감성',   thumb:'https://picsum.photos/id/30/540/675',  url:'https://picsum.photos/id/30/1080/1350'},
+  {label:'흰 벽',       thumb:'https://picsum.photos/id/39/540/675',  url:'https://picsum.photos/id/39/1080/1350'},
+  {label:'파스텔 방',   thumb:'https://picsum.photos/id/42/540/675',  url:'https://picsum.photos/id/42/1080/1350'},
+  {label:'책상',        thumb:'https://picsum.photos/id/60/540/675',  url:'https://picsum.photos/id/60/1080/1350'},
+  {label:'빈티지 소품', thumb:'https://picsum.photos/id/119/540/675', url:'https://picsum.photos/id/119/1080/1350'},
   // 텍스처·패턴
-  {label:'크래프트 종이', url:'https://picsum.photos/id/25/800/600'},
-  {label:'린넨 패브릭',   url:'https://picsum.photos/id/65/800/600'},
-  {label:'돌 질감',       url:'https://picsum.photos/id/136/800/600'},
-  {label:'나무결',         url:'https://picsum.photos/id/168/800/600'},
+  {label:'크래프트 종이', thumb:'https://picsum.photos/id/25/540/675',  url:'https://picsum.photos/id/25/1080/1350'},
+  {label:'린넨 패브릭',   thumb:'https://picsum.photos/id/65/540/675',  url:'https://picsum.photos/id/65/1080/1350'},
+  {label:'돌 질감',       thumb:'https://picsum.photos/id/136/540/675', url:'https://picsum.photos/id/136/1080/1350'},
+  {label:'나무결',         thumb:'https://picsum.photos/id/168/540/675', url:'https://picsum.photos/id/168/1080/1350'},
   // 색감·분위기
-  {label:'핑크 보케',   url:'https://picsum.photos/id/96/800/600'},
-  {label:'골든 아워',   url:'https://picsum.photos/id/159/800/600'},
-  {label:'파스텔 하늘', url:'https://picsum.photos/id/180/800/600'},
-  {label:'밤 도시',     url:'https://picsum.photos/id/161/800/600'},
-  {label:'초록 잎',     url:'https://picsum.photos/id/152/800/600'},
-  {label:'꽃 클로즈업', url:'https://picsum.photos/id/106/800/600'},
-  {label:'하얀 꽃',    url:'https://picsum.photos/id/116/800/600'},
-  {label:'봄 벚꽃',    url:'https://picsum.photos/id/167/800/600'},
+  {label:'핑크 보케',   thumb:'https://picsum.photos/id/96/540/675',  url:'https://picsum.photos/id/96/1080/1350'},
+  {label:'골든 아워',   thumb:'https://picsum.photos/id/159/540/675', url:'https://picsum.photos/id/159/1080/1350'},
+  {label:'파스텔 하늘', thumb:'https://picsum.photos/id/180/540/675', url:'https://picsum.photos/id/180/1080/1350'},
+  {label:'밤 도시',     thumb:'https://picsum.photos/id/161/540/675', url:'https://picsum.photos/id/161/1080/1350'},
+  {label:'초록 잎',     thumb:'https://picsum.photos/id/152/540/675', url:'https://picsum.photos/id/152/1080/1350'},
+  {label:'꽃 클로즈업', thumb:'https://picsum.photos/id/106/540/675', url:'https://picsum.photos/id/106/1080/1350'},
+  {label:'하얀 꽃',    thumb:'https://picsum.photos/id/116/540/675',  url:'https://picsum.photos/id/116/1080/1350'},
+  {label:'봄 벚꽃',    thumb:'https://picsum.photos/id/167/540/675',  url:'https://picsum.photos/id/167/1080/1350'},
 ];
+
+// ── 내보내기 목표 해상도 (인스타그램 포스트 4:5 표준) ──
+const EXPORT_W = 1080;
+const EXPORT_H = 1350;
 
 // ── 앱 상태 ──
 let canvasW = 0, canvasH = 0;
@@ -368,13 +374,13 @@ function renderFreeBgGrid() {
   if(!grid) return;
   grid.innerHTML = FREE_BG_IMAGES.map((b,i)=>`
     <div class="bg-thumb" data-idx="${i}">
-      <img src="${b.url}" loading="lazy" onerror="this.parentElement.classList.add('broken')">
+      <img src="${b.thumb}" loading="lazy" onerror="this.parentElement.classList.add('broken')">
       <div class="bg-label">${b.label}</div>
     </div>`).join('');
   grid.querySelectorAll('.bg-thumb').forEach(el => {
     el.addEventListener('click', () => {
       const i = +el.dataset.idx;
-      selectBgByUrl(FREE_BG_IMAGES[i].url, FREE_BG_IMAGES[i].label);
+      selectBgByUrl(FREE_BG_IMAGES[i].url, FREE_BG_IMAGES[i].label); // 고해상도 URL 사용
     });
   });
 }
@@ -393,6 +399,17 @@ function onBgUpload(e) {
   reader.onload = ev => {
     const img = new Image();
     img.onload = () => {
+      // 인스타 4:5 출력 기준 최소 해상도 체크
+      const upscale = Math.max(EXPORT_W / img.naturalWidth, EXPORT_H / img.naturalHeight);
+      if(upscale > 1.2) {
+        const ok = confirm(
+          `이미지 해상도가 낮아요 (${img.naturalWidth}×${img.naturalHeight}px)\n\n` +
+          `인스타그램 고화질 업로드 권장 최소: 1080×1350px\n` +
+          `현재 이미지를 사용하면 완성 이미지가 흐릿하게 보일 수 있어요.\n\n` +
+          `그래도 사용하시겠어요?`
+        );
+        if(!ok) { e.target.value = ''; return; }
+      }
       bgImage = img; bgImage._src = ev.target.result;
       document.getElementById('no-bg-msg').style.display = 'none';
       drawBg(); closeBgModal();
@@ -810,37 +827,39 @@ function renderKeyColorSwatches() {
 // ── 내보내기 ──
 async function openExport() {
   const expCanvas = document.getElementById('export-canvas');
-  expCanvas.width = canvasW;
-  expCanvas.height = canvasH;
+  expCanvas.width = EXPORT_W;
+  expCanvas.height = EXPORT_H;
   const ctx = expCanvas.getContext('2d');
+  const scale = EXPORT_W / canvasW; // 화면→출력 배율 (4:5 고정이므로 scaleX=scaleY)
 
   // 1. 배경
   if(bgImage) {
     const iw = bgImage.naturalWidth, ih = bgImage.naturalHeight;
-    const scale = Math.max(canvasW/iw, canvasH/ih);
-    const dw = iw*scale, dh = ih*scale;
-    ctx.drawImage(bgImage, (canvasW-dw)/2, (canvasH-dh)/2, dw, dh);
+    const s = Math.max(EXPORT_W/iw, EXPORT_H/ih);
+    const dw = iw*s, dh = ih*s;
+    ctx.drawImage(bgImage, (EXPORT_W-dw)/2, (EXPORT_H-dh)/2, dw, dh);
   }
 
   // 2. 아이템들 (순서대로)
   for(const item of items) {
-    await drawItemOnCanvas(ctx, item);
+    await drawItemOnCanvas(ctx, item, scale);
   }
 
   document.getElementById('export-modal').classList.add('on');
 }
 
-async function drawItemOnCanvas(ctx, item) {
+async function drawItemOnCanvas(ctx, item, scale=1) {
   const img = await loadImageCORS(item.src);
   if(!img) return;
   ctx.save();
-  ctx.translate(item.x + item.w/2, item.y + item.h/2);
+  const sw = item.w * scale, sh = item.h * scale;
+  ctx.translate((item.x + item.w/2) * scale, (item.y + item.h/2) * scale);
   ctx.rotate((item.rot||0) * Math.PI/180);
 
   // 프레임 클립
-  applyFrameClip(ctx, item.frame, item.w, item.h);
+  applyFrameClip(ctx, item.frame, sw, sh);
 
-  ctx.drawImage(img, -item.w/2, -item.h/2, item.w, item.h);
+  ctx.drawImage(img, -sw/2, -sh/2, sw, sh);
   ctx.restore();
 }
 
