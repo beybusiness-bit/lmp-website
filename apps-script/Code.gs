@@ -6,6 +6,9 @@
 // 배포: 웹앱 → 다음 사용자로 실행: 나(본인) → 액세스: 모든 사용자(익명 포함)
 // ================================================================
 
+// 새로 생성되는 모든 시트에 자동 편집자 공유할 계정 목록
+const SHARED_EDITORS = ['itsbeybusiness@gmail.com', 'baekeun0@gmail.com'];
+
 // ── 권한 부여용 테스트 함수 (GAS 편집기에서 한 번 실행 후 삭제해도 됨) ──
 function testCreateSheet() {
   const ss = SpreadsheetApp.create('권한 테스트 (삭제하세요)');
@@ -42,6 +45,10 @@ function doGet(e) {
         headerRow.setBackground('#f3f3f3');
         sheet.setFrozenRows(1);
       }
+      // 지정된 계정에 편집 권한 자동 공유
+      SHARED_EDITORS.forEach(function(email) {
+        try { DriveApp.getFileById(newSS.getId()).addEditor(email); } catch(_) {}
+      });
       return json({ success: true, sheetId: newSS.getId(), url: newSS.getUrl() });
     } catch (err) {
       return json({ success: false, error: err.message });
@@ -52,13 +59,7 @@ function doGet(e) {
 }
 
 // ================================================================
-// POST 요청 — 폼 응답 행 추가
-// body: {
-//   action: 'submitForm',
-//   sheetId: '스프레드시트ID',
-//   headers: ['제출일시', '항목1', ...],  // 시트 비어있을 때만 사용
-//   row:     ['2025-05-04 14:30', '값1', ...]
-// }
+// POST 요청 — 폼 응답 행 추가 / 일괄 추가
 // ================================================================
 function doPost(e) {
   try {
@@ -66,24 +67,26 @@ function doPost(e) {
     const action = data.action || '';
 
     if (action === 'bulkAppend') {
-      const sheetId = data.sheetId;
-      const rows    = data.rows || [];
+      const sheetId  = data.sheetId;
+      const sheetTab = data.sheetTab || '응답';
+      const rows     = data.rows || [];
       if (!sheetId) return json({ success: false, error: 'sheetId 없음' });
       const ss    = SpreadsheetApp.openById(sheetId);
-      const sheet = ss.getSheetByName('응답') || ss.getActiveSheet();
-      rows.forEach(row => sheet.appendRow(row));
+      const sheet = ss.getSheetByName(sheetTab) || ss.getActiveSheet();
+      rows.forEach(function(row) { sheet.appendRow(row); });
       return json({ success: true, count: rows.length });
     }
 
     if (action === 'submitForm') {
-      const sheetId = data.sheetId;
-      const row     = data.row     || [];
-      const headers = data.headers || [];
+      const sheetId  = data.sheetId;
+      const sheetTab = data.sheetTab || '응답';
+      const row      = data.row     || [];
+      const headers  = data.headers || [];
 
       if (!sheetId) return json({ success: false, error: 'sheetId 없음' });
 
       const ss    = SpreadsheetApp.openById(sheetId);
-      const sheet = ss.getSheetByName('응답') || ss.getActiveSheet();
+      const sheet = ss.getSheetByName(sheetTab) || ss.getActiveSheet();
 
       if (sheet.getLastRow() === 0 && headers.length) {
         const headerRow = sheet.getRange(1, 1, 1, headers.length);

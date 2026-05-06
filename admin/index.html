@@ -783,13 +783,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <div class="empty-msg">불러오는 중…</div>
     </div>
     <div style="padding:10px 0 0;border-top:1.5px solid rgba(0,0,0,.1);margin-top:4px;">
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <span id="resp-sheet-status" style="font-size:12px;flex:1;min-width:120px;color:rgba(0,0,0,.5);">구글 시트: 미연동</span>
-        <button id="resp-sheet-btn" onclick="createRespSheet()" style="padding:6px 12px;background:transparent;border:1.5px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📊 새 시트 생성</button>
+      <!-- 연동됨 상태 -->
+      <div id="resp-sheet-connected-view" style="display:none;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span id="resp-sheet-status" style="font-size:12px;flex:1;min-width:120px;color:rgba(0,0,0,.7);">구글 시트: 미연동</span>
+          <button onclick="disconnectRespSheet()" style="padding:6px 12px;background:transparent;border:1.5px solid #c00;color:#c00;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">연결 해제</button>
+        </div>
       </div>
-      <label id="resp-sheet-backfill-wrap" style="display:none;align-items:center;gap:6px;margin-top:8px;font-size:12px;cursor:pointer;">
-        <input type="checkbox" id="resp-sheet-backfill"> Firestore에 저장된 기존 응답 <span id="resp-backfill-count">0</span>개도 시트에 함께 기록
-      </label>
+      <!-- 미연동 상태 -->
+      <div id="resp-sheet-disconnected-view">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:12px;color:rgba(0,0,0,.45);flex:1;">구글 시트: 미연동</span>
+          <button id="resp-sheet-btn" onclick="createRespSheet()" style="padding:6px 12px;background:transparent;border:1.5px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📊 새 시트 생성</button>
+        </div>
+        <label id="resp-sheet-backfill-wrap" style="display:none;align-items:center;gap:6px;margin-top:8px;font-size:12px;cursor:pointer;">
+          <input type="checkbox" id="resp-sheet-backfill"> Firestore에 저장된 기존 응답 <span id="resp-backfill-count">0</span>개도 시트에 함께 기록
+        </label>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(0,0,0,.15);">
+          <div style="font-size:11px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:6px;">기존 스프레드시트에 연결</div>
+          <input id="resp-existing-sheet-id" placeholder="스프레드시트 ID" style="width:100%;box-sizing:border-box;padding:6px 8px;border:1.5px solid rgba(0,0,0,.2);font-size:12px;font-family:inherit;margin-bottom:4px;border-radius:0;">
+          <div style="display:flex;gap:6px;">
+            <input id="resp-existing-sheet-tab" placeholder="시트 탭 이름 (기본: 응답)" style="flex:1;padding:6px 8px;border:1.5px solid rgba(0,0,0,.2);font-size:12px;font-family:inherit;border-radius:0;">
+            <button onclick="connectExistingSheet()" style="padding:6px 14px;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">연결</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="modal-footer" style="margin-top:8px;">
       <button class="mbtn-cancel" onclick="closeModal('form-resp-modal')">닫기</button>
@@ -2328,20 +2346,60 @@ async function viewFormResponses(formId) {
 }
 function updateRespSheetStatus() {
   const cfg = curRespFormBlock?.formConfig||{};
+  const connectedView = document.getElementById('resp-sheet-connected-view');
+  const disconnectedView = document.getElementById('resp-sheet-disconnected-view');
   const statusEl = document.getElementById('resp-sheet-status');
-  const btn = document.getElementById('resp-sheet-btn');
   const bfWrap = document.getElementById('resp-sheet-backfill-wrap');
   const bfCount = document.getElementById('resp-backfill-count');
-  if(!statusEl) return;
-  if(cfg.sheetUrl) {
-    statusEl.innerHTML = `구글 시트: <a href="${cfg.sheetUrl}" target="_blank" style="color:#000;font-weight:700;">시트 열기 ↗</a>`;
-    if(btn) btn.textContent = '📊 시트 재생성';
+  if(!connectedView||!disconnectedView) return;
+  if(cfg.sheetId) {
+    connectedView.style.display = '';
+    disconnectedView.style.display = 'none';
+    if(statusEl) {
+      const link = cfg.sheetUrl
+        ? `<a href="${cfg.sheetUrl}" target="_blank" style="color:#000;font-weight:700;">시트 열기 ↗</a>`
+        : cfg.sheetId;
+      const tabInfo = cfg.sheetTab ? ` · 탭: <b>${cfg.sheetTab}</b>` : '';
+      statusEl.innerHTML = `구글 시트 연동됨${tabInfo} · ${link}`;
+    }
   } else {
-    statusEl.textContent = '구글 시트: 미연동';
-    if(btn) btn.textContent = '📊 새 시트 생성';
+    connectedView.style.display = 'none';
+    disconnectedView.style.display = '';
+    if(bfWrap) bfWrap.style.display = 'flex';
+    if(bfCount) bfCount.textContent = curRespData.length;
   }
-  if(bfWrap) bfWrap.style.display = 'flex';
-  if(bfCount) bfCount.textContent = curRespData.length;
+}
+async function _saveRespBlockConfig() {
+  /* 현재 curRespFormBlock의 formConfig 변경을 Firestore에 저장 */
+  const block = curRespFormBlock;
+  if(!block) return;
+  const idx = curBlocks.findIndex(b=>b.formId===curRespFormId);
+  if(idx>=0) curBlocks[idx] = block;
+  const stageId = curEditingStageIdx!==null ? curStages[curEditingStageIdx]?.id : null;
+  if(stageId && curProjId) {
+    await db.collection('cms_projects').doc(curProjId)
+      .collection('stage_content').doc(stageId)
+      .set({blocks: curBlocks.map((b,i)=>({...b,order:i})), updatedAt:firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+  }
+}
+async function _backfillRespSheet(sheetId, sheetTab) {
+  /* Firestore에 저장된 기존 응답을 시트에 일괄 기록 */
+  const block = curRespFormBlock;
+  if(!block||!curRespData.length) return;
+  const fieldKeys = block.formFields?.map(f=>f.key)||[];
+  const statusEl = document.getElementById('resp-sheet-status');
+  if(statusEl) statusEl.textContent = '기존 응답 기록 중…';
+  const rows = curRespData.slice().reverse().map(resp => {
+    const ts = resp.submittedAt?.seconds ? new Date(resp.submittedAt.seconds*1000).toLocaleString('ko') : '';
+    const authVals = curAuthEnabled ? curAuthFields.map(f=>{
+      const v=resp['_auth_'+f.key];
+      return String(v!==undefined?v:(f.key===curAuthKeyField?resp._user||'':''));
+    }) : [];
+    const vals = fieldKeys.map(k=>{ const v=resp[k]; return Array.isArray(v)?v.join(', '):(v??''); });
+    return [ts, ...authVals, ...vals];
+  });
+  await fetch(GAS_URL, {method:'POST',
+    body: JSON.stringify({action:'bulkAppend', sheetId, sheetTab: sheetTab||'응답', rows})});
 }
 async function createRespSheet() {
   const block = curRespFormBlock;
@@ -2349,49 +2407,51 @@ async function createRespSheet() {
   if(!block.formFields?.length) { alert('필드를 먼저 추가해주세요.'); return; }
   const fTitle = block.formConfig?.formTitle || document.getElementById('p-name')?.value.trim() || '폼';
   const title = fTitle + '의 응답';
-  const fieldKeys = block.formFields.map(f=>f.key);
   const fieldLabels = block.formFields.map(f=>f.label);
   const authHeaders = curAuthEnabled ? curAuthFields.map(f=>f.label) : [];
   const headers = ['제출일시', ...authHeaders, ...fieldLabels];
   const statusEl = document.getElementById('resp-sheet-status');
   const btn = document.getElementById('resp-sheet-btn');
-  if(statusEl) statusEl.textContent = '시트 생성 중…';
-  if(btn) btn.disabled = true;
+  if(btn) { btn.disabled = true; btn.textContent = '생성 중…'; }
   try {
     const createUrl = GAS_URL + '?action=createSheet&title=' + encodeURIComponent(title) + '&headers=' + encodeURIComponent(JSON.stringify(headers));
     const r = await fetch(createUrl);
     const data = await r.json();
     if(!data.success) throw new Error(data.error||'생성 실패');
-    block.formConfig = {...(block.formConfig||{}), sheetId:data.sheetId, sheetUrl:data.url};
-    const idx = curBlocks.findIndex(b=>b.formId===curRespFormId);
-    if(idx>=0) curBlocks[idx] = block;
-    const stageId = curEditingStageIdx!==null ? curStages[curEditingStageIdx]?.id : null;
-    if(stageId && curProjId) {
-      await db.collection('cms_projects').doc(curProjId)
-        .collection('stage_content').doc(stageId)
-        .set({blocks: curBlocks.map((b,i)=>({...b,order:i})), updatedAt:firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
-    }
-    /* backfill existing responses */
+    block.formConfig = {...(block.formConfig||{}), sheetId:data.sheetId, sheetUrl:data.url, sheetTab:''};
+    await _saveRespBlockConfig();
     const doBackfill = document.getElementById('resp-sheet-backfill')?.checked;
-    if(doBackfill && curRespData.length) {
-      if(statusEl) statusEl.textContent = '기존 응답 기록 중…';
-      const rows = curRespData.slice().reverse().map(resp => {
-        const ts = resp.submittedAt?.seconds ? new Date(resp.submittedAt.seconds*1000).toLocaleString('ko') : '';
-        const authVals = curAuthEnabled ? curAuthFields.map(f=>{
-          const v=resp['_auth_'+f.key];
-          return String(v!==undefined?v:(f.key===curAuthKeyField?resp._user||'':''));
-        }) : [];
-        const vals = fieldKeys.map(k=>{ const v=resp[k]; return Array.isArray(v)?v.join(', '):(v??''); });
-        return curAuthEnabled ? [ts, ...authVals, ...vals] : [ts, ...vals];
-      });
-      await fetch(GAS_URL, {method:'POST',
-        body: JSON.stringify({action:'bulkAppend', sheetId:data.sheetId, rows})});
-    }
+    if(doBackfill && curRespData.length) await _backfillRespSheet(data.sheetId, '응답');
     updateRespSheetStatus();
   } catch(e) {
     if(statusEl) statusEl.textContent = '생성 실패: ' + e.message;
-    if(btn) btn.disabled = false;
+    if(btn) { btn.disabled = false; btn.textContent = '📊 새 시트 생성'; }
   }
+}
+async function connectExistingSheet() {
+  const block = curRespFormBlock;
+  if(!block) { alert('폼 블록을 찾을 수 없어요.'); return; }
+  const sheetId = document.getElementById('resp-existing-sheet-id')?.value.trim();
+  const sheetTab = document.getElementById('resp-existing-sheet-tab')?.value.trim() || '응답';
+  if(!sheetId) { alert('스프레드시트 ID를 입력해주세요.'); return; }
+  const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}`;
+  block.formConfig = {...(block.formConfig||{}), sheetId, sheetUrl, sheetTab};
+  try {
+    await _saveRespBlockConfig();
+    const doBackfill = document.getElementById('resp-sheet-backfill')?.checked;
+    if(doBackfill && curRespData.length) await _backfillRespSheet(sheetId, sheetTab);
+    updateRespSheetStatus();
+  } catch(e) { alert('연결 실패: ' + e.message); }
+}
+async function disconnectRespSheet() {
+  if(!confirm('시트 연결을 해제할까요?\n(시트 자체는 삭제되지 않습니다. 이후 새 응답은 시트에 기록되지 않아요.)')) return;
+  const block = curRespFormBlock;
+  if(!block) return;
+  block.formConfig = {...(block.formConfig||{}), sheetId:'', sheetUrl:'', sheetTab:''};
+  try {
+    await _saveRespBlockConfig();
+    updateRespSheetStatus();
+  } catch(e) { alert('해제 실패: ' + e.message); }
 }
 function _getRespCols(){
   const block=curRespFormBlock;

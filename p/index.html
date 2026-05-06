@@ -1042,7 +1042,7 @@ async function submitForm(formId){
         const headers=['제출일시',...authHeaders,...formFields.map(f=>f.label)];
         const vals=formFields.map(f=>{const v=result[f.key];return Array.isArray(v)?v.join(', '):(v??'');});
         await fetch(GAS_URL,{method:'POST',
-          body:JSON.stringify({action:'submitForm',sheetId:formConfig.sheetId,headers,row:[ts,...authVals,...vals]})});
+          body:JSON.stringify({action:'submitForm',sheetId:formConfig.sheetId,sheetTab:formConfig.sheetTab||'응답',headers,row:[ts,...authVals,...vals]})});
       }catch(e){}
     }
   }catch(e){
