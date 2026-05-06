@@ -2,120 +2,93 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>계산기 생성기</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>계산기</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f0f0;display:flex;justify-content:center;min-height:100vh;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f0f0f0;display:flex;justify-content:center;min-height:100vh;}
 #app{width:100%;max-width:430px;min-height:100vh;background:#fff;position:relative;display:flex;flex-direction:column;}
 @media(max-width:430px){body{background:#fff;}}
 
-/* ── 공통 ── */
-.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;font-size:13px;font-weight:700;border:1.5px solid #000;background:#000;color:#fff;cursor:pointer;border-radius:0;font-family:inherit;}
-.btn.sec{background:#fff;color:#000;}
-.btn.sm{padding:6px 12px;font-size:12px;}
-.btn.danger{background:#fff;color:#c00;border-color:#c00;}
-.btn:active{opacity:.7;}
-input,textarea,select{font-family:inherit;font-size:13px;border:1.5px solid #000;border-radius:0;padding:10px 12px;width:100%;background:#fff;outline:none;}
-input:focus,textarea:focus,select:focus{border-color:#000;box-shadow:0 0 0 2px rgba(0,0,0,.1);}
-textarea{resize:vertical;min-height:80px;}
-label.lbl{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:rgba(0,0,0,.45);display:block;margin-bottom:4px;}
-.row{display:flex;gap:8px;align-items:flex-start;}
-.field{display:flex;flex-direction:column;gap:4px;flex:1;}
-.divider{height:1.5px;background:#000;margin:20px 0;}
-.empty{color:rgba(0,0,0,.4);font-size:13px;padding:16px 0;text-align:center;}
-.tag-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:default;}
-.tag-pill .tag-del{cursor:pointer;font-size:13px;line-height:1;}
+/* ── lmp 버튼 ── */
+.lmp-btn{flex-shrink:0;padding:10px 18px;background:transparent;color:#000;border:2px solid #000;border-radius:0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;letter-spacing:-.2px;transition:background .15s,color .15s;}
+.lmp-btn:hover,.lmp-btn:active,.lmp-btn.active{background:#000;color:#fff;}
+.lmp-btn.primary{background:#000;color:#fff;}
+.lmp-btn.primary:hover,.lmp-btn.primary:active{background:#fff;color:#000;}
+.lmp-btn:disabled{opacity:.35;cursor:default;}
+.lmp-btn.danger{color:#c00;border-color:#c00;}
+.lmp-btn.danger:hover,.lmp-btn.danger:active{background:#c00;color:#fff;}
+
+/* ── 입력 ── */
+input[type=number],input[type=text]{font-family:inherit;font-size:16px;font-weight:700;border:2px solid #000;border-radius:0;padding:14px 16px;width:100%;background:#fff;outline:none;-webkit-appearance:none;}
+input:focus{border-color:#000;box-shadow:0 0 0 3px rgba(0,0,0,.08);}
 
 /* ── 헤더 ── */
-#header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1.5px solid #000;flex-shrink:0;}
-#header .back{font-size:20px;cursor:pointer;line-height:1;padding:4px;}
-#header .title{font-size:14px;font-weight:800;flex:1;}
-#header .actions{display:flex;gap:8px;}
+#view-header{display:flex;align-items:center;padding:14px 16px;border-bottom:2px solid #000;flex-shrink:0;gap:12px;}
+#view-header .title{font-size:14px;font-weight:800;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
-/* ── 빌더 ── */
-#builder{display:flex;flex-direction:column;flex:1;overflow:hidden;}
-#builder-body{flex:1;overflow-y:auto;padding:16px;}
+/* ── 진행 바 ── */
+#progress-wrap{height:3px;background:#e8e8e8;flex-shrink:0;}
+#progress-bar{height:100%;background:#000;transition:width .3s;}
 
-/* 계산기 목록 */
-#form-list-screen{}
-.form-item{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1.5px solid #000;cursor:pointer;}
-.form-item:first-child{border-top:1.5px solid #000;}
-.form-item-name{font-size:14px;font-weight:700;}
-.form-item-meta{font-size:11px;color:rgba(0,0,0,.45);margin-top:2px;}
-.form-item-arrow{font-size:18px;color:rgba(0,0,0,.3);}
+/* ── 단계 화면 ── */
+#step-screen{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#step-body{flex:1;overflow-y:auto;padding:28px 20px 16px;}
+.q-label{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(0,0,0,.35);margin-bottom:14px;}
+.q-title{font-size:20px;font-weight:800;line-height:1.4;margin-bottom:8px;word-break:keep-all;}
+.q-sub{font-size:12px;color:rgba(0,0,0,.4);font-weight:600;margin-bottom:24px;}
 
-/* 계산기 편집 */
-#form-edit-screen{display:none;}
-.block-list{display:flex;flex-direction:column;gap:0;}
-.block-item{border:1.5px solid #000;margin-bottom:8px;}
-.block-item-head{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;background:#fff;}
-.block-item-head:hover{background:#f8f8f8;}
-.block-type-badge{font-size:10px;font-weight:800;letter-spacing:.06em;padding:3px 7px;border:1.5px solid #000;flex-shrink:0;}
-.block-type-badge.choice{background:#000;color:#fff;}
-.block-type-badge.numeric{background:#fff;color:#000;}
-.block-type-badge.result{background:#000;color:#fff;}
-.block-item-label{font-size:13px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:rgba(0,0,0,.7);}
-.block-item-actions{display:flex;gap:4px;flex-shrink:0;}
-.icon-btn{background:none;border:none;cursor:pointer;font-size:16px;padding:4px;line-height:1;color:rgba(0,0,0,.5);}
-.icon-btn:hover{color:#000;}
-
-/* 블록 편집 패널 */
-.block-editor{padding:12px;border-top:1.5px solid #000;background:#fafafa;}
-.opt-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
-.opt-row input{flex:1;margin-bottom:0;}
-.opt-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;margin-bottom:6px;}
-.condition-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
-
-/* ── 뷰어 ── */
-#viewer{display:flex;flex-direction:column;flex:1;overflow:hidden;}
-#viewer-progress{flex-shrink:0;height:4px;background:#e0e0e0;}
-#viewer-progress-bar{height:100%;background:#000;transition:width .3s;}
-#viewer-body{flex:1;overflow-y:auto;padding:24px 20px;}
-#viewer-nav{flex-shrink:0;padding:16px 20px;border-top:1.5px solid #000;display:flex;gap:12px;}
-
-/* 뷰어 카드들 */
-.q-title{font-size:18px;font-weight:800;line-height:1.4;margin-bottom:24px;}
-.q-sub{font-size:13px;color:rgba(0,0,0,.5);margin-top:-16px;margin-bottom:20px;}
-.choice-options{display:flex;flex-direction:column;gap:10px;}
-.choice-opt{padding:14px 16px;border:1.5px solid #000;font-size:14px;font-weight:600;cursor:pointer;background:#fff;transition:background .12s,color .12s;text-align:left;font-family:inherit;}
+/* ── 선택지 ── */
+.choice-options{display:flex;flex-direction:column;gap:8px;margin-top:24px;}
+.choice-opt{padding:15px 18px;border:2px solid #000;font-size:14px;font-weight:700;cursor:pointer;background:#fff;transition:background .12s,color .12s;text-align:left;font-family:inherit;width:100%;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.choice-opt .opt-check{width:18px;height:18px;border:2px solid #000;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;transition:background .12s;}
 .choice-opt.selected{background:#000;color:#fff;}
+.choice-opt.selected .opt-check{background:#fff;color:#000;}
 .choice-opt:active{opacity:.7;}
-.numeric-wrap{display:flex;align-items:center;gap:8px;}
-.numeric-wrap input{flex:1;font-size:18px;font-weight:700;padding:14px 16px;}
-.numeric-unit{font-size:14px;font-weight:700;white-space:nowrap;}
 
-/* 결과 화면 */
+/* ── 숫자 입력 ── */
+.numeric-wrap{margin-top:24px;display:flex;align-items:stretch;gap:0;}
+.numeric-wrap input{flex:1;border-right:0;}
+.numeric-unit{display:flex;align-items:center;padding:0 16px;border:2px solid #000;font-size:14px;font-weight:800;white-space:nowrap;background:#f8f8f8;flex-shrink:0;}
+
+/* ── 하단 네비 ── */
+#step-nav{flex-shrink:0;padding:16px 20px;border-top:2px solid #000;display:flex;gap:8px;}
+
+/* ── 결과 화면 ── */
 #result-screen{display:none;flex-direction:column;flex:1;overflow:hidden;}
-#result-body{flex:1;overflow-y:auto;padding:24px 20px;}
-.result-header{font-size:12px;font-weight:800;letter-spacing:.08em;color:rgba(0,0,0,.4);margin-bottom:20px;text-align:center;}
-.result-card{border:1.5px solid #000;margin-bottom:16px;padding:20px;}
-.result-card-title{font-size:16px;font-weight:800;margin-bottom:12px;}
-.result-card-body{font-size:14px;line-height:1.7;color:rgba(0,0,0,.8);white-space:pre-wrap;}
-.result-card-body strong{font-weight:800;}
-.result-restart{padding:16px 20px;border-top:1.5px solid #000;}
+#result-header{flex-shrink:0;padding:16px 20px;border-bottom:2px solid #000;display:flex;align-items:center;justify-content:space-between;}
+#result-header .r-title{font-size:13px;font-weight:800;}
+#result-header .r-count{font-size:11px;font-weight:700;color:rgba(0,0,0,.4);}
+#result-body{flex:1;overflow-y:auto;padding:20px;}
+.result-card{border:2px solid #000;margin-bottom:12px;}
+.result-card-head{padding:14px 16px 0;border-bottom:0;}
+.result-card-title{font-size:15px;font-weight:800;margin-bottom:12px;}
+.result-card-divider{height:2px;background:#000;margin:0 -0px;}
+.result-card-body{padding:14px 16px;font-size:13px;line-height:1.8;color:rgba(0,0,0,.8);white-space:pre-wrap;word-break:keep-all;}
+.result-card-body strong{font-weight:800;color:#000;}
+#result-footer{flex-shrink:0;padding:16px 20px;border-top:2px solid #000;}
 
-/* ── 토글 스위치 ── */
-.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;}
-.toggle-lbl{font-size:13px;font-weight:600;}
-.toggle{position:relative;width:42px;height:24px;flex-shrink:0;}
-.toggle input{opacity:0;width:0;height:0;}
-.toggle-slider{position:absolute;inset:0;background:#ddd;cursor:pointer;transition:.2s;border:1.5px solid #000;}
-.toggle input:checked+.toggle-slider{background:#000;}
-.toggle-slider:before{content:'';position:absolute;width:16px;height:16px;left:3px;bottom:2px;background:#fff;transition:.2s;}
-.toggle input:checked+.toggle-slider:before{left:19px;}
+/* ── 로딩 / 에러 ── */
+#loading{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;}
+#loading p{font-size:13px;font-weight:700;color:rgba(0,0,0,.4);}
+.error-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;gap:8px;}
+.error-wrap .error-icon{font-size:32px;margin-bottom:4px;}
+.error-wrap .error-msg{font-size:14px;font-weight:700;color:#000;}
+.error-wrap .error-sub{font-size:12px;color:rgba(0,0,0,.4);}
 
-/* loading */
-#loading{display:flex;align-items:center;justify-content:center;flex:1;font-size:13px;color:rgba(0,0,0,.4);}
+/* ── 빌더 안내 (mode=builder 직접 접근 시) ── */
+.builder-redirect{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:32px 24px;text-align:center;}
+.builder-redirect p{font-size:13px;color:rgba(0,0,0,.5);}
 </style>
 </head>
 <body>
 <div id="app">
-  <div id="loading">불러오는 중…</div>
+  <div id="loading"><p>불러오는 중…</p></div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script>
 const FIREBASE_CONFIG = {
   apiKey:"AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
@@ -127,603 +100,255 @@ const FIREBASE_CONFIG = {
 };
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
+const auth = firebase.auth();
 const FORMS_REF = () => db.collection('game_configs').doc('guide').collection('forms');
 
-/* ────────────────────────────────────────────
-   유틸리티
-──────────────────────────────────────────── */
-function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+const params = new URLSearchParams(location.search);
+const FORM_ID = params.get('id');
 
-/* 안전한 수식 계산: {{expr}} 안의 표현식을 변수값으로 치환 후 계산
-   지원: 숫자, +,-,*,/, %, (), Math.ceil/floor/round, ceil/floor/round 단축 */
+/* ────────────────────────────────────────────
+   초기화
+──────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', async () => {
+  if(!FORM_ID) {
+    showBuilderRedirect();
+    return;
+  }
+  /* 익명 로그인으로 Firestore 읽기 권한 확보 */
+  try {
+    if(!auth.currentUser) await auth.signInAnonymously();
+  } catch(_) { /* 익명 로그인 실패해도 시도 계속 */ }
+  await initViewer(FORM_ID);
+});
+
+/* ────────────────────────────────────────────
+   수식 계산 엔진
+──────────────────────────────────────────── */
 function evalTemplate(template, vars) {
   return template.replace(/\{\{([^}]+)\}\}/g, (_, expr) => {
     try {
-      // 변수 치환
       let e = expr;
       Object.keys(vars).sort((a,b) => b.length - a.length).forEach(k => {
         e = e.replace(new RegExp('\\b' + k + '\\b', 'g'), String(vars[k] ?? 0));
       });
-      // 단축 수학 함수 → Math.*
-      e = e.replace(/\bceil\s*\(/g,'Math.ceil(').replace(/\bfloor\s*\(/g,'Math.floor(').replace(/\bround\s*\(/g,'Math.round(');
-      // 허용된 문자만 통과
-      if(!/^[\d\s\+\-\*\/\%\(\)\.,MathceilflooroundMth]+$/.test(e.replace(/\bMath\.(ceil|floor|round)\b/g,''))) {
+      e = e.replace(/\bceil\s*\(/g,'Math.ceil(')
+           .replace(/\bfloor\s*\(/g,'Math.floor(')
+           .replace(/\bround\s*\(/g,'Math.round(');
+      if(!/^[\d\s\+\-\*\/\%\(\)\.,Mathceilflorroundth]+$/.test(e.replace(/\bMath\.(ceil|floor|round)\b/g,'')))
         return '[계산오류]';
-      }
-      const result = Function('"use strict";return (' + e + ')')();
-      if(!isFinite(result)) return '[계산불가]';
-      // 정수면 정수로, 아니면 소수점 2자리
-      return Number.isInteger(result) ? String(result) : result.toFixed(2);
+      const r = Function('"use strict";return (' + e + ')')();
+      if(!isFinite(r)) return '[계산불가]';
+      return Number.isInteger(r) ? String(r) : r.toFixed(2);
     } catch { return '[계산오류]'; }
   });
 }
 
-/* 마크다운 볼드(**text**) 처리 */
 function renderMd(text) {
   return text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 }
 
-/* ────────────────────────────────────────────
-   URL 파라미터 파싱
-──────────────────────────────────────────── */
-const params = new URLSearchParams(location.search);
-const MODE   = params.get('mode') || (params.get('id') ? 'viewer' : 'builder');
-const FORM_ID = params.get('id') || null;
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 /* ────────────────────────────────────────────
-   앱 초기화
+   뷰어
 ──────────────────────────────────────────── */
-window.addEventListener('DOMContentLoaded', () => {
-  if(MODE === 'viewer' && FORM_ID) {
-    initViewer(FORM_ID);
-  } else {
-    initBuilder();
-  }
-});
-
-/* ════════════════════════════════════════════
-   빌더 모드
-════════════════════════════════════════════ */
-let builderState = {
-  forms: [],        // Firestore에서 로드된 계산기 목록
-  curFormId: null,  // 현재 편집 중인 계산기 ID
-  curForm: null,    // 현재 편집 중인 계산기 객체 {title, blocks:[]}
-  editingBlock: null, // 현재 편집 중인 블록 ID
-};
-
-async function initBuilder() {
-  document.getElementById('app').innerHTML = buildBuilderHTML();
-  await loadFormList();
-}
-
-function buildBuilderHTML() {
-  return `
-  <div id="builder">
-    <div id="header">
-      <span id="header-back" class="back" onclick="onHeaderBack()" style="display:none;">←</span>
-      <span class="title" id="header-title">계산기 생성기</span>
-      <div class="actions" id="header-actions"></div>
-    </div>
-    <div id="builder-body">
-      <!-- 계산기 목록 화면 -->
-      <div id="form-list-screen">
-        <div style="margin-bottom:16px;">
-          <button class="btn" onclick="createForm()" style="width:100%;">+ 새 계산기 만들기</button>
-        </div>
-        <div id="form-list-inner"></div>
-      </div>
-      <!-- 계산기 편집 화면 -->
-      <div id="form-edit-screen" style="display:none;">
-        <div class="field" style="margin-bottom:16px;">
-          <label class="lbl">계산기 제목</label>
-          <input id="form-title-input" placeholder="예: 행사 참여 전략 가이드" oninput="onFormTitleChange(this.value)">
-        </div>
-        <div class="divider"></div>
-        <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-size:13px;font-weight:800;">블록 목록</span>
-          <div style="display:flex;gap:6px;">
-            <button class="btn sm" onclick="addBlock('choice')">+ 질문</button>
-            <button class="btn sm sec" onclick="addBlock('numeric')">+ 숫자</button>
-            <button class="btn sm" onclick="addBlock('result')" style="background:#555;border-color:#555;">+ 결과</button>
-          </div>
-        </div>
-        <div id="block-list" class="block-list"></div>
-        <div id="block-list-empty" class="empty" style="display:none;">블록이 없어요. 위 버튼으로 추가하세요.</div>
-      </div>
-    </div>
-  </div>`;
-}
-
-async function loadFormList() {
-  const el = document.getElementById('form-list-inner');
-  el.innerHTML = '<div class="empty">불러오는 중…</div>';
-  try {
-    const snap = await FORMS_REF().orderBy('updatedAt','desc').get();
-    builderState.forms = snap.docs.map(d => ({id:d.id, ...d.data()}));
-    renderFormList();
-  } catch(e) {
-    el.innerHTML = '<div class="empty">불러오기 실패: ' + e.message + '</div>';
-  }
-}
-
-function renderFormList() {
-  const el = document.getElementById('form-list-inner');
-  if(!builderState.forms.length) {
-    el.innerHTML = '<div class="empty">아직 만든 계산기가 없어요.<br>위 버튼으로 첫 번째 계산기를 만들어보세요.</div>';
-    return;
-  }
-  el.innerHTML = builderState.forms.map(f => `
-    <div class="form-item" onclick="openFormEdit('${f.id}')">
-      <div>
-        <div class="form-item-name">${f.title || '(제목 없음)'}</div>
-        <div class="form-item-meta">블록 ${(f.blocks||[]).length}개 · <a href="/tools/guide?id=${f.id}" target="_blank" onclick="event.stopPropagation()" style="color:rgba(0,0,0,.5);">사용자 링크 ↗</a></div>
-      </div>
-      <span class="form-item-arrow">›</span>
-    </div>`).join('');
-}
-
-async function createForm() {
-  const id = uid();
-  const form = { title:'', blocks:[], createdAt:firebase.firestore.FieldValue.serverTimestamp(), updatedAt:firebase.firestore.FieldValue.serverTimestamp() };
-  await FORMS_REF().doc(id).set(form);
-  builderState.curFormId = id;
-  builderState.curForm = { title:'', blocks:[] };
-  showFormEdit();
-}
-
-async function openFormEdit(formId) {
-  const snap = await FORMS_REF().doc(formId).get();
-  if(!snap.exists) return;
-  builderState.curFormId = formId;
-  builderState.curForm = snap.data();
-  if(!builderState.curForm.blocks) builderState.curForm.blocks = [];
-  showFormEdit();
-}
-
-function showFormEdit() {
-  document.getElementById('form-list-screen').style.display = 'none';
-  document.getElementById('form-edit-screen').style.display = '';
-  document.getElementById('header-back').style.display = '';
-  document.getElementById('header-title').textContent = '계산기 편집';
-  document.getElementById('header-actions').innerHTML = `
-    <button class="btn sm" onclick="saveForm()">저장</button>
-    <button class="btn sm danger" onclick="deleteForm()">삭제</button>`;
-  document.getElementById('form-title-input').value = builderState.curForm.title || '';
-  builderState.editingBlock = null;
-  renderBlockList();
-}
-
-function showFormList() {
-  document.getElementById('form-list-screen').style.display = '';
-  document.getElementById('form-edit-screen').style.display = 'none';
-  document.getElementById('header-back').style.display = 'none';
-  document.getElementById('header-title').textContent = '계산기 생성기';
-  document.getElementById('header-actions').innerHTML = '';
-  loadFormList();
-}
-
-function onHeaderBack() { showFormList(); }
-
-function onFormTitleChange(val) {
-  if(builderState.curForm) builderState.curForm.title = val;
-}
-
-async function saveForm() {
-  if(!builderState.curFormId) return;
-  try {
-    await FORMS_REF().doc(builderState.curFormId).set({
-      ...builderState.curForm,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    alert('저장됐어요.');
-  } catch(e) { alert('저장 실패: ' + e.message); }
-}
-
-async function deleteForm() {
-  if(!confirm('이 계산기를 삭제할까요?')) return;
-  await FORMS_REF().doc(builderState.curFormId).delete();
-  showFormList();
-}
-
-/* ── 블록 CRUD ── */
-function addBlock(type) {
-  const block = { id: uid(), type };
-  if(type === 'choice')  Object.assign(block, { question:'', multiple:false, options:[] });
-  if(type === 'numeric') Object.assign(block, { question:'', variable:'', unit:'', min:null, max:null });
-  if(type === 'result')  Object.assign(block, { title:'', content:'', condition:{ operator:'AND', tags:[] } });
-  builderState.curForm.blocks.push(block);
-  builderState.editingBlock = block.id;
-  renderBlockList();
-}
-
-function removeBlock(id) {
-  if(!confirm('이 블록을 삭제할까요?')) return;
-  builderState.curForm.blocks = builderState.curForm.blocks.filter(b => b.id !== id);
-  if(builderState.editingBlock === id) builderState.editingBlock = null;
-  renderBlockList();
-}
-
-function moveBlock(id, dir) {
-  const arr = builderState.curForm.blocks;
-  const i = arr.findIndex(b => b.id === id);
-  if(dir === -1 && i === 0) return;
-  if(dir === 1 && i === arr.length-1) return;
-  [arr[i], arr[i+dir]] = [arr[i+dir], arr[i]];
-  renderBlockList();
-}
-
-function toggleBlockEdit(id) {
-  builderState.editingBlock = builderState.editingBlock === id ? null : id;
-  renderBlockList();
-}
-
-/* ── 블록 렌더링 ── */
-function renderBlockList() {
-  const container = document.getElementById('block-list');
-  const empty = document.getElementById('block-list-empty');
-  const blocks = builderState.curForm.blocks;
-  if(!blocks.length) {
-    container.innerHTML = '';
-    empty.style.display = '';
-    return;
-  }
-  empty.style.display = 'none';
-  container.innerHTML = blocks.map((b, i) => renderBlockItem(b, i, blocks.length)).join('');
-}
-
-function renderBlockItem(b, i, total) {
-  const typeLabel = {choice:'질문',numeric:'숫자',result:'결과'}[b.type] || b.type;
-  const preview = b.type === 'result' ? (b.title || '(제목 없음)') : (b.question || '(질문 없음)');
-  const isEditing = builderState.editingBlock === b.id;
-  return `
-  <div class="block-item" id="bitem-${b.id}">
-    <div class="block-item-head" onclick="toggleBlockEdit('${b.id}')">
-      <span class="block-type-badge ${b.type}">${typeLabel}</span>
-      <span class="block-item-label">${preview}</span>
-      <div class="block-item-actions" onclick="event.stopPropagation()">
-        ${i>0 ? `<button class="icon-btn" onclick="moveBlock('${b.id}',-1)" title="위로">↑</button>` : ''}
-        ${i<total-1 ? `<button class="icon-btn" onclick="moveBlock('${b.id}',1)" title="아래로">↓</button>` : ''}
-        <button class="icon-btn" onclick="removeBlock('${b.id}')" title="삭제">×</button>
-      </div>
-    </div>
-    ${isEditing ? renderBlockEditor(b) : ''}
-  </div>`;
-}
-
-function renderBlockEditor(b) {
-  if(b.type === 'choice') return renderChoiceEditor(b);
-  if(b.type === 'numeric') return renderNumericEditor(b);
-  if(b.type === 'result') return renderResultEditor(b);
-  return '';
-}
-
-function renderChoiceEditor(b) {
-  const opts = (b.options||[]).map((o,i) => `
-    <div class="opt-row" id="opt-row-${b.id}-${i}">
-      <input value="${escHtml(o.label||'')}" placeholder="선택지 텍스트" oninput="updateOption('${b.id}',${i},'label',this.value)" style="flex:2;">
-      <button class="btn sm danger" onclick="removeOption('${b.id}',${i})">×</button>
-    </div>
-    <div class="opt-tags" id="opt-tags-${b.id}-${i}">
-      ${(o.tags||[]).map((t,ti) => `<span class="tag-pill">${escHtml(t)}<span class="tag-del" onclick="removeTag('${b.id}',${i},${ti})">×</span></span>`).join('')}
-      <button class="btn sm sec" style="font-size:10px;padding:2px 8px;" onclick="addTagPrompt('${b.id}',${i})">+ 태그</button>
-    </div>`).join('');
-  return `<div class="block-editor">
-    <div class="field" style="margin-bottom:10px;">
-      <label class="lbl">질문</label>
-      <input value="${escHtml(b.question||'')}" placeholder="질문을 입력하세요" oninput="updateBlockField('${b.id}','question',this.value)">
-    </div>
-    <div class="toggle-row" style="margin-bottom:10px;">
-      <span class="toggle-lbl">복수 선택 허용</span>
-      <label class="toggle"><input type="checkbox" ${b.multiple?'checked':''} onchange="updateBlockField('${b.id}','multiple',this.checked)"><span class="toggle-slider"></span></label>
-    </div>
-    <label class="lbl">선택지</label>
-    <div id="opts-${b.id}">${opts}</div>
-    <button class="btn sm sec" style="margin-top:8px;width:100%;" onclick="addOption('${b.id}')">+ 선택지 추가</button>
-  </div>`;
-}
-
-function renderNumericEditor(b) {
-  return `<div class="block-editor">
-    <div class="field" style="margin-bottom:10px;">
-      <label class="lbl">질문</label>
-      <input value="${escHtml(b.question||'')}" placeholder="예: 목표 매출은 얼마인가요?" oninput="updateBlockField('${b.id}','question',this.value)">
-    </div>
-    <div class="row" style="margin-bottom:10px;">
-      <div class="field">
-        <label class="lbl">변수명 (영문)</label>
-        <input value="${escHtml(b.variable||'')}" placeholder="예: target_revenue" oninput="updateBlockField('${b.id}','variable',this.value)">
-      </div>
-      <div class="field">
-        <label class="lbl">단위</label>
-        <input value="${escHtml(b.unit||'')}" placeholder="만원 / 개 / 명" oninput="updateBlockField('${b.id}','unit',this.value)">
-      </div>
-    </div>
-    <div class="row">
-      <div class="field">
-        <label class="lbl">최솟값 (선택)</label>
-        <input type="number" value="${b.min??''}" placeholder="0" oninput="updateBlockField('${b.id}','min',this.value===''?null:Number(this.value))">
-      </div>
-      <div class="field">
-        <label class="lbl">최댓값 (선택)</label>
-        <input type="number" value="${b.max??''}" placeholder="" oninput="updateBlockField('${b.id}','max',this.value===''?null:Number(this.value))">
-      </div>
-    </div>
-  </div>`;
-}
-
-function renderResultEditor(b) {
-  const cond = b.condition || { operator:'AND', tags:[] };
-  const tagPills = (cond.tags||[]).map((t,i) => `<span class="tag-pill">${escHtml(t)}<span class="tag-del" onclick="removeCondTag('${b.id}',${i})">×</span></span>`).join('');
-  return `<div class="block-editor">
-    <div class="field" style="margin-bottom:10px;">
-      <label class="lbl">카드 제목</label>
-      <input value="${escHtml(b.title||'')}" placeholder="예: 매출 목표 달성 플랜" oninput="updateBlockField('${b.id}','title',this.value)">
-    </div>
-    <div class="field" style="margin-bottom:10px;">
-      <label class="lbl">본문 (** 볼드 **, {{변수명}} 계산식 사용 가능)</label>
-      <textarea placeholder="예: 목표 {{target_revenue}}만원 달성을 위해&#10;→ {{ceil(target_revenue / product_price)}}개 판매 필요" oninput="updateBlockField('${b.id}','content',this.value)">${escHtml(b.content||'')}</textarea>
-    </div>
-    <label class="lbl">노출 조건 (이 태그를 가진 사람에게만 표시)</label>
-    <div class="condition-row" style="margin-top:6px;">
-      <select onchange="updateCondOperator('${b.id}',this.value)" style="width:auto;flex:none;padding:8px 10px;">
-        <option value="AND" ${cond.operator==='AND'?'selected':''}>모두 해당 (AND)</option>
-        <option value="OR" ${cond.operator==='OR'?'selected':''}>하나라도 해당 (OR)</option>
-      </select>
-    </div>
-    <div class="opt-tags" style="margin-bottom:8px;">
-      ${tagPills}
-      <button class="btn sm sec" style="font-size:10px;padding:2px 8px;" onclick="addCondTagPrompt('${b.id}')">+ 태그</button>
-    </div>
-    <div style="font-size:11px;color:rgba(0,0,0,.4);">조건 없으면 항상 표시</div>
-  </div>`;
-}
-
-/* ── 블록 필드 업데이트 ── */
-function updateBlockField(id, field, value) {
-  const b = builderState.curForm.blocks.find(x => x.id === id);
-  if(b) b[field] = value;
-}
-
-function updateCondOperator(id, val) {
-  const b = builderState.curForm.blocks.find(x => x.id === id);
-  if(b) { if(!b.condition) b.condition={}; b.condition.operator = val; }
-}
-
-/* 선택지 관리 */
-function addOption(blockId) {
-  const b = builderState.curForm.blocks.find(x => x.id === blockId);
-  if(!b) return;
-  if(!b.options) b.options = [];
-  b.options.push({ id: uid(), label:'', tags:[] });
-  renderBlockList();
-}
-
-function removeOption(blockId, idx) {
-  const b = builderState.curForm.blocks.find(x => x.id === blockId);
-  if(b) b.options.splice(idx, 1);
-  renderBlockList();
-}
-
-function updateOption(blockId, idx, field, value) {
-  const b = builderState.curForm.blocks.find(x => x.id === blockId);
-  if(b && b.options[idx]) b.options[idx][field] = value;
-}
-
-function addTagPrompt(blockId, optIdx) {
-  const tag = prompt('태그 이름 입력 (예: 매출집중, 초보, 온라인경험있음)');
-  if(!tag || !tag.trim()) return;
-  const b = builderState.curForm.blocks.find(x => x.id === blockId);
-  if(!b || !b.options[optIdx]) return;
-  if(!b.options[optIdx].tags) b.options[optIdx].tags = [];
-  b.options[optIdx].tags.push(tag.trim());
-  renderBlockList();
-}
-
-function removeTag(blockId, optIdx, tagIdx) {
-  const b = builderState.curForm.blocks.find(x => x.id === blockId);
-  if(b && b.options[optIdx]) b.options[optIdx].tags.splice(tagIdx, 1);
-  renderBlockList();
-}
-
-function addCondTagPrompt(blockId) {
-  const tag = prompt('노출 조건 태그 입력');
-  if(!tag || !tag.trim()) return;
-  const b = builderState.curForm.blocks.find(x => x.id === blockId);
-  if(!b) return;
-  if(!b.condition) b.condition = { operator:'AND', tags:[] };
-  if(!b.condition.tags) b.condition.tags = [];
-  b.condition.tags.push(tag.trim());
-  renderBlockList();
-}
-
-function removeCondTag(blockId, idx) {
-  const b = builderState.curForm.blocks.find(x => x.id === blockId);
-  if(b && b.condition) b.condition.tags.splice(idx, 1);
-  renderBlockList();
-}
-
-function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-/* ════════════════════════════════════════════
-   뷰어 모드
-════════════════════════════════════════════ */
-let viewerState = {
+let vs = {
   form: null,
-  stepIdx: 0,       // 현재 표시 중인 question/numeric 블록 인덱스 (result 제외)
-  answers: {},      // { blockId: [optionId,...] } (choice) or { blockId: number } (numeric)
-  tags: new Set(),  // 선택한 옵션들의 태그 합집합
-  numVars: {},      // { variableName: number }
-  inputBlocks: [],  // type이 choice or numeric인 블록만
+  stepIdx: 0,
+  answers: {},
+  inputBlocks: [],
 };
 
 async function initViewer(formId) {
   try {
     const snap = await FORMS_REF().doc(formId).get();
-    if(!snap.exists) { showError('계산기를 찾을 수 없어요.'); return; }
-    viewerState.form = snap.data();
-    viewerState.inputBlocks = viewerState.form.blocks.filter(b => b.type === 'choice' || b.type === 'numeric');
-    viewerState.stepIdx = 0;
+    if(!snap.exists) {
+      showError('계산기를 찾을 수 없어요.', '링크가 올바른지 확인해주세요.');
+      return;
+    }
+    vs.form = snap.data();
+    vs.inputBlocks = (vs.form.blocks||[]).filter(b => b.type==='choice' || b.type==='numeric');
+    vs.stepIdx = 0;
+    vs.answers = {};
+    if(!vs.inputBlocks.length && !(vs.form.blocks||[]).filter(b=>b.type==='result').length) {
+      showError('아직 블록이 없는 계산기예요.', '관리자 페이지에서 블록을 추가해주세요.');
+      return;
+    }
     renderViewer();
-  } catch(e) { showError('불러오기 실패: ' + e.message); }
+  } catch(e) {
+    const isPermission = e.code === 'permission-denied' || (e.message||'').includes('permissions');
+    showError(
+      isPermission ? '접근 권한이 없어요.' : '불러오기 실패: ' + e.message,
+      isPermission ? 'Firestore 보안 규칙에서 game_configs 하위 컬렉션 읽기를 허용해주세요.' : ''
+    );
+  }
 }
 
 function renderViewer() {
-  document.getElementById('app').innerHTML = `
-  <div id="viewer">
-    <div id="viewer-progress"><div id="viewer-progress-bar" style="width:0%"></div></div>
-    <div id="viewer-body"></div>
-    <div id="viewer-nav">
-      <button class="btn sec" id="btn-prev" onclick="viewerPrev()" style="flex:1;">← 이전</button>
-      <button class="btn" id="btn-next" onclick="viewerNext()" style="flex:2;">다음 →</button>
+  const app = document.getElementById('app');
+  const title = esc(vs.form.title || '계산기');
+  app.innerHTML = `
+    <div id="view-header">
+      <span class="title">${title}</span>
     </div>
-  </div>
-  <div id="result-screen">
-    <div id="header" style="border-bottom:1.5px solid #000;padding:12px 16px;flex-shrink:0;">
-      <span class="title">${escHtml2(viewerState.form.title || '결과')}</span>
+    <div id="progress-wrap"><div id="progress-bar" style="width:0%"></div></div>
+    <div id="step-screen">
+      <div id="step-body"></div>
+      <div id="step-nav">
+        <button class="lmp-btn" id="btn-prev" onclick="vPrev()" style="display:none;">← 이전</button>
+        <button class="lmp-btn primary" id="btn-next" onclick="vNext()" style="flex:1;">다음 →</button>
+      </div>
     </div>
-    <div id="result-body"></div>
-    <div class="result-restart">
-      <button class="btn sec" style="width:100%;" onclick="restartViewer()">다시 하기</button>
-    </div>
-  </div>`;
-  renderViewerStep();
+    <div id="result-screen"></div>`;
+  renderStep();
 }
 
-function renderViewerStep() {
-  const total = viewerState.inputBlocks.length;
-  const idx = viewerState.stepIdx;
-  const pct = total ? Math.round((idx / total) * 100) : 0;
-  document.getElementById('viewer-progress-bar').style.width = pct + '%';
-
-  const prevBtn = document.getElementById('btn-prev');
-  const nextBtn = document.getElementById('btn-next');
-  prevBtn.style.display = idx === 0 ? 'none' : '';
+function renderStep() {
+  const total = vs.inputBlocks.length;
+  const idx = vs.stepIdx;
+  const pct = total ? Math.round((idx / total) * 100) : 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('btn-prev').style.display = idx > 0 ? '' : 'none';
 
   if(idx >= total) { showResults(); return; }
 
-  const block = viewerState.inputBlocks[idx];
-  const body = document.getElementById('viewer-body');
+  const b = vs.inputBlocks[idx];
+  const body = document.getElementById('step-body');
+  const stepLabel = `${idx+1} / ${total}`;
 
-  if(block.type === 'choice') {
-    const selected = viewerState.answers[block.id] || [];
+  if(b.type === 'choice') {
+    const sel = vs.answers[b.id] || [];
     body.innerHTML = `
-      <div class="q-title">${escHtml2(block.question)}</div>
-      ${block.multiple ? '<p class="q-sub">복수 선택 가능</p>' : ''}
+      <div class="q-label">${stepLabel}</div>
+      <div class="q-title">${esc(b.question)}</div>
+      ${b.multiple ? '<div class="q-sub">복수 선택 가능</div>' : ''}
       <div class="choice-options">
-        ${(block.options||[]).map(o => `
-          <button class="choice-opt${selected.includes(o.id)?' selected':''}" onclick="selectChoice('${block.id}','${o.id}',${!!block.multiple})">
-            ${escHtml2(o.label)}
+        ${(b.options||[]).map(o => `
+          <button class="choice-opt${sel.includes(o.id)?' active':''}" onclick="selectOpt('${b.id}','${o.id}',${!!b.multiple})">
+            <span class="opt-check">${sel.includes(o.id)?'✓':''}</span>
+            ${esc(o.label)}
           </button>`).join('')}
       </div>`;
-    nextBtn.textContent = '다음 →';
   }
 
-  if(block.type === 'numeric') {
-    const val = viewerState.answers[block.id] ?? '';
+  if(b.type === 'numeric') {
+    const val = vs.answers[b.id] ?? '';
     body.innerHTML = `
-      <div class="q-title">${escHtml2(block.question)}</div>
+      <div class="q-label">${stepLabel}</div>
+      <div class="q-title">${esc(b.question)}</div>
       <div class="numeric-wrap">
-        <input type="number" id="num-input" value="${val}" placeholder="0"
-          min="${block.min??''}" max="${block.max??''}"
-          oninput="updateNumericAnswer('${block.id}',this.value)">
-        ${block.unit ? `<span class="numeric-unit">${escHtml2(block.unit)}</span>` : ''}
+        <input type="number" id="num-inp" value="${esc(String(val))}" placeholder="0"
+          ${b.min!=null?`min="${b.min}"`:''}${b.max!=null?` max="${b.max}"`:''}
+          oninput="vs.answers['${b.id}']=this.value===''?'':Number(this.value)"
+          autofocus>
+        ${b.unit ? `<span class="numeric-unit">${esc(b.unit)}</span>` : ''}
       </div>`;
-    nextBtn.textContent = '다음 →';
+    /* iOS 자동 포커스 */
+    setTimeout(()=>{ const el=document.getElementById('num-inp'); if(el) el.focus(); }, 100);
   }
+
+  document.getElementById('btn-next').textContent = idx === total-1 ? '결과 보기 →' : '다음 →';
 }
 
-function selectChoice(blockId, optionId, multiple) {
-  if(!viewerState.answers[blockId]) viewerState.answers[blockId] = [];
-  const arr = viewerState.answers[blockId];
+function selectOpt(blockId, optId, multiple) {
+  if(!vs.answers[blockId]) vs.answers[blockId] = [];
+  const arr = vs.answers[blockId];
   if(multiple) {
-    const i = arr.indexOf(optionId);
-    if(i >= 0) arr.splice(i, 1); else arr.push(optionId);
+    const i = arr.indexOf(optId); i>=0 ? arr.splice(i,1) : arr.push(optId);
   } else {
-    viewerState.answers[blockId] = [optionId];
+    vs.answers[blockId] = [optId];
   }
-  renderViewerStep();
+  renderStep();
 }
 
-function updateNumericAnswer(blockId, val) {
-  viewerState.answers[blockId] = val === '' ? '' : Number(val);
+function vNext() {
+  if(vs.stepIdx < vs.inputBlocks.length) vs.stepIdx++;
+  renderStep();
 }
 
-function viewerNext() {
-  if(viewerState.stepIdx >= viewerState.inputBlocks.length) return;
-  viewerState.stepIdx++;
-  renderViewerStep();
+function vPrev() {
+  if(vs.stepIdx > 0) vs.stepIdx--;
+  renderStep();
 }
 
-function viewerPrev() {
-  if(viewerState.stepIdx <= 0) return;
-  viewerState.stepIdx--;
-  renderViewerStep();
-}
-
+/* ── 결과 화면 ── */
 function showResults() {
-  // 태그·변수 집계
-  viewerState.tags = new Set();
-  viewerState.numVars = {};
-  viewerState.form.blocks.forEach(b => {
-    if(b.type === 'choice') {
-      const selected = viewerState.answers[b.id] || [];
-      selected.forEach(optId => {
-        const opt = (b.options||[]).find(o => o.id === optId);
-        if(opt) (opt.tags||[]).forEach(t => viewerState.tags.add(t));
+  /* 태그·변수 집계 */
+  const tags = new Set();
+  const numVars = {};
+  (vs.form.blocks||[]).forEach(b => {
+    if(b.type==='choice') {
+      (vs.answers[b.id]||[]).forEach(optId => {
+        const opt = (b.options||[]).find(o=>o.id===optId);
+        if(opt) (opt.tags||[]).forEach(t=>tags.add(t));
       });
     }
-    if(b.type === 'numeric' && b.variable) {
-      const v = viewerState.answers[b.id];
-      if(v !== '' && v !== undefined) viewerState.numVars[b.variable] = Number(v) || 0;
+    if(b.type==='numeric' && b.variable) {
+      const v = vs.answers[b.id];
+      if(v!==''&&v!=null) numVars[b.variable] = Number(v)||0;
     }
   });
 
-  // 조건 체크해서 해당하는 result 블록만 수집
-  const resultBlocks = viewerState.form.blocks.filter(b => {
-    if(b.type !== 'result') return false;
-    const cond = b.condition;
-    if(!cond || !cond.tags || !cond.tags.length) return true; // 조건 없으면 항상 표시
-    if(cond.operator === 'AND') return cond.tags.every(t => viewerState.tags.has(t));
-    return cond.tags.some(t => viewerState.tags.has(t));
+  /* 조건 맞는 결과 카드 필터 */
+  const cards = (vs.form.blocks||[]).filter(b => {
+    if(b.type!=='result') return false;
+    const c = b.condition;
+    if(!c||!c.tags||!c.tags.length) return true;
+    return c.operator==='OR' ? c.tags.some(t=>tags.has(t)) : c.tags.every(t=>tags.has(t));
   });
 
-  const resultBody = document.getElementById('result-body');
-  if(!resultBlocks.length) {
-    resultBody.innerHTML = '<div class="empty" style="padding:40px 20px;">해당하는 결과 카드가 없어요.</div>';
-  } else {
-    resultBody.innerHTML = `
-      <div class="result-header">나에게 맞는 가이드 ${resultBlocks.length}개</div>
-      ${resultBlocks.map(b => {
-        const rendered = evalTemplate(b.content || '', viewerState.numVars);
+  document.getElementById('step-screen').style.display = 'none';
+  const resultEl = document.getElementById('result-screen');
+  resultEl.style.display = 'flex';
+
+  const cardsHTML = cards.length
+    ? cards.map(b => {
+        const body = renderMd(esc(evalTemplate(b.content||'', numVars)));
         return `<div class="result-card">
-          <div class="result-card-title">${escHtml2(b.title)}</div>
-          <div class="result-card-body">${renderMd(escHtml2(rendered))}</div>
+          <div class="result-card-head"><div class="result-card-title">${esc(b.title)}</div></div>
+          <div class="result-card-divider"></div>
+          <div class="result-card-body">${body}</div>
         </div>`;
-      }).join('')}`;
-  }
+      }).join('')
+    : `<div style="text-align:center;padding:40px 0;font-size:13px;font-weight:700;color:rgba(0,0,0,.35);">해당하는 결과 카드가 없어요.</div>`;
 
-  document.getElementById('viewer').style.display = 'none';
-  document.getElementById('result-screen').style.display = 'flex';
+  resultEl.innerHTML = `
+    <div id="result-header">
+      <span class="r-title">결과</span>
+      <span class="r-count">카드 ${cards.length}개</span>
+    </div>
+    <div id="result-body">${cardsHTML}</div>
+    <div id="result-footer">
+      <button class="lmp-btn" onclick="restart()" style="width:100%;">← 다시 하기</button>
+    </div>`;
 }
 
-function restartViewer() {
-  viewerState.stepIdx = 0;
-  viewerState.answers = {};
-  viewerState.tags = new Set();
-  viewerState.numVars = {};
-  document.getElementById('viewer').style.display = '';
+function restart() {
+  vs.stepIdx = 0;
+  vs.answers = {};
   document.getElementById('result-screen').style.display = 'none';
-  renderViewerStep();
+  document.getElementById('step-screen').style.display = '';
+  renderStep();
 }
 
-function escHtml2(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+/* ── 유틸 ── */
+function showError(msg, sub) {
+  document.getElementById('app').innerHTML = `
+    <div class="error-wrap">
+      <div class="error-icon">!</div>
+      <div class="error-msg">${esc(msg)}</div>
+      ${sub ? `<div class="error-sub">${esc(sub)}</div>` : ''}
+    </div>`;
 }
 
-function showError(msg) {
-  document.getElementById('app').innerHTML = `<div style="padding:40px 20px;text-align:center;color:rgba(0,0,0,.4);font-size:14px;">${msg}</div>`;
+function showBuilderRedirect() {
+  document.getElementById('app').innerHTML = `
+    <div class="builder-redirect">
+      <p>계산기 ID가 없어요.<br>관리자 페이지에서 계산기를 만들고 미리보기 링크를 사용해주세요.</p>
+      <a href="/admin" class="lmp-btn" style="text-decoration:none;">관리자 페이지 →</a>
+    </div>`;
 }
 </script>
 </body>
