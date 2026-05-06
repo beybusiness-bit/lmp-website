@@ -823,6 +823,34 @@ function attachCheck(h,b){
   if(vPos==='top') return checkEl+h;
   return h+checkEl;
 }
+// ── 임베드 iframe에 사용자 컨텍스트 전달 ──
+function _sendContextToEmbeds(){
+  // lmp-ready 신호 대기 + 직접 전송 (300ms 후, iframe 로드 완료 예상)
+  setTimeout(()=>{
+    document.querySelectorAll('iframe').forEach(f=>{
+      try{
+        f.contentWindow.postMessage({
+          type:'lmp-context',
+          boothType: (typeof user!=='undefined'&&user) ? (user.boothType||user.type||'') : '',
+          keyColors: typeof KEY_COLORS!=='undefined' ? KEY_COLORS : [],
+          userFields: (typeof user!=='undefined'&&user) ? user : {}
+        },'*');
+      }catch(e){}
+    });
+  },300);
+}
+// lmp-ready 신호 수신 시 즉시 전송
+window.addEventListener('message',e=>{
+  if(e.data?.type!=='lmp-ready'||!e.source) return;
+  try{
+    e.source.postMessage({
+      type:'lmp-context',
+      boothType: (typeof user!=='undefined'&&user) ? (user.boothType||user.type||'') : '',
+      keyColors: typeof KEY_COLORS!=='undefined' ? KEY_COLORS : [],
+      userFields: (typeof user!=='undefined'&&user) ? user : {}
+    },'*');
+  }catch(er){}
+});
 function renderGuideScroll(blocks){
   document.getElementById('guide-scroll-blocks').innerHTML=blocks.map(b=>{
     const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
@@ -832,6 +860,7 @@ function renderGuideScroll(blocks){
     return (bgS||mS)?`<div style="${bgS}${mS}">${inner}</div>`:inner;
   }).join('');
   document.getElementById('guide-scroll-body').style.display='block';
+  _sendContextToEmbeds();
 }
 function renderGuideSlide(blocks){
   gSlideIdx=0; gSlideTotal=blocks.length;
@@ -846,6 +875,7 @@ function renderGuideSlide(blocks){
   }).join('');
   track.style.width=(N*100)+'%';
   updateDots(); document.getElementById('guide-slide-body').style.display='flex';
+  _sendContextToEmbeds();
   const sb=document.getElementById('guide-slide-body');
   sb.ontouchstart=e=>{ gTouchX=e.touches[0].clientX; };
   sb.ontouchend  =e=>{ const dx=e.changedTouches[0].clientX-gTouchX; if(Math.abs(dx)>40) goSlide(gSlideIdx+(dx<0?1:-1)); };

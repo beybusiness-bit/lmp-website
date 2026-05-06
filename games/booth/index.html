@@ -90,7 +90,15 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .bg-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 .bg-thumb .bg-label{position:absolute;bottom:0;left:0;right:0;font-size:10px;font-weight:700;color:#fff;text-align:center;padding:3px 4px;background:rgba(0,0,0,.55);}
 
-/* ── 완성 모달 ── */
+/* 배경 모달 탭 */
+.bg-tabs{display:flex;border-bottom:2px solid #000;margin-bottom:12px;}
+.bg-tab{flex:1;padding:8px 0;background:transparent;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.2px;color:rgba(0,0,0,.4);border-bottom:2px solid transparent;margin-bottom:-2px;}
+.bg-tab.active{color:#000;border-bottom-color:#000;}
+.bg-tab-panel{display:none;}
+.bg-tab-panel.active{display:block;}
+#bg-upload-zone{border:2px dashed rgba(0,0,0,.3);padding:30px 16px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:rgba(0,0,0,.4);}
+#bg-upload-zone:hover{border-color:#000;color:#000;}
+#bg-upload-input{display:none;}
 #export-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:16px;}
 #export-modal.on{display:flex;}
 #export-canvas{max-width:360px;max-height:60vh;}
@@ -199,7 +207,21 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
       <span>배경 선택</span>
       <button onclick="closeBgModal()">✕</button>
     </div>
-    <div id="bg-grid"><p style="color:rgba(0,0,0,.4);font-size:12px;">배경 불러오는 중…</p></div>
+    <div class="bg-tabs">
+      <button class="bg-tab active" onclick="switchBgTab('free',this)">무료 이미지</button>
+      <button class="bg-tab" onclick="switchBgTab('upload',this)">직접 업로드</button>
+    </div>
+    <!-- 무료 이미지 탭 -->
+    <div id="bg-tab-free" class="bg-tab-panel active">
+      <div id="bg-grid"></div>
+    </div>
+    <!-- 직접 업로드 탭 -->
+    <div id="bg-tab-upload" class="bg-tab-panel">
+      <div id="bg-upload-zone" onclick="document.getElementById('bg-upload-input').click()">
+        탭하여 이미지 선택
+      </div>
+      <input type="file" id="bg-upload-input" accept="image/*" onchange="onBgUpload(event)">
+    </div>
   </div>
 </div>
 
@@ -226,6 +248,22 @@ const FB_CFG = {
 firebase.initializeApp(FB_CFG);
 const db = firebase.firestore();
 
+// ── 무료 배경 이미지 (Unsplash 큐레이션) ──
+const FREE_BG_IMAGES = [
+  {label:'파스텔 그라디언트', url:'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=800&q=80'},
+  {label:'보케 조명',         url:'https://images.unsplash.com/photo-1483683804023-6ccdb62f86ef?w=800&q=80'},
+  {label:'흰 벽돌',           url:'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=800&q=80'},
+  {label:'우드 테이블',       url:'https://images.unsplash.com/photo-1541123437800-1bb1317badc2?w=800&q=80'},
+  {label:'핑크 꽃',           url:'https://images.unsplash.com/photo-1490750967868-88df5691cc62?w=800&q=80'},
+  {label:'하늘',              url:'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&q=80'},
+  {label:'크래프트 종이',     url:'https://images.unsplash.com/photo-1494887205043-c5f291293cf6?w=800&q=80'},
+  {label:'민트 배경',         url:'https://images.unsplash.com/photo-1557682224-5b8590cd9ec5?w=800&q=80'},
+  {label:'노을',              url:'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80'},
+  {label:'라벤더',            url:'https://images.unsplash.com/photo-1499002238440-d264edd596ec?w=800&q=80'},
+  {label:'빈티지 린넨',       url:'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=800&q=80'},
+  {label:'노란 꽃밭',         url:'https://images.unsplash.com/photo-1444930694458-01babf71abce?w=800&q=80'},
+];
+
 // ── 앱 상태 ──
 let canvasW = 0, canvasH = 0;
 let bgImage = null;
@@ -233,11 +271,12 @@ let backgrounds = []; // [{type, label, url}]
 let items = [];       // 데코 아이템 목록
 let selectedItem = null;
 let drawMode = false;
-let drawColor = '#ffffff';
+let drawColor = '#000000';
 let drawSize = 8;
-let strokeHistory = []; // 각 스트로크 = ImageData snapshot
-let keyColors = [];    // 프로젝트 키컬러 (postMessage로 수신)
-let userBoothType = ''; // 부스 종류 (postMessage로 수신)
+let strokeHistory = [];
+let keyColors = [];
+let userBoothType = '';
+let contextReceived = false; // 프로젝트에서 컨텍스트 수신 여부
 let isDrawing = false;
 let lastX = 0, lastY = 0;
 
@@ -251,7 +290,14 @@ const canvasWrap = document.getElementById('canvas-wrap');
 // ── 초기화 ──
 async function init() {
   resizeCanvases();
+  // 부모 플레이어에 ready 신호 전송
+  window.parent.postMessage({type:'lmp-ready'}, '*');
+  // 1.5초 안에 컨텍스트가 안 오면 배경 버튼 표시
+  setTimeout(() => {
+    if(!contextReceived) showBgBtn();
+  }, 1500);
   await loadBackgrounds();
+  renderFreeBgGrid();
   setupDrawEvents();
   document.getElementById('draw-size-range').addEventListener('input', e => {
     drawSize = +e.target.value;
@@ -262,6 +308,19 @@ async function init() {
   });
   document.getElementById('loading').style.display = 'none';
   window.addEventListener('resize', resizeCanvases);
+}
+
+function showBgBtn() {
+  const btn = document.getElementById('btn-bg');
+  const sep = btn.nextElementSibling;
+  btn.style.display = '';
+  if(sep) sep.style.display = '';
+}
+function hideBgBtn() {
+  const btn = document.getElementById('btn-bg');
+  const sep = btn.nextElementSibling;
+  btn.style.display = 'none';
+  if(sep) sep.style.display = 'none';
 }
 
 function resizeCanvases() {
@@ -283,17 +342,39 @@ async function loadBackgrounds() {
   } catch(e) {}
 }
 
-function renderBgGrid() {
+function renderFreeBgGrid() {
   const grid = document.getElementById('bg-grid');
-  if(!backgrounds.length) {
-    grid.innerHTML = '<p style="color:rgba(255,255,255,.4);font-size:12px;grid-column:1/-1;">등록된 배경이 없어요. 관리자가 배경을 추가해 주세요.</p>';
-    return;
-  }
-  grid.innerHTML = backgrounds.map((b,i)=>`
-    <div class="bg-thumb ${bgImage && backgrounds.indexOf(b)===backgrounds.findIndex(x=>x.url===bgImage._src)?'active':''}" onclick="selectBg(${i})">
+  if(!grid) return;
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:8px;overflow-y:auto;max-height:45vh;';
+  grid.innerHTML = FREE_BG_IMAGES.map(b=>`
+    <div class="bg-thumb" onclick="selectBgByUrl('${b.url}','${b.label}')">
       <img src="${b.url}" loading="lazy">
-      <div class="bg-label">${b.label||b.type||'배경'+(i+1)}</div>
+      <div class="bg-label">${b.label}</div>
     </div>`).join('');
+}
+
+function switchBgTab(tab, btn) {
+  document.querySelectorAll('.bg-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.bg-tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('bg-tab-'+tab).classList.add('active');
+}
+
+function onBgUpload(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      bgImage = img; bgImage._src = ev.target.result;
+      document.getElementById('no-bg-msg').style.display = 'none';
+      drawBg(); closeBgModal();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
 }
 
 function autoSelectBg() {
@@ -302,31 +383,32 @@ function autoSelectBg() {
 }
 
 function selectBg(i, silent=false) {
-  const b = backgrounds[i];
+  selectBgByUrl(backgrounds[i].url, backgrounds[i].label||'', silent);
+}
+
+function selectBgByUrl(url, label='', silent=false) {
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = () => {
-    bgImage = img;
-    bgImage._src = b.url;
+    bgImage = img; bgImage._src = url;
     document.getElementById('no-bg-msg').style.display = 'none';
     drawBg();
     if(!silent) closeBgModal();
   };
-  img.src = b.url;
+  img.onerror = () => { img.crossOrigin = undefined; img.src = url; };
+  img.src = url;
 }
 
 function drawBg() {
   if(!bgImage) return;
   bgCtx.clearRect(0,0,canvasW,canvasH);
-  // cover 방식
   const iw = bgImage.naturalWidth, ih = bgImage.naturalHeight;
   const scale = Math.max(canvasW/iw, canvasH/ih);
   const dw = iw*scale, dh = ih*scale;
-  const dx = (canvasW-dw)/2, dy = (canvasH-dh)/2;
-  bgCtx.drawImage(bgImage, dx, dy, dw, dh);
+  bgCtx.drawImage(bgImage, (canvasW-dw)/2, (canvasH-dh)/2, dw, dh);
 }
 
-function openBgModal() { renderBgGrid(); document.getElementById('bg-modal').classList.add('on'); }
+function openBgModal() { document.getElementById('bg-modal').classList.add('on'); }
 function closeBgModal() { document.getElementById('bg-modal').classList.remove('on'); }
 
 // ── 이미지 추가 ──
@@ -770,11 +852,24 @@ function closeExport() { document.getElementById('export-modal').classList.remov
 window.addEventListener('message', e => {
   if(e.data?.type !== 'lmp-context') return;
   const d = e.data;
+  contextReceived = true;
   if(d.keyColors?.length) { keyColors = d.keyColors; renderKeyColorSwatches(); }
-  if(d.boothType) { userBoothType = d.boothType; if(backgrounds.length) autoSelectBg(); }
+  // boothType: 부모가 명시적으로 보내거나 userFields.type 에서 추출
+  const bt = d.boothType || d.userFields?.boothType || d.userFields?.type || '';
+  if(bt) {
+    userBoothType = bt;
+    hideBgBtn();
+    if(backgrounds.length) autoSelectBg();
+  } else {
+    showBgBtn(); // 컨텍스트 왔지만 부스 종류 없으면 버튼 표시
+  }
 });
 
-// ── 시작 ──
+// ── 시작: 배경 버튼 기본 숨김 (컨텍스트 대기) ──
+document.addEventListener('DOMContentLoaded', () => {
+  hideBgBtn();
+});
+
 init();
 </script>
 </body>
