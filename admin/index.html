@@ -164,6 +164,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .switch-lbl{font-size:13px;font-weight:600;}
 .chk-pos-btn{width:100%;aspect-ratio:1;background:transparent;border:1.5px solid rgba(0,0,0,.2);font-size:14px;cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;}
 .chk-pos-btn.on{background:#000;color:#fff;border-color:#000;}
+/* ── Games tab ── */
+#panel-games .proj-item { cursor: pointer; }
+.proj-item{padding:14px 0;border-bottom:1.5px solid #000;}
+.pi-name{font-size:15px;font-weight:700;margin-bottom:2px;}
+.pi-meta{font-size:11px;color:rgba(0,0,0,.45);}
+.booth-bg-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1.5px solid rgba(0,0,0,.08);}
+.booth-bg-item:last-child{border-bottom:none;}
+.booth-bg-thumb{width:60px;height:75px;object-fit:cover;border:1.5px solid rgba(0,0,0,.15);flex-shrink:0;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(0,0,0,.3);}
+.booth-bg-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.booth-bg-info{flex:1;min-width:0;}
+.booth-bg-type{font-size:13px;font-weight:700;margin-bottom:2px;}
+.booth-bg-url{font-size:10px;color:rgba(0,0,0,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.booth-bg-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -192,7 +205,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <button class="hdr-btn" onclick="managePAT()" id="pat-btn">토큰 ●</button>
     <button class="hdr-btn" onclick="doSignOut()">로그아웃</button>
   </div>
-  <div class="tab-nav" style="display:none;"></div>
+  <div class="tab-nav">
+    <button class="tab-btn on" onclick="switchTab('proj')" id="tabbtn-proj">프로젝트</button>
+    <button class="tab-btn" onclick="switchTab('games')" id="tabbtn-games">게임</button>
+  </div>
   <div class="admin-body">
 
     <!-- 프로젝트 탭 -->
@@ -423,6 +439,43 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         </div><!-- /proj-layout -->
       </div><!-- /proj-edit-view -->
     </div><!-- /proj-list-view container -->
+
+    <!-- 게임 탭 -->
+    <div class="panel" id="panel-games">
+      <div id="games-list-view">
+        <div class="sect-head" style="margin-bottom:16px;">게임 관리</div>
+        <div id="games-list">
+          <!-- 게임 카드 -->
+          <div class="proj-item" onclick="openGame('booth')" style="cursor:pointer;">
+            <div class="pi-name">부스 꾸미기</div>
+            <div class="pi-meta">배경 이미지 · 부스 종류별 설정</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 부스 게임 설정 화면 -->
+      <div id="game-booth-view" style="display:none;flex-direction:column;">
+        <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
+          <span class="back-btn" onclick="closeGame()">←</span>
+          <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">부스 꾸미기 설정</span>
+        </div>
+        <div style="padding:20px 16px;overflow-y:auto;flex:1;">
+          <div class="sect-head" style="margin-bottom:4px;">부스 종류별 배경 이미지</div>
+          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">각 부스 종류에 맞는 배경 이미지를 업로드하세요. 업로드된 이미지는 사용자가 게임 시작 시 자동으로 선택됩니다. 권장 크기: 1080×1350px (4:5)</div>
+
+          <!-- 부스 종류 추가 -->
+          <div style="display:flex;gap:8px;margin-bottom:20px;">
+            <input class="fi" id="new-booth-type" placeholder="부스 종류 입력 (예: food, craft, beauty)" style="flex:1;margin-bottom:0;">
+            <button class="save-btn" onclick="addBoothType()">추가</button>
+          </div>
+
+          <!-- 부스 종류 목록 -->
+          <div id="booth-bg-list">
+            <div class="empty-msg">불러오는 중…</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
   </div>
 </div>
@@ -921,7 +974,10 @@ function signIn() {
 function doSignOut() { auth.signOut(); }
 
 /* ── Tabs ── */
-function switchTab(t) { /* 탭이 단일화되어 미사용 */ }
+function switchTab(t) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('on', b.id === 'tabbtn-'+t));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === 'panel-'+t));
+}
 function switchInnerTab(t) {
   document.querySelectorAll('.inner-tab').forEach((el,i) => {
     el.classList.toggle('on', ['basic','design','auth','stages'][i] === t);
@@ -3056,6 +3112,114 @@ window.addEventListener('load', () => {
     if(projDirty || stageDirty) { e.preventDefault(); e.returnValue=''; }
   });
 });
+
+/* ── Games Tab ── */
+let curGame = null;
+
+function openGame(gameId) {
+  curGame = gameId;
+  document.getElementById('games-list-view').style.display = 'none';
+  document.getElementById('game-'+gameId+'-view').style.display = 'flex';
+  if(gameId === 'booth') loadBoothBgs();
+}
+
+function closeGame() {
+  if(curGame) {
+    document.getElementById('game-'+curGame+'-view').style.display = 'none';
+    curGame = null;
+  }
+  document.getElementById('games-list-view').style.display = '';
+}
+
+/* ── Booth Backgrounds ── */
+async function loadBoothBgs() {
+  const el = document.getElementById('booth-bg-list');
+  el.innerHTML = '<div class="empty-msg">불러오는 중…</div>';
+  try {
+    const doc = await db.collection('game_configs').doc('booth').get();
+    const bgs = doc.exists ? (doc.data().backgrounds || []) : [];
+    renderBoothBgList(bgs);
+  } catch(e) {
+    el.innerHTML = '<div class="empty-msg">불러오기 실패: ' + e.message + '</div>';
+  }
+}
+
+function renderBoothBgList(bgs) {
+  const el = document.getElementById('booth-bg-list');
+  if(!bgs.length) {
+    el.innerHTML = '<div class="empty-msg">등록된 배경이 없어요. 위에서 부스 종류를 추가하고 이미지를 업로드하세요.</div>';
+    return;
+  }
+  el.innerHTML = bgs.map((b, i) => `
+    <div class="booth-bg-item" data-idx="${i}">
+      <div class="booth-bg-thumb">
+        ${b.url ? `<img src="${b.url}" onerror="this.style.display='none'">` : '없음'}
+      </div>
+      <div class="booth-bg-info">
+        <div class="booth-bg-type">${b.type}</div>
+        <div class="booth-bg-url">${b.label || ''}</div>
+        <div class="booth-bg-url" style="margin-top:2px;">${b.url ? '이미지 등록됨' : '이미지 없음'}</div>
+      </div>
+      <div class="booth-bg-actions">
+        <label class="save-btn" style="margin:0;cursor:pointer;font-size:11px;padding:6px 10px;">
+          이미지 변경
+          <input type="file" accept="image/*" style="display:none;" onchange="uploadBoothBg(event,${i})">
+        </label>
+        <button class="del-btn" style="margin:0;" onclick="deleteBoothBg(${i})">삭제</button>
+      </div>
+    </div>`).join('');
+}
+
+async function addBoothType() {
+  const input = document.getElementById('new-booth-type');
+  const type = input.value.trim();
+  if(!type) return;
+  try {
+    const doc = await db.collection('game_configs').doc('booth').get();
+    const bgs = doc.exists ? (doc.data().backgrounds || []) : [];
+    if(bgs.find(b => b.type === type)) {
+      alert('이미 존재하는 부스 종류예요: ' + type); return;
+    }
+    bgs.push({ type, label: type, url: '' });
+    await db.collection('game_configs').doc('booth').set({ backgrounds: bgs }, { merge: true });
+    input.value = '';
+    renderBoothBgList(bgs);
+  } catch(e) {
+    alert('추가 실패: ' + e.message);
+  }
+}
+
+async function uploadBoothBg(e, idx) {
+  const file = e.target.files[0];
+  if(!file) return;
+  e.target.closest('.booth-bg-item').querySelector('.booth-bg-url').textContent = '업로드 중…';
+  try {
+    const ref = storage.ref('game_configs/booth_bgs/' + Date.now() + '_' + file.name);
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
+
+    const doc = await db.collection('game_configs').doc('booth').get();
+    const bgs = doc.data().backgrounds || [];
+    bgs[idx].url = url;
+    await db.collection('game_configs').doc('booth').set({ backgrounds: bgs }, { merge: true });
+    renderBoothBgList(bgs);
+  } catch(err) {
+    alert('업로드 실패: ' + err.message);
+  }
+}
+
+async function deleteBoothBg(idx) {
+  if(!confirm('이 부스 종류를 삭제할까요?')) return;
+  try {
+    const doc = await db.collection('game_configs').doc('booth').get();
+    const bgs = doc.data().backgrounds || [];
+    bgs.splice(idx, 1);
+    await db.collection('game_configs').doc('booth').set({ backgrounds: bgs }, { merge: true });
+    renderBoothBgList(bgs);
+  } catch(e) {
+    alert('삭제 실패: ' + e.message);
+  }
+}
 </script>
 <div id="fmt-popup" style="display:none;position:fixed;background:#fff;border:2px solid #000;z-index:600;box-shadow:3px 3px 0 rgba(0,0,0,.1);min-width:110px;"><div id="fmt-popup-inner"></div></div>
 </body>
