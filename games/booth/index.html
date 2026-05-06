@@ -456,10 +456,12 @@ function onImageFileSelected(e) {
 }
 
 function addImageItem(imgEl, src) {
-  const size = Math.min(canvasW * 0.4, 150);
-  const x = canvasW/2 - size/2;
-  const y = canvasH/2 - size/2;
-  const item = { id: Date.now(), type:'image', src, x, y, w: size, h: size, rot:0, frame:'' };
+  const targetW = Math.min(canvasW * 0.4, 150);
+  const naturalRatio = (imgEl.naturalHeight / imgEl.naturalWidth) || 1;
+  const targetH = targetW * naturalRatio;
+  const x = canvasW/2 - targetW/2;
+  const y = canvasH/2 - targetH/2;
+  const item = { id: Date.now(), type:'image', src, x, y, w: targetW, h: targetH, rot:0, frame:'', naturalRatio };
   items.push(item);
   renderItems();
   selectItemById(item.id);
@@ -478,11 +480,12 @@ function renderItems() {
     // 프레임 설정
     const frameClass = item.frame || '';
     const needsInner = ['frame-triangle','frame-heart','frame-star','frame-squirt'].includes(frameClass);
+    const objFit = frameClass ? 'cover' : 'fill';
     if(needsInner) {
       el.innerHTML = `<div class="frame-inner" style="width:100%;height:100%;"><img src="${item.src}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>`;
       el.classList.add(frameClass);
     } else {
-      el.innerHTML = `<img src="${item.src}" style="width:100%;height:100%;object-fit:cover;display:block;">`;
+      el.innerHTML = `<img src="${item.src}" style="width:100%;height:100%;object-fit:${objFit};display:block;">`;
       if(frameClass) el.classList.add(frameClass);
     }
 
@@ -634,7 +637,17 @@ function onItemSizeChange(val) {
 
 function setFrame(btn, frame) {
   if(!selectedItem) return;
+  const prevFrame = selectedItem.frame;
   selectedItem.frame = frame;
+
+  if(frame && !prevFrame) {
+    // 프레임 적용: 정사각형으로 변환 (프레임이 사방을 꽉 채우도록)
+    selectedItem.h = selectedItem.w;
+  } else if(!frame && prevFrame) {
+    // 프레임 해제: 원본 비율 복원
+    selectedItem.h = selectedItem.w * (selectedItem.naturalRatio || 1);
+  }
+
   document.querySelectorAll('.frame-btn').forEach(b=>b.classList.toggle('active', b===btn));
   renderItems();
   // 선택 유지
