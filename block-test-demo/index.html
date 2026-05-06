@@ -243,9 +243,10 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
   <div id="prep-screen" class="fullscreen">
     <div id="prep-topbar" class="topbar">
       <div class="topbar-left" onclick="toggleMenu()">
-        <div class="basket-icon-wrap">
+        <div class="basket-icon-wrap" id="prep-cta-wrap">
           <div class="basket-layer basket-layer-black" id="prep-cta-icon"></div>
         </div>
+        <span id="prep-menu-fallback" style="display:none;font-size:22px;font-weight:900;line-height:1;">☰</span>
       </div>
       <div class="topbar-center" id="topbar-title">준비</div>
       <div class="topbar-right" onclick="closePrep()">↓</div>
@@ -428,7 +429,14 @@ function applySettings(d){
   if(d.name) document.getElementById('topbar-title').textContent = d.name;
 
   /* CTA */
-  if(d.ctaIconUrl){ setMaskUrl('#cta-icon',d.ctaIconUrl); setMaskUrl('#prep-cta-icon',d.ctaIconUrl); }
+  if(d.ctaIconUrl){
+    setMaskUrl('#cta-icon',d.ctaIconUrl);
+    setMaskUrl('#prep-cta-icon',d.ctaIconUrl);
+  } else {
+    document.getElementById('cta-icon').style.display = 'none';
+    document.getElementById('prep-cta-wrap').style.display = 'none';
+    document.getElementById('prep-menu-fallback').style.display = 'inline';
+  }
   if(d.ctaIconSize) setCss('--cta-icon-size',(d.ctaIconSize)+'px');
   if(d.ctaText) document.getElementById('cta-text').textContent=d.ctaText;
 
