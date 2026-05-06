@@ -156,8 +156,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 #help-panel-body .badge.black{background:#000;color:#fff;}
 #help-panel-body code{background:#f0f0f0;padding:1px 5px;font-family:monospace;font-size:12px;border-radius:2px;}
 /* preview */
-.preview-side-panel{flex-shrink:0;border-left:2px solid #000;background:#f4f4f4;display:flex;flex-direction:column;align-items:center;padding:16px 12px;overflow-y:auto;}
+.preview-side-panel{flex-shrink:0;border-left:2px solid #000;background:#f4f4f4;flex-direction:column;align-items:center;padding:16px 12px;overflow-y:auto;display:none;}
+.preview-side-panel.pv-open{display:flex;}
 .preview-side-panel-header{display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:10px;}
+/* 패널 내 모바일 닫기 버튼 (데스크탑에서 숨김) */
+.pv-close-btn{display:none;width:100%;padding:10px 0;margin-top:12px;background:transparent;border:1.5px solid #000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.pv-close-btn:hover{background:#000;color:#fff;}
+/* 공유 백드롭 */
+#pv-backdrop{display:none;position:fixed;inset:0;z-index:449;background:rgba(0,0,0,.45);cursor:pointer;}
+#pv-backdrop.on{display:block;}
+/* 모바일: 미리보기 패널 & 도움말 패널 → 풀스크린 모달 */
+@media(max-width:767px){
+  .preview-side-panel.pv-open{position:fixed !important;inset:0 !important;z-index:450 !important;width:100% !important;max-width:100% !important;border-left:none !important;padding:20px;overflow-y:auto;}
+  .pv-close-btn{display:block !important;}
+  #help-panel{width:100% !important;max-width:100% !important;}
+}
 #proj-edit-view{position:fixed;inset:0;z-index:100;background:#f4f4f4;}
 #stage-content-overlay{flex-direction:column;}
 .stage-layout{display:flex;flex:1;overflow:hidden;}
@@ -240,6 +253,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <span class="back-btn" onclick="backToProjects()">←</span>
           <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">프로젝트 편집</span>
           <div style="flex:1;"></div>
+          <button class="prev-btn" onclick="togglePreviewPanel('proj-preview-panel')" id="proj-pv-btn" style="font-size:12px;">미리보기</button>
           <button class="save-btn" onclick="saveProject(false)">저장</button>
           <button class="save-btn" onclick="saveProject(true)" id="deploy-btn">배포</button>
           <button class="del-btn" id="proj-del" onclick="deleteProject()" style="display:none;">삭제</button>
@@ -452,6 +466,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             </div>
           </div>
           <div style="font-size:9px;color:rgba(0,0,0,.35);text-align:center;margin-top:8px;">실제와 다를 수<br>있어요</div>
+          <button class="pv-close-btn" onclick="togglePreviewPanel('proj-preview-panel')">닫기 ×</button>
         </div>
         </div><!-- /proj-layout -->
       </div><!-- /proj-edit-view -->
@@ -567,6 +582,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   </div>
 </div>
 
+<!-- ── 미리보기/도움말 공유 백드롭 (모바일 모달용) ── -->
+<div id="pv-backdrop" onclick="closePvPanel()"></div>
+
 <!-- ── 전역 왼쪽 도움말 패널 ── -->
 <div id="help-panel">
   <div id="help-panel-head">
@@ -583,6 +601,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">스테이지 내용</span>
     <span id="sco-stage-title" style="font-size:12px;font-weight:800;margin-left:4px;color:#000;"></span>
     <div style="flex:1;"></div>
+    <button class="prev-btn" onclick="togglePreviewPanel('guide-preview-panel')" id="guide-pv-btn" style="font-size:12px;">미리보기</button>
     <button class="prev-btn" onclick="openCopyModal()" style="margin-right:4px;">복제</button>
     <button class="save-btn" onclick="saveStageContent()">저장</button>
   </div>
@@ -620,6 +639,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div id="gprev-content" style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;"></div>
       </div>
       <div style="font-size:9px;color:rgba(0,0,0,.35);text-align:center;margin-top:8px;">실제와 다를 수<br>있어요</div>
+      <button class="pv-close-btn" onclick="togglePreviewPanel('guide-preview-panel')">닫기 ×</button>
     </div>
   </div>
 </div>
@@ -647,6 +667,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   <div class="bm-top">
     <span class="back-btn" onclick="closeBlockModal()">←</span>
     <span style="font-size:14px;font-weight:800;flex:1;" id="bm-title">블록 추가</span>
+    <button class="prev-btn" onclick="togglePreviewPanel('bm-preview-panel')" id="bm-pv-btn" style="font-size:12px;">미리보기</button>
     <button class="save-btn" onclick="saveBlock()">완료</button>
   </div>
   <div class="bm-layout">
@@ -824,7 +845,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     </div><!-- /ed-inner -->
   </div>
   <!-- 블록 편집 실시간 미리보기 패널 -->
-  <div class="bm-preview-panel preview-side-panel" style="border-left:2px solid #000;">
+  <div id="bm-preview-panel" class="bm-preview-panel preview-side-panel" style="border-left:2px solid #000;">
     <div class="preview-side-panel-header">
       <span style="font-size:11px;font-weight:900;color:#000;">실시간 미리보기</span>
       <div style="display:flex;align-items:center;gap:4px;">
@@ -836,6 +857,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <div id="bm-preview-content"></div>
     </div>
     <div style="font-size:10px;color:rgba(0,0,0,.35);margin-top:8px;text-align:center;line-height:1.5;">실제와 다를 수<br>있어요</div>
+    <button class="pv-close-btn" onclick="togglePreviewPanel('bm-preview-panel')">닫기 ×</button>
   </div>
   </div><!-- /bm-layout -->
 </div>
@@ -3696,6 +3718,38 @@ function gbClearOptImg(blockId, optIdx) {
 }
 
 /* ════════════════════════════════════════════
+   미리보기 패널 토글 시스템
+════════════════════════════════════════════ */
+function togglePreviewPanel(panelId) {
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  const isOpen = panel.classList.contains('pv-open');
+  if (isOpen) {
+    panel.classList.remove('pv-open');
+    _pvHideBackdrop();
+  } else {
+    panel.classList.add('pv-open');
+    _pvShowBackdropIfMobile();
+  }
+}
+function closePvPanel() {
+  /* 백드롭 클릭 시 열려있는 미리보기 패널 전부 닫기 */
+  document.querySelectorAll('.preview-side-panel.pv-open').forEach(p => p.classList.remove('pv-open'));
+  closeHelpPanel();
+  _pvHideBackdrop();
+}
+function _pvShowBackdropIfMobile() {
+  if (window.innerWidth <= 767) {
+    document.getElementById('pv-backdrop').classList.add('on');
+  }
+}
+function _pvHideBackdrop() {
+  const anyOpen = document.querySelector('.preview-side-panel.pv-open') ||
+                  document.getElementById('help-panel').classList.contains('open');
+  if (!anyOpen) document.getElementById('pv-backdrop').classList.remove('on');
+}
+
+/* ════════════════════════════════════════════
    전역 왼쪽 도움말 패널
    사용법: openHelpPanel('제목', '<p>내용 HTML</p>')
 ════════════════════════════════════════════ */
@@ -3704,14 +3758,17 @@ function openHelpPanel(title, contentHTML) {
   /* 같은 패널이 이미 열려있으면 토글로 닫기 */
   if(panel.classList.contains('open') && document.getElementById('help-panel-title').textContent === title) {
     panel.classList.remove('open');
+    _pvHideBackdrop();
     return;
   }
   document.getElementById('help-panel-title').textContent = title;
   document.getElementById('help-panel-body').innerHTML = contentHTML;
   panel.classList.add('open');
+  _pvShowBackdropIfMobile();
 }
 function closeHelpPanel() {
   document.getElementById('help-panel').classList.remove('open');
+  _pvHideBackdrop();
 }
 
 const GB_HELP_HTML = `
