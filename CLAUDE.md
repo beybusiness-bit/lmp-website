@@ -383,9 +383,15 @@ URL: https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1w
 **완료 ✅**
 - admin CMS 패널: 프로젝트 생성·편집, 스테이지 관리, 블록 에디터 (텍스트/이미지/혼합/임베드)
 - 블록 에디터: 포맷바(크기·정렬·컬러 드롭다운), 배경색, 마진, 복제
-- 미리보기: transform:scale() 줌, 실시간 반영
-- **스테이지 내용 미리보기 스크롤 수정**: guide-preview-phone에 transform 제거 → 196px 고정, 스크롤 정상 동작
-- **블록 편집 미리보기**: 블록 모달 "미리보기" 버튼 → 미니 폰 미리보기 자동 업데이트
+- **admin 미리보기 시스템 전면 개편** (이번 세션 완료 ✅)
+  - 3개 미리보기(프로젝트·스테이지·블록) 모두 인라인 사이드 패널로 통일
+  - 프로젝트 편집 화면 `position:fixed;inset:0` 전체화면 전환
+  - 편집 콘텐츠 너비 `.ed-inner{max-width:720px}` 제한
+  - 사이드 패널 너비 `previewWidth+80px` 동적 확장
+  - `setPreviewSize()` ±30px 크기 조절 — 3개 패널 동기화
+  - 프로젝트 미리보기: `#preview-inner` 래퍼 추가 → 직접 크기 지정 방식 (overflow 잘림 해결)
+  - `_projDirtyLock`, `silent` 파라미터로 false dirty 오탐지 수정
+  - `schedulePreviewUpdate()` 에서 불필요한 guard 조건 제거
 - p/ 플레이어: 프로젝트 렌더링, 사용자 인증, 스테이지 탐색
 - admin-link 우하단 스타일 (gmbf/po-c)
 - 블록 기능 테스트 더미데이터 시드
@@ -437,6 +443,10 @@ URL: https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1w
 - 폼 블록: 제출 완료 후 화면(submitMsg) 커스터마이즈
 - games/booth: picsum 이미지 실제 로드 확인 (CORS 이슈 가능성)
 - 블록 편집 미리보기 UX 개선 (현재 텍스트/이미지 기본 지원, embed는 URL 텍스트로 표시)
+
+**다음 세션 시작점**
+- admin 미리보기 수정 완료 후 첫 세션 → admin 패널 기능 검증 (실제 프로젝트 생성·저장·배포 테스트)
+- 또는 사용자가 원하는 새 기능 추가
 
 ---
 
