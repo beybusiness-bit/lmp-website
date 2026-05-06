@@ -167,7 +167,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     </div>
     <div class="panel-row">
       <span class="panel-label">프레임</span>
-      <button class="frame-btn active" data-frame="" onclick="setFrame(this,'')">□</button>
+      <button class="frame-btn active" data-frame="" onclick="setFrame(this,'')" style="width:auto;padding:0 10px;font-size:11px;">원본</button>
+      <button class="frame-btn" data-frame="frame-square" onclick="setFrame(this,'frame-square')">□</button>
       <button class="frame-btn" data-frame="frame-circle" onclick="setFrame(this,'frame-circle')">○</button>
       <button class="frame-btn" data-frame="frame-round" onclick="setFrame(this,'frame-round')">▢</button>
       <button class="frame-btn" data-frame="frame-triangle" onclick="setFrame(this,'frame-triangle')">△</button>
