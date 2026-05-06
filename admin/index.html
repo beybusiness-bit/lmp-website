@@ -496,10 +496,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">계산기 생성기</span>
         </div>
         <div style="padding:20px 16px;overflow-y:auto;flex:1;">
-          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">질문·숫자입력·결과카드 블록을 조합해 맞춤 가이드를 만들어요. 빌더에서 폼을 만들고, 링크를 공유하거나 embed 블록에 붙여넣으세요.</div>
+          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">질문·숫자입력·결과카드 블록을 조합해 맞춤 가이드를 만들어요. 빌더에서 계산기를 만들고, 링크를 공유하거나 embed 블록에 붙여넣으세요.</div>
           <a id="guide-builder-link" href="/tools/guide?mode=builder" target="_blank" class="save-btn" style="display:inline-block;text-decoration:none;margin-bottom:24px;">빌더 열기 →</a>
 
-          <div class="sect-head" style="margin-bottom:8px;">생성된 폼 목록</div>
+          <div class="sect-head" style="margin-bottom:8px;">생성된 계산기 목록</div>
           <div id="guide-forms-list"><div class="empty-msg">불러오는 중…</div></div>
         </div>
       </div>
@@ -3165,7 +3165,7 @@ async function loadGuideForms() {
   el.innerHTML = '<div class="empty-msg">불러오는 중…</div>';
   try {
     const snap = await db.collection('tool_configs').doc('guide').collection('forms').orderBy('updatedAt','desc').get();
-    if(snap.empty) { el.innerHTML = '<div class="empty-msg">아직 만든 폼이 없어요. 빌더를 열어 첫 번째 폼을 만들어보세요.</div>'; return; }
+    if(snap.empty) { el.innerHTML = '<div class="empty-msg">아직 만든 계산기가 없어요. 빌더를 열어 첫 번째 계산기를 만들어보세요.</div>'; return; }
     el.innerHTML = snap.docs.map(d => {
       const f = d.data();
       const url = '/tools/guide?id=' + d.id;

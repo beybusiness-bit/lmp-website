@@ -37,7 +37,7 @@ label.lbl{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:upp
 #builder{display:flex;flex-direction:column;flex:1;overflow:hidden;}
 #builder-body{flex:1;overflow-y:auto;padding:16px;}
 
-/* 폼 목록 */
+/* 계산기 목록 */
 #form-list-screen{}
 .form-item{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1.5px solid #000;cursor:pointer;}
 .form-item:first-child{border-top:1.5px solid #000;}
@@ -45,7 +45,7 @@ label.lbl{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:upp
 .form-item-meta{font-size:11px;color:rgba(0,0,0,.45);margin-top:2px;}
 .form-item-arrow{font-size:18px;color:rgba(0,0,0,.3);}
 
-/* 폼 편집 */
+/* 계산기 편집 */
 #form-edit-screen{display:none;}
 .block-list{display:flex;flex-direction:column;gap:0;}
 .block-item{border:1.5px solid #000;margin-bottom:8px;}
@@ -185,9 +185,9 @@ window.addEventListener('DOMContentLoaded', () => {
    빌더 모드
 ════════════════════════════════════════════ */
 let builderState = {
-  forms: [],        // Firestore에서 로드된 폼 목록
-  curFormId: null,  // 현재 편집 중인 폼 ID
-  curForm: null,    // 현재 편집 중인 폼 객체 {title, blocks:[]}
+  forms: [],        // Firestore에서 로드된 계산기 목록
+  curFormId: null,  // 현재 편집 중인 계산기 ID
+  curForm: null,    // 현재 편집 중인 계산기 객체 {title, blocks:[]}
   editingBlock: null, // 현재 편집 중인 블록 ID
 };
 
@@ -205,17 +205,17 @@ function buildBuilderHTML() {
       <div class="actions" id="header-actions"></div>
     </div>
     <div id="builder-body">
-      <!-- 폼 목록 화면 -->
+      <!-- 계산기 목록 화면 -->
       <div id="form-list-screen">
         <div style="margin-bottom:16px;">
-          <button class="btn" onclick="createForm()" style="width:100%;">+ 새 폼 만들기</button>
+          <button class="btn" onclick="createForm()" style="width:100%;">+ 새 계산기 만들기</button>
         </div>
         <div id="form-list-inner"></div>
       </div>
-      <!-- 폼 편집 화면 -->
+      <!-- 계산기 편집 화면 -->
       <div id="form-edit-screen" style="display:none;">
         <div class="field" style="margin-bottom:16px;">
-          <label class="lbl">폼 제목</label>
+          <label class="lbl">계산기 제목</label>
           <input id="form-title-input" placeholder="예: 행사 참여 전략 가이드" oninput="onFormTitleChange(this.value)">
         </div>
         <div class="divider"></div>
@@ -249,7 +249,7 @@ async function loadFormList() {
 function renderFormList() {
   const el = document.getElementById('form-list-inner');
   if(!builderState.forms.length) {
-    el.innerHTML = '<div class="empty">아직 만든 폼이 없어요.<br>위 버튼으로 첫 번째 폼을 만들어보세요.</div>';
+    el.innerHTML = '<div class="empty">아직 만든 계산기가 없어요.<br>위 버튼으로 첫 번째 계산기를 만들어보세요.</div>';
     return;
   }
   el.innerHTML = builderState.forms.map(f => `
@@ -284,7 +284,7 @@ function showFormEdit() {
   document.getElementById('form-list-screen').style.display = 'none';
   document.getElementById('form-edit-screen').style.display = '';
   document.getElementById('header-back').style.display = '';
-  document.getElementById('header-title').textContent = '폼 편집';
+  document.getElementById('header-title').textContent = '계산기 편집';
   document.getElementById('header-actions').innerHTML = `
     <button class="btn sm" onclick="saveForm()">저장</button>
     <button class="btn sm danger" onclick="deleteForm()">삭제</button>`;
@@ -320,7 +320,7 @@ async function saveForm() {
 }
 
 async function deleteForm() {
-  if(!confirm('이 폼을 삭제할까요?')) return;
+  if(!confirm('이 계산기를 삭제할까요?')) return;
   await FORMS_REF().doc(builderState.curFormId).delete();
   showFormList();
 }
@@ -561,7 +561,7 @@ let viewerState = {
 async function initViewer(formId) {
   try {
     const snap = await FORMS_REF().doc(formId).get();
-    if(!snap.exists) { showError('폼을 찾을 수 없어요.'); return; }
+    if(!snap.exists) { showError('계산기를 찾을 수 없어요.'); return; }
     viewerState.form = snap.data();
     viewerState.inputBlocks = viewerState.form.blocks.filter(b => b.type === 'choice' || b.type === 'numeric');
     viewerState.stepIdx = 0;
