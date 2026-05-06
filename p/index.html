@@ -801,11 +801,14 @@ function blockHtml(b){
   if(b.type==='form' && b.formId){
     formBlockData[b.formId]={formFields:b.formFields||[],formConfig:b.formConfig||{},blockId:b.id};
     const config=b.formConfig||{};
+    /* 중복제출 불허 + 인증사용자 + 이미 제출한 경우 → 완료 화면으로 고정 */
+    const noResubmit=!config.allowDuplicates&&AUTH_ENABLED&&USER_DOC_ID&&(userProgress[curStageId]||new Set()).has(b.id);
+    const doneHtml=`${config.postSubmitImage?`<img src="${config.postSubmitImage}" style="width:100%;display:block;margin-bottom:16px;" loading="lazy">`:''}<div>${config.postSubmitHtml||'제출되었어요!'}</div>`;
     const titleHtml=config.formTitle?`<div class="ff-form-title">${config.formTitle}</div>`:'';
     const fieldsHtml=(b.formFields||[]).map(f=>renderFormField(f)).join('');
     return `<div class="g-block-form" style="${mS}${bgS}">
-      <div id="form-body-${b.formId}">${titleHtml}${fieldsHtml}<div class="ff-err" id="form-err-${b.formId}"></div><button class="form-submit-btn" onclick="submitForm('${b.formId}')">${config.submitBtnText||'제출하기'}</button></div>
-      <div id="form-done-${b.formId}" class="form-done-screen" style="display:none;">${config.postSubmitImage?`<img src="${config.postSubmitImage}" style="width:100%;display:block;margin-bottom:16px;" loading="lazy">`:''}<div>${config.postSubmitHtml||'제출되었어요!'}</div></div>
+      <div id="form-body-${b.formId}"${noResubmit?' style="display:none;"':''}>${titleHtml}${fieldsHtml}<div class="ff-err" id="form-err-${b.formId}"></div><button class="form-submit-btn" onclick="submitForm('${b.formId}')">${config.submitBtnText||'제출하기'}</button></div>
+      <div id="form-done-${b.formId}" class="form-done-screen"${noResubmit?'':' style="display:none;"'}>${doneHtml}</div>
     </div>`;
   }
   return '';
