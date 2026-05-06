@@ -2427,7 +2427,8 @@ function openBlockModal(idx){
 }
 function closeBlockModal(){document.getElementById('block-modal').classList.remove('on');}
 function saveBlock(){
-  let b={id:uid(),type:curBlkType};
+  const existingId=(curBlkIdx!==null&&curBlocks[curBlkIdx]?.id)||uid();
+  let b={id:existingId,type:curBlkType};
   if(curBlkType==='text'){
     b.textContent=document.getElementById('ced-text').innerHTML;
     const lnk=document.getElementById('text-link-url').value.trim();
