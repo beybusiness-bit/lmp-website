@@ -760,7 +760,7 @@ async function openStageContent(stage){
     if(!doc.exists){ showGuideEmpty('안내 내용이 아직 준비되지 않았어요.'); return; }
     const g=doc.data();
     const blocks=(g.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
-    const actualCnt=blocks.filter(b=>b.checkable).length;
+    const actualCnt=blocks.filter(b=>b.checkable||b.type==='form').length;
     if(STAGES[curStageIdx]) STAGES[curStageIdx].checkableCount=actualCnt;
     if(g.displayType==='slide') renderGuideSlide(blocks);
     else renderGuideScroll(blocks);
@@ -798,7 +798,7 @@ function blockHtml(b){
     return `<div class="g-block-embed" style="${mS}${bgS}"><iframe src="${b.embedUrl}" width="100%" height="${b.embedHeight||500}" frameborder="0" allowfullscreen style="display:block;border:none;"></iframe></div>`;
   }
   if(b.type==='form' && b.formId){
-    formBlockData[b.formId]={formFields:b.formFields||[],formConfig:b.formConfig||{}};
+    formBlockData[b.formId]={formFields:b.formFields||[],formConfig:b.formConfig||{},blockId:b.id};
     const config=b.formConfig||{};
     const titleHtml=config.formTitle?`<div class="ff-form-title">${config.formTitle}</div>`:'';
     const fieldsHtml=(b.formFields||[]).map(f=>renderFormField(f)).join('');
@@ -1023,6 +1023,8 @@ async function submitForm(formId){
     await db.collection('cms_form_responses').doc(formId).collection('responses').add(docData);
     document.getElementById('form-body-'+formId).style.display='none';
     document.getElementById('form-done-'+formId).style.display='';
+    const _bid=formBlockData[formId]?.blockId;
+    if(_bid&&!(userProgress[curStageId]||new Set()).has(_bid)) await toggleBlockCheck(_bid);
     if(formConfig.sheetId){
       try{
         const ts=new Date().toLocaleString('ko');
