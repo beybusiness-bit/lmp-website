@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>부스 배경 관리</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f5f5f5;padding:20px;max-width:600px;margin:0 auto;}
+h2{font-size:18px;margin-bottom:16px;}
+.card{background:#fff;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.1);}
+label{font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:4px;}
+input,select{width:100%;padding:8px 10px;border:1.5px solid rgba(0,0,0,.15);border-radius:6px;font-size:13px;font-family:inherit;margin-bottom:10px;}
+button{padding:8px 16px;background:#000;color:#fff;border:none;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+button.del{background:#f44;margin-left:8px;}
+.bg-list{display:flex;flex-direction:column;gap:10px;}
+.bg-row{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;background:#fafafa;}
+.bg-row img{width:60px;height:45px;object-fit:cover;border-radius:4px;flex-shrink:0;}
+.bg-row .info{flex:1;font-size:12px;}
+.bg-row .info b{display:block;font-size:13px;}
+#status{font-size:12px;color:#888;margin-top:8px;}
+</style>
+</head>
+<body>
+<h2>🏕 부스 배경 관리</h2>
+
+<!-- 비밀번호 -->
+<div id="login-wrap" class="card">
+  <label>관리자 비밀번호</label>
+  <input type="password" id="pw-input" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')checkPw()">
+  <button onclick="checkPw()">확인</button>
+</div>
+
+<div id="main-wrap" style="display:none;">
+  <!-- 배경 추가 -->
+  <div class="card">
+    <h3 style="font-size:14px;margin-bottom:12px;">배경 추가</h3>
+    <label>이미지 업로드</label>
+    <input type="file" id="bg-file" accept="image/*" onchange="onBgFileSelected(event)">
+    <div id="upload-preview" style="margin-bottom:10px;display:none;">
+      <img id="upload-preview-img" style="max-width:100%;max-height:150px;border-radius:6px;">
+    </div>
+    <label>부스 종류 (영문, 예: A, B, table-3)</label>
+    <input type="text" id="bg-type" placeholder="A">
+    <label>표시 이름</label>
+    <input type="text" id="bg-label" placeholder="A형 부스">
+    <button onclick="addBackground()">추가</button>
+    <p id="status"></p>
+  </div>
+
+  <!-- 배경 목록 -->
+  <div class="card">
+    <h3 style="font-size:14px;margin-bottom:12px;">등록된 배경</h3>
+    <div class="bg-list" id="bg-list">불러오는 중…</div>
+  </div>
+</div>
+
+<script>
+const FB_CFG = {
+  apiKey:"AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
+  authDomain:"beyhome-admin.firebaseapp.com",
+  projectId:"beyhome-admin",
+  storageBucket:"beyhome-admin.firebasestorage.app",
+  messagingSenderId:"849320781553",
+  appId:"1:849320781553:web:9d844044e85995c0aa2b50"
+};
+firebase.initializeApp(FB_CFG);
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+const ADMIN_PW = 'beybey12!';
+let backgrounds = [];
+let pendingFile = null;
+
+function checkPw() {
+  if(document.getElementById('pw-input').value === ADMIN_PW) {
+    document.getElementById('login-wrap').style.display='none';
+    document.getElementById('main-wrap').style.display='block';
+    loadBgList();
+  } else { alert('비밀번호가 틀렸어요.'); }
+}
+
+function onBgFileSelected(e) {
+  pendingFile = e.target.files[0];
+  if(!pendingFile) return;
+  const url = URL.createObjectURL(pendingFile);
+  document.getElementById('upload-preview').style.display='block';
+  document.getElementById('upload-preview-img').src = url;
+}
+
+async function loadBgList() {
+  try {
+    const doc = await db.collection('game_configs').doc('booth').get();
+    backgrounds = doc.exists ? (doc.data().backgrounds||[]) : [];
+    renderBgList();
+  } catch(e) { document.getElementById('bg-list').textContent = '불러오기 실패: '+e.message; }
+}
+
+function renderBgList() {
+  const el = document.getElementById('bg-list');
+  if(!backgrounds.length) { el.innerHTML='<p style="font-size:12px;color:#999;">등록된 배경이 없어요.</p>'; return; }
+  el.innerHTML = backgrounds.map((b,i)=>`
+    <div class="bg-row">
+      <img src="${b.url}" onerror="this.style.display='none'">
+      <div class="info"><b>${b.label||b.type}</b><span>종류: ${b.type}</span></div>
+      <button class="del" onclick="removeBg(${i})">삭제</button>
+    </div>`).join('');
+}
+
+async function addBackground() {
+  const type = document.getElementById('bg-type').value.trim();
+  const label = document.getElementById('bg-label').value.trim();
+  if(!type) { alert('부스 종류를 입력해주세요.'); return; }
+  if(!pendingFile) { alert('이미지를 선택해주세요.'); return; }
+  const status = document.getElementById('status');
+  status.textContent = '업로드 중…';
+  try {
+    const path = `game_booth/${Date.now()}_${pendingFile.name}`;
+    const ref = storage.ref(path);
+    await ref.put(pendingFile);
+    const url = await ref.getDownloadURL();
+    backgrounds.push({ type, label: label||type, url });
+    await db.collection('game_configs').doc('booth').set({ backgrounds }, { merge:true });
+    status.textContent = '추가 완료!';
+    document.getElementById('bg-type').value='';
+    document.getElementById('bg-label').value='';
+    document.getElementById('bg-file').value='';
+    document.getElementById('upload-preview').style.display='none';
+    pendingFile = null;
+    renderBgList();
+  } catch(e) { status.textContent = '실패: '+e.message; }
+}
+
+async function removeBg(i) {
+  if(!confirm('삭제할까요?')) return;
+  backgrounds.splice(i,1);
+  await db.collection('game_configs').doc('booth').set({ backgrounds }, { merge:true });
+  renderBgList();
+}
+</script>
+</body>
+</html>
