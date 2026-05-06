@@ -3500,25 +3500,55 @@ function gbEditorHTML(b) {
 }
 
 function gbChoiceEditor(b) {
+  const hasOptImg = (b.options||[]).some(o=>o.imageUrl);
+  const allHaveImg = (b.options||[]).length > 0 && (b.options||[]).every(o=>o.imageUrl);
+  const imgWarn = hasOptImg && !allHaveImg
+    ? `<div style="font-size:11px;color:#c00;font-weight:700;margin-bottom:8px;padding:6px 8px;background:#fff5f5;border:1.5px solid #fcc;">⚠ 일부 선택지만 이미지가 있어요. 모든 선택지에 이미지를 넣어야 이미지형으로 표시돼요.</div>` : '';
   const opts = (b.options||[]).map((o,i)=>`
-    <div style="margin-bottom:6px;">
-      <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
+    <div style="border:1.5px solid rgba(0,0,0,.15);padding:8px;margin-bottom:6px;background:#fff;">
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
         <input class="fi" value="${gbEsc(o.label||'')}" placeholder="선택지 텍스트" oninput="gbUpdateOpt('${b.id}',${i},'label',this.value)" style="flex:1;margin:0;">
         <button class="prev-btn" style="padding:4px 8px;color:#c00;border-color:#c00;" onclick="gbRemoveOpt('${b.id}',${i})">×</button>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;padding-left:4px;">
+      <div style="margin-bottom:6px;">
+        ${o.imageUrl?`<img src="${gbEsc(o.imageUrl)}" style="width:100%;max-height:80px;object-fit:cover;border:1px solid rgba(0,0,0,.12);margin-bottom:4px;display:block;">`:''}
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          <label class="prev-btn" style="cursor:pointer;font-size:10px;padding:3px 8px;display:inline-flex;align-items:center;gap:3px;">
+            📷 ${o.imageUrl?'변경':'이미지 추가'}
+            <input type="file" accept="image/*" style="display:none;" onchange="gbUploadOptImg(event,'${b.id}',${i})">
+          </label>
+          ${o.imageUrl?`<button class="prev-btn" style="font-size:10px;padding:3px 8px;color:#c00;border-color:#c00;" onclick="gbClearOptImg('${b.id}',${i})">삭제</button>`:''}
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">
         ${(o.tags||[]).map((t,ti)=>`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border:1.5px solid #000;font-size:11px;font-weight:700;">${gbEsc(t)}<span style="cursor:pointer;font-size:13px;" onclick="gbRemoveOptTag('${b.id}',${i},${ti})">×</span></span>`).join('')}
         <button class="prev-btn" style="font-size:10px;padding:2px 7px;" onclick="gbAddOptTag('${b.id}',${i})">+ 태그</button>
       </div>
     </div>`).join('');
   return `<div style="padding:12px;border-top:1.5px solid #000;background:#fafafa;">
+    <div style="margin-bottom:10px;">
+      <div class="ed-lbl" style="margin-bottom:4px;">헤더 이미지 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
+      ${b.imageUrl?`<img src="${gbEsc(b.imageUrl)}" style="width:100%;max-height:120px;object-fit:cover;border:1px solid rgba(0,0,0,.12);margin-bottom:4px;display:block;">`:''}
+      <div style="display:flex;gap:4px;flex-wrap:wrap;">
+        <label class="prev-btn" style="cursor:pointer;font-size:11px;padding:5px 10px;display:inline-flex;align-items:center;gap:4px;">
+          📷 ${b.imageUrl?'이미지 변경':'이미지 업로드'}
+          <input type="file" accept="image/*" style="display:none;" onchange="gbUploadBlockImg(event,'${b.id}')">
+        </label>
+        ${b.imageUrl?`<button class="prev-btn" style="font-size:11px;padding:5px 10px;color:#c00;border-color:#c00;" onclick="gbSetField('${b.id}','imageUrl','');gbRenderBlocks()">삭제</button>`:''}
+      </div>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div class="ed-lbl" style="margin-bottom:4px;">추가 설명 <span style="font-weight:400;opacity:.55;">(선택, 질문 아래에 표시)</span></div>
+      <textarea class="fi-sm" placeholder="예: 해당하는 것을 모두 선택해주세요." oninput="gbSetField('${b.id}','headerText',this.value)" style="min-height:48px;resize:vertical;margin-bottom:0;">${gbEsc(b.headerText||'')}</textarea>
+    </div>
     <div class="ed-lbl" style="margin-bottom:4px;">질문</div>
     <input class="fi" value="${gbEsc(b.question||'')}" placeholder="질문을 입력하세요" oninput="gbSetField('${b.id}','question',this.value)" style="margin-bottom:10px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
       <span style="font-size:13px;font-weight:600;">복수 선택 허용</span>
       <label style="position:relative;width:42px;height:24px;"><input type="checkbox" ${b.multiple?'checked':''} onchange="gbSetField('${b.id}','multiple',this.checked)" style="opacity:0;width:0;height:0;"><span style="position:absolute;inset:0;background:${b.multiple?'#000':'#ddd'};cursor:pointer;border:1.5px solid #000;transition:.2s;"><span style="position:absolute;width:16px;height:16px;left:${b.multiple?'19':'3'}px;bottom:2px;background:#fff;transition:.2s;"></span></span></label>
     </div>
-    <div class="ed-lbl" style="margin-bottom:6px;">선택지</div>
+    ${imgWarn}
+    <div class="ed-lbl" style="margin-bottom:6px;">선택지 <span style="font-weight:400;opacity:.55;">(모든 선택지에 이미지 넣으면 이미지형 카드로 표시)</span></div>
     <div id="gb-opts-${b.id}">${opts}</div>
     <button class="prev-btn" onclick="gbAddOpt('${b.id}')" style="width:100%;margin-top:4px;">+ 선택지 추가</button>
   </div>`;
@@ -3526,6 +3556,21 @@ function gbChoiceEditor(b) {
 
 function gbNumericEditor(b) {
   return `<div style="padding:12px;border-top:1.5px solid #000;background:#fafafa;">
+    <div style="margin-bottom:10px;">
+      <div class="ed-lbl" style="margin-bottom:4px;">헤더 이미지 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
+      ${b.imageUrl?`<img src="${gbEsc(b.imageUrl)}" style="width:100%;max-height:120px;object-fit:cover;border:1px solid rgba(0,0,0,.12);margin-bottom:4px;display:block;">`:''}
+      <div style="display:flex;gap:4px;flex-wrap:wrap;">
+        <label class="prev-btn" style="cursor:pointer;font-size:11px;padding:5px 10px;display:inline-flex;align-items:center;gap:4px;">
+          📷 ${b.imageUrl?'이미지 변경':'이미지 업로드'}
+          <input type="file" accept="image/*" style="display:none;" onchange="gbUploadBlockImg(event,'${b.id}')">
+        </label>
+        ${b.imageUrl?`<button class="prev-btn" style="font-size:11px;padding:5px 10px;color:#c00;border-color:#c00;" onclick="gbSetField('${b.id}','imageUrl','');gbRenderBlocks()">삭제</button>`:''}
+      </div>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div class="ed-lbl" style="margin-bottom:4px;">추가 설명 <span style="font-weight:400;opacity:.55;">(선택, 질문 아래에 표시)</span></div>
+      <textarea class="fi-sm" placeholder="예: 지난 달 기준으로 입력해주세요." oninput="gbSetField('${b.id}','headerText',this.value)" style="min-height:48px;resize:vertical;margin-bottom:0;">${gbEsc(b.headerText||'')}</textarea>
+    </div>
     <div class="ed-lbl" style="margin-bottom:4px;">질문</div>
     <input class="fi" value="${gbEsc(b.question||'')}" placeholder="예: 목표 매출은 얼마인가요?" oninput="gbSetField('${b.id}','question',this.value)" style="margin-bottom:10px;">
     <div style="display:flex;gap:8px;margin-bottom:10px;">
@@ -3608,6 +3653,47 @@ function gbRemoveCondTag(blockId,idx) {
 }
 
 function gbEsc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* ── 계산기 이미지 업로드 ── */
+async function gbUploadBlockImg(event, blockId) {
+  const file = event.target.files[0];
+  if(!file) return;
+  event.target.value = '';
+  const label = event.target.closest('label');
+  if(label) { label.style.opacity = '.4'; label.style.pointerEvents = 'none'; }
+  try {
+    const ref = storage.ref('game_configs/guide/' + Date.now() + '_' + file.name);
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
+    const b = gbState.curCalc.blocks.find(x=>x.id===blockId);
+    if(b) b.imageUrl = url;
+    gbRenderBlocks();
+  } catch(e) { alert('업로드 실패: ' + e.message); }
+  finally { if(label) { label.style.opacity=''; label.style.pointerEvents=''; } }
+}
+
+async function gbUploadOptImg(event, blockId, optIdx) {
+  const file = event.target.files[0];
+  if(!file) return;
+  event.target.value = '';
+  const label = event.target.closest('label');
+  if(label) { label.style.opacity = '.4'; label.style.pointerEvents = 'none'; }
+  try {
+    const ref = storage.ref('game_configs/guide/' + Date.now() + '_' + file.name);
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
+    const b = gbState.curCalc.blocks.find(x=>x.id===blockId);
+    if(b && b.options[optIdx]) b.options[optIdx].imageUrl = url;
+    gbRenderBlocks();
+  } catch(e) { alert('업로드 실패: ' + e.message); }
+  finally { if(label) { label.style.opacity=''; label.style.pointerEvents=''; } }
+}
+
+function gbClearOptImg(blockId, optIdx) {
+  const b = gbState.curCalc.blocks.find(x=>x.id===blockId);
+  if(b && b.options[optIdx]) b.options[optIdx].imageUrl = '';
+  gbRenderBlocks();
+}
 
 /* ════════════════════════════════════════════
    전역 왼쪽 도움말 패널
