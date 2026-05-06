@@ -2389,20 +2389,18 @@ function openBlockModal(idx){
   document.getElementById('ced-mixed').innerHTML=b.type==='mixed'?(b.textContent||''):'';
   document.getElementById('embed-url').value=b.type==='embed'?(b.embedUrl||''):'';
   document.getElementById('embed-height').value=b.type==='embed'?(b.embedHeight||500):'500';
-  /* form */
+  /* form — 항상 UI 초기화 후 기존 값 로드 */
   curFormFields = b.type==='form' ? JSON.parse(JSON.stringify(b.formFields||[])) : [];
-  curFormConfig  = b.type==='form' ? {...{submitBtnText:'제출하기',postSubmitHtml:'',postSubmitImage:'',allowDuplicates:false}, ...b.formConfig} : {};
-  if (b.type==='form') {
-    document.getElementById('form-title-inp').value      = curFormConfig.formTitle||'';
-    document.getElementById('form-submit-text').value    = curFormConfig.submitBtnText||'';
-    document.getElementById('ced-formpost').innerHTML    = curFormConfig.postSubmitHtml||'';
-    const piUrl = curFormConfig.postSubmitImage||'';
-    document.getElementById('form-post-img-url').value   = piUrl;
-    prevImg('form-post-img-prev', piUrl);
-    document.getElementById('form-dup-sw').classList.toggle('on', !!curFormConfig.allowDuplicates);
-    document.getElementById('form-dup-wrap').style.display = curAuthEnabled ? '' : 'none';
-    renderFormFields();
-  }
+  curFormConfig  = b.type==='form' ? {...{submitBtnText:'제출하기',postSubmitHtml:'',postSubmitImage:'',allowDuplicates:false}, ...b.formConfig} : {submitBtnText:'제출하기'};
+  document.getElementById('form-title-inp').value      = curFormConfig.formTitle||'';
+  document.getElementById('form-submit-text').value    = curFormConfig.submitBtnText||'제출하기';
+  document.getElementById('ced-formpost').innerHTML    = curFormConfig.postSubmitHtml||'';
+  const _piUrl = curFormConfig.postSubmitImage||'';
+  document.getElementById('form-post-img-url').value   = _piUrl;
+  prevImg('form-post-img-prev', _piUrl);
+  document.getElementById('form-dup-sw').classList.toggle('on', !!curFormConfig.allowDuplicates);
+  document.getElementById('form-dup-wrap').style.display = curAuthEnabled ? '' : 'none';
+  renderFormFields();
   prevImg('img-prev',document.getElementById('img-url').value);
   prevImg('mixed-img-prev',document.getElementById('mixed-img-url').value);
   setMixedLayout(curMixedLayout);savedRange=null;
