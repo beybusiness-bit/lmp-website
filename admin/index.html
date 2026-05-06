@@ -177,6 +177,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .booth-bg-type{font-size:13px;font-weight:700;margin-bottom:2px;}
 .booth-bg-url{font-size:10px;color:rgba(0,0,0,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .booth-bg-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+.booth-conn-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1.5px solid rgba(0,0,0,.08);}
+.booth-conn-item:last-child{border-bottom:none;}
 </style>
 </head>
 <body>
@@ -471,6 +473,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
           <!-- 부스 종류 목록 -->
           <div id="booth-bg-list">
+            <div class="empty-msg">불러오는 중…</div>
+          </div>
+
+          <!-- 연결된 프로젝트·블록 -->
+          <div class="sect-head" style="margin-top:28px;margin-bottom:4px;">연결된 프로젝트 · 블록</div>
+          <div class="ed-lbl" style="margin-bottom:12px;color:rgba(0,0,0,.5);">이 게임이 임베드된 프로젝트·스테이지·블록 목록이에요.</div>
+          <div id="booth-connections">
             <div class="empty-msg">불러오는 중…</div>
           </div>
         </div>
@@ -3120,7 +3129,7 @@ function openGame(gameId) {
   curGame = gameId;
   document.getElementById('games-list-view').style.display = 'none';
   document.getElementById('game-'+gameId+'-view').style.display = 'flex';
-  if(gameId === 'booth') loadBoothBgs();
+  if(gameId === 'booth') { loadBoothBgs(); loadBoothConnections(); }
 }
 
 function closeGame() {
@@ -3206,6 +3215,59 @@ async function uploadBoothBg(e, idx) {
   } catch(err) {
     alert('업로드 실패: ' + err.message);
   }
+}
+
+/* ── Booth Connections ── */
+async function loadBoothConnections() {
+  const el = document.getElementById('booth-connections');
+  el.innerHTML = '<div class="empty-msg">연결된 블록 확인 중…</div>';
+  try {
+    const projsSnap = await db.collection('cms_projects').get();
+    const connections = [];
+    for(const projDoc of projsSnap.docs) {
+      const proj = projDoc.data();
+      const projId = projDoc.id;
+      const stagesSnap = await db.collection('cms_projects').doc(projId).collection('stage_content').get();
+      for(const stageDoc of stagesSnap.docs) {
+        const stageId = stageDoc.id;
+        const blocks = stageDoc.data().blocks || [];
+        for(const block of blocks) {
+          if(block.type === 'embed' && block.embedUrl && block.embedUrl.includes('games/booth')) {
+            const stage = (proj.stages || []).find(s => s.id === stageId);
+            connections.push({
+              projId, projName: proj.name || projId,
+              stageId, stageName: stage?.title || stageId,
+              blockId: block.id
+            });
+          }
+        }
+      }
+    }
+    renderBoothConnections(connections);
+  } catch(e) {
+    el.innerHTML = '<div class="empty-msg">확인 실패: ' + e.message + '</div>';
+  }
+}
+
+function renderBoothConnections(connections) {
+  const el = document.getElementById('booth-connections');
+  if(!connections.length) {
+    el.innerHTML = '<div class="empty-msg">아직 이 게임을 사용하는 블록이 없어요.</div>';
+    return;
+  }
+  el.innerHTML = connections.map(c => `
+    <div class="booth-conn-item">
+      <div class="booth-bg-info">
+        <div class="booth-bg-type">${c.projName}</div>
+        <div class="booth-bg-url">${c.stageName}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <a class="u-btn" href="/admin/#edit/${c.projId}/stages" target="_blank"
+           style="text-decoration:none;display:inline-flex;align-items:center;">블록 편집</a>
+        <a class="u-btn" href="/${c.projId}/" target="_blank"
+           style="text-decoration:none;display:inline-flex;align-items:center;">플레이어</a>
+      </div>
+    </div>`).join('');
 }
 
 async function deleteBoothBg(idx) {
