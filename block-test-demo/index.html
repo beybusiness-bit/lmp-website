@@ -820,7 +820,13 @@ function attachCheck(h,b){
   return h+checkEl;
 }
 function renderGuideScroll(blocks){
-  document.getElementById('guide-scroll-blocks').innerHTML=blocks.map(b=>attachCheck(blockHtml(b),b)).join('');
+  document.getElementById('guide-scroll-blocks').innerHTML=blocks.map(b=>{
+    const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
+    const mS=(b.marginV||b.marginH)?`margin:${b.marginV||0}px ${b.marginH||0}px;`:'';
+    const bStripped={...b,bgColor:'',marginV:0,marginH:0};
+    const inner=attachCheck(blockHtml(bStripped),b);
+    return (bgS||mS)?`<div style="${bgS}${mS}">${inner}</div>`:inner;
+  }).join('');
   document.getElementById('guide-scroll-body').style.display='block';
 }
 function renderGuideSlide(blocks){
