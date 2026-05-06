@@ -463,9 +463,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div class="sect-head" style="margin-bottom:16px;">도구 관리</div>
         <div id="tools-list">
           <!-- 도구 카드 -->
-          <div class="proj-item" onclick="openTool('booth')" style="cursor:pointer;">
-            <div class="pi-name">부스 꾸미기</div>
-            <div class="pi-meta">배경 이미지 · 부스 종류별 설정</div>
+          <div class="proj-item" onclick="openTool('deco')" style="cursor:pointer;">
+            <div class="pi-name">꾸미기 생성기</div>
+            <div class="pi-meta">배경 이미지·부스 종류별 꾸미기 도구 관리</div>
           </div>
           <div class="proj-item" onclick="openTool('guide')" style="cursor:pointer;">
             <div class="pi-name">계산기 생성기</div>
@@ -474,30 +474,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         </div>
       </div>
 
-      <!-- 부스 도구 설정 화면 -->
-      <div id="tool-booth-view" style="display:none;flex-direction:column;">
+      <!-- 꾸미기 생성기 목록 화면 -->
+      <div id="tool-deco-view" style="display:none;flex-direction:column;">
         <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
-          <span class="back-btn" onclick="closeTool()">←</span>
-          <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">부스 꾸미기 설정</span>
+          <span class="back-btn" id="deco-back-btn" onclick="decoBack()">←</span>
+          <span id="deco-header-title" style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">꾸미기 생성기</span>
         </div>
-        <div style="padding:20px 16px;overflow-y:auto;flex:1;">
-          <div class="sect-head" style="margin-bottom:4px;">부스 종류별 배경 이미지</div>
-          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">각 부스 종류에 맞는 배경 이미지를 업로드하세요. 업로드된 이미지는 사용자가 도구 시작 시 자동으로 선택됩니다. 권장 크기: 1080×1350px (4:5)</div>
 
-          <!-- 부스 종류 추가 -->
+        <!-- 꾸미기 목록 화면 -->
+        <div id="deco-list-screen" style="padding:16px;overflow-y:auto;flex:1;">
+          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">꾸미기 도구별 배경 이미지와 설정을 관리해요. 각 꾸미기는 <code>?config=ID</code> 파라미터로 열 수 있어요.</div>
+          <div id="deco-list">
+            <!-- 부스 꾸미기 (고정 항목) -->
+            <div class="proj-item" onclick="decoOpenConfig('booth')" style="cursor:pointer;">
+              <div class="pi-name">부스 꾸미기</div>
+              <div class="pi-meta">기본 꾸미기 도구 · /tools/booth</div>
+            </div>
+          </div>
+          <button class="add-btn" style="margin-top:14px;" onclick="decoCreateConfig()">+ 새 꾸미기 만들기</button>
+        </div>
+
+        <!-- 꾸미기 설정 화면 (부스 꾸미기 / 커스텀 꾸미기 공용) -->
+        <div id="deco-config-screen" style="display:none;padding:20px 16px;overflow-y:auto;flex:1;">
+          <div style="margin-bottom:16px;">
+            <div class="ed-lbl" style="margin-bottom:4px;">꾸미기 이름</div>
+            <input class="fi" id="deco-config-name" placeholder="예: 플리마켓 부스 꾸미기" style="margin-bottom:0;" oninput="decoState.curConfig&&(decoState.curConfig.name=this.value)">
+          </div>
+
+          <div class="sect-head" style="margin-bottom:4px;">부스 종류별 배경 이미지</div>
+          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">각 부스 종류에 맞는 배경 이미지를 업로드하세요. 사용자가 도구 시작 시 자동으로 선택됩니다. 권장 크기: 1080×1350px (4:5)</div>
+
           <div style="display:flex;gap:8px;margin-bottom:20px;">
             <input class="fi" id="new-booth-type" placeholder="부스 종류 입력 (예: food, craft, beauty)" style="flex:1;margin-bottom:0;">
             <button class="save-btn" onclick="addBoothType()">추가</button>
           </div>
-
-          <!-- 부스 종류 목록 -->
           <div id="booth-bg-list">
             <div class="empty-msg">불러오는 중…</div>
           </div>
 
           <!-- 연결된 프로젝트·블록 -->
           <div class="sect-head" style="margin-top:28px;margin-bottom:4px;">연결된 프로젝트 · 블록</div>
-          <div class="ed-lbl" style="margin-bottom:12px;color:rgba(0,0,0,.5);">이 도구가 임베드된 프로젝트·스테이지·블록 목록이에요.</div>
+          <div class="ed-lbl" style="margin-bottom:12px;color:rgba(0,0,0,.5);">이 꾸미기가 임베드된 프로젝트·스테이지·블록 목록이에요.</div>
           <div id="booth-connections">
             <div class="empty-msg">불러오는 중…</div>
           </div>
@@ -536,6 +553,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           </div>
           <div id="gb-block-list"></div>
           <div id="gb-block-empty" class="empty-msg" style="display:none;">블록이 없어요.</div>
+
+          <!-- 연결된 프로젝트·블록 -->
+          <div style="margin-top:28px;">
+            <div class="sect-head" style="margin-bottom:4px;">연결된 프로젝트 · 블록</div>
+            <div class="ed-lbl" style="margin-bottom:12px;color:rgba(0,0,0,.5);">이 계산기가 임베드된 프로젝트·스테이지·블록 목록이에요.</div>
+            <div id="gb-connections"><div class="empty-msg">불러오는 중…</div></div>
+          </div>
         </div>
       </div>
     </div>
@@ -3192,7 +3216,7 @@ function openTool(toolId) {
   curTool = toolId;
   document.getElementById('tools-list-view').style.display = 'none';
   document.getElementById('tool-'+toolId+'-view').style.display = 'flex';
-  if(toolId === 'booth') { loadBoothBgs(); loadBoothConnections(); }
+  if(toolId === 'deco') { decoShowList(); }
   if(toolId === 'guide') { gbShowList(); }
 }
 
@@ -3202,6 +3226,66 @@ function closeTool() {
     curTool = null;
   }
   document.getElementById('tools-list-view').style.display = '';
+}
+
+/* ════════════════════════════════════════════
+   꾸미기 생성기 (deco)
+════════════════════════════════════════════ */
+const decoState = { curConfigId: null, curConfig: null };
+
+function decoShowList() {
+  document.getElementById('deco-list-screen').style.display = '';
+  document.getElementById('deco-config-screen').style.display = 'none';
+  document.getElementById('deco-header-title').textContent = '꾸미기 생성기';
+  document.getElementById('deco-back-btn').onclick = () => closeTool();
+  loadDecoCustomList();
+}
+
+async function loadDecoCustomList() {
+  const listEl = document.getElementById('deco-list');
+  // 항상 booth 고정 항목은 HTML에 있으므로 커스텀 항목만 추가
+  try {
+    const snap = await db.collection('game_configs').where('_type','==','deco_config').get();
+    // 커스텀 항목 기존 삭제 후 재렌더
+    listEl.querySelectorAll('.deco-custom-item').forEach(el => el.remove());
+    snap.docs.forEach(doc => {
+      const data = doc.data();
+      const div = document.createElement('div');
+      div.className = 'proj-item deco-custom-item';
+      div.style.cursor = 'pointer';
+      div.onclick = () => decoOpenConfig(doc.id);
+      div.innerHTML = `<div class="pi-name">${data.name || doc.id}</div>
+        <div class="pi-meta">/tools/booth?config=${doc.id}</div>`;
+      listEl.appendChild(div);
+    });
+  } catch(e) { /* 커스텀 항목 없으면 무시 */ }
+}
+
+async function decoCreateConfig() {
+  const name = prompt('새 꾸미기 이름을 입력하세요 (예: 봄 플리마켓)');
+  if(!name) return;
+  const id = 'deco_' + Date.now();
+  try {
+    await db.collection('game_configs').doc(id).set({ _type: 'deco_config', name, backgrounds: [], createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    decoOpenConfig(id);
+  } catch(e) { alert('생성 실패: ' + e.message); }
+}
+
+async function decoOpenConfig(configId) {
+  decoState.curConfigId = configId;
+  document.getElementById('deco-list-screen').style.display = 'none';
+  document.getElementById('deco-config-screen').style.display = '';
+  document.getElementById('deco-header-title').textContent = configId === 'booth' ? '부스 꾸미기 설정' : '꾸미기 설정';
+  document.getElementById('deco-back-btn').onclick = () => decoShowList();
+  document.getElementById('deco-config-name').value = '';
+  document.getElementById('deco-config-name').disabled = (configId === 'booth');
+  // booth는 이름 수정 불가
+  if(configId === 'booth') {
+    document.getElementById('deco-config-name').value = '부스 꾸미기';
+    decoState.curConfig = { name: '부스 꾸미기' };
+  }
+  loadBoothBgs(configId);
+  loadBoothConnections(configId);
 }
 
 /* ════════════════════════════════════════════
@@ -3281,6 +3365,54 @@ function gbShowEdit() {
     <button class="prev-btn" onclick="gbDelete()" style="font-size:11px;color:#c00;border-color:#c00;">삭제</button>`;
   document.getElementById('gb-calc-title').value = gbState.curCalc.title || '';
   gbRenderBlocks();
+  gbLoadConnections(gbState.curCalcId);
+}
+
+async function gbLoadConnections(calcId) {
+  const el = document.getElementById('gb-connections');
+  el.innerHTML = '<div class="empty-msg">연결된 블록 확인 중…</div>';
+  try {
+    const projsSnap = await db.collection('cms_projects').get();
+    const connections = [];
+    for(const projDoc of projsSnap.docs) {
+      const proj = projDoc.data();
+      const projId = projDoc.id;
+      const stagesSnap = await db.collection('cms_projects').doc(projId).collection('stage_content').get();
+      for(const stageDoc of stagesSnap.docs) {
+        const stageId = stageDoc.id;
+        const blocks = stageDoc.data().blocks || [];
+        for(const block of blocks) {
+          if(block.type === 'embed' && block.embedUrl && block.embedUrl.includes(`tools/guide?id=${calcId}`)) {
+            const stage = (proj.stages || []).find(s => s.id === stageId);
+            connections.push({
+              projId, projName: proj.name || projId,
+              stageId, stageName: stage?.title || stageId,
+              blockId: block.id
+            });
+          }
+        }
+      }
+    }
+    if(!connections.length) {
+      el.innerHTML = '<div class="empty-msg">아직 이 계산기를 사용하는 블록이 없어요.</div>';
+      return;
+    }
+    el.innerHTML = connections.map(c => `
+      <div class="booth-conn-item">
+        <div class="booth-bg-info">
+          <div class="booth-bg-type">${c.projName}</div>
+          <div class="booth-bg-url">${c.stageName}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <a class="u-btn" href="/admin/#edit/${c.projId}/stages" target="_blank"
+             style="text-decoration:none;display:inline-flex;align-items:center;">블록 편집</a>
+          <a class="u-btn" href="/${c.projId}/" target="_blank"
+             style="text-decoration:none;display:inline-flex;align-items:center;">플레이어</a>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty-msg">확인 실패: ' + e.message + '</div>';
+  }
 }
 
 async function gbSave() {
@@ -3537,12 +3669,17 @@ const GB_HELP_HTML = `
 이 URL을 복사해서 공유하거나, 프로젝트 편집기의 <b>임베드 블록</b>에 붙여넣으면 프로젝트 안에서 바로 실행돼요.</p>`;
 
 /* ── Booth Backgrounds ── */
-async function loadBoothBgs() {
+async function loadBoothBgs(configId = 'booth') {
+  decoState.curConfigId = configId;
   const el = document.getElementById('booth-bg-list');
   el.innerHTML = '<div class="empty-msg">불러오는 중…</div>';
   try {
-    const doc = await db.collection('game_configs').doc('booth').get();
+    const doc = await db.collection('game_configs').doc(configId).get();
     const bgs = doc.exists ? (doc.data().backgrounds || []) : [];
+    if(doc.exists && doc.data().name && configId !== 'booth') {
+      decoState.curConfig = doc.data();
+      document.getElementById('deco-config-name').value = doc.data().name;
+    }
     renderBoothBgList(bgs);
   } catch(e) {
     el.innerHTML = '<div class="empty-msg">불러오기 실패: ' + e.message + '</div>';
@@ -3576,17 +3713,18 @@ function renderBoothBgList(bgs) {
 }
 
 async function addBoothType() {
+  const configId = decoState.curConfigId || 'booth';
   const input = document.getElementById('new-booth-type');
   const type = input.value.trim();
   if(!type) return;
   try {
-    const doc = await db.collection('game_configs').doc('booth').get();
+    const doc = await db.collection('game_configs').doc(configId).get();
     const bgs = doc.exists ? (doc.data().backgrounds || []) : [];
     if(bgs.find(b => b.type === type)) {
       alert('이미 존재하는 부스 종류예요: ' + type); return;
     }
     bgs.push({ type, label: type, url: '' });
-    await db.collection('game_configs').doc('booth').set({ backgrounds: bgs }, { merge: true });
+    await db.collection('game_configs').doc(configId).set({ backgrounds: bgs }, { merge: true });
     input.value = '';
     renderBoothBgList(bgs);
   } catch(e) {
@@ -3595,6 +3733,7 @@ async function addBoothType() {
 }
 
 async function uploadBoothBg(e, idx) {
+  const configId = decoState.curConfigId || 'booth';
   const file = e.target.files[0];
   if(!file) return;
   e.target.closest('.booth-bg-item').querySelector('.booth-bg-url').textContent = '업로드 중…';
@@ -3603,20 +3742,22 @@ async function uploadBoothBg(e, idx) {
     await ref.put(file);
     const url = await ref.getDownloadURL();
 
-    const doc = await db.collection('game_configs').doc('booth').get();
+    const doc = await db.collection('game_configs').doc(configId).get();
     const bgs = doc.data().backgrounds || [];
     bgs[idx].url = url;
-    await db.collection('game_configs').doc('booth').set({ backgrounds: bgs }, { merge: true });
+    await db.collection('game_configs').doc(configId).set({ backgrounds: bgs }, { merge: true });
     renderBoothBgList(bgs);
   } catch(err) {
     alert('업로드 실패: ' + err.message);
   }
 }
 
-/* ── Booth Connections ── */
-async function loadBoothConnections() {
+/* ── Booth / Deco Connections ── */
+async function loadBoothConnections(configId = 'booth') {
   const el = document.getElementById('booth-connections');
   el.innerHTML = '<div class="empty-msg">연결된 블록 확인 중…</div>';
+  // booth 기본 URL에 config 파라미터가 없거나 있는 경우 모두 탐색
+  const urlKeyword = configId === 'booth' ? 'tools/booth' : `tools/booth?config=${configId}`;
   try {
     const projsSnap = await db.collection('cms_projects').get();
     const connections = [];
@@ -3628,7 +3769,7 @@ async function loadBoothConnections() {
         const stageId = stageDoc.id;
         const blocks = stageDoc.data().blocks || [];
         for(const block of blocks) {
-          if(block.type === 'embed' && block.embedUrl && block.embedUrl.includes('tools/booth')) {
+          if(block.type === 'embed' && block.embedUrl && block.embedUrl.includes(urlKeyword)) {
             const stage = (proj.stages || []).find(s => s.id === stageId);
             connections.push({
               projId, projName: proj.name || projId,
@@ -3667,12 +3808,13 @@ function renderBoothConnections(connections) {
 }
 
 async function deleteBoothBg(idx) {
+  const configId = decoState.curConfigId || 'booth';
   if(!confirm('이 부스 종류를 삭제할까요?')) return;
   try {
-    const doc = await db.collection('game_configs').doc('booth').get();
+    const doc = await db.collection('game_configs').doc(configId).get();
     const bgs = doc.data().backgrounds || [];
     bgs.splice(idx, 1);
-    await db.collection('game_configs').doc('booth').set({ backgrounds: bgs }, { merge: true });
+    await db.collection('game_configs').doc(configId).set({ backgrounds: bgs }, { merge: true });
     renderBoothBgList(bgs);
   } catch(e) {
     alert('삭제 실패: ' + e.message);

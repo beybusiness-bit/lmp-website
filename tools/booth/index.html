@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>내 부스 꾸미기</title>
+<title id="page-title">내 부스 꾸미기</title>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
@@ -304,6 +304,7 @@ let strokeHistory = [];
 let keyColors = [];
 let userBoothType = '';
 let contextReceived = false; // 프로젝트에서 컨텍스트 수신 여부
+let toolTitle = '내 부스 꾸미기'; // 설정에서 동적으로 업데이트됨
 let isDrawing = false;
 let lastX = 0, lastY = 0;
 
@@ -358,12 +359,20 @@ function resizeCanvases() {
   if(bgImage) drawBg();
 }
 
+// ── 설정 ID (URL 파라미터 ?config=xxx, 기본값 'booth') ──
+const CONFIG_ID = new URLSearchParams(location.search).get('config') || 'booth';
+
 // ── 배경 로드 (Firestore) ──
 async function loadBackgrounds() {
   try {
-    const doc = await db.collection('game_configs').doc('booth').get();
+    const doc = await db.collection('game_configs').doc(CONFIG_ID).get();
     if(doc.exists) {
       backgrounds = doc.data().backgrounds || [];
+      // 설정 문서에 name 필드가 있으면 페이지 타이틀 업데이트
+      if(doc.data().name) {
+        document.getElementById('page-title').textContent = doc.data().name;
+        toolTitle = doc.data().name;
+      }
       if(userBoothType) autoSelectBg();
     }
   } catch(e) {}
@@ -927,7 +936,7 @@ async function shareExport() {
   const canvas = document.getElementById('export-canvas');
   canvas.toBlob(async blob => {
     if(navigator.share && navigator.canShare({files:[new File([blob],'booth.png',{type:'image/png'})]})) {
-      await navigator.share({files:[new File([blob],'booth.png',{type:'image/png'})], title:'내 부스 꾸미기'});
+      await navigator.share({files:[new File([blob],'booth.png',{type:'image/png'})], title:toolTitle});
     } else {
       downloadExport();
     }
