@@ -384,6 +384,8 @@ URL: https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1w
 - admin CMS 패널: 프로젝트 생성·편집, 스테이지 관리, 블록 에디터 (텍스트/이미지/혼합/임베드)
 - 블록 에디터: 포맷바(크기·정렬·컬러 드롭다운), 배경색, 마진, 복제
 - 미리보기: transform:scale() 줌, 실시간 반영
+- **스테이지 내용 미리보기 스크롤 수정**: guide-preview-phone에 transform 제거 → 196px 고정, 스크롤 정상 동작
+- **블록 편집 미리보기**: 블록 모달 "미리보기" 버튼 → 미니 폰 미리보기 자동 업데이트
 - p/ 플레이어: 프로젝트 렌더링, 사용자 인증, 스테이지 탐색
 - admin-link 우하단 스타일 (gmbf/po-c)
 - 블록 기능 테스트 더미데이터 시드
@@ -413,6 +415,15 @@ URL: https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1w
 - **사이드바 메뉴 뱃지 수정**: `s.status`(undefined) → `calcPct` 기반 상태값, trackProgress:true인 스테이지에만 표시
 - **상태 뱃지·메뉴 뱃지 텍스트**: 9px → 11px
 - **CLAUDE.md 명칭 사전**: 컬러·레이아웃·화면·카드 용어 통일 (📖 UI 명칭 사전 섹션)
+- **games/booth 부스 꾸미기 게임** (Phase 1+2 완료)
+  - HTML Canvas + DOM 아이템 레이어 하이브리드, 이미지 추가·이동·회전·리사이즈·프레임·그리기·내보내기
+  - lmp 스타일 적용 (검정 테두리, 직각 버튼, 검정 슬라이더, 투명 배경)
+  - postMessage로 프로젝트 연동 (boothType → 배경 자동 선택, keyColors → 색상 피커)
+  - 배경 선택 모달: 무료 이미지 탭(picsum 24장, onerror 처리) + 직접 업로드 탭
+  - games/booth/admin.html: 관리자 배경 이미지 관리
+  - vercel.json: /games/* Cache-Control no-store, X-Frame-Options SAMEORIGIN
+- **임베드 블록 높이 auto**: admin에서 "자동" 체크 → embedHeight=0 저장, 플레이어에서 min-height:60vh 적용
+- **배경 갤러리 UI 겹침 수정**: flex 레이아웃 분리, data-idx 이벤트 위임으로 URL 인코딩 문제 해결
 
 **미확인/이슈 🔶**
 - GAS `bulkAppend` 코드: `apps-script/Code.gs`에 추가됐으나 **GAS 편집기에서 재배포 필요**
@@ -424,6 +435,8 @@ URL: https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1w
 - 블록 체크 진행률 시스템 end-to-end 테스트 (실제 사용자 로그인 후)
 - 폼 블록: 파일 업로드 타입 구현 (현재 미구현)
 - 폼 블록: 제출 완료 후 화면(submitMsg) 커스터마이즈
+- games/booth: picsum 이미지 실제 로드 확인 (CORS 이슈 가능성)
+- 블록 편집 미리보기 UX 개선 (현재 텍스트/이미지 기본 지원, embed는 URL 텍스트로 표시)
 
 ---
 
