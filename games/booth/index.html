@@ -22,7 +22,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .tool-sep{flex-shrink:0;width:1px;height:20px;background:#000;margin:0 4px;}
 
 /* ── 캔버스 영역 ── */
-#canvas-wrap{position:relative;width:100%;max-width:480px;flex:1;overflow:hidden;background:transparent;touch-action:none;}
+#canvas-wrap{position:relative;width:100%;max-width:480px;aspect-ratio:4/5;flex-shrink:0;overflow:hidden;background:transparent;touch-action:none;}
 #bg-canvas,#draw-canvas,#items-layer{position:absolute;top:0;left:0;width:100%;height:100%;}
 #bg-canvas{z-index:1;}
 #items-layer{z-index:2;pointer-events:none;}
