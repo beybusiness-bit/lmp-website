@@ -800,13 +800,11 @@ function blockHtml(b){
   if(b.type==='form' && b.formId){
     formBlockData[b.formId]={formFields:b.formFields||[],formConfig:b.formConfig||{},blockId:b.id};
     const config=b.formConfig||{};
-    const alreadyDone=(AUTH_ENABLED&&USER_DOC_ID)&&(userProgress[curStageId]||new Set()).has(b.id);
     const titleHtml=config.formTitle?`<div class="ff-form-title">${config.formTitle}</div>`:'';
     const fieldsHtml=(b.formFields||[]).map(f=>renderFormField(f)).join('');
-    const doneHtml=`${config.postSubmitImage?`<img src="${config.postSubmitImage}" style="width:100%;display:block;margin-bottom:16px;" loading="lazy">`:''}<div>${config.postSubmitHtml||'제출되었어요!'}</div>`;
     return `<div class="g-block-form" style="${mS}${bgS}">
-      <div id="form-body-${b.formId}"${alreadyDone?' style="display:none;"':''}>${titleHtml}${fieldsHtml}<div class="ff-err" id="form-err-${b.formId}"></div><button class="form-submit-btn" onclick="submitForm('${b.formId}')">${config.submitBtnText||'제출하기'}</button></div>
-      <div id="form-done-${b.formId}" class="form-done-screen"${alreadyDone?'':' style="display:none;"'}>${doneHtml}</div>
+      <div id="form-body-${b.formId}">${titleHtml}${fieldsHtml}<div class="ff-err" id="form-err-${b.formId}"></div><button class="form-submit-btn" onclick="submitForm('${b.formId}')">${config.submitBtnText||'제출하기'}</button></div>
+      <div id="form-done-${b.formId}" class="form-done-screen" style="display:none;">${config.postSubmitImage?`<img src="${config.postSubmitImage}" style="width:100%;display:block;margin-bottom:16px;" loading="lazy">`:''}<div>${config.postSubmitHtml||'제출되었어요!'}</div></div>
     </div>`;
   }
   return '';
