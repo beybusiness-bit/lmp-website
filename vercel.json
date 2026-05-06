@@ -22,6 +22,18 @@
         { "key": "Cache-Control", "value": "no-store, must-revalidate" },
         { "key": "X-Frame-Options", "value": "SAMEORIGIN" }
       ]
+    },
+    {
+      "source": "/(admin|p|gmbf-poc|block-test-demo|gmbf)/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/(admin|p|gmbf-poc|block-test-demo|gmbf)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" }
+      ]
     }
   ],
   "redirects": [
