@@ -1021,7 +1021,10 @@ async function submitForm(formId){
   try{
     const user=JSON.parse(sessionStorage.getItem('userSession')||'{}');
     const docData={...result,submittedAt:firebase.firestore.FieldValue.serverTimestamp()};
-    if(user[AUTH_KEY_FIELD]) docData._user=user[AUTH_KEY_FIELD];
+    if(AUTH_ENABLED){
+      if(user[AUTH_KEY_FIELD]) docData._user=user[AUTH_KEY_FIELD];
+      AUTH_FIELDS.forEach(f=>{if(user[f.key]!==undefined) docData['_auth_'+f.key]=user[f.key];});
+    }
     await db.collection('cms_form_responses').doc(formId).collection('responses').add(docData);
     document.getElementById('form-body-'+formId).style.display='none';
     document.getElementById('form-done-'+formId).style.display='';
@@ -1030,13 +1033,12 @@ async function submitForm(formId){
     if(formConfig.sheetId){
       try{
         const ts=new Date().toLocaleString('ko');
-        const user=JSON.parse(sessionStorage.getItem('userSession')||'{}');
-        const userVal=user[AUTH_KEY_FIELD]||'';
-        const headers=['제출일시',...(AUTH_ENABLED?['사용자']:[]),...formFields.map(f=>f.label)];
+        const authHeaders=AUTH_ENABLED?AUTH_FIELDS.map(f=>f.label):[];
+        const authVals=AUTH_ENABLED?AUTH_FIELDS.map(f=>String(user[f.key]??'')):[];
+        const headers=['제출일시',...authHeaders,...formFields.map(f=>f.label)];
         const vals=formFields.map(f=>{const v=result[f.key];return Array.isArray(v)?v.join(', '):(v??'');});
-        const row=AUTH_ENABLED?[ts,userVal,...vals]:[ts,...vals];
         await fetch(GAS_URL,{method:'POST',
-          body:JSON.stringify({action:'submitForm',sheetId:formConfig.sheetId,headers,row})});
+          body:JSON.stringify({action:'submitForm',sheetId:formConfig.sheetId,headers,row:[ts,...authVals,...vals]})});
       }catch(e){}
     }
   }catch(e){
