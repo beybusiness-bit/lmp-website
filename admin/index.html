@@ -2842,7 +2842,12 @@ function gBlockHtml(b,S){
     if(b.mixedLayout==='split') return `<div style="${mS}${bgS}${pad}"><img src="${b.imageUrl||''}" style="width:100%;display:block;margin-bottom:${Math.round(6*S)}px;" alt=""><div style="${txS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div></div>`;
     return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="width:100%;display:block;" alt=""><div style="position:absolute;inset:0;display:flex;align-items:flex-end;${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;">${b.textContent||''}</div></div></div>`;
   }
-  if(b.type==='embed') return `<div style="${mS}${bgS}${pad};text-align:center;font-size:${Math.round(11*S)}px;color:rgba(0,0,0,.4);">[임베드: ${b.embedUrl||'URL 없음'}]</div>`;
+  if(b.type==='embed'){
+    if(!b.embedUrl) return `<div style="${mS}${bgS}${pad};text-align:center;font-size:${Math.round(11*S)}px;color:rgba(0,0,0,.4);">임베드 URL 없음</div>`;
+    /* 실제 플레이어와 동일한 iframe 렌더링 (스케일에 맞춰 높이 축소) */
+    const eh = b.embedHeight===0 ? Math.round(360*S) : Math.round((b.embedHeight||500)*S);
+    return `<div style="${mS}${bgS}position:relative;"><iframe src="${b.embedUrl}" width="100%" height="${eh}" frameborder="0" allowfullscreen loading="lazy" style="display:block;border:none;pointer-events:none;"></iframe></div>`;
+  }
   if(b.type==='form'){
     const fields=(b.formFields||[]).map(f=>`<div style="margin-bottom:${Math.round(6*S)}px;"><div style="font-size:${Math.round(10*S)}px;font-weight:700;margin-bottom:${Math.round(2*S)}px;">${f.label}${f.required?'*':''}</div><div style="border:1px solid rgba(0,0,0,.3);height:${Math.round(22*S)}px;background:#fafafa;border-radius:2px;"></div></div>`).join('');
     const btn=`<div style="margin-top:${Math.round(8*S)}px;background:#000;color:#fff;text-align:center;font-size:${Math.round(11*S)}px;font-weight:700;padding:${Math.round(8*S)}px;">${b.formConfig?.submitBtnText||'제출하기'}</div>`;
