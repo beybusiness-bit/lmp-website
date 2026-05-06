@@ -17,7 +17,7 @@
       ]
     },
     {
-      "source": "/games/(.*)",
+      "source": "/tools/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, must-revalidate" },
         { "key": "X-Frame-Options", "value": "SAMEORIGIN" }
@@ -37,6 +37,11 @@
     }
   ],
   "redirects": [
+    {
+      "source": "/games/:path*",
+      "destination": "/tools/:path*",
+      "permanent": true
+    },
     {
       "source": "/lazy",
       "destination": "/lazy/info",

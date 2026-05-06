@@ -164,8 +164,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .switch-lbl{font-size:13px;font-weight:600;}
 .chk-pos-btn{width:100%;aspect-ratio:1;background:transparent;border:1.5px solid rgba(0,0,0,.2);font-size:14px;cursor:pointer;border-radius:4px;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;}
 .chk-pos-btn.on{background:#000;color:#fff;border-color:#000;}
-/* ── Games tab ── */
-#panel-games .proj-item { cursor: pointer; }
+/* ── Tools tab ── */
+#panel-tools .proj-item { cursor: pointer; }
 .proj-item{padding:14px 0;border-bottom:1.5px solid #000;}
 .pi-name{font-size:15px;font-weight:700;margin-bottom:2px;}
 .pi-meta{font-size:11px;color:rgba(0,0,0,.45);}
@@ -209,7 +209,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   </div>
   <div class="tab-nav">
     <button class="tab-btn on" onclick="switchTab('proj')" id="tabbtn-proj">프로젝트</button>
-    <button class="tab-btn" onclick="switchTab('games')" id="tabbtn-games">게임</button>
+    <button class="tab-btn" onclick="switchTab('tools')" id="tabbtn-tools">툴</button>
   </div>
   <div class="admin-body">
 
@@ -442,28 +442,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       </div><!-- /proj-edit-view -->
     </div><!-- /proj-list-view container -->
 
-    <!-- 게임 탭 -->
-    <div class="panel" id="panel-games">
-      <div id="games-list-view">
-        <div class="sect-head" style="margin-bottom:16px;">게임 관리</div>
-        <div id="games-list">
-          <!-- 게임 카드 -->
-          <div class="proj-item" onclick="openGame('booth')" style="cursor:pointer;">
+    <!-- 툴 탭 -->
+    <div class="panel" id="panel-tools">
+      <div id="tools-list-view">
+        <div class="sect-head" style="margin-bottom:16px;">툴 관리</div>
+        <div id="tools-list">
+          <!-- 툴 카드 -->
+          <div class="proj-item" onclick="openTool('booth')" style="cursor:pointer;">
             <div class="pi-name">부스 꾸미기</div>
             <div class="pi-meta">배경 이미지 · 부스 종류별 설정</div>
+          </div>
+          <div class="proj-item" onclick="openTool('guide')" style="cursor:pointer;">
+            <div class="pi-name">계산기 생성기</div>
+            <div class="pi-meta">질문·숫자입력·결과카드로 맞춤 가이드 제작</div>
           </div>
         </div>
       </div>
 
-      <!-- 부스 게임 설정 화면 -->
-      <div id="game-booth-view" style="display:none;flex-direction:column;">
+      <!-- 부스 툴 설정 화면 -->
+      <div id="tool-booth-view" style="display:none;flex-direction:column;">
         <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
-          <span class="back-btn" onclick="closeGame()">←</span>
+          <span class="back-btn" onclick="closeTool()">←</span>
           <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">부스 꾸미기 설정</span>
         </div>
         <div style="padding:20px 16px;overflow-y:auto;flex:1;">
           <div class="sect-head" style="margin-bottom:4px;">부스 종류별 배경 이미지</div>
-          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">각 부스 종류에 맞는 배경 이미지를 업로드하세요. 업로드된 이미지는 사용자가 게임 시작 시 자동으로 선택됩니다. 권장 크기: 1080×1350px (4:5)</div>
+          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">각 부스 종류에 맞는 배경 이미지를 업로드하세요. 업로드된 이미지는 사용자가 툴 시작 시 자동으로 선택됩니다. 권장 크기: 1080×1350px (4:5)</div>
 
           <!-- 부스 종류 추가 -->
           <div style="display:flex;gap:8px;margin-bottom:20px;">
@@ -478,10 +482,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
           <!-- 연결된 프로젝트·블록 -->
           <div class="sect-head" style="margin-top:28px;margin-bottom:4px;">연결된 프로젝트 · 블록</div>
-          <div class="ed-lbl" style="margin-bottom:12px;color:rgba(0,0,0,.5);">이 게임이 임베드된 프로젝트·스테이지·블록 목록이에요.</div>
+          <div class="ed-lbl" style="margin-bottom:12px;color:rgba(0,0,0,.5);">이 툴이 임베드된 프로젝트·스테이지·블록 목록이에요.</div>
           <div id="booth-connections">
             <div class="empty-msg">불러오는 중…</div>
           </div>
+        </div>
+      </div>
+
+      <!-- 계산기 생성기 툴 설정 화면 -->
+      <div id="tool-guide-view" style="display:none;flex-direction:column;">
+        <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
+          <span class="back-btn" onclick="closeTool()">←</span>
+          <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">계산기 생성기</span>
+        </div>
+        <div style="padding:20px 16px;overflow-y:auto;flex:1;">
+          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">질문·숫자입력·결과카드 블록을 조합해 맞춤 가이드를 만들어요. 빌더에서 폼을 만들고, 링크를 공유하거나 embed 블록에 붙여넣으세요.</div>
+          <a id="guide-builder-link" href="/tools/guide?mode=builder" target="_blank" class="save-btn" style="display:inline-block;text-decoration:none;margin-bottom:24px;">빌더 열기 →</a>
+
+          <div class="sect-head" style="margin-bottom:8px;">생성된 폼 목록</div>
+          <div id="guide-forms-list"><div class="empty-msg">불러오는 중…</div></div>
         </div>
       </div>
     </div>
@@ -3122,22 +3141,48 @@ window.addEventListener('load', () => {
   });
 });
 
-/* ── Games Tab ── */
-let curGame = null;
+/* ── Tools Tab ── */
+let curTool = null;
 
-function openGame(gameId) {
-  curGame = gameId;
-  document.getElementById('games-list-view').style.display = 'none';
-  document.getElementById('game-'+gameId+'-view').style.display = 'flex';
-  if(gameId === 'booth') { loadBoothBgs(); loadBoothConnections(); }
+function openTool(toolId) {
+  curTool = toolId;
+  document.getElementById('tools-list-view').style.display = 'none';
+  document.getElementById('tool-'+toolId+'-view').style.display = 'flex';
+  if(toolId === 'booth') { loadBoothBgs(); loadBoothConnections(); }
+  if(toolId === 'guide') { loadGuideForms(); }
 }
 
-function closeGame() {
-  if(curGame) {
-    document.getElementById('game-'+curGame+'-view').style.display = 'none';
-    curGame = null;
+function closeTool() {
+  if(curTool) {
+    document.getElementById('tool-'+curTool+'-view').style.display = 'none';
+    curTool = null;
   }
-  document.getElementById('games-list-view').style.display = '';
+  document.getElementById('tools-list-view').style.display = '';
+}
+
+async function loadGuideForms() {
+  const el = document.getElementById('guide-forms-list');
+  el.innerHTML = '<div class="empty-msg">불러오는 중…</div>';
+  try {
+    const snap = await db.collection('tool_configs').doc('guide').collection('forms').orderBy('updatedAt','desc').get();
+    if(snap.empty) { el.innerHTML = '<div class="empty-msg">아직 만든 폼이 없어요. 빌더를 열어 첫 번째 폼을 만들어보세요.</div>'; return; }
+    el.innerHTML = snap.docs.map(d => {
+      const f = d.data();
+      const url = '/tools/guide?id=' + d.id;
+      return `<div class="proj-item" style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="pi-name">${f.title || '(제목 없음)'}</div>
+          <div class="pi-meta">블록 ${(f.blocks||[]).length}개</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <a href="/tools/guide?mode=builder&id=${d.id}" target="_blank" class="save-btn" style="text-decoration:none;font-size:11px;padding:6px 10px;">편집</a>
+          <a href="${url}" target="_blank" class="save-btn" style="text-decoration:none;font-size:11px;padding:6px 10px;background:#fff;color:#000;">미리보기</a>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty-msg">불러오기 실패: ' + e.message + '</div>';
+  }
 }
 
 /* ── Booth Backgrounds ── */
@@ -3232,7 +3277,7 @@ async function loadBoothConnections() {
         const stageId = stageDoc.id;
         const blocks = stageDoc.data().blocks || [];
         for(const block of blocks) {
-          if(block.type === 'embed' && block.embedUrl && block.embedUrl.includes('games/booth')) {
+          if(block.type === 'embed' && block.embedUrl && block.embedUrl.includes('tools/booth')) {
             const stage = (proj.stages || []).find(s => s.id === stageId);
             connections.push({
               projId, projName: proj.name || projId,
@@ -3252,7 +3297,7 @@ async function loadBoothConnections() {
 function renderBoothConnections(connections) {
   const el = document.getElementById('booth-connections');
   if(!connections.length) {
-    el.innerHTML = '<div class="empty-msg">아직 이 게임을 사용하는 블록이 없어요.</div>';
+    el.innerHTML = '<div class="empty-msg">아직 이 툴을 사용하는 블록이 없어요.</div>';
     return;
   }
   el.innerHTML = connections.map(c => `
