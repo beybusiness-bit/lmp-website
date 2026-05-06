@@ -209,7 +209,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   </div>
   <div class="tab-nav">
     <button class="tab-btn on" onclick="switchTab('proj')" id="tabbtn-proj">프로젝트</button>
-    <button class="tab-btn" onclick="switchTab('tools')" id="tabbtn-tools">툴</button>
+    <button class="tab-btn" onclick="switchTab('tools')" id="tabbtn-tools">도구</button>
   </div>
   <div class="admin-body">
 
@@ -442,12 +442,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       </div><!-- /proj-edit-view -->
     </div><!-- /proj-list-view container -->
 
-    <!-- 툴 탭 -->
+    <!-- 도구 탭 -->
     <div class="panel" id="panel-tools">
       <div id="tools-list-view">
-        <div class="sect-head" style="margin-bottom:16px;">툴 관리</div>
+        <div class="sect-head" style="margin-bottom:16px;">도구 관리</div>
         <div id="tools-list">
-          <!-- 툴 카드 -->
+          <!-- 도구 카드 -->
           <div class="proj-item" onclick="openTool('booth')" style="cursor:pointer;">
             <div class="pi-name">부스 꾸미기</div>
             <div class="pi-meta">배경 이미지 · 부스 종류별 설정</div>
@@ -459,7 +459,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         </div>
       </div>
 
-      <!-- 부스 툴 설정 화면 -->
+      <!-- 부스 도구 설정 화면 -->
       <div id="tool-booth-view" style="display:none;flex-direction:column;">
         <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
           <span class="back-btn" onclick="closeTool()">←</span>
@@ -467,7 +467,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         </div>
         <div style="padding:20px 16px;overflow-y:auto;flex:1;">
           <div class="sect-head" style="margin-bottom:4px;">부스 종류별 배경 이미지</div>
-          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">각 부스 종류에 맞는 배경 이미지를 업로드하세요. 업로드된 이미지는 사용자가 툴 시작 시 자동으로 선택됩니다. 권장 크기: 1080×1350px (4:5)</div>
+          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">각 부스 종류에 맞는 배경 이미지를 업로드하세요. 업로드된 이미지는 사용자가 도구 시작 시 자동으로 선택됩니다. 권장 크기: 1080×1350px (4:5)</div>
 
           <!-- 부스 종류 추가 -->
           <div style="display:flex;gap:8px;margin-bottom:20px;">
@@ -482,14 +482,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
           <!-- 연결된 프로젝트·블록 -->
           <div class="sect-head" style="margin-top:28px;margin-bottom:4px;">연결된 프로젝트 · 블록</div>
-          <div class="ed-lbl" style="margin-bottom:12px;color:rgba(0,0,0,.5);">이 툴이 임베드된 프로젝트·스테이지·블록 목록이에요.</div>
+          <div class="ed-lbl" style="margin-bottom:12px;color:rgba(0,0,0,.5);">이 도구가 임베드된 프로젝트·스테이지·블록 목록이에요.</div>
           <div id="booth-connections">
             <div class="empty-msg">불러오는 중…</div>
           </div>
         </div>
       </div>
 
-      <!-- 계산기 생성기 툴 설정 화면 -->
+      <!-- 계산기 생성기 도구 설정 화면 -->
       <div id="tool-guide-view" style="display:none;flex-direction:column;">
         <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
           <span class="back-btn" onclick="closeTool()">←</span>
@@ -3297,7 +3297,7 @@ async function loadBoothConnections() {
 function renderBoothConnections(connections) {
   const el = document.getElementById('booth-connections');
   if(!connections.length) {
-    el.innerHTML = '<div class="empty-msg">아직 이 툴을 사용하는 블록이 없어요.</div>';
+    el.innerHTML = '<div class="empty-msg">아직 이 도구를 사용하는 블록이 없어요.</div>';
     return;
   }
   el.innerHTML = connections.map(c => `
