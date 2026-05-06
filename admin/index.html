@@ -141,14 +141,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .sect-head{font-size:10px;font-weight:900;letter-spacing:.9px;text-transform:uppercase;background:rgba(0,0,0,.08);color:rgba(0,0,0,.5);padding:5px 16px;margin:20px -16px 14px;display:block;}
 .ip-first-sect{margin-top:2px;}
 /* preview */
-/* preview-wrap은 inline side panel로 변경 — position:fixed 제거 */
 .preview-side-panel{flex-shrink:0;border-left:2px solid #000;background:#f4f4f4;display:flex;flex-direction:column;align-items:center;padding:16px 12px;overflow-y:auto;}
 .preview-side-panel-header{display:flex;align-items:center;justify-content:space-between;width:100%;margin-bottom:10px;}
+#proj-edit-view{position:fixed;inset:0;z-index:100;background:#f4f4f4;}
 #stage-content-overlay{flex-direction:column;}
 .stage-layout{display:flex;flex:1;overflow:hidden;}
 #sco-body{flex:1;overflow-y:auto;padding:16px;}
 .proj-layout{display:flex;min-height:0;flex:1;overflow:hidden;}
-.proj-content{flex:1;overflow-y:auto;}
+.proj-content{flex:1;overflow-y:auto;padding:20px 16px 60px;}
 #preview-phone{width:196px;height:348px;border:3px solid #000;border-radius:18px;overflow:hidden;position:relative;background:#f5f5f5;box-shadow:0 6px 24px rgba(0,0,0,.2);}
 .prev-sz-btn{padding:2px 7px;background:transparent;border:1.5px solid #000;color:#000;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;line-height:1.4;border-radius:3px;}
 .prev-sz-btn:hover{background:#000;color:#fff;}
@@ -200,8 +200,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="add-btn" onclick="startNewProject()">+ 프로젝트 추가</button>
         <button class="add-btn" onclick="seedTestData()" style="margin-top:8px;border-color:rgba(0,0,0,.3);color:rgba(0,0,0,.45);font-size:12px;">🧪 블록 기능 테스트 프로젝트 추가</button>
       </div>
-      <div id="proj-edit-view" style="display:none;flex-direction:column;min-height:100vh;overflow:hidden;">
-        <div class="ed-top">
+      <div id="proj-edit-view" style="display:none;flex-direction:column;">
+        <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
           <span class="back-btn" onclick="backToProjects()">←</span>
           <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">프로젝트 편집</span>
           <div style="flex:1;"></div>
@@ -1647,7 +1647,7 @@ function backToProjects() {
 }
 function startNewProject() {
   if(projDirty && !confirm('저장하지 않은 변경사항이 있어요. 저장 없이 새 프로젝트를 만드시겠어요?')) return;
-  projDirty=false; _projDirtyLock=false;
+  projDirty=false; _projDirtyLock=true;
   curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}];
   curAuthKeyField='name'; curUsers=[]; curAuthCollection=''; curLogoTextSize='24'; curLogoTextAlign='center'; curLogoImgW=76;
   curStats=[]; curElementOrder=['edition','logo','dday','stats'];
@@ -1663,6 +1663,7 @@ function startNewProject() {
   setLogoType('image'); setLayoutType('separate'); setDday(false); setAuth(false);
   renderKeyColorList(); renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList();
   switchInnerTab('basic'); showProjView('edit');
+  setTimeout(()=>{ _projDirtyLock=false; projDirty=false; }, 300);
 }
 async function editProject(id) {
   if(projDirty && curProjId && curProjId!==id && !confirm('저장하지 않은 변경사항이 있어요. 저장 없이 다른 프로젝트로 이동하시겠어요?')) return;
@@ -1712,7 +1713,7 @@ async function editProject(id) {
     renderKeyColorList(); renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList();
     if (d.authEnabled) await loadUsers();
     switchInnerTab('basic'); showProjView('edit');
-    setTimeout(()=>{ _projDirtyLock=false; }, 200);
+    setTimeout(()=>{ _projDirtyLock=false; projDirty=false; }, 300);
   } catch(e) { alert('불러오기 실패: '+e.message); }
 }
 async function saveProject(deploy=true) {
@@ -2034,7 +2035,7 @@ async function openStageContent(i) {
   const stage = curStages[i];
   const titleEl = document.getElementById('sco-stage-title');
   if (titleEl) titleEl.textContent = stage.title ? `— ${stage.title}` : '';
-  setGuideType('scroll'); renderBlockList();
+  setGuideType('scroll', true); renderBlockList();
   const authEnabled = curAuthEnabled;
   const varHint = document.getElementById('var-hint');
   const varChips = document.getElementById('var-chips');
@@ -2058,9 +2059,10 @@ async function openStageContent(i) {
       const d = doc.data();
       curBlocks = (d.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
       curGuideDispType = d.displayType||'scroll';
-      setGuideType(curGuideDispType); renderBlockList();
+      setGuideType(curGuideDispType, true); renderBlockList();
     }
   } catch(e) {}
+  stageDirty = false; /* 로딩 완료 후 dirty 초기화 */
 }
 function backFromStageContent() {
   if(stageDirty && !confirm('저장하지 않은 변경사항이 있어요. 저장 없이 닫으시겠어요?')) return;
@@ -2068,8 +2070,9 @@ function backFromStageContent() {
   document.getElementById('stage-content-overlay').style.display = 'none';
   curEditingStageIdx = null; curBlocks = [];
 }
-function setGuideType(t) {
-  curGuideDispType = t; stageDirty = true;
+function setGuideType(t, silent=false) {
+  curGuideDispType = t;
+  if (!silent) stageDirty = true;
   document.getElementById('tog-scroll').classList.toggle('on', t==='scroll');
   document.getElementById('tog-slide').classList.toggle('on', t==='slide');
   scheduleGuidePreviewUpdate();
