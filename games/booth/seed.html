@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>배경 테스트 데이터 등록</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<style>
+body{font-family:sans-serif;max-width:500px;margin:40px auto;padding:20px;}
+button{padding:10px 24px;background:#000;color:#fff;border:none;border-radius:20px;font-size:14px;cursor:pointer;font-family:inherit;}
+pre{background:#f5f5f5;padding:12px;border-radius:8px;font-size:12px;white-space:pre-wrap;margin-top:16px;}
+</style>
+</head>
+<body>
+<h2>부스 배경 테스트 데이터 등록</h2>
+<p style="font-size:13px;color:#555;margin:12px 0;">gmbf-poc 프로젝트의 부스 종류 5가지에 대한 테스트 배경 이미지를 Firestore에 등록합니다.</p>
+<button onclick="seed()">등록 시작</button>
+<pre id="log">버튼을 누르면 시작됩니다.</pre>
+
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
+  authDomain:"beyhome-admin.firebaseapp.com",
+  projectId:"beyhome-admin",
+  storageBucket:"beyhome-admin.firebasestorage.app",
+  messagingSenderId:"849320781553",
+  appId:"1:849320781553:web:9d844044e85995c0aa2b50"
+});
+const db = firebase.firestore();
+
+const backgrounds = [
+  { type:'실내 2층 마켓 부스', label:'실내 2층 마켓 부스', url:'https://picsum.photos/seed/indoor2f/800/600' },
+  { type:'야외 마켓 부스',     label:'야외 마켓 부스',     url:'https://picsum.photos/seed/outdoor/800/600'  },
+  { type:'운영',               label:'운영',               url:'https://picsum.photos/seed/staff/800/600'    },
+  { type:'실내 복층 다락 팝업', label:'실내 복층 다락 팝업', url:'https://picsum.photos/seed/loft/800/600'   },
+  { type:'실내 1층 팝업',      label:'실내 1층 팝업',      url:'https://picsum.photos/seed/popup1f/800/600' },
+];
+
+async function seed() {
+  const log = document.getElementById('log');
+  log.textContent = '등록 중…\n';
+  try {
+    await db.collection('game_configs').doc('booth').set({ backgrounds }, { merge: true });
+    log.textContent += '✅ 완료!\n\n등록된 배경:\n';
+    backgrounds.forEach(b => { log.textContent += `  ${b.label} → ${b.url}\n`; });
+    log.textContent += '\n이 페이지는 닫아도 됩니다.';
+  } catch(e) {
+    log.textContent += '❌ 실패: ' + e.message + '\n\nFirestore 규칙에 game_configs 쓰기 권한이 있는지 확인해주세요.';
+  }
+}
+</script>
+</body>
+</html>
