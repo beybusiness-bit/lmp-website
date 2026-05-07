@@ -187,9 +187,9 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .blk-check-wrap.align-center{justify-content:center;}
 .blk-check-wrap.blk-check-mid{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);z-index:3;padding:0 20px;pointer-events:auto;}
 .blk-check-btn{padding:8px 18px;background:transparent;border:2px solid var(--chk-color,#000);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--chk-color,#000);-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s,border-color .15s;letter-spacing:-.2px;}
-.blk-check-btn.on{background:var(--chk-color,#000);color:var(--prep-bg);border-color:var(--chk-color,#000);}
+.blk-check-btn.on{background:var(--chk-color,#000);color:var(--chk-text-color,var(--prep-bg));border-color:var(--chk-color,#000);}
 .blk-check-box{width:26px;height:26px;border:2.5px solid var(--chk-color,#000);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;-webkit-tap-highlight-color:transparent;transition:border-color .15s,background .15s,color .15s;}
-.blk-check-box.on{background:var(--chk-color,#000);border-color:var(--chk-color,#000);color:var(--prep-bg);}
+.blk-check-box.on{background:var(--chk-color,#000);border-color:var(--chk-color,#000);color:var(--chk-text-color,var(--prep-bg));}
 .stage-pct-txt{font-size:10px;font-weight:800;color:var(--prep-bg,#fff);padding-right:4px;white-space:nowrap;}
 .stage-pbar-fill.merged .stage-pct-txt{color:#000;}
 </style>
@@ -1036,7 +1036,8 @@ function renderCheckEl(b,checked,pos){
   const alignCls=hPos==='left'?' align-left':hPos==='center'?' align-center':'';
   const midCls=vPos==='middle'?' blk-check-mid':'';
   const wrapCls=`blk-check-wrap${alignCls}${midCls}`;
-  const colorStyle=b.checkColor?` style="--chk-color:${b.checkColor}"`:' ';
+  const _cs=(b.checkColor?`--chk-color:${b.checkColor};`:'')+( b.checkTextColor?`--chk-text-color:${b.checkTextColor};`:'');
+  const colorStyle=_cs?` style="${_cs}"`:'  ';
   if(useBox){
     return `<div class="${wrapCls}"${colorStyle}><div id="chk-${b.id}" class="blk-check-box${checked?' on':''}" onclick="toggleBlockCheck('${b.id}')" data-before="" data-after="">${checked?'✓':''}</div></div>`;
   }

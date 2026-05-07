@@ -1025,11 +1025,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           </div>
         </div>
         <div style="margin-top:10px;">
-          <div class="ed-lbl" style="font-size:10px;">체크 색상 <span style="font-weight:400;opacity:.5;">(테두리·글씨·채움)</span></div>
+          <div class="ed-lbl" style="font-size:10px;">체크 색상 <span style="font-weight:400;opacity:.5;">(테두리·채움)</span></div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <input type="color" id="blk-check-color" value="#000000" oninput="onBlkCheckPick(this.value)" style="width:32px;height:32px;border:2px solid #000;padding:0;cursor:pointer;flex-shrink:0;">
             <input class="fi-sm" id="blk-check-hex" placeholder="#000000" style="width:84px;margin-bottom:0;" oninput="onBlkCheckHex(this.value)">
             <div id="blk-kc-check" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"></div>
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <div class="ed-lbl" style="font-size:10px;">완료 텍스트 색상 <span style="font-weight:400;opacity:.5;">(체크 완료 시 글씨)</span></div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <input type="color" id="blk-check-text-color" value="#ffffff" oninput="onBlkCheckTextPick(this.value)" style="width:32px;height:32px;border:2px solid #000;padding:0;cursor:pointer;flex-shrink:0;">
+            <input class="fi-sm" id="blk-check-text-hex" placeholder="#FFFFFF" style="width:84px;margin-bottom:0;" oninput="onBlkCheckTextHex(this.value)">
+            <button onclick="clearBlkCheckTextColor()" style="padding:4px 9px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">기본값</button>
+            <div id="blk-kc-check-text" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"></div>
           </div>
         </div>
       </div>
@@ -3004,6 +3013,7 @@ function exportRespCsv() {
 let curBlkIdx=null,curBlkInsertAt=null,curBlkType='text',curMixedLayout='overlay',savedRange=null;
 let curBlkBgColor='';
 let curBlkCheckColor='';
+let curBlkCheckTextColor='';
 let curBlkVerticalAlign='center';
 function setBlkVerticalAlign(v){
   curBlkVerticalAlign=v;
@@ -3039,6 +3049,13 @@ function renderBlkKeyColors(){
       return `<div onclick="onBlkCheckPick('${c}')" title="${c}" style="width:22px;height:22px;background:${c};border:2px solid ${border};cursor:pointer;flex-shrink:0;border-radius:2px;"></div>`;
     }).join('');
   }
+  const chkTxtEl = document.getElementById('blk-kc-check-text');
+  if(chkTxtEl){
+    chkTxtEl.innerHTML = kc.map(c=>{
+      const border=c.toLowerCase()==='#ffffff'?'#ccc':'#000';
+      return `<div onclick="onBlkCheckTextPick('${c}')" title="${c}" style="width:22px;height:22px;background:${c};border:2px solid ${border};cursor:pointer;flex-shrink:0;border-radius:2px;"></div>`;
+    }).join('');
+  }
 }
 function onBlkCheckPick(v){
   curBlkCheckColor=v;
@@ -3046,6 +3063,13 @@ function onBlkCheckPick(v){
   const p=document.getElementById('blk-check-color'); if(p) p.value=v;
 }
 function onBlkCheckHex(v){ if(/^#[0-9a-fA-F]{6}$/.test(v)) onBlkCheckPick(v); }
+function onBlkCheckTextPick(v){
+  curBlkCheckTextColor=v;
+  const h=document.getElementById('blk-check-text-hex'); if(h) h.value=v.toUpperCase();
+  const p=document.getElementById('blk-check-text-color'); if(p) p.value=v;
+}
+function onBlkCheckTextHex(v){ if(/^#[0-9a-fA-F]{6}$/.test(v)) onBlkCheckTextPick(v); }
+function clearBlkCheckTextColor(){ curBlkCheckTextColor=''; const h=document.getElementById('blk-check-text-hex'); if(h) h.value=''; const p=document.getElementById('blk-check-text-color'); if(p) p.value='#ffffff'; }
 function isLight(hex){try{const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return(r*299+g*587+b*114)/1000>128;}catch(e){return true;}}
 function onBlkBgPick(v){
   curBlkBgColor=v;
@@ -3128,6 +3152,9 @@ function openBlockModal(idx,insertAt){
   curBlkCheckColor=b.checkColor||'';
   const chkP=document.getElementById('blk-check-color'); if(chkP) chkP.value=curBlkCheckColor||'#000000';
   const chkH=document.getElementById('blk-check-hex');   if(chkH) chkH.value=(curBlkCheckColor||'').toUpperCase();
+  curBlkCheckTextColor=b.checkTextColor||'';
+  const chkTP=document.getElementById('blk-check-text-color'); if(chkTP) chkTP.value=curBlkCheckTextColor||'#ffffff';
+  const chkTH=document.getElementById('blk-check-text-hex');   if(chkTH) chkTH.value=(curBlkCheckTextColor||'').toUpperCase();
   setCheckPos(b.checkPosition||'bottom-right');
   const bgH=document.getElementById('blk-bg-hex');  if(bgH) bgH.value=(curBlkBgColor||'').toUpperCase();
   const mv=document.getElementById('blk-margin-v'); if(mv) mv.value=b.marginV??'';
@@ -3238,6 +3265,7 @@ function saveBlock(){
   b.checkBeforeText=document.getElementById('blk-check-before')?.value.trim()||'';
   b.checkAfterText=document.getElementById('blk-check-after')?.value.trim()||'';
   if(curBlkCheckColor) b.checkColor=curBlkCheckColor; else delete b.checkColor;
+  if(curBlkCheckTextColor) b.checkTextColor=curBlkCheckTextColor; else delete b.checkTextColor;
   if(b.checkable) b.checkPosition=curCheckPos; else delete b.checkPosition;
   if(curBlkIdx!==null)curBlocks[curBlkIdx]={...curBlocks[curBlkIdx],...b};
   else if(curBlkInsertAt!==null)curBlocks.splice(curBlkInsertAt,0,b);
