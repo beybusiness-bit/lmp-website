@@ -755,9 +755,8 @@ async function submitRegistration(){
     sessionStorage.setItem('userSession',JSON.stringify({...data,project:PROJECT_ID,_docId:USER_DOC_ID}));
     loadUserProgress(data);
     applyGreeting(data);
-    closeModal('reg-modal');
-    if(LAYOUT_TYPE==='merged') renderMergedStages();
-    else openPrep();
+    document.getElementById('reg-box').innerHTML=`<div style="text-align:center;padding:24px 0;"><div style="font-size:28px;margin-bottom:12px;">✅</div><div style="font-size:18px;font-weight:900;margin-bottom:8px;">등록 완료!</div><div style="font-size:13px;opacity:.7;">잠시 후 입장합니다…</div></div>`;
+    setTimeout(()=>{ closeModal('reg-modal'); if(LAYOUT_TYPE==='merged') renderMergedStages(); else openPrep(); }, 1500);
   }catch(e){ document.getElementById('reg-err').textContent='등록 실패. 다시 시도해주세요.'; btn.textContent='등록'; btn.disabled=false; }
 }
 async function confirmAuth(){
