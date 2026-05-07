@@ -849,7 +849,9 @@ function blockHtml(b){
     const src=toolUrls[b.toolType]||'';
     const h=b.height||0;
     const heightCss=h?`height:${h}px`:`min-height:60vh`;
-    return `<div class="g-block-embed" style="${mS}${bgS}${h?'':'min-height:60vh;'}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}"></iframe></div>`;
+    const trigger=b.completeTrigger||'tool-signal';
+    const onloadAttr=trigger==='open'?` onload="if(this.src&&this.src!=='about:blank')autoCheckBlock('${b.id}')"`:'';
+    return `<div class="g-block-embed" style="${mS}${bgS}${h?'':'min-height:60vh;'}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}" data-complete-trigger="${trigger}"${onloadAttr}></iframe></div>`;
   }
   if(b.type==='spacer'){
     const h=b.spacerHeight||40;
@@ -915,7 +917,8 @@ window.addEventListener('message',e=>{
   if(e.data?.type==='lmp-tool-complete'){
     document.querySelectorAll('iframe[data-tool-block]').forEach(f=>{
       try{
-        if(f.contentWindow===e.source) autoCheckBlock(f.getAttribute('data-tool-block'));
+        if(f.contentWindow===e.source&&f.getAttribute('data-complete-trigger')!=='manual')
+          autoCheckBlock(f.getAttribute('data-tool-block'));
       }catch(_){}
     });
     return;

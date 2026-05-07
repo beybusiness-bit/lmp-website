@@ -813,6 +813,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div class="ed-lbl" style="margin-bottom:6px;">높이 <span style="font-weight:400;opacity:.55;">(px, 0=자동)</span></div>
         <input class="fi-sm" id="tool-height" type="number" min="0" placeholder="0 (자동)" style="margin-bottom:0;width:120px;">
       </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
+        <div class="ed-lbl" style="margin-bottom:8px;">완료 조건 <span style="font-weight:400;opacity:.55;">(진행률 반영 시점)</span></div>
+        <div style="display:flex;flex-direction:column;gap:6px;" id="complete-trigger-opts">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;">
+            <input type="radio" name="complete-trigger" value="tool-signal" style="width:16px;height:16px;cursor:pointer;" onchange="curBlkCompleteTrigger=this.value"> 도구 완료 시 <span style="font-weight:400;opacity:.6;">(폼 제출·결과 도달 등 도구가 완료 신호를 보낼 때)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;">
+            <input type="radio" name="complete-trigger" value="open" style="width:16px;height:16px;cursor:pointer;" onchange="curBlkCompleteTrigger=this.value"> 열면 자동 완료 <span style="font-weight:400;opacity:.6;">(도구를 한 번 열기만 해도 완료)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;">
+            <input type="radio" name="complete-trigger" value="manual" style="width:16px;height:16px;cursor:pointer;" onchange="curBlkCompleteTrigger=this.value"> 수동 체크만 <span style="font-weight:400;opacity:.6;">(도구 완료와 무관하게 사용자가 직접 체크)</span>
+          </label>
+        </div>
+      </div>
     </div>
     <div id="bpanel-form" style="display:none;">
       <div style="margin-bottom:14px;">
@@ -1312,6 +1326,7 @@ let curRespFormBlock = null;
 /* 도구 블록 상태 */
 let curBlkToolType = 'form';
 let curBlkToolConfig = {};
+let curBlkCompleteTrigger = 'tool-signal';
 let toolInstList = [];
 /* 도구 탭 폼 관리 상태 */
 let tfCurDocId = null;
@@ -2919,12 +2934,16 @@ function openBlockModal(idx){
   if(b.type==='tool'){
     curBlkToolType=b.toolType||'form';
     curBlkToolConfig={...b.toolConfig||{}};
+    curBlkCompleteTrigger=b.completeTrigger||'tool-signal';
     ['form','booth','guide'].forEach(k=>{
       const el=document.getElementById('ttab-'+k);
       if(el) el.classList.toggle('on',k===curBlkToolType);
     });
     const hi=document.getElementById('tool-height');
     if(hi) hi.value=b.height||0;
+    document.querySelectorAll('input[name="complete-trigger"]').forEach(r=>{
+      r.checked=r.value===curBlkCompleteTrigger;
+    });
   }
   /* form — 항상 UI 초기화 후 기존 값 로드 */
   curFormFields = b.type==='form' ? JSON.parse(JSON.stringify(b.formFields||[])) : [];
@@ -2995,6 +3014,7 @@ function _buildCurrentBlock(){
     b.toolType=curBlkToolType;
     b.toolConfig=curBlkToolConfig;
     b.height=parseInt(document.getElementById('tool-height')?.value)||0;
+    b.completeTrigger=curBlkCompleteTrigger||'tool-signal';
   } else if(curBlkType==='form'){
     b.formFields=curFormFields||[];
     b.formConfig={submitBtnText:document.getElementById('form-submit-text')?.value||'제출하기'};
@@ -3086,7 +3106,12 @@ function switchBlkTab(t){
   });
   const chkSection=document.getElementById('blk-check-section');
   if(chkSection) chkSection.style.display=(t==='form'||t==='tool'||t==='spacer'||t==='divider')?'none':'';
-  if(t==='tool') loadToolInstList(curBlkToolType);
+  if(t==='tool'){
+    loadToolInstList(curBlkToolType);
+    document.querySelectorAll('input[name="complete-trigger"]').forEach(r=>{
+      r.checked=r.value===curBlkCompleteTrigger;
+    });
+  }
 }
 function switchToolType(tt){
   curBlkToolType=tt;
