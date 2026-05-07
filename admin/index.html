@@ -429,6 +429,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl">인증 모달 설명</div>
               <input class="fi" id="p-auth-desc" placeholder="예: 신청 시 입력한 휴대폰 번호로 인증해주세요.">
             </div>
+            <div class="sect-head">사용자 직접 등록</div>
+            <div class="ed-sect">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <div class="ed-lbl" style="margin-bottom:0;">직접 등록 허용</div>
+                <button class="tgl-btn" id="self-reg-sw" style="flex:unset;padding:6px 16px;" onclick="toggleSelfReg()">OFF</button>
+              </div>
+              <div id="self-reg-opts" style="display:none;">
+                <div class="ed-lbl">인증 모달의 등록하기 버튼 텍스트</div>
+                <input class="fi" id="p-self-reg-cta" placeholder="예: 등록하기" value="등록하기">
+              </div>
+            </div>
             <div class="sect-head">로그인 후 인사 문구</div>
             <div class="ed-sect">
               <div class="ed-lbl">인사 문구 <span style="font-weight:400;opacity:.55;">(로그인한 사용자에게 표시)</span></div>
@@ -1298,6 +1309,7 @@ let curLayoutType = 'separate';
 let curBgImages = [];          // [{url, holdTime, transitionTime}]
 let curDdayEnabled = false;
 let curAuthEnabled = false;
+let curSelfRegEnabled = false;
 let curAuthFields = [];        // [{key, label, type, required}]
 let curAuthKeyField = '';
 let curStages = [];
@@ -1492,6 +1504,13 @@ function setAuth(v) {
   curAuthEnabled = v;
   document.getElementById('auth-sw').classList.toggle('on', v);
   document.getElementById('auth-fields-wrap').style.display = v ? '' : 'none';
+}
+function toggleSelfReg() { setSelfReg(!curSelfRegEnabled); projDirty=true; }
+function setSelfReg(v) {
+  curSelfRegEnabled = v;
+  document.getElementById('self-reg-sw').classList.toggle('on', v);
+  document.getElementById('self-reg-sw').textContent = v ? 'ON' : 'OFF';
+  document.getElementById('self-reg-opts').style.display = v ? '' : 'none';
 }
 
 /* ══════════════════════════════════════
@@ -1999,6 +2018,7 @@ function startNewProject() {
   projDirty=false; _projDirtyLock=true;
   curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}];
   curAuthKeyField='name'; curUsers=[]; curAuthCollection=''; curLogoTextSize='24'; curLogoTextAlign='center'; curLogoImgW=76;
+  setSelfReg(false); document.getElementById('p-self-reg-cta').value='등록하기';
   curStats=[]; curElementOrder=['edition','logo','dday','stats'];
   curKeyColors=[{color:'#00CE6B',holdTime:8,transitionTime:2},{color:'#FFF100',holdTime:8,transitionTime:2},{color:'#F95548',holdTime:8,transitionTime:2},{color:'#0BC6FF',holdTime:8,transitionTime:2}];
   ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-title','p-auth-desc']
@@ -2052,6 +2072,8 @@ async function editProject(id) {
     updateAuthColDisplay();
     document.getElementById('p-auth-title').value   = d.authTitle||'';
     document.getElementById('p-auth-desc').value    = d.authDesc||'';
+    document.getElementById('p-self-reg-cta').value = d.selfRegCta||'등록하기';
+    setSelfReg(d.selfRegEnabled||false);
     document.getElementById('p-greeting-text').value = d.greetingText||'';
 
     document.getElementById('proj-del').style.display = 'block';
@@ -2095,6 +2117,8 @@ async function saveProject(deploy=true) {
     authKeyField: curAuthKeyField,
     authTitle:    document.getElementById('p-auth-title').value.trim(),
     authDesc:     document.getElementById('p-auth-desc').value.trim(),
+    selfRegEnabled: curSelfRegEnabled,
+    selfRegCta:   document.getElementById('p-self-reg-cta').value.trim()||'등록하기',
     greetingText: document.getElementById('p-greeting-text').value.trim(),
     bgImages:     curBgImages,
     stages:       curStages.map((s,i)=>({...s,order:i})),

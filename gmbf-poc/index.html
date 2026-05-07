@@ -287,6 +287,22 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
       <button class="modal-btn" onclick="closeModal('auth-modal')">취소</button>
       <button class="modal-btn" id="auth-ok" onclick="confirmAuth()">확인</button>
     </div>
+    <div id="auth-reg-wrap" style="display:none;text-align:center;margin-top:14px;">
+      <button id="auth-reg-btn" onclick="openRegModal()" style="background:transparent;border:none;font-size:13px;font-weight:700;text-decoration:underline;cursor:pointer;font-family:inherit;color:inherit;opacity:.7;">등록하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-ov" id="reg-modal" onclick="ovClick(event,'reg-modal')">
+  <div class="modal-box" id="reg-box" style="max-height:80vh;overflow-y:auto;">
+    <div class="modal-ttl">등록하기</div>
+    <div class="modal-desc" id="reg-desc" style="margin-bottom:16px;">정보를 입력하고 등록해주세요.</div>
+    <div id="reg-fields"></div>
+    <div class="modal-err" id="reg-err"></div>
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="closeModal('reg-modal')">취소</button>
+      <button class="modal-btn" id="reg-ok" onclick="submitRegistration()">등록</button>
+    </div>
   </div>
 </div>
 
@@ -322,6 +338,8 @@ let AUTH_ENABLED   = false;
 let AUTH_COLLECTION = '';
 let AUTH_FIELDS    = [];
 let AUTH_KEY_FIELD = '';
+let SELF_REG_ENABLED = false;
+let SELF_REG_CTA   = '등록하기';
 let GREETING_TEXT  = '';
 let STAGES         = [];
 let STATS          = [];   // [{id, label, collection, countType, unit, enabled}]
@@ -405,6 +423,8 @@ function applySettings(d){
   AUTH_COLLECTION = 'cms_users_' + PROJECT_ID;
   AUTH_FIELDS     = d.authFields     || [{key:'name',label:'이름',type:'string',required:true}];
   AUTH_KEY_FIELD  = d.authKeyField   || (AUTH_FIELDS[0]?.key||'name');
+  SELF_REG_ENABLED = d.selfRegEnabled || false;
+  SELF_REG_CTA    = d.selfRegCta     || '등록하기';
   GREETING_TEXT   = d.greetingText   || '';
   console.log('[Greeting] GREETING_TEXT loaded:', GREETING_TEXT);
   STAGES = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0)).map(s=>({
@@ -684,8 +704,54 @@ function openAuthModal(){
   document.getElementById('auth-err').textContent='';
   document.getElementById('auth-ok').textContent='확인';
   document.getElementById('auth-ok').disabled=false;
+  const regWrap=document.getElementById('auth-reg-wrap');
+  regWrap.style.display=SELF_REG_ENABLED?'':'none';
+  if(SELF_REG_ENABLED) document.getElementById('auth-reg-btn').textContent=SELF_REG_CTA;
   document.getElementById('auth-modal').classList.add('on');
   setTimeout(()=>document.getElementById('auth-key-input').focus(),200);
+}
+function openRegModal(){
+  closeModal('auth-modal');
+  const c=pickOther(COLORS[colorIdx]||'',KEY_COLORS);
+  const box=document.getElementById('reg-box');
+  box.style.background=c; box.style.setProperty('--modal-bg',c);
+  document.getElementById('reg-err').textContent='';
+  document.getElementById('reg-ok').textContent='등록';
+  document.getElementById('reg-ok').disabled=false;
+  const fieldsHtml=AUTH_FIELDS.map(f=>`
+    <div style="margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:700;margin-bottom:4px;">${f.label}${f.required?'<span style="color:red;margin-left:2px;">*</span>':''}</div>
+      <input class="inp" data-reg-key="${f.key}" data-reg-type="${f.type||'string'}" placeholder="${f.label}" style="margin-bottom:0;">
+    </div>`).join('');
+  document.getElementById('reg-fields').innerHTML=fieldsHtml;
+  document.getElementById('reg-modal').classList.add('on');
+  setTimeout(()=>{ const first=document.querySelector('#reg-fields input'); if(first) first.focus(); },200);
+}
+async function submitRegistration(){
+  const inputs=[...document.querySelectorAll('#reg-fields input[data-reg-key]')];
+  const data={};
+  for(const inp of inputs){
+    const key=inp.dataset.regKey;
+    const type=inp.dataset.regType;
+    const val=inp.value.trim();
+    if(!val){ const f=AUTH_FIELDS.find(f=>f.key===key); if(f?.required){ document.getElementById('reg-err').textContent=`'${f.label}'을(를) 입력해주세요.`; inp.focus(); return; } }
+    data[key]=type==='number'?(parseFloat(val)||0):val;
+  }
+  const btn=document.getElementById('reg-ok');
+  btn.textContent='등록 중…'; btn.disabled=true;
+  try{
+    const keyVal=data[AUTH_KEY_FIELD];
+    const dup=await db.collection(AUTH_COLLECTION).where(AUTH_KEY_FIELD,'==',keyVal).limit(1).get();
+    if(!dup.empty){ document.getElementById('reg-err').textContent='이미 등록된 정보예요.'; btn.textContent='등록'; btn.disabled=false; return; }
+    const ref=await db.collection(AUTH_COLLECTION).add(data);
+    USER_DOC_ID=ref.id;
+    sessionStorage.setItem('userSession',JSON.stringify({...data,project:PROJECT_ID,_docId:USER_DOC_ID}));
+    loadUserProgress(data);
+    applyGreeting(data);
+    closeModal('reg-modal');
+    if(LAYOUT_TYPE==='merged') renderMergedStages();
+    else openPrep();
+  }catch(e){ document.getElementById('reg-err').textContent='등록 실패. 다시 시도해주세요.'; btn.textContent='등록'; btn.disabled=false; }
 }
 async function confirmAuth(){
   const val=document.getElementById('auth-key-input').value.trim();
