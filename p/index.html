@@ -152,16 +152,18 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .guide-slide-item .g-block-mixed-split{flex:1;display:flex;flex-direction:column;min-height:0;}
 .guide-slide-item .g-block-mixed-split .g-split-img{flex-shrink:0;}
 .guide-slide-item .g-block-mixed-split .g-split-text{flex:1;overflow-y:auto;}
-/* 세로 정렬 설정 시: 모든 직계 자식이 자연 높이만 차지 (flex:1 해제) */
+/* 세로 정렬: 직계 자식은 자연 높이, 이미지/고정 블록은 0 0 auto */
 .guide-slide-item[data-valign] > *{flex:0 0 auto!important;}
-.guide-slide-item[data-valign] .g-block-text .g-block-text-inner,
-.guide-slide-item[data-valign] .g-block-mixed-split .g-split-text{flex:unset;overflow-y:visible;}
 .guide-slide-item[data-valign] .g-block-image img,
 .guide-slide-item[data-valign] .g-block-mixed-overlay img{height:auto;max-height:100%;}
-.guide-slide-item[data-valign] .g-block-text,
 .guide-slide-item[data-valign] .g-block-image,
-.guide-slide-item[data-valign] .g-block-mixed-overlay,
-.guide-slide-item[data-valign] .g-block-mixed-split{flex:0 0 auto!important;}
+.guide-slide-item[data-valign] .g-block-mixed-overlay{flex:0 0 auto!important;}
+/* 텍스트 블록: 컨테이너 높이까지 줄어들 수 있게 해서 내부 스크롤 허용 */
+.guide-slide-item[data-valign] .g-block-text{flex:0 1 auto!important;max-height:100%;min-height:0;display:flex;flex-direction:column;}
+.guide-slide-item[data-valign] .g-block-text .g-block-text-inner{flex:1;min-height:0;overflow-y:auto;}
+.guide-slide-item[data-valign] .g-block-mixed-split{flex:0 1 auto!important;max-height:100%;min-height:0;}
+.guide-slide-item[data-valign] .g-block-mixed-split .g-split-text{flex:1;min-height:0;overflow-y:auto;}
+.guide-slide-item[data-valign] .blk-check-outer{flex:0 1 auto!important;max-height:100%;min-height:0;display:flex;flex-direction:column;}
 /* form block */
 .g-block-form{padding:24px 20px;}
 .ff-wrap{margin-bottom:22px;}
