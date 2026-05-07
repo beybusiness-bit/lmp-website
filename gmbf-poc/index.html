@@ -744,7 +744,9 @@ async function submitRegistration(){
     const dup=await db.collection(AUTH_COLLECTION).where(AUTH_KEY_FIELD,'==',keyVal).limit(1).get();
     if(!dup.empty){
       const existing=dup.docs[0].data();
-      const detail=AUTH_FIELDS.map(f=>`<b>${f.label}</b>: ${existing[f.key]??'—'}`).join(' / ');
+      const keyField=AUTH_FIELDS.find(f=>f.key===AUTH_KEY_FIELD);
+      const nameField=AUTH_FIELDS.find(f=>f.required&&f.key!==AUTH_KEY_FIELD)||AUTH_FIELDS[0];
+      const detail=`<b>${keyField?.label||AUTH_KEY_FIELD}</b> ${existing[AUTH_KEY_FIELD]??'—'} / <b>${nameField?.label||'이름'}</b> ${existing[nameField?.key]??'—'}`;
       document.getElementById('reg-err').innerHTML=`이미 등록된 정보예요.<br><span style="font-size:11px;opacity:.75;">${detail}</span>`;
       btn.textContent='등록'; btn.disabled=false; return;
     }
