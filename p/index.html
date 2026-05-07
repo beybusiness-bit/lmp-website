@@ -82,7 +82,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .stage-pct-out{font-size:10px;font-weight:800;color:#000;margin-left:4px;white-space:nowrap;}
 .stage-pct-out.merged{color:rgba(255,255,255,.85);}
 /* side menu */
-#side-menu{position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:430px;background:var(--menu-bg);transform:translateX(-50%) translateX(-100%);transition:transform .35s cubic-bezier(.32,.72,0,1);z-index:80;display:flex;flex-direction:column;}
+#side-menu{position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:430px;background:var(--menu-bg);transform:translateX(calc(-50% - 100vw));transition:transform .35s cubic-bezier(.32,.72,0,1);z-index:80;display:flex;flex-direction:column;}
 #side-menu.open{transform:translateX(-50%);}
 .menu-header{flex-shrink:0;display:flex;justify-content:flex-end;padding:16px 20px;border-bottom:1px solid rgba(0,0,0,.12);}
 .menu-close{font-size:24px;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:4px 4px 4px 16px;line-height:1;}
@@ -246,7 +246,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
         <div class="basket-icon-wrap" id="prep-cta-wrap">
           <div class="basket-layer basket-layer-black" id="prep-cta-icon"></div>
         </div>
-        <span id="prep-menu-fallback" style="display:none;font-size:22px;font-weight:900;line-height:1;">☰</span>
+        <span id="prep-menu-fallback" style="display:none;font-size:26px;font-weight:900;line-height:1;color:#000;padding:2px 0;">☰</span>
       </div>
       <div class="topbar-center" id="topbar-title">준비</div>
       <div class="topbar-right" onclick="closePrep()">↓</div>
