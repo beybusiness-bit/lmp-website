@@ -340,6 +340,7 @@ let AUTH_FIELDS    = [];
 let AUTH_KEY_FIELD = '';
 let SELF_REG_ENABLED = false;
 let SELF_REG_CTA   = '등록하기';
+let SELF_REG_SUCCESS_MSG = '';
 let GREETING_TEXT  = '';
 let STAGES         = [];
 let STATS          = [];   // [{id, label, collection, countType, unit, enabled}]
@@ -425,6 +426,7 @@ function applySettings(d){
   AUTH_KEY_FIELD  = d.authKeyField   || (AUTH_FIELDS[0]?.key||'name');
   SELF_REG_ENABLED = d.selfRegEnabled || false;
   SELF_REG_CTA    = d.selfRegCta     || '등록하기';
+  SELF_REG_SUCCESS_MSG = d.selfRegSuccessMsg || '';
   GREETING_TEXT   = d.greetingText   || '';
   console.log('[Greeting] GREETING_TEXT loaded:', GREETING_TEXT);
   STAGES = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0)).map(s=>({
@@ -755,8 +757,9 @@ async function submitRegistration(){
     sessionStorage.setItem('userSession',JSON.stringify({...data,project:PROJECT_ID,_docId:USER_DOC_ID}));
     loadUserProgress(data);
     applyGreeting(data);
-    document.getElementById('reg-box').innerHTML=`<div style="text-align:center;padding:24px 0;"><div style="font-size:28px;margin-bottom:12px;">✅</div><div style="font-size:18px;font-weight:900;margin-bottom:8px;">등록 완료!</div><div style="font-size:13px;opacity:.7;">잠시 후 입장합니다…</div></div>`;
-    setTimeout(()=>{ closeModal('reg-modal'); if(LAYOUT_TYPE==='merged') renderMergedStages(); else openPrep(); }, 1500);
+    const _regMsg=(SELF_REG_SUCCESS_MSG||'등록 완료!').replace(/\{\{(\w+)\}\}/g,(_,k)=>data[k]??`{{${k}}}`);
+    document.getElementById('reg-box').innerHTML=`<div style="text-align:center;padding:24px 0;"><div style="font-size:28px;margin-bottom:12px;">✅</div><div style="font-size:16px;font-weight:900;margin-bottom:8px;white-space:pre-wrap;">${_regMsg}</div><div style="font-size:13px;opacity:.7;">잠시 후 입장합니다…</div></div>`;
+    setTimeout(()=>{ closeModal('reg-modal'); if(LAYOUT_TYPE==='merged') renderMergedStages(); else openPrep(); }, 1800);
   }catch(e){ document.getElementById('reg-err').textContent='등록 실패. 다시 시도해주세요.'; btn.textContent='등록'; btn.disabled=false; }
 }
 async function confirmAuth(){
