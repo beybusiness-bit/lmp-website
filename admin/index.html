@@ -3041,7 +3041,7 @@ function setCheckPos(pos){
   document.querySelectorAll('.chk-pos-btn').forEach(b=>{b.classList.toggle('on',b.dataset.pos===pos);});
 }
 function saveRange(el){if(_fmtPopType)return;const sel=window.getSelection();if(sel.rangeCount)savedRange={el,range:sel.getRangeAt(0).cloneRange()};}
-function restoreRange(el){if(!savedRange||savedRange.el!==el)return;const sel=window.getSelection();if(sel.rangeCount&&!sel.getRangeAt(0).collapsed&&el.contains(sel.anchorNode))return;sel.removeAllRanges();sel.addRange(savedRange.range);}
+function restoreRange(el){if(!savedRange||savedRange.el!==el)return;const sel=window.getSelection();if(sel.rangeCount&&el.contains(sel.anchorNode))return;sel.removeAllRanges();sel.addRange(savedRange.range);}
 function renderBlkKeyColors(){
   const kc = curKeyColors.length ? curKeyColors.map(k=>k.color||k) : ['#00CE6B','#FFF100'];
   const bgEl = document.getElementById('blk-kc-bg');
@@ -3348,10 +3348,52 @@ function getEd(ctx){
   return document.getElementById(ctx==='text'?'ced-text':'ced-mixed');
 }
 function focusEd(ctx){const ed=getEd(ctx);ed.focus();restoreRange(ed);}
-function fmtCmd(ctx,cmd){focusEd(ctx);document.execCommand(cmd,false,null);}
-function fmtSz(ctx,px){focusEd(ctx);document.execCommand('fontSize',false,'7');getEd(ctx).querySelectorAll('font[size="7"]').forEach(el=>{el.removeAttribute('size');el.style.fontSize=px+'px';});}
+/* 커서 위치(선택 없음)에 포맷을 쌓아두는 pending span 반환 또는 생성 */
+function _getPendingSpan(ctx){
+  const sel=window.getSelection();
+  if(!sel||!sel.rangeCount||!sel.isCollapsed)return null;
+  let node=sel.getRangeAt(0).startContainer;
+  let el=node.nodeType===3?node.parentElement:node;
+  const ed=getEd(ctx);
+  while(el&&el!==ed){if(el.dataset&&el.dataset.fmtPending==='1')return el;el=el.parentElement;}
+  const span=document.createElement('span');
+  span.dataset.fmtPending='1';
+  span.textContent='​';
+  const range=sel.getRangeAt(0).cloneRange();
+  range.insertNode(span);
+  const nr=document.createRange();
+  nr.setStart(span.firstChild,1);nr.setEnd(span.firstChild,1);
+  sel.removeAllRanges();sel.addRange(nr);
+  return span;
+}
+function fmtCmd(ctx,cmd){
+  focusEd(ctx);
+  const sel=window.getSelection();
+  if(sel&&sel.isCollapsed&&cmd==='bold'){
+    const span=_getPendingSpan(ctx);
+    if(span){
+      const isBold=span.style.fontWeight==='bold'||parseInt(span.style.fontWeight||'0')>=700;
+      span.style.fontWeight=isBold?'normal':'bold';
+      document.getElementById('fmt-bold-'+ctx)?.classList.toggle('on',!isBold);
+    }
+    scheduleBmPreview();return;
+  }
+  document.execCommand(cmd,false,null);scheduleBmPreview();
+}
+function fmtSz(ctx,px){
+  focusEd(ctx);
+  const sel=window.getSelection();
+  if(!sel||!sel.rangeCount)return;
+  if(sel.isCollapsed){const span=_getPendingSpan(ctx);if(span)span.style.fontSize=px+'px';return;}
+  document.execCommand('fontSize',false,'7');getEd(ctx).querySelectorAll('font[size="7"]').forEach(el=>{el.removeAttribute('size');el.style.fontSize=px+'px';});
+}
 function fmtAlign(ctx,dir){focusEd(ctx);document.execCommand('justify'+dir.charAt(0).toUpperCase()+dir.slice(1),false,null);}
-function fmtClr(ctx,clr){focusEd(ctx);document.execCommand('foreColor',false,clr);}
+function fmtClr(ctx,clr){
+  focusEd(ctx);
+  const sel=window.getSelection();
+  if(sel&&sel.isCollapsed){const span=_getPendingSpan(ctx);if(span){span.style.color=clr;return;}}
+  document.execCommand('foreColor',false,clr);
+}
 function prevImg(id,url){const el=document.getElementById(id);if(url&&url.startsWith('http')){el.src=url;el.style.display='block';}else el.style.display='none';}
 
 /* ── 포맷 드롭다운 팝업 ── */
@@ -3523,7 +3565,16 @@ function applyFmtClr(ctx,clr){
 }
 function applyFmtBg(ctx,clr){
   focusEd(ctx);
-  document.execCommand('backColor',false,clr);
+  const sel=window.getSelection();
+  if(sel&&sel.isCollapsed){
+    const span=_getPendingSpan(ctx);
+    if(span){
+      if(clr==='rgba(0,0,0,0)'||clr==='transparent') span.style.removeProperty('background-color');
+      else span.style.backgroundColor=clr;
+    }
+  } else {
+    document.execCommand('backColor',false,clr);
+  }
   const dot=document.getElementById('fmt-bg-dot-'+ctx);
   if(dot) dot.style.background=(clr==='rgba(0,0,0,0)'||clr==='transparent')?'rgba(0,0,0,.18)':clr;
 }
