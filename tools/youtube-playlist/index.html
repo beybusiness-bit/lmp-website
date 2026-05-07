@@ -245,7 +245,7 @@ async function doSearch(pageToken) {
       document.getElementById('result-list').innerHTML = `<div class="empty-msg">검색 오류: ${esc(data.error.message)}</div>`;
       return;
     }
-    const items = data.items || [];
+    const items = (data.items || []).filter(item => item.id?.videoId);
     nextPageToken = data.nextPageToken || '';
     const statusEl = document.getElementById('search-status');
     statusEl.textContent = items.length ? `검색 결과 ${items.length}건` : '';
