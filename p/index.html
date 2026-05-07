@@ -920,6 +920,7 @@ function blockHtml(b){
       form:`/tools/form/?id=${b.toolConfig?.formId||''}`,
       booth:`/tools/booth/?id=${b.toolConfig?.boothId||''}`,
       guide:`/tools/guide/?id=${b.toolConfig?.guideId||''}`,
+      'youtube-playlist':'/tools/youtube-playlist/',
     };
     const src=toolUrls[b.toolType]||'';
     const h=b.height||0;
