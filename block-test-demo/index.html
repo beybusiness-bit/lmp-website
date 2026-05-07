@@ -455,13 +455,14 @@ function applySettings(d){
   } else {
     KEY_COLORS_DATA = KEY_COLORS.map(c=>({color:c,holdTime:8,transitionTime:2}));
   }
-  setCss('--guide-pager', KEY_COLORS[Math.floor(Math.random()*KEY_COLORS.length)]);
   setCss('--body-bg', KEY_COLORS[0]);
   /* pick --prep-bg randomly at session start, persist until refresh */
   const savedPrepBg = sessionStorage.getItem('prepBgColor');
   prepBg = (savedPrepBg && KEY_COLORS.includes(savedPrepBg)) ? savedPrepBg : KEY_COLORS[Math.floor(Math.random()*KEY_COLORS.length)];
   sessionStorage.setItem('prepBgColor', prepBg);
   setCss('--prep-bg', prepBg);
+  /* pager active dot: key color that differs from pager bar bg (--prep-bg) */
+  setCss('--guide-pager', pickOther(prepBg, KEY_COLORS)||KEY_COLORS[0]||'#000');
 
   /* title */
   if(d.name) document.title = d.name;
