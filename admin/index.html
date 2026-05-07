@@ -1535,6 +1535,23 @@ function openBgUpload(i) {
   pendingBgUploadIdx = i;
   document.getElementById('bg-file-input').click();
 }
+async function compressImage(file, { maxWidth = 1200, quality = 0.85 } = {}) {
+  return new Promise(resolve => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob => resolve(blob || file), 'image/webp', quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
 async function checkPngTransparency(file) {
   return new Promise(resolve => {
     const reader = new FileReader();
@@ -1571,11 +1588,11 @@ async function uploadSingleImage(event, fieldId, storagePath, checkTransparency=
     }
   }
   const projId = document.getElementById('p-id').value.trim() || 'tmp';
-  const ext = file.name.split('.').pop();
-  const path = `${storagePath}/${projId}/${Date.now()}.${ext}`;
+  const compressed = await compressImage(file, { maxWidth: 800, quality: 0.9 });
+  const path = `${storagePath}/${projId}/${Date.now()}.webp`;
   try {
     const ref = storage.ref(path);
-    await ref.put(file);
+    await ref.put(compressed, { contentType: 'image/webp' });
     const url = await ref.getDownloadURL();
     document.getElementById(fieldId).value = url;
     schedulePreviewUpdate();
@@ -1593,11 +1610,11 @@ async function uploadBlockImage(event, urlFieldId, prevId) {
   const origVal = urlField ? urlField.value : '';
   if (urlField) urlField.value = '⏳ 업로드 중…';
   const stageId = (curEditingStageIdx !== null ? curStages[curEditingStageIdx]?.id : null) || 'tmp';
-  const ext = file.name.split('.').pop();
-  const path = `cms_projects/${curProjId||'tmp'}/stage_content/${stageId}/blocks/${Date.now()}.${ext}`;
+  const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.85 });
+  const path = `cms_projects/${curProjId||'tmp'}/stage_content/${stageId}/blocks/${Date.now()}.webp`;
   try {
     const ref = storage.ref(path);
-    await ref.put(file);
+    await ref.put(compressed, { contentType: 'image/webp' });
     const url = await ref.getDownloadURL();
     if (urlField) urlField.value = url;
     prevImg(prevId, url);
@@ -1613,11 +1630,11 @@ async function onBgFileSelected(e) {
   const i = pendingBgUploadIdx;
   pendingBgUploadIdx = null;
   const projId = document.getElementById('p-id').value.trim() || 'tmp';
-  const ext = file.name.split('.').pop();
-  const path = `cms_projects/${projId}/bg/${Date.now()}.${ext}`;
+  const compressed = await compressImage(file, { maxWidth: 1600, quality: 0.85 });
+  const path = `cms_projects/${projId}/bg/${Date.now()}.webp`;
   try {
     const ref = storage.ref(path);
-    await ref.put(file);
+    await ref.put(compressed, { contentType: 'image/webp' });
     const url = await ref.getDownloadURL();
     curBgImages[i].url = url;
     renderBgImages();
@@ -1923,11 +1940,11 @@ async function onStageImgFileSelected(e) {
   const origTxt = btn ? btn.textContent : '';
   if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
   const projId = document.getElementById('p-id').value.trim() || 'tmp';
-  const ext = file.name.split('.').pop();
-  const path = `cms_projects/${projId}/stages/${Date.now()}.${ext}`;
+  const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.85 });
+  const path = `cms_projects/${projId}/stages/${Date.now()}.webp`;
   try {
     const ref = storage.ref(path);
-    await ref.put(file);
+    await ref.put(compressed, { contentType: 'image/webp' });
     const url = await ref.getDownloadURL();
     curStages[i].stageImageUrl = url;
     renderStageList();
@@ -2671,10 +2688,10 @@ function saveFormField() {
 async function uploadFormPostImage(event) {
   const file = event.target.files[0]; event.target.value='';
   if (!file) return;
-  const ext=file.name.split('.').pop();
-  const path=`cms_projects/${curProjId||'tmp'}/form_post/${Date.now()}.${ext}`;
+  const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.85 });
+  const path=`cms_projects/${curProjId||'tmp'}/form_post/${Date.now()}.webp`;
   try {
-    const ref=storage.ref(path); await ref.put(file);
+    const ref=storage.ref(path); await ref.put(compressed, { contentType: 'image/webp' });
     const url=await ref.getDownloadURL();
     document.getElementById('form-post-img-url').value=url;
     prevImg('form-post-img-prev',url);
@@ -4051,9 +4068,10 @@ async function gbUploadBlockImg(event, blockId) {
   event.target.value = '';
   const label = event.target.closest('label');
   if(label) { label.style.opacity = '.4'; label.style.pointerEvents = 'none'; }
+  const compressed = await compressImage(file, { maxWidth: 1000, quality: 0.85 });
   try {
-    const ref = storage.ref('game_configs/guide/' + Date.now() + '_' + file.name);
-    await ref.put(file);
+    const ref = storage.ref('game_configs/guide/' + Date.now() + '.webp');
+    await ref.put(compressed, { contentType: 'image/webp' });
     const url = await ref.getDownloadURL();
     const b = gbState.curCalc.blocks.find(x=>x.id===blockId);
     if(b) b.imageUrl = url;
@@ -4068,9 +4086,10 @@ async function gbUploadOptImg(event, blockId, optIdx) {
   event.target.value = '';
   const label = event.target.closest('label');
   if(label) { label.style.opacity = '.4'; label.style.pointerEvents = 'none'; }
+  const compressed = await compressImage(file, { maxWidth: 800, quality: 0.85 });
   try {
-    const ref = storage.ref('game_configs/guide/' + Date.now() + '_' + file.name);
-    await ref.put(file);
+    const ref = storage.ref('game_configs/guide/' + Date.now() + '.webp');
+    await ref.put(compressed, { contentType: 'image/webp' });
     const url = await ref.getDownloadURL();
     const b = gbState.curCalc.blocks.find(x=>x.id===blockId);
     if(b && b.options[optIdx]) b.options[optIdx].imageUrl = url;
@@ -4248,9 +4267,10 @@ async function uploadBoothBg(e, idx) {
   const file = e.target.files[0];
   if(!file) return;
   e.target.closest('.booth-bg-item').querySelector('.booth-bg-url').textContent = '업로드 중…';
+  const compressed = await compressImage(file, { maxWidth: 1600, quality: 0.85 });
   try {
-    const ref = storage.ref('game_configs/booth_bgs/' + Date.now() + '_' + file.name);
-    await ref.put(file);
+    const ref = storage.ref('game_configs/booth_bgs/' + Date.now() + '.webp');
+    await ref.put(compressed, { contentType: 'image/webp' });
     const url = await ref.getDownloadURL();
 
     const doc = await db.collection('game_configs').doc(configId).get();
