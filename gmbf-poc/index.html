@@ -201,6 +201,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
   <!-- 사이드 메뉴 (separate / merged 공용) -->
   <div id="side-menu">
     <div class="menu-header"><div class="menu-close" onclick="closeMenu()">✕</div></div>
+    <div id="menu-greeting"></div>
     <div id="menu-list"></div>
   </div>
 
@@ -233,11 +234,13 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
     <div id="merged-stage-wrap">
       <div id="merged-edition"></div>
       <div id="merged-dday"></div>
+      <div id="merged-greeting"></div>
       <div id="merged-stage-list"></div>
     </div>
   </div>
 
   <div id="return-btn" onclick="reopenPrep()">↑</div>
+  <div id="return-greeting"></div>
 
   <div id="error-screen">
     <div class="error-msg" id="error-msg">프로젝트를 찾을 수 없어요.</div>
@@ -256,7 +259,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
       <div class="topbar-center" id="topbar-title">준비</div>
       <div class="topbar-right" onclick="closePrep()">↓</div>
     </div>
-    <div class="screen-body"><div id="stage-list"></div></div>
+    <div class="screen-body"><div id="prep-greeting"></div><div id="stage-list"></div></div>
   </div>
 
   <!-- Guide viewer -->
