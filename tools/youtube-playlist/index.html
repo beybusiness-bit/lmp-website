@@ -462,12 +462,24 @@ async function loadPrevSubmissions() {
 }
 
 // ── 초기화 ──
+async function loadToolSettings() {
+  try {
+    const doc = await db.collection('cms_youtube_settings').doc('config').get();
+    if (doc.exists) {
+      const d = doc.data();
+      if (d.toolTitle) document.title = d.toolTitle;
+      if (d.doneTitle) document.querySelector('.done-title').textContent = d.doneTitle;
+      if (d.doneSub)   document.getElementById('done-sub').textContent = d.doneSub;
+    }
+  } catch(e) { console.error('[loadToolSettings]', e); }
+}
+
 async function init() {
   // context 대기 (최대 600ms)
   if (!ctxReceived) {
     await Promise.race([ctxPromise, new Promise(r => setTimeout(r, 600))]);
   }
-  await loadPrevSubmissions();
+  await Promise.all([loadPrevSubmissions(), loadToolSettings()]);
   document.getElementById('loading').style.display = 'none';
   document.getElementById('app').style.display = '';
   updateBadge();
