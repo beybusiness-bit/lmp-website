@@ -1012,6 +1012,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           </div>
         </div>
       </div>
+      <div id="overlay-valign-row" style="margin-top:10px;margin-bottom:8px;display:none;">
+        <div class="ed-lbl" style="margin-bottom:6px;">텍스트 세로 정렬 <span style="font-weight:400;opacity:.55;">(오버레이형)</span></div>
+        <div style="display:flex;gap:6px;">
+          <button class="img-fit-btn on" id="ova-top"    onclick="setOverlayVAlign('top')"    onpointerdown="epd(event)">상단</button>
+          <button class="img-fit-btn"    id="ova-center" onclick="setOverlayVAlign('center')" onpointerdown="epd(event)">중앙</button>
+          <button class="img-fit-btn"    id="ova-bottom" onclick="setOverlayVAlign('bottom')" onpointerdown="epd(event)">하단</button>
+        </div>
+      </div>
       <div class="ed-lbl" style="margin-top:10px;margin-bottom:8px;">텍스트</div>
       <div class="fmt-bar">
         <button class="fmt-btn" id="fmt-bold-mixed" onpointerdown="epd(event)" onclick="fmtCmd('mixed','bold')"><b>B</b></button>
@@ -3077,7 +3085,7 @@ function exportRespCsv() {
 }
 
 /* ── Block editor ── */
-let curBlkIdx=null,curBlkInsertAt=null,curBlkType='text',curMixedLayout='overlay',savedRange=null;
+let curBlkIdx=null,curBlkInsertAt=null,curBlkType='text',curMixedLayout='overlay',curOverlayVAlign='bottom',savedRange=null;
 let curBlkBgColor='';
 let curBlkCheckColor='';
 let curBlkCheckTextColor='';
@@ -3234,7 +3242,7 @@ function openBlockModal(idx,insertAt){
   setMixedImgFit(b.type==='mixed'?(b.imageFit||'cover'):'cover');
   setMixedImgPos(b.type==='mixed'?(b.imagePosition||'center'):'center');
   const _mhv=document.getElementById('mixed-height-val'); if(_mhv) _mhv.value=b.type==='mixed'?(b.imageHeight||''):'';
-  setMixedLayout(curMixedLayout);savedRange=null;
+  curOverlayVAlign=b.type==='mixed'?(b.overlayTextVAlign||'bottom'):'bottom';setOverlayVAlign(curOverlayVAlign);setMixedLayout(curMixedLayout);savedRange=null;
   /* spacer 블록 */
   const _sh=document.getElementById('blk-spacer-height');
   if(_sh) _sh.value=b.type==='spacer'?(b.spacerHeight||40):40;
@@ -3292,6 +3300,7 @@ function _buildCurrentBlock(){
     b.mixedLayout=curMixedLayout;
     b.imageFit=curMixedImgFit; b.imagePosition=curMixedImgPos;
     const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0; if(_mh) b.imageHeight=_mh;
+    if(curMixedLayout==='overlay') b.overlayTextVAlign=curOverlayVAlign||'bottom';
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url')?.value||'';
     b.embedHeight=document.getElementById('embed-height-auto')?.checked?0:(parseInt(document.getElementById('embed-height')?.value)||500);
@@ -3345,6 +3354,7 @@ function saveBlock(){
     b.imageFit=curMixedImgFit||'cover'; b.imagePosition=curMixedImgPos||'center';
     const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0;
     if(_mh) b.imageHeight=_mh; else delete b.imageHeight;
+    if(curMixedLayout==='overlay') b.overlayTextVAlign=curOverlayVAlign||'bottom'; else delete b.overlayTextVAlign;
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url').value.trim();
     b.embedHeight=document.getElementById('embed-height-auto').checked?0:(parseInt(document.getElementById('embed-height').value)||500);
@@ -3446,7 +3456,8 @@ function openToolManageLink(e){
   document.getElementById('block-modal').classList.remove('on');
   openTool('form-mgr');
 }
-function setMixedLayout(l){curMixedLayout=l;document.getElementById('ml-overlay').classList.toggle('on',l==='overlay');document.getElementById('ml-split').classList.toggle('on',l==='split');}
+function setMixedLayout(l){curMixedLayout=l;document.getElementById('ml-overlay').classList.toggle('on',l==='overlay');document.getElementById('ml-split').classList.toggle('on',l==='split');const ovRow=document.getElementById('overlay-valign-row');if(ovRow)ovRow.style.display=l==='overlay'?'':'none';}
+function setOverlayVAlign(v){curOverlayVAlign=v;['top','center','bottom'].forEach(k=>document.getElementById('ova-'+k)?.classList.toggle('on',k===v));scheduleBmPreview();}
 function toggleEmbedHeightAuto(checked){document.getElementById('embed-height-wrap').style.display=checked?'none':'';}
 
 function getEd(ctx){
@@ -3791,7 +3802,8 @@ function gBlockHtml(b,S){
       return `<div style="${mS}${bgS}${pad}"><img src="${b.imageUrl||''}" style="${spS}" alt=""><div style="${txS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div></div>`;
     }
     const ovS=mfit==='natural'?'width:100%;display:block;':`width:100%;height:${mih}px;object-fit:${mfit};object-position:${mpos};display:block;`;
-    return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="${ovS}" alt=""><div style="position:absolute;inset:0;display:flex;align-items:flex-end;${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;">${b.textContent||''}</div></div></div>`;
+    const _ova=b.overlayTextVAlign||'bottom';const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};const _ai=_aiMap[_ova]||'flex-end';const _grad={top:`to bottom`,center:`to bottom, transparent 0%,rgba(0,0,0,.55) 50%,transparent 100%`,bottom:`to top`}[_ova];const _gradFull=_ova==='center'?`linear-gradient(${_grad})`:`linear-gradient(${_grad},rgba(0,0,0,.65) 0%,transparent 60%)`;
+    return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="${ovS}" alt=""><div style="position:absolute;inset:0;display:flex;align-items:${_ai};background:${_gradFull};${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;">${b.textContent||''}</div></div></div>`;
   }
   if(b.type==='embed'){
     if(!b.embedUrl) return `<div style="${mS}${bgS}${pad};text-align:center;font-size:${Math.round(11*S)}px;color:rgba(0,0,0,.4);">임베드 URL 없음</div>`;

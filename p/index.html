@@ -937,7 +937,11 @@ function blockHtml(b){
     const imgEl=b.imageLinkUrl
       ?`<a href="${b.imageLinkUrl}" target="_blank" rel="noopener" style="display:block;"><img src="${b.imageUrl||''}" alt="" loading="lazy" style="${ovS}"></a>`
       :`<img src="${b.imageUrl||''}" alt="" loading="lazy" style="${ovS}">`;
-    return `<div class="g-block-mixed-overlay" style="${mS}${bgS}">${imgEl}<div class="g-overlay-text"><div class="g-overlay-text-inner" style="${txS}">${html}</div></div></div>`;
+    const _ova=b.overlayTextVAlign||'bottom';
+    const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};
+    const _gradMap={top:'linear-gradient(to bottom,rgba(0,0,0,.65) 0%,transparent 60%)',center:'linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.55) 50%,transparent 100%)',bottom:'linear-gradient(to top,rgba(0,0,0,.65) 0%,transparent 60%)'};
+    const _ovTextStyle=`align-items:${_aiMap[_ova]||'flex-end'};background:${_gradMap[_ova]||_gradMap.bottom};`;
+    return `<div class="g-block-mixed-overlay" style="${mS}${bgS}">${imgEl}<div class="g-overlay-text" style="${_ovTextStyle}"><div class="g-overlay-text-inner" style="${txS}">${html}</div></div></div>`;
   }
   if(b.type==='embed' && b.embedUrl){
     const _eh=b.embedHeight===0?'100%':(b.embedHeight||500);
