@@ -123,6 +123,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 #fmt-popup{display:none;position:fixed;background:#fff;border:2px solid #000;z-index:600;box-shadow:3px 3px 0 rgba(0,0,0,.1);min-width:110px;}
 .fmt-pop-opt{display:block;width:100%;padding:8px 12px;background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,.08);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;white-space:nowrap;}
 .hr-style-btn.on{background:#000!important;color:#fff!important;border-color:#000!important;}
+.img-fit-btn{padding:4px 8px;border:1.5px solid rgba(0,0,0,.25);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#000;}
+.img-fit-btn.on{border-color:#000;background:#000;color:#fff;}
+.img-pos-btn{width:26px;height:26px;border:1.5px solid rgba(0,0,0,.2);background:transparent;font-size:12px;cursor:pointer;font-family:inherit;color:#000;padding:0;}
+.img-pos-btn.on{border-color:#000;background:#000;color:#fff;}
 .fmt-pop-opt:last-child{border-bottom:none;}
 .fmt-pop-opt:hover,.fmt-pop-opt.cur{background:#000;color:#fff;}
 .ced{min-height:150px;max-height:260px;overflow-y:auto;border:2px solid #000;padding:10px;font-size:14px;line-height:1.7;outline:none;font-family:inherit;}
@@ -844,6 +848,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div class="ed-lbl" style="margin-bottom:4px;">링크 URL <span style="font-weight:400;opacity:.55;">(선택, 이미지 탭 시 이동)</span></div>
         <input class="img-inp" id="img-link-url" type="url" placeholder="https://…" style="margin-bottom:0;">
       </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,.1);">
+        <div class="ed-lbl" style="font-size:10px;margin-bottom:6px;">이미지 배치</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">
+          <button class="img-fit-btn on" data-ctx="img" data-fit="natural" onpointerdown="epd(event)" onclick="setImgFit('natural')">원본비율</button>
+          <button class="img-fit-btn" data-ctx="img" data-fit="cover" onpointerdown="epd(event)" onclick="setImgFit('cover')">크롭채움</button>
+          <button class="img-fit-btn" data-ctx="img" data-fit="contain" onpointerdown="epd(event)" onclick="setImgFit('contain')">비율유지</button>
+          <button class="img-fit-btn" data-ctx="img" data-fit="fill" onpointerdown="epd(event)" onclick="setImgFit('fill')">늘려채움</button>
+        </div>
+        <div id="img-height-row" style="display:none;margin-bottom:8px;">
+          <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:3px;">높이 <span style="font-weight:400;">(px, 비워두면 260)</span></div>
+          <input class="fi-sm" id="img-height-val" type="number" min="60" max="1200" placeholder="260" style="width:80px;margin-bottom:0;" oninput="scheduleBmPreview()">
+        </div>
+        <div id="img-pos-row" style="display:none;">
+          <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">기준점</div>
+          <div style="display:grid;grid-template-columns:repeat(3,26px);gap:3px;">
+            <button class="img-pos-btn" data-ctx="img" data-pos="left top" onpointerdown="epd(event)" onclick="setImgPos('left top')">↖</button>
+            <button class="img-pos-btn" data-ctx="img" data-pos="center top" onpointerdown="epd(event)" onclick="setImgPos('center top')">↑</button>
+            <button class="img-pos-btn" data-ctx="img" data-pos="right top" onpointerdown="epd(event)" onclick="setImgPos('right top')">↗</button>
+            <button class="img-pos-btn" data-ctx="img" data-pos="left center" onpointerdown="epd(event)" onclick="setImgPos('left center')">←</button>
+            <button class="img-pos-btn on" data-ctx="img" data-pos="center" onpointerdown="epd(event)" onclick="setImgPos('center')">●</button>
+            <button class="img-pos-btn" data-ctx="img" data-pos="right center" onpointerdown="epd(event)" onclick="setImgPos('right center')">→</button>
+            <button class="img-pos-btn" data-ctx="img" data-pos="left bottom" onpointerdown="epd(event)" onclick="setImgPos('left bottom')">↙</button>
+            <button class="img-pos-btn" data-ctx="img" data-pos="center bottom" onpointerdown="epd(event)" onclick="setImgPos('center bottom')">↓</button>
+            <button class="img-pos-btn" data-ctx="img" data-pos="right bottom" onpointerdown="epd(event)" onclick="setImgPos('right bottom')">↘</button>
+          </div>
+        </div>
+      </div>
     </div>
     <div id="bpanel-embed" style="display:none;">
       <div class="ed-lbl" style="margin-bottom:8px;">임베드 URL <span style="font-weight:400;opacity:.55;">(Tally 폼, 유튜브 등)</span></div>
@@ -953,6 +984,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <div style="margin-top:6px;margin-bottom:10px;">
         <div class="ed-lbl" style="margin-bottom:4px;">이미지 링크 URL <span style="font-weight:400;opacity:.55;">(선택, 이미지 탭 시 이동)</span></div>
         <input class="img-inp" id="mixed-img-link-url" type="url" placeholder="https://…" style="margin-bottom:0;">
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,.1);">
+        <div class="ed-lbl" style="font-size:10px;margin-bottom:6px;">이미지 배치 <span style="font-weight:400;opacity:.55;">(오버레이형에만 적용)</span></div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">
+          <button class="img-fit-btn" data-ctx="mixed" data-fit="natural" onpointerdown="epd(event)" onclick="setMixedImgFit('natural')">원본비율</button>
+          <button class="img-fit-btn on" data-ctx="mixed" data-fit="cover" onpointerdown="epd(event)" onclick="setMixedImgFit('cover')">크롭채움</button>
+          <button class="img-fit-btn" data-ctx="mixed" data-fit="contain" onpointerdown="epd(event)" onclick="setMixedImgFit('contain')">비율유지</button>
+          <button class="img-fit-btn" data-ctx="mixed" data-fit="fill" onpointerdown="epd(event)" onclick="setMixedImgFit('fill')">늘려채움</button>
+        </div>
+        <div id="mixed-height-row" style="display:none;margin-bottom:8px;">
+          <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:3px;">높이 <span style="font-weight:400;">(px, 비워두면 260)</span></div>
+          <input class="fi-sm" id="mixed-height-val" type="number" min="60" max="1200" placeholder="260" style="width:80px;margin-bottom:0;" oninput="scheduleBmPreview()">
+        </div>
+        <div id="mixed-pos-row" style="display:none;">
+          <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">기준점</div>
+          <div style="display:grid;grid-template-columns:repeat(3,26px);gap:3px;">
+            <button class="img-pos-btn" data-ctx="mixed" data-pos="left top" onpointerdown="epd(event)" onclick="setMixedImgPos('left top')">↖</button>
+            <button class="img-pos-btn" data-ctx="mixed" data-pos="center top" onpointerdown="epd(event)" onclick="setMixedImgPos('center top')">↑</button>
+            <button class="img-pos-btn" data-ctx="mixed" data-pos="right top" onpointerdown="epd(event)" onclick="setMixedImgPos('right top')">↗</button>
+            <button class="img-pos-btn" data-ctx="mixed" data-pos="left center" onpointerdown="epd(event)" onclick="setMixedImgPos('left center')">←</button>
+            <button class="img-pos-btn on" data-ctx="mixed" data-pos="center" onpointerdown="epd(event)" onclick="setMixedImgPos('center')">●</button>
+            <button class="img-pos-btn" data-ctx="mixed" data-pos="right center" onpointerdown="epd(event)" onclick="setMixedImgPos('right center')">→</button>
+            <button class="img-pos-btn" data-ctx="mixed" data-pos="left bottom" onpointerdown="epd(event)" onclick="setMixedImgPos('left bottom')">↙</button>
+            <button class="img-pos-btn" data-ctx="mixed" data-pos="center bottom" onpointerdown="epd(event)" onclick="setMixedImgPos('center bottom')">↓</button>
+            <button class="img-pos-btn" data-ctx="mixed" data-pos="right bottom" onpointerdown="epd(event)" onclick="setMixedImgPos('right bottom')">↘</button>
+          </div>
+        </div>
       </div>
       <div class="ed-lbl" style="margin-top:10px;margin-bottom:8px;">텍스트</div>
       <div class="fmt-bar">
@@ -3024,6 +3082,36 @@ let curBlkBgColor='';
 let curBlkCheckColor='';
 let curBlkCheckTextColor='';
 let curBlkVerticalAlign='center';
+let curImgFit='natural',curImgPos='center';
+let curMixedImgFit='cover',curMixedImgPos='center';
+function setImgFit(fit){
+  curImgFit=fit;
+  document.querySelectorAll('.img-fit-btn[data-ctx="img"]').forEach(b=>b.classList.toggle('on',b.dataset.fit===fit));
+  const showPos=fit==='cover'||fit==='contain';
+  const showH=fit!=='natural';
+  const pr=document.getElementById('img-pos-row'); if(pr) pr.style.display=showPos?'':'none';
+  const hr=document.getElementById('img-height-row'); if(hr) hr.style.display=showH?'':'none';
+  scheduleBmPreview();
+}
+function setImgPos(pos){
+  curImgPos=pos;
+  document.querySelectorAll('.img-pos-btn[data-ctx="img"]').forEach(b=>b.classList.toggle('on',b.dataset.pos===pos));
+  scheduleBmPreview();
+}
+function setMixedImgFit(fit){
+  curMixedImgFit=fit;
+  document.querySelectorAll('.img-fit-btn[data-ctx="mixed"]').forEach(b=>b.classList.toggle('on',b.dataset.fit===fit));
+  const showPos=fit==='cover'||fit==='contain';
+  const showH=fit!=='natural';
+  const pr=document.getElementById('mixed-pos-row'); if(pr) pr.style.display=showPos?'':'none';
+  const hr=document.getElementById('mixed-height-row'); if(hr) hr.style.display=showH?'':'none';
+  scheduleBmPreview();
+}
+function setMixedImgPos(pos){
+  curMixedImgPos=pos;
+  document.querySelectorAll('.img-pos-btn[data-ctx="mixed"]').forEach(b=>b.classList.toggle('on',b.dataset.pos===pos));
+  scheduleBmPreview();
+}
 function setBlkVerticalAlign(v){
   curBlkVerticalAlign=v;
   ['top','center','bottom'].forEach(k=>{
@@ -3140,6 +3228,12 @@ function openBlockModal(idx,insertAt){
   renderFormFields();
   prevImg('img-prev',document.getElementById('img-url').value);
   prevImg('mixed-img-prev',document.getElementById('mixed-img-url').value);
+  setImgFit(b.type==='image'?(b.imageFit||'natural'):'natural');
+  setImgPos(b.type==='image'?(b.imagePosition||'center'):'center');
+  const _ihv=document.getElementById('img-height-val'); if(_ihv) _ihv.value=b.type==='image'?(b.imageHeight||''):'';
+  setMixedImgFit(b.type==='mixed'?(b.imageFit||'cover'):'cover');
+  setMixedImgPos(b.type==='mixed'?(b.imagePosition||'center'):'center');
+  const _mhv=document.getElementById('mixed-height-val'); if(_mhv) _mhv.value=b.type==='mixed'?(b.imageHeight||''):'';
   setMixedLayout(curMixedLayout);savedRange=null;
   /* spacer 블록 */
   const _sh=document.getElementById('blk-spacer-height');
@@ -3187,11 +3281,17 @@ function scheduleBmPreview(){
 function _buildCurrentBlock(){
   const b={type:curBlkType,bgColor:curBlkBgColor||''};
   if(curBlkType==='text'){b.textContent=document.getElementById('ced-text')?.innerHTML||'';}
-  else if(curBlkType==='image'){b.imageUrl=document.getElementById('img-url')?.value||'';}
+  else if(curBlkType==='image'){
+    b.imageUrl=document.getElementById('img-url')?.value||'';
+    b.imageFit=curImgFit; b.imagePosition=curImgPos;
+    const _ih=parseInt(document.getElementById('img-height-val')?.value)||0; if(_ih) b.imageHeight=_ih;
+  }
   else if(curBlkType==='mixed'){
     b.imageUrl=document.getElementById('mixed-img-url')?.value||'';
     b.textContent=document.getElementById('ced-mixed')?.innerHTML||'';
     b.mixedLayout=curMixedLayout;
+    b.imageFit=curMixedImgFit; b.imagePosition=curMixedImgPos;
+    const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0; if(_mh) b.imageHeight=_mh;
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url')?.value||'';
     b.embedHeight=document.getElementById('embed-height-auto')?.checked?0:(parseInt(document.getElementById('embed-height')?.value)||500);
@@ -3233,12 +3333,18 @@ function saveBlock(){
     b.imageUrl=document.getElementById('img-url').value.trim();
     const lnk=document.getElementById('img-link-url').value.trim();
     if(lnk) b.linkUrl=lnk;
+    b.imageFit=curImgFit||'natural'; b.imagePosition=curImgPos||'center';
+    const _ih=parseInt(document.getElementById('img-height-val')?.value)||0;
+    if(_ih) b.imageHeight=_ih; else delete b.imageHeight;
   } else if(curBlkType==='mixed'){
     b.imageUrl=document.getElementById('mixed-img-url').value.trim();
     const mlnk=document.getElementById('mixed-img-link-url').value.trim();
     if(mlnk) b.imageLinkUrl=mlnk;
     b.textContent=document.getElementById('ced-mixed').innerHTML;
     b.mixedLayout=curMixedLayout;
+    b.imageFit=curMixedImgFit||'cover'; b.imagePosition=curMixedImgPos||'center';
+    const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0;
+    if(_mh) b.imageHeight=_mh; else delete b.imageHeight;
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url').value.trim();
     b.embedHeight=document.getElementById('embed-height-auto').checked?0:(parseInt(document.getElementById('embed-height').value)||500);
@@ -3673,10 +3779,19 @@ function gBlockHtml(b,S){
   const mv=b.marginV?Math.round(b.marginV*S):0, mh=b.marginH?Math.round(b.marginH*S):0;
   const mS=(mv||mh)?`margin:${mv}px ${mh}px;`:'';
   if(b.type==='text') return `<div style="${mS}${bgS}${pad};font-size:${Math.round(13*S)}px;line-height:1.6;word-break:break-word;overflow:hidden;box-sizing:border-box;width:calc(100% - ${mh*2}px);${txS}">${b.textContent||''}</div>`;
-  if(b.type==='image') return `<div style="${mS}${bgS}"><img src="${b.imageUrl||''}" style="width:100%;display:block;" alt=""></div>`;
+  if(b.type==='image'){
+    const fit=b.imageFit||'natural', pos=b.imagePosition||'center', ih=Math.round((b.imageHeight||260)*S);
+    const imgS=fit==='natural'?'width:100%;display:block;':`width:100%;height:${ih}px;object-fit:${fit};object-position:${pos};display:block;`;
+    return `<div style="${mS}${bgS}"><img src="${b.imageUrl||''}" style="${imgS}" alt=""></div>`;
+  }
   if(b.type==='mixed'){
-    if(b.mixedLayout==='split') return `<div style="${mS}${bgS}${pad}"><img src="${b.imageUrl||''}" style="width:100%;display:block;margin-bottom:${Math.round(6*S)}px;" alt=""><div style="${txS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div></div>`;
-    return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="width:100%;display:block;" alt=""><div style="position:absolute;inset:0;display:flex;align-items:flex-end;${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;">${b.textContent||''}</div></div></div>`;
+    const mfit=b.imageFit||'cover', mpos=b.imagePosition||'center', mih=Math.round((b.imageHeight||260)*S);
+    if(b.mixedLayout==='split'){
+      const spS=mfit==='natural'?`width:100%;display:block;max-height:${mih}px;object-fit:contain;object-position:${mpos};margin-bottom:${Math.round(6*S)}px;`:`width:100%;height:${mih}px;object-fit:${mfit};object-position:${mpos};display:block;margin-bottom:${Math.round(6*S)}px;`;
+      return `<div style="${mS}${bgS}${pad}"><img src="${b.imageUrl||''}" style="${spS}" alt=""><div style="${txS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div></div>`;
+    }
+    const ovS=mfit==='natural'?'width:100%;display:block;':`width:100%;height:${mih}px;object-fit:${mfit};object-position:${mpos};display:block;`;
+    return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="${ovS}" alt=""><div style="position:absolute;inset:0;display:flex;align-items:flex-end;${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;">${b.textContent||''}</div></div></div>`;
   }
   if(b.type==='embed'){
     if(!b.embedUrl) return `<div style="${mS}${bgS}${pad};text-align:center;font-size:${Math.round(11*S)}px;color:rgba(0,0,0,.4);">임베드 URL 없음</div>`;
