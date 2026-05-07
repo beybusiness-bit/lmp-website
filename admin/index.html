@@ -438,6 +438,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div id="self-reg-opts" style="display:none;">
                 <div class="ed-lbl">인증 모달의 등록하기 버튼 텍스트</div>
                 <input class="fi" id="p-self-reg-cta" placeholder="예: 등록하기" value="등록하기">
+                <div class="ed-lbl" style="margin-top:10px;">등록 완료 메시지 <span style="font-weight:400;opacity:.55;">(등록 성공 시 표시)</span></div>
+                <input class="fi" id="p-self-reg-success" placeholder="예: {{이름}}님, 등록이 완료되었어요!">
+                <div id="p-self-reg-success-vars" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;"></div>
+                <div style="font-size:11px;color:rgba(0,0,0,.38);margin-top:5px;">버튼 클릭 시 커서 위치에 변수 삽입</div>
               </div>
             </div>
             <div class="sect-head">로그인 후 인사 문구</div>
@@ -1722,17 +1726,22 @@ function renderAuthFields() {
   const sel = document.getElementById('auth-key-sel');
   sel.innerHTML = curAuthFields.map(f=>`<option value="${f.key}"${f.key===curAuthKeyField?' selected':''}>${f.label} (${f.key})</option>`).join('');
   sel.onchange = () => { curAuthKeyField = sel.value; renderAuthFields(); };
-  /* 인사 문구 변수 힌트 */
+  /* 인사 문구 / 등록 완료 메시지 변수 힌트 */
+  const varBtns = curAuthFields.map(f=>`<button onclick="insertFieldVar('${f.key}',this.closest('[data-var-target]').dataset.varTarget)" style="padding:4px 9px;background:#000;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:2px;">{{${f.key}}}<span style="opacity:.6;font-weight:400;"> ${f.label}</span></button>`).join('');
   const hint = document.getElementById('p-greeting-vars');
-  if(hint) hint.innerHTML = curAuthFields.map(f=>`<button onclick="insertGreetingVar('${f.key}')" style="padding:4px 9px;background:#000;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:2px;">{{${f.key}}}<span style="opacity:.6;font-weight:400;"> ${f.label}</span></button>`).join('');
+  if(hint){ hint.setAttribute('data-var-target','p-greeting-text'); hint.innerHTML=varBtns; }
+  const hint2 = document.getElementById('p-self-reg-success-vars');
+  if(hint2){ hint2.setAttribute('data-var-target','p-self-reg-success'); hint2.innerHTML=varBtns; }
 }
-function insertGreetingVar(key){
-  const el=document.getElementById('p-greeting-text');
+function insertFieldVar(key, targetId){
+  const el=document.getElementById(targetId);
+  if(!el) return;
   const ins=`{{${key}}}`;
   const s=el.selectionStart??el.value.length, e=el.selectionEnd??el.value.length;
   el.setRangeText(ins,s,e,'end');
   el.focus();
 }
+function insertGreetingVar(key){ insertFieldVar(key,'p-greeting-text'); }
 function setAuthKey(key) {
   curAuthKeyField = key;
   document.getElementById('auth-key-sel').value = key;
@@ -2052,7 +2061,7 @@ function startNewProject() {
   projDirty=false; _projDirtyLock=true;
   curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}];
   curAuthKeyField='name'; curUsers=[]; curAuthCollection=''; curLogoTextSize='24'; curLogoTextAlign='center'; curLogoImgW=76;
-  setSelfReg(false); document.getElementById('p-self-reg-cta').value='등록하기';
+  setSelfReg(false); document.getElementById('p-self-reg-cta').value='등록하기'; document.getElementById('p-self-reg-success').value='';
   curStats=[]; curElementOrder=['edition','logo','dday','stats'];
   curKeyColors=[{color:'#00CE6B',holdTime:8,transitionTime:2},{color:'#FFF100',holdTime:8,transitionTime:2},{color:'#F95548',holdTime:8,transitionTime:2},{color:'#0BC6FF',holdTime:8,transitionTime:2}];
   ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-title','p-auth-desc']
@@ -2107,6 +2116,7 @@ async function editProject(id) {
     document.getElementById('p-auth-title').value   = d.authTitle||'';
     document.getElementById('p-auth-desc').value    = d.authDesc||'';
     document.getElementById('p-self-reg-cta').value = d.selfRegCta||'등록하기';
+    document.getElementById('p-self-reg-success').value = d.selfRegSuccessMsg||'';
     setSelfReg(d.selfRegEnabled||false);
     document.getElementById('p-greeting-text').value = d.greetingText||'';
 
@@ -2153,6 +2163,7 @@ async function saveProject(deploy=true) {
     authDesc:     document.getElementById('p-auth-desc').value.trim(),
     selfRegEnabled: curSelfRegEnabled,
     selfRegCta:   document.getElementById('p-self-reg-cta').value.trim()||'등록하기',
+    selfRegSuccessMsg: document.getElementById('p-self-reg-success').value.trim(),
     greetingText: document.getElementById('p-greeting-text').value.trim(),
     bgImages:     curBgImages,
     stages:       curStages.map((s,i)=>({...s,order:i})),
