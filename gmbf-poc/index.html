@@ -986,8 +986,10 @@ function renderGuideSlide(blocks){
     const bStripped={...b,bgColor:'',marginV:0,marginH:0};
     const inner=attachCheck(blockHtml(bStripped),b);
     const scrollable=(b.type==='tool'||b.type==='embed');
-    const scrollS=scrollable?'overflow-y:auto;justify-content:flex-start;':'';
-    return `<div class="guide-slide-item" style="width:${100/N}%;${bgS}${mS}${scrollS}">${inner}</div>`;
+    const vaMap={top:'flex-start',center:'center',bottom:'flex-end'};
+    const jc=scrollable?'flex-start':(vaMap[b.verticalAlign]||'center');
+    const scrollS=scrollable?'overflow-y:auto;':'';
+    return `<div class="guide-slide-item" style="width:${100/N}%;justify-content:${jc};${bgS}${mS}${scrollS}">${inner}</div>`;
   }).join('');
   track.style.width=(N*100)+'%';
   updateDots(); document.getElementById('guide-slide-body').style.display='flex';

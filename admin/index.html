@@ -1051,6 +1051,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         </div>
       </div>
     </div>
+    <!-- 공통: 슬라이드 세로 정렬 -->
+    <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
+      <div class="ed-lbl">슬라이드 세로 정렬 <span style="font-weight:400;opacity:.6;">(슬라이드형 스테이지에서만 적용)</span></div>
+      <div style="display:flex;gap:4px;">
+        <button id="valign-btn-top"    class="valign-btn" onclick="setBlkVerticalAlign('top')"    style="flex:1;padding:7px 0;background:transparent;border:2px solid #000;border-right:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">상단</button>
+        <button id="valign-btn-center" class="valign-btn on" onclick="setBlkVerticalAlign('center')" style="flex:1;padding:7px 0;background:#000;color:#fff;border:2px solid #000;border-right:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">중앙</button>
+        <button id="valign-btn-bottom" class="valign-btn" onclick="setBlkVerticalAlign('bottom')" style="flex:1;padding:7px 0;background:transparent;border:2px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">하단</button>
+      </div>
+    </div>
     </div><!-- /ed-inner -->
   </div>
   <!-- 블록 편집 실시간 미리보기 패널 -->
@@ -2991,6 +3000,18 @@ function exportRespCsv() {
 let curBlkIdx=null,curBlkInsertAt=null,curBlkType='text',curMixedLayout='overlay',savedRange=null;
 let curBlkBgColor='';
 let curBlkCheckColor='';
+let curBlkVerticalAlign='center';
+function setBlkVerticalAlign(v){
+  curBlkVerticalAlign=v;
+  ['top','center','bottom'].forEach(k=>{
+    const btn=document.getElementById('valign-btn-'+k);
+    if(!btn)return;
+    btn.classList.toggle('on',k===v);
+    btn.style.background=k===v?'#000':'transparent';
+    btn.style.color=k===v?'#fff':'';
+  });
+  scheduleBmPreview();
+}
 let curCheckPos='bottom-right';
 function setCheckPos(pos){
   curCheckPos=pos;
@@ -3107,6 +3128,7 @@ function openBlockModal(idx,insertAt){
   const bgH=document.getElementById('blk-bg-hex');  if(bgH) bgH.value=(curBlkBgColor||'').toUpperCase();
   const mv=document.getElementById('blk-margin-v'); if(mv) mv.value=b.marginV??'';
   const mh=document.getElementById('blk-margin-h'); if(mh) mh.value=b.marginH??'';
+  setBlkVerticalAlign(b.verticalAlign||'center');
   renderBlkKeyColors();
   /* 변수 버튼: 인증 활성화 + 필드 있을 때만 표시 */
   const showVar = curAuthEnabled && curAuthFields.length > 0;
@@ -3207,6 +3229,7 @@ function saveBlock(){
   const _mh=parseInt(document.getElementById('blk-margin-h')?.value)||0;
   if(_mv) b.marginV=_mv; else delete b.marginV;
   if(_mh) b.marginH=_mh; else delete b.marginH;
+  if(curBlkVerticalAlign&&curBlkVerticalAlign!=='center') b.verticalAlign=curBlkVerticalAlign; else delete b.verticalAlign;
   b.checkable=!!document.getElementById('blk-checkable-sw')?.classList.contains('on');
   b.checkBeforeText=document.getElementById('blk-check-before')?.value.trim()||'';
   b.checkAfterText=document.getElementById('blk-check-after')?.value.trim()||'';
