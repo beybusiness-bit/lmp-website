@@ -131,6 +131,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .mixed-btn{flex:1;padding:9px 4px;background:transparent;border:2px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;text-align:center;line-height:1.5;transition:background .15s,color .15s;}
 .mixed-btn.on{background:#000;color:#fff;}
 .blk-item{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1.5px solid rgba(0,0,0,.1);}
+.insert-row{display:flex;align-items:center;gap:0;height:20px;cursor:pointer;opacity:.25;transition:opacity .15s;}
+.insert-row:hover{opacity:1;}
+.insert-row::before,.insert-row::after{content:'';flex:1;height:1.5px;background:#000;}
+.insert-row-btn{font-size:10px;font-weight:700;padding:2px 8px;border:1.5px solid #000;background:#fff;color:#000;border-radius:20px;cursor:pointer;white-space:nowrap;font-family:inherit;flex-shrink:0;}
 .blk-badge{font-size:10px;font-weight:800;color:rgba(0,0,0,.5);border:1.5px solid rgba(0,0,0,.3);padding:2px 5px;flex-shrink:0;}
 .blk-prev{flex:1;font-size:12px;color:#000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .blk-acts{display:flex;gap:3px;flex-shrink:0;}
@@ -1888,10 +1892,12 @@ async function saveBulkUsers() {
 /* ══════════════════════════════════════
    Stage editor
 ══════════════════════════════════════ */
+function _stageInsertRow(pos){return `<div class="insert-row" onclick="insertStageAt(${pos})"><button class="insert-row-btn">+ 여기에 추가</button></div>`;}
+function insertStageAt(pos){curStages.splice(pos,0,{id:uid(),title:'',displayType:'text',stageImageUrl:'',order:pos});renderStageList();schedulePreviewUpdate();projDirty=true;}
 function renderStageList() {
   const el = document.getElementById('stage-list');
-  if (!curStages.length) { el.innerHTML = '<div class="empty-msg" style="padding:12px 0;">스테이지가 없어요.</div>'; schedulePreviewUpdate(); return; }
-  el.innerHTML = curStages.map((s,i) => `
+  if (!curStages.length) { el.innerHTML = _stageInsertRow(0)+'<div class="empty-msg" style="padding:12px 0;">스테이지가 없어요.</div>'; schedulePreviewUpdate(); return; }
+  const items = curStages.map((s,i) => `
     <div class="stage-item">
       <div class="stage-row1">
         <input class="stage-inp" value="${(s.title||'').replace(/"/g,'&quot;')}" placeholder="스테이지 제목"
@@ -1918,7 +1924,8 @@ function renderStageList() {
         <button class="tgl-btn${s.trackProgress?' on':''}" onclick="curStages[${i}].trackProgress=!curStages[${i}].trackProgress;renderStageList();" style="font-size:11px;padding:5px 12px;">${s.trackProgress?'표시 ON':'표시 OFF'}</button>
         ${s.checkableCount?`<span style="font-size:10px;color:rgba(0,0,0,.4);">체크 항목 ${s.checkableCount}개</span>`:''}
       </div>
-    </div>`).join('');
+    </div>`);
+  el.innerHTML = _stageInsertRow(0) + items.map((h,i)=>h+_stageInsertRow(i+1)).join('');
 }
 function addStage()   { curStages.push({id:uid(),title:'',displayType:'text',stageImageUrl:'',order:curStages.length}); renderStageList(); schedulePreviewUpdate(); projDirty=true; }
 function mvStage(i,d) { const j=i+d; if(j<0||j>=curStages.length) return; [curStages[i],curStages[j]]=[curStages[j],curStages[i]]; renderStageList(); schedulePreviewUpdate(); projDirty=true; }
@@ -2551,10 +2558,11 @@ async function doCopyFromStage() {
     setGuideType(curGuideDispType); renderBlockList(); scheduleGuidePreviewUpdate();
   } catch(e) { alert('복제 실패: '+e.message); }
 }
+function _blkInsertRow(pos){return `<div class="insert-row" onclick="openBlockModal(null,${pos})"><button class="insert-row-btn">+ 여기에 추가</button></div>`;}
 function renderBlockList() {
   const el=document.getElementById('block-list');
-  if(!curBlocks.length){el.innerHTML='<div class="empty-msg" style="padding:10px 0;">블록이 없어요.</div>';return;}
-  el.innerHTML=curBlocks.map((b,i)=>{
+  if(!curBlocks.length){el.innerHTML=_blkInsertRow(0)+'<div class="empty-msg" style="padding:10px 0;">블록이 없어요.</div>';return;}
+  const items=curBlocks.map((b,i)=>{
     const tl=b.type==='text'?'텍스트':b.type==='image'?'이미지':b.type==='mixed'?'혼합':b.type==='embed'?'임베드':b.type==='tool'?'도구':b.type==='spacer'?'스페이서':b.type==='divider'?'구분선':'폼(구)';
     const toolSubLbl=b.type==='tool'?`${b.toolType||'?'} · ${b.toolConfig?.formId||b.toolConfig?.boothId||b.toolConfig?.guideId||'(미선택)'}` :'';
     const pv=b.type==='text'?(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,32):
@@ -2577,7 +2585,8 @@ function renderBlockList() {
         <button class="b-btn" onclick="rmBlk(${i})">✕</button>
       </div>
     </div>`;
-  }).join('');
+  });
+  el.innerHTML=_blkInsertRow(0)+items.map((h,i)=>h+_blkInsertRow(i+1)).join('');
 }
 function mvBlk(i,d){const j=i+d;if(j<0||j>=curBlocks.length)return;[curBlocks[i],curBlocks[j]]=[curBlocks[j],curBlocks[i]];renderBlockList();scheduleGuidePreviewUpdate();stageDirty=true;_autoSaveStage();}
 function rmBlk(i){if(!confirm('이 블록을 삭제할까요?'))return;curBlocks.splice(i,1);renderBlockList();scheduleGuidePreviewUpdate();stageDirty=true;_autoSaveStage();}
@@ -2872,7 +2881,7 @@ function exportRespCsv() {
 }
 
 /* ── Block editor ── */
-let curBlkIdx=null,curBlkType='text',curMixedLayout='overlay',savedRange=null;
+let curBlkIdx=null,curBlkInsertAt=null,curBlkType='text',curMixedLayout='overlay',savedRange=null;
 let curBlkBgColor='';
 let curBlkCheckColor='';
 let curCheckPos='bottom-right';
@@ -2913,8 +2922,9 @@ function onBlkBgPick(v){
 }
 function onBlkBgHex(v){ if(/^#[0-9a-fA-F]{6}$/.test(v)) onBlkBgPick(v); }
 function clearBlkBg(){ curBlkBgColor=''; const h=document.getElementById('blk-bg-hex'); if(h) h.value=''; const p=document.getElementById('blk-bg-color'); if(p) p.value='#ffffff'; }
-function openBlockModal(idx){
+function openBlockModal(idx,insertAt){
   curBlkIdx=idx;
+  curBlkInsertAt=(idx===null&&insertAt!==undefined&&insertAt!==null)?insertAt:null;
   document.getElementById('bm-title').textContent=idx===null?'블록 추가':'블록 편집';
   const b=idx!==null?curBlocks[idx]:{type:'text',textContent:'',imageUrl:'',mixedLayout:'overlay'};
   curBlkType=b.type||'text';curMixedLayout=b.mixedLayout||'overlay';
@@ -3091,6 +3101,7 @@ function saveBlock(){
   if(curBlkCheckColor) b.checkColor=curBlkCheckColor; else delete b.checkColor;
   if(b.checkable) b.checkPosition=curCheckPos; else delete b.checkPosition;
   if(curBlkIdx!==null)curBlocks[curBlkIdx]={...curBlocks[curBlkIdx],...b};
+  else if(curBlkInsertAt!==null)curBlocks.splice(curBlkInsertAt,0,b);
   else curBlocks.push(b);
   stageDirty=true;
   renderBlockList();closeBlockModal();scheduleGuidePreviewUpdate();
