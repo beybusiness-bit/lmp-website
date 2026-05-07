@@ -445,7 +445,7 @@ closeHelpPanel();
 - **사이드바 position:fixed**: 모바일 주소바 대응, transform:translateX(calc(-50% - 100vw)) 완전 숨김
 - **로그인 사용자 인사 문구 시스템**: greetingText + {{변수명}} 치환, 홈화면·사이드바·복귀버튼에 표시
   - admin 인증 탭에 greetingText 입력 + 변수 삽입 버튼 (클릭 → 커서 위치에 {{key}} 삽입)
-- **폼 블록 빌더** (관리자, 현재 블록 편집 안에 있음 — 다음 세션에 도구 탭으로 이전 예정)
+- **폼 블록 빌더** (레거시, type:'form' 하위 호환 유지)
 - **폼 렌더링 + 제출** (플레이어): Firestore + GAS Google Sheets 저장
 - **응답 관리 모달**: 응답 목록 보기 + CSV 다운로드 + Google Sheet 연결/생성
 - **블록 체크 진행률 시스템**: checkable 블록 체크 → stageProgress 저장 → 홈화면 진행률 바
@@ -454,24 +454,30 @@ closeHelpPanel();
 - **tools/계산기·가이드** (`tools/guide/index.html`): 조건부 계산식 엔진, admin 빌더
 - **admin 도구 탭**: 도구 목록 → 도구별 설정 화면 (꾸미기 도구 구성, 계산기 빌더)
 - **전역 도움말 패널** (`#help-panel`): openHelpPanel() / closeHelpPanel()
+- **✅ 도구 블록 신설 + 폼 도구화** (이번 세션 완료):
+  - `tools/form/index.html` 신규 생성: cms_form_configs 기반 폼 도구 iframe
+  - `type:'tool'` 블록: 블록 편집 "도구" 탭 → 폼/꾸미기/계산기 선택 → 인스턴스 선택
+  - lmp-tool-complete 신호: 도구 완료 시 플레이어가 autoCheckBlock으로 자동 체크
+  - admin 도구 탭에 폼 생성기 추가: 폼 목록·생성·편집·필드 빌더·응답 보기
+  - lmp-context에 projectId 추가, p/+block-test-demo+gmbf-poc 동기화
 
 **미확인/이슈 🔶**
 - GAS `bulkAppend` 코드: `apps-script/Code.gs`에 추가됐으나 **GAS 편집기에서 재배포 필요**
   → 방법: script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
 
 **진행 예정 🔲**
-- **🔲 [다음 세션] 도구 블록 신설 + 폼 도구화** ← 다음 세션 시작점 (아래 상세 설계 참고)
 - GAS 재배포 후 시트 생성 + 백필 end-to-end 테스트
 - 블록 체크 진행률 end-to-end 테스트
+- 도구 블록 end-to-end 테스트 (폼 생성 → 블록 연결 → 플레이어 제출 → 진행률 반영)
 
 **다음 세션 시작점**
-- 🔲 도구 블록 신설 + 폼 도구화 (아래 "📐 다음 세션 구현 설계" 섹션 전체 참고)
+- 🔲 end-to-end 테스트 및 버그 수정 (도구 블록, 폼 생성기, lmp-tool-complete 흐름 검증)
 
 ---
 
-### 📐 다음 세션 구현 설계: 도구 블록 신설 + 폼 도구화
+### 📐 ✅ 완료된 구현: 도구 블록 신설 + 폼 도구화
 
-> ⚠️ 이 섹션은 다음 세션에서 그대로 구현한다. 의사결정 완료된 설계임. 임의로 축약하거나 변경하지 말 것.
+> 이 섹션은 구현 완료됐습니다 (2026-05-07 세션). 참고용으로 보존합니다.
 
 #### 배경 및 목적
 - 현재 `type:'form'` 블록을 제거하고 새 `type:'tool'` 도구 블록으로 통합
