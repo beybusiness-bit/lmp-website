@@ -318,6 +318,7 @@ function vPrev() {
 
 /* ── 결과 화면 ── */
 function showResults() {
+  window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
   /* 태그·변수 집계 */
   const tags = new Set();
   const numVars = {};

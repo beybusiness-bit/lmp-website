@@ -835,6 +835,7 @@ function renderKeyColorSwatches() {
 
 // ── 내보내기 ──
 async function openExport() {
+  window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
   const expCanvas = document.getElementById('export-canvas');
   expCanvas.width = EXPORT_W;
   expCanvas.height = EXPORT_H;

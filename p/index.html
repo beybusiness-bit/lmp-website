@@ -796,7 +796,7 @@ async function openStageContent(stage){
     const g=doc.data();
     const blocks=(g.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
     /* checkableCount 보정: Firestore 스테이지 데이터가 stale할 수 있으므로 실제 블록 기준으로 갱신 */
-    const actualCnt=blocks.filter(b=>b.checkable||b.type==='form').length;
+    const actualCnt=blocks.filter(b=>b.checkable||b.type==='form'||b.type==='tool').length;
     if(STAGES[curStageIdx]) STAGES[curStageIdx].checkableCount=actualCnt;
     if(g.displayType==='slide') renderGuideSlide(blocks);
     else renderGuideScroll(blocks);
@@ -835,6 +835,17 @@ function blockHtml(b){
     const _eStyle=b.embedHeight===0?'min-height:60vh;height:100%;':'';
     return `<div class="g-block-embed" style="${mS}${bgS}${b.embedHeight===0?'min-height:60vh;':''}"><iframe src="${b.embedUrl}" width="100%" height="${_eh}" frameborder="0" allowfullscreen style="display:block;border:none;${_eStyle}"></iframe></div>`;
   }
+  if(b.type==='tool'){
+    const toolUrls={
+      form:`/tools/form/?id=${b.toolConfig?.formId||''}`,
+      booth:`/tools/booth/?id=${b.toolConfig?.boothId||''}`,
+      guide:`/tools/guide/?id=${b.toolConfig?.guideId||''}`,
+    };
+    const src=toolUrls[b.toolType]||'';
+    const h=b.height||0;
+    const heightCss=h?`height:${h}px`:`min-height:60vh`;
+    return `<div class="g-block-embed" style="${mS}${bgS}${h?'':'min-height:60vh;'}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}"></iframe></div>`;
+  }
   if(b.type==='form' && b.formId){
     formBlockData[b.formId]={formFields:b.formFields||[],formConfig:b.formConfig||{},blockId:b.id};
     const config=b.formConfig||{};
@@ -861,32 +872,37 @@ function attachCheck(h,b){
   return h+checkEl;
 }
 // ── 임베드 iframe에 사용자 컨텍스트 전달 ──
+function _lmpContext(){
+  return {
+    type:'lmp-context',
+    projectId: typeof PROJECT_ID!=='undefined' ? PROJECT_ID : '',
+    boothType: (typeof user!=='undefined'&&user) ? (user.boothType||user.type||'') : '',
+    keyColors: typeof KEY_COLORS!=='undefined' ? KEY_COLORS : [],
+    userFields: (typeof user!=='undefined'&&user) ? user : {}
+  };
+}
 function _sendContextToEmbeds(){
-  // lmp-ready 신호 대기 + 직접 전송 (300ms 후, iframe 로드 완료 예상)
   setTimeout(()=>{
     document.querySelectorAll('iframe').forEach(f=>{
-      try{
-        f.contentWindow.postMessage({
-          type:'lmp-context',
-          boothType: (typeof user!=='undefined'&&user) ? (user.boothType||user.type||'') : '',
-          keyColors: typeof KEY_COLORS!=='undefined' ? KEY_COLORS : [],
-          userFields: (typeof user!=='undefined'&&user) ? user : {}
-        },'*');
-      }catch(e){}
+      try{ f.contentWindow.postMessage(_lmpContext(),'*'); }catch(e){}
     });
   },300);
 }
-// lmp-ready 신호 수신 시 즉시 전송
+// lmp-ready 수신 시 즉시 전송
+// lmp-tool-complete 수신 시 autoCheckBlock 처리
 window.addEventListener('message',e=>{
-  if(e.data?.type!=='lmp-ready'||!e.source) return;
-  try{
-    e.source.postMessage({
-      type:'lmp-context',
-      boothType: (typeof user!=='undefined'&&user) ? (user.boothType||user.type||'') : '',
-      keyColors: typeof KEY_COLORS!=='undefined' ? KEY_COLORS : [],
-      userFields: (typeof user!=='undefined'&&user) ? user : {}
-    },'*');
-  }catch(er){}
+  if(e.data?.type==='lmp-ready'&&e.source){
+    try{ e.source.postMessage(_lmpContext(),'*'); }catch(er){}
+    return;
+  }
+  if(e.data?.type==='lmp-tool-complete'){
+    document.querySelectorAll('iframe[data-tool-block]').forEach(f=>{
+      try{
+        if(f.contentWindow===e.source) autoCheckBlock(f.getAttribute('data-tool-block'));
+      }catch(_){}
+    });
+    return;
+  }
 });
 function renderGuideScroll(blocks){
   document.getElementById('guide-scroll-blocks').innerHTML=blocks.map(b=>{
@@ -1018,6 +1034,24 @@ async function toggleBlockCheck(blockId){
     updateCheckEl(blockId,wasChecked);
     refreshStageProgress();
   }
+}
+
+/* ── Tool block: 완료 자동 체크 ── */
+function autoCheckBlock(blockId){
+  if(!blockId) return;
+  const stageId=curStageId;
+  if(!userProgress[stageId]) userProgress[stageId]=new Set();
+  if(userProgress[stageId].has(blockId)) return;
+  userProgress[stageId].add(blockId);
+  refreshStageProgress();
+  if(!AUTH_ENABLED||!USER_DOC_ID) return;
+  const u=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  if(!u.stageProgress) u.stageProgress={};
+  u.stageProgress[stageId]=[...userProgress[stageId]];
+  sessionStorage.setItem('userSession',JSON.stringify(u));
+  db.collection(AUTH_COLLECTION).doc(USER_DOC_ID).update({
+    ['stageProgress.'+stageId]:firebase.firestore.FieldValue.arrayUnion(blockId)
+  }).catch(console.error);
 }
 
 /* ── Form block ── */

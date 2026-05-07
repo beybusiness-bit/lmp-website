@@ -485,6 +485,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div class="sect-head" style="margin-bottom:16px;">도구 관리</div>
         <div id="tools-list">
           <!-- 도구 카드 -->
+          <div class="proj-item" onclick="openTool('form-mgr')" style="cursor:pointer;">
+            <div class="pi-name">폼 생성기</div>
+            <div class="pi-meta">입력 폼 생성·편집·응답 관리</div>
+          </div>
           <div class="proj-item" onclick="openTool('deco')" style="cursor:pointer;">
             <div class="pi-name">꾸미기 생성기</div>
             <div class="pi-meta">배경 이미지·부스 종류별 꾸미기 도구 관리</div>
@@ -492,6 +496,63 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <div class="proj-item" onclick="openTool('guide')" style="cursor:pointer;">
             <div class="pi-name">계산기 생성기</div>
             <div class="pi-meta">질문·숫자입력·결과카드로 맞춤 가이드 제작</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 폼 생성기 관리 화면 -->
+      <div id="tool-form-mgr-view" style="display:none;flex-direction:column;overflow:hidden;">
+        <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
+          <span class="back-btn" onclick="toolFormMgrBack()">←</span>
+          <span id="tf-header-title" style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">폼 생성기</span>
+        </div>
+
+        <!-- 폼 목록 화면 -->
+        <div id="tf-list-screen" style="padding:16px;overflow-y:auto;flex:1;">
+          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">폼을 만들어 도구 블록에 연결하세요. 폼 응답은 Firestore에 저장되고, Google Sheet로 연동할 수 있어요.</div>
+          <button class="save-btn" onclick="toolFormCreate()" style="width:100%;margin-bottom:16px;">+ 새 폼 만들기</button>
+          <div id="tf-form-list"><div class="empty-msg">불러오는 중…</div></div>
+        </div>
+
+        <!-- 폼 편집 화면 -->
+        <div id="tf-edit-screen" style="display:none;flex-direction:column;overflow:hidden;">
+          <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;align-items:center;gap:10px;">
+            <button class="mbtn-cancel" style="flex:0 0 auto;" onclick="toolFormMgrList()">← 목록</button>
+            <button class="save-btn" style="flex:1;" onclick="toolFormSave()">저장</button>
+          </div>
+          <div style="padding:16px;overflow-y:auto;flex:1;">
+            <div class="ed-sect">
+              <div class="ed-lbl">폼 이름</div>
+              <input class="fi" id="tf-title" placeholder="예: 참가 신청서" style="margin-bottom:0;">
+            </div>
+            <div class="sect-head" style="margin-bottom:8px;">필드</div>
+            <div id="tf-field-list"></div>
+            <button class="add-btn" style="font-size:12px;padding:8px 0;margin-top:8px;" onclick="toolFormOpenFieldModal(null)">+ 필드 추가</button>
+            <div class="sect-head" style="margin-top:20px;margin-bottom:8px;">제출 설정</div>
+            <div class="ed-sect">
+              <div class="ed-lbl">제출 버튼 텍스트</div>
+              <input class="fi-sm" id="tf-submit-text" placeholder="제출하기" style="margin-bottom:0;">
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">완료 메시지 <span style="font-weight:400;opacity:.55;">(HTML 가능)</span></div>
+              <textarea class="fi-sm" id="tf-submit-msg" placeholder="제출이 완료됐어요!" style="min-height:80px;resize:vertical;margin-bottom:0;"></textarea>
+            </div>
+            <div class="ed-sect">
+              <div class="switch-row" style="margin-bottom:0;">
+                <div class="switch" id="tf-no-resubmit-sw" onclick="this.classList.toggle('on')"></div>
+                <span class="switch-lbl">중복 제출 방지</span>
+              </div>
+            </div>
+            <div class="sect-head" style="margin-top:20px;margin-bottom:8px;">Google Sheet 연동</div>
+            <div class="ed-sect">
+              <div class="ed-lbl">Sheet ID</div>
+              <input class="fi-sm" id="tf-sheet-id" placeholder="스프레드시트 ID" style="margin-bottom:4px;">
+              <div class="ed-lbl" style="margin-bottom:4px;">시트 탭명</div>
+              <input class="fi-sm" id="tf-sheet-tab" placeholder="응답" style="margin-bottom:0;">
+            </div>
+            <div class="ed-sect" style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="mbtn-cancel" onclick="toolFormViewResponses()">📋 응답 보기</button>
+            </div>
           </div>
         </div>
       </div>
@@ -685,7 +746,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <button class="blk-tab"    id="btab-image" onclick="switchBlkTab('image')">이미지</button>
       <button class="blk-tab"    id="btab-mixed" onclick="switchBlkTab('mixed')">혼합</button>
       <button class="blk-tab"    id="btab-embed" onclick="switchBlkTab('embed')">임베드</button>
-      <button class="blk-tab"    id="btab-form"  onclick="switchBlkTab('form')">폼</button>
+      <button class="blk-tab"    id="btab-tool"  onclick="switchBlkTab('tool')">도구</button>
+      <button class="blk-tab"    id="btab-form"  onclick="switchBlkTab('form')" style="display:none;">폼(구)</button>
     </div>
     <div id="bpanel-text">
       <div class="fmt-bar">
@@ -729,6 +791,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <input class="img-inp" id="embed-height" type="number" placeholder="500" style="margin-bottom:0;width:100px;">
           <span style="font-size:11px;color:rgba(0,0,0,.45);">px</span>
         </div>
+      </div>
+    </div>
+    <div id="bpanel-tool" style="display:none;">
+      <div class="ed-lbl" style="margin-bottom:10px;">도구 종류</div>
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <button class="blk-tab on" id="ttab-form"  onclick="switchToolType('form')"  style="font-size:12px;padding:6px 12px;">폼</button>
+        <button class="blk-tab"    id="ttab-booth" onclick="switchToolType('booth')" style="font-size:12px;padding:6px 12px;">꾸미기 도구</button>
+        <button class="blk-tab"    id="ttab-guide" onclick="switchToolType('guide')" style="font-size:12px;padding:6px 12px;">계산기·가이드</button>
+      </div>
+      <div class="ed-lbl" style="margin-bottom:6px;">인스턴스 선택</div>
+      <select class="fi-sm" id="tool-inst-sel" style="margin-bottom:4px;cursor:pointer;">
+        <option value="">— 선택하세요 —</option>
+      </select>
+      <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:14px;">
+        <a id="tool-manage-link" href="#" onclick="openToolManageLink(event)" style="color:rgba(0,0,0,.5);text-decoration:underline;">도구 탭에서 관리하기 →</a>
+      </div>
+      <div style="margin-top:4px;">
+        <div class="ed-lbl" style="margin-bottom:6px;">높이 <span style="font-weight:400;opacity:.55;">(px, 0=자동)</span></div>
+        <input class="fi-sm" id="tool-height" type="number" min="0" placeholder="0 (자동)" style="margin-bottom:0;width:120px;">
       </div>
     </div>
     <div id="bpanel-form" style="display:none;">
@@ -1191,6 +1272,14 @@ let ffSelectMode = 'dropdown';
 let curRespFormId = null;
 let curRespData = [];
 let curRespFormBlock = null;
+/* 도구 블록 상태 */
+let curBlkToolType = 'form';
+let curBlkToolConfig = {};
+let toolInstList = [];
+/* 도구 탭 폼 관리 상태 */
+let tfCurDocId = null;
+let tfFields = [];
+let formFieldCtx = 'block'; // 'block' | 'tool'
 
 /* ── URL Preview ── */
 function updateUrlPreview() {
@@ -2291,7 +2380,7 @@ async function _autoSaveStage() {
         blocks: curBlocks.map((b,i)=>({...b,order:i})),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       }, {merge:true});
-    const checkableCount = curBlocks.filter(b=>b.checkable||b.type==='form').length;
+    const checkableCount = curBlocks.filter(b=>b.checkable||b.type==='form'||b.type==='tool').length;
     curStages[curEditingStageIdx].checkableCount = checkableCount;
     const updatedStages = curStages.map((s,i)=>({
       id:s.id, title:s.title||'', displayType:s.displayType||'text',
@@ -2313,7 +2402,7 @@ async function saveStageContent() {
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       }, {merge:true});
     /* sync checkableCount to project stages */
-    const checkableCount = curBlocks.filter(b=>b.checkable||b.type==='form').length;
+    const checkableCount = curBlocks.filter(b=>b.checkable||b.type==='form'||b.type==='tool').length;
     curStages[curEditingStageIdx].checkableCount = checkableCount;
     const updatedStages = curStages.map((s,i)=>({
       id:s.id, title:s.title||'', displayType:s.displayType||'text',
@@ -2414,11 +2503,13 @@ function renderBlockList() {
   const el=document.getElementById('block-list');
   if(!curBlocks.length){el.innerHTML='<div class="empty-msg" style="padding:10px 0;">블록이 없어요.</div>';return;}
   el.innerHTML=curBlocks.map((b,i)=>{
-    const tl=b.type==='text'?'텍스트':b.type==='image'?'이미지':b.type==='mixed'?'혼합':b.type==='embed'?'임베드':'폼';
+    const tl=b.type==='text'?'텍스트':b.type==='image'?'이미지':b.type==='mixed'?'혼합':b.type==='embed'?'임베드':b.type==='tool'?'도구':'폼(구)';
+    const toolSubLbl=b.type==='tool'?`${b.toolType||'?'} · ${b.toolConfig?.formId||b.toolConfig?.boothId||b.toolConfig?.guideId||'(미선택)'}` :'';
     const pv=b.type==='text'?(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,32):
              b.type==='image'?(b.imageUrl?'[이미지]'+(b.linkUrl?' 🔗':''):'(URL 없음)'):
              b.type==='mixed'?'['+(b.mixedLayout==='split'?'분리':'오버레이')+'] '+(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,22):
              b.type==='embed'?(b.embedUrl||'(URL 없음)').slice(0,35):
+             b.type==='tool'?toolSubLbl:
              b.type==='form'?(b.formFields?.length?`필드 ${b.formFields.length}개`:'(필드 없음)'):'';
     return `<div class="blk-item">
       <div class="blk-badge">${tl}</div>
@@ -2530,7 +2621,13 @@ function saveFormField() {
   }
   document.getElementById('ff-key').dataset.userEdited = '';
   closeModal('form-field-modal');
-  renderFormFields();
+  if(formFieldCtx==='tool'){
+    tfFields=curFormFields;
+    renderTfFieldList();
+    formFieldCtx='block';
+  } else {
+    renderFormFields();
+  }
 }
 async function uploadFormPostImage(event) {
   const file = event.target.files[0]; event.target.value='';
@@ -2779,6 +2876,17 @@ function openBlockModal(idx){
   document.getElementById('embed-height-auto').checked=_isAutoH;
   document.getElementById('embed-height').value=b.type==='embed'?(b.embedHeight||500):'500';
   document.getElementById('embed-height-wrap').style.display=_isAutoH?'none':'';
+  /* tool 블록 상태 로드 */
+  if(b.type==='tool'){
+    curBlkToolType=b.toolType||'form';
+    curBlkToolConfig={...b.toolConfig||{}};
+    ['form','booth','guide'].forEach(k=>{
+      const el=document.getElementById('ttab-'+k);
+      if(el) el.classList.toggle('on',k===curBlkToolType);
+    });
+    const hi=document.getElementById('tool-height');
+    if(hi) hi.value=b.height||0;
+  }
   /* form — 항상 UI 초기화 후 기존 값 로드 */
   curFormFields = b.type==='form' ? JSON.parse(JSON.stringify(b.formFields||[])) : [];
   curFormConfig  = b.type==='form' ? {...{submitBtnText:'제출하기',postSubmitHtml:'',postSubmitImage:'',allowDuplicates:false}, ...b.formConfig} : {submitBtnText:'제출하기'};
@@ -2833,6 +2941,10 @@ function _buildCurrentBlock(){
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url')?.value||'';
     b.embedHeight=document.getElementById('embed-height-auto')?.checked?0:(parseInt(document.getElementById('embed-height')?.value)||500);
+  } else if(curBlkType==='tool'){
+    b.toolType=curBlkToolType;
+    b.toolConfig=curBlkToolConfig;
+    b.height=parseInt(document.getElementById('tool-height')?.value)||0;
   } else if(curBlkType==='form'){
     b.formFields=curFormFields||[];
     b.formConfig={submitBtnText:document.getElementById('form-submit-text')?.value||'제출하기'};
@@ -2866,6 +2978,15 @@ function saveBlock(){
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url').value.trim();
     b.embedHeight=document.getElementById('embed-height-auto').checked?0:(parseInt(document.getElementById('embed-height').value)||500);
+  } else if(curBlkType==='tool'){
+    const selV=document.getElementById('tool-inst-sel')?.value||'';
+    const tc={};
+    if(curBlkToolType==='form') tc.formId=selV;
+    else if(curBlkToolType==='booth') tc.boothId=selV;
+    else if(curBlkToolType==='guide') tc.guideId=selV;
+    b.toolType=curBlkToolType;
+    b.toolConfig=tc;
+    b.height=parseInt(document.getElementById('tool-height')?.value)||0;
   } else if(curBlkType==='form'){
     curFormConfig.formTitle       = document.getElementById('form-title-inp').value.trim();
     curFormConfig.submitBtnText   = document.getElementById('form-submit-text').value.trim()||'제출하기';
@@ -2893,12 +3014,47 @@ function saveBlock(){
 }
 function switchBlkTab(t){
   curBlkType=t;
-  ['text','image','mixed','embed','form'].forEach(k=>{
-    document.getElementById('btab-'+k).classList.toggle('on',k===t);
-    document.getElementById('bpanel-'+k).style.display=k===t?'block':'none';
+  ['text','image','mixed','embed','tool','form'].forEach(k=>{
+    const btn=document.getElementById('btab-'+k);
+    if(btn) btn.classList.toggle('on',k===t);
+    const panel=document.getElementById('bpanel-'+k);
+    if(panel) panel.style.display=k===t?'block':'none';
   });
   const chkSection=document.getElementById('blk-check-section');
-  if(chkSection) chkSection.style.display=t==='form'?'none':'';
+  if(chkSection) chkSection.style.display=(t==='form'||t==='tool')?'none':'';
+  if(t==='tool') loadToolInstList(curBlkToolType);
+}
+function switchToolType(tt){
+  curBlkToolType=tt;
+  ['form','booth','guide'].forEach(k=>{
+    document.getElementById('ttab-'+k).classList.toggle('on',k===tt);
+  });
+  loadToolInstList(tt);
+}
+async function loadToolInstList(tt){
+  const sel=document.getElementById('tool-inst-sel');
+  if(!sel) return;
+  sel.innerHTML='<option value="">— 로딩 중… —</option>';
+  toolInstList=[];
+  try{
+    if(tt==='form'){
+      const snap=await db.collection('cms_form_configs').orderBy('createdAt','desc').get();
+      toolInstList=snap.docs.map(d=>({id:d.id,...d.data()}));
+    } else if(tt==='booth'){
+      const snap=await db.collection('game_configs').doc('booth').get();
+      toolInstList=(snap.data()?.booths||[]);
+    } else if(tt==='guide'){
+      const snap=await db.collection('game_configs').where('_type','==','guide_form').get();
+      toolInstList=snap.docs.map(d=>({id:d.id,...d.data()}));
+    }
+  }catch(e){ console.error('[loadToolInstList]',e); }
+  const cur=tt==='form'?curBlkToolConfig?.formId:tt==='booth'?curBlkToolConfig?.boothId:curBlkToolConfig?.guideId;
+  sel.innerHTML='<option value="">— 선택하세요 —</option>'+toolInstList.map(x=>`<option value="${x.id}"${x.id===cur?' selected':''}>${x.name||x.title||x.id}</option>`).join('');
+}
+function openToolManageLink(e){
+  e.preventDefault();
+  document.getElementById('block-modal').classList.remove('on');
+  openTool('form-mgr');
 }
 function setMixedLayout(l){curMixedLayout=l;document.getElementById('ml-overlay').classList.toggle('on',l==='overlay');document.getElementById('ml-split').classList.toggle('on',l==='split');}
 function toggleEmbedHeightAuto(checked){document.getElementById('embed-height-wrap').style.display=checked?'none':'';}
@@ -3260,6 +3416,7 @@ function openTool(toolId) {
   document.getElementById('tool-'+toolId+'-view').style.display = 'flex';
   if(toolId === 'deco') { decoShowList(); }
   if(toolId === 'guide') { gbShowList(); }
+  if(toolId === 'form-mgr') { toolFormMgrList(); }
 }
 
 function closeTool() {
@@ -3268,6 +3425,122 @@ function closeTool() {
     curTool = null;
   }
   document.getElementById('tools-list-view').style.display = '';
+}
+
+/* ════════════════════════════════════════════
+   폼 생성기 (tool form manager)
+════════════════════════════════════════════ */
+function toolFormMgrBack(){closeTool();}
+function toolFormMgrList(){
+  tfCurDocId=null; tfFields=[];
+  document.getElementById('tf-list-screen').style.display='';
+  document.getElementById('tf-edit-screen').style.display='none';
+  document.getElementById('tf-header-title').textContent='폼 생성기';
+  loadTfList();
+}
+async function loadTfList(){
+  const el=document.getElementById('tf-form-list');
+  if(!el) return;
+  el.innerHTML='<div class="empty-msg">불러오는 중…</div>';
+  try{
+    const snap=await db.collection('cms_form_configs').orderBy('createdAt','desc').get();
+    if(!snap.docs.length){el.innerHTML='<div class="empty-msg">폼이 없어요. 새 폼을 만들어 보세요.</div>';return;}
+    el.innerHTML=snap.docs.map(d=>{
+      const data=d.data();
+      return `<div class="proj-item" style="cursor:pointer;" onclick="toolFormEdit('${d.id}')">
+        <div class="pi-name">${data.title||'(제목 없음)'}</div>
+        <div class="pi-meta">필드 ${(data.fields||[]).length}개 · ID: ${d.id}</div>
+        <div class="blk-acts" style="margin-top:6px;">
+          <button class="b-btn" onclick="event.stopPropagation();toolFormEditResponses('${d.id}')">📋 응답</button>
+          <button class="b-btn" onclick="event.stopPropagation();if(confirm('이 폼을 삭제할까요?'))toolFormDelete('${d.id}')">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div class="empty-msg">불러오기 실패</div>';}
+}
+async function toolFormCreate(){
+  const name=prompt('새 폼 이름을 입력하세요.');
+  if(!name) return;
+  try{
+    const ref=await db.collection('cms_form_configs').add({title:name,fields:[],submitBtnText:'제출하기',submitMsg:'제출이 완료됐어요!',noResubmit:false,sheetId:'',sheetTab:'응답',createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    toolFormEdit(ref.id);
+  }catch(e){alert('생성 실패: '+e.message);}
+}
+async function toolFormEdit(docId){
+  tfCurDocId=docId;
+  document.getElementById('tf-list-screen').style.display='none';
+  document.getElementById('tf-edit-screen').style.display='flex';
+  document.getElementById('tf-edit-screen').style.flexDirection='column';
+  document.getElementById('tf-header-title').textContent='폼 편집';
+  try{
+    const snap=await db.collection('cms_form_configs').doc(docId).get();
+    const d=snap.data()||{};
+    tfFields=JSON.parse(JSON.stringify(d.fields||[]));
+    document.getElementById('tf-title').value=d.title||'';
+    document.getElementById('tf-submit-text').value=d.submitBtnText||'제출하기';
+    document.getElementById('tf-submit-msg').value=d.submitMsg||'';
+    document.getElementById('tf-no-resubmit-sw').classList.toggle('on',!!d.noResubmit);
+    document.getElementById('tf-sheet-id').value=d.sheetId||'';
+    document.getElementById('tf-sheet-tab').value=d.sheetTab||'응답';
+    renderTfFieldList();
+  }catch(e){alert('로드 실패: '+e.message);}
+}
+function renderTfFieldList(){
+  const el=document.getElementById('tf-field-list');
+  if(!el) return;
+  if(!tfFields.length){el.innerHTML='<div class="empty-msg" style="padding:6px 0;">필드가 없어요.</div>';return;}
+  const typeLabel={string:'짧은텍스트',textarea:'긴텍스트',number:'숫자',select:'선택'};
+  el.innerHTML=tfFields.map((f,i)=>{
+    const tl=f.type==='select'?(f.selectMode==='buttons'?'버튼선택':'드롭다운'):(typeLabel[f.type]||f.type);
+    return `<div class="field-item">
+      <div class="field-info">
+        <div class="field-name">${f.label}</div>
+        <div class="field-meta">${f.key} · ${tl}${f.required?' · 필수':''}${f.allowOther?' · 기타포함':''}</div>
+      </div>
+      <div class="field-badges">
+        ${i>0?`<span class="fbadge" onclick="mvTfField(${i},-1)">↑</span>`:''}
+        ${i<tfFields.length-1?`<span class="fbadge" onclick="mvTfField(${i},1)">↓</span>`:''}
+        <span class="fbadge" onclick="toolFormOpenFieldModal(${i})">편집</span>
+        <span class="fbadge danger" onclick="rmTfField(${i})">삭제</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+function mvTfField(i,d){const j=i+d;if(j<0||j>=tfFields.length)return;[tfFields[i],tfFields[j]]=[tfFields[j],tfFields[i]];renderTfFieldList();}
+function rmTfField(i){if(!confirm('이 필드를 삭제할까요?'))return;tfFields.splice(i,1);renderTfFieldList();}
+function toolFormOpenFieldModal(idx){
+  formFieldCtx='tool';
+  curFormFields=tfFields;
+  openFormFieldModal(idx);
+}
+async function toolFormSave(){
+  if(!tfCurDocId) return;
+  const title=document.getElementById('tf-title')?.value.trim()||'';
+  const submitBtnText=document.getElementById('tf-submit-text')?.value.trim()||'제출하기';
+  const submitMsg=document.getElementById('tf-submit-msg')?.value.trim()||'';
+  const noResubmit=document.getElementById('tf-no-resubmit-sw')?.classList.contains('on')||false;
+  const sheetId=document.getElementById('tf-sheet-id')?.value.trim()||'';
+  const sheetTab=document.getElementById('tf-sheet-tab')?.value.trim()||'응답';
+  if(!title){alert('폼 이름을 입력해주세요.');return;}
+  try{
+    await db.collection('cms_form_configs').doc(tfCurDocId).update({title,fields:tfFields,submitBtnText,submitMsg,noResubmit,sheetId,sheetTab,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    alert('저장됐어요!');
+  }catch(e){alert('저장 실패: '+e.message);}
+}
+function toolFormViewResponses(){
+  if(!tfCurDocId) return;
+  viewFormResponses(tfCurDocId);
+  curRespFormBlock={formFields:tfFields,formConfig:{submitBtnText:'제출하기',sheetId:document.getElementById('tf-sheet-id')?.value||'',sheetTab:document.getElementById('tf-sheet-tab')?.value||'응답'}};
+  updateRespSheetStatus();
+}
+function toolFormEditResponses(docId){
+  viewFormResponses(docId);
+}
+async function toolFormDelete(docId){
+  try{
+    await db.collection('cms_form_configs').doc(docId).delete();
+    loadTfList();
+  }catch(e){alert('삭제 실패: '+e.message);}
 }
 
 /* ════════════════════════════════════════════
