@@ -869,7 +869,7 @@ function attachCheck(h,b){
   if(vPos==='top') return checkEl+h;
   return h+checkEl;
 }
-function _lmpContext(){return{type:'lmp-context',projectId:typeof PROJECT_ID!=='undefined'?PROJECT_ID:'',boothType:(typeof user!=='undefined'&&user)?(user.boothType||user.type||''):'',keyColors:typeof KEY_COLORS!=='undefined'?KEY_COLORS:[],userFields:(typeof user!=='undefined'&&user)?user:{}};}
+function _lmpContext(){return{type:'lmp-context',projectId:typeof PROJECT_ID!=='undefined'?PROJECT_ID:'',userId:typeof USER_DOC_ID!=='undefined'?USER_DOC_ID:'',boothType:(typeof user!=='undefined'&&user)?(user.boothType||user.type||''):'',keyColors:typeof KEY_COLORS!=='undefined'?KEY_COLORS:[],userFields:(typeof user!=='undefined'&&user)?user:{}};}
 function _sendContextToEmbeds(){
   setTimeout(()=>{document.querySelectorAll('iframe').forEach(f=>{try{f.contentWindow.postMessage(_lmpContext(),'*');}catch(e){}});},300);
 }

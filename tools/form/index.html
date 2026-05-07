@@ -10,12 +10,10 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:transparent;}
 
-/* lmp-btn */
 .lmp-btn{display:block;width:100%;padding:14px 18px;background:#000;color:#fff;border:2px solid #000;border-radius:0;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.2px;transition:background .15s,color .15s;}
 .lmp-btn:hover,.lmp-btn:active{background:#fff;color:#000;}
 .lmp-btn:disabled{opacity:.35;cursor:default;}
 
-/* form fields */
 .ff-wrap{margin-bottom:20px;}
 .ff-label{display:block;font-size:13px;font-weight:700;margin-bottom:8px;line-height:1.4;}
 .ff-desc{font-size:12px;color:rgba(0,0,0,.5);margin-bottom:8px;font-weight:500;line-height:1.6;}
@@ -28,7 +26,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .ff-err{color:#c00;font-size:13px;font-weight:700;margin-bottom:12px;min-height:16px;}
 .ff-required{color:#c00;}
 
-/* layout */
 #app{padding:24px 20px;}
 .form-title{font-size:17px;font-weight:800;margin-bottom:24px;letter-spacing:-.3px;line-height:1.4;}
 #done-screen{display:none;padding:40px 20px;text-align:center;}
@@ -71,12 +68,18 @@ const db = firebase.firestore();
 const FORM_ID = new URLSearchParams(location.search).get('id') || '';
 let formConfig = null;
 let ctxProjectId = '';
+let ctxUserId = '';
 let ctxUserFields = {};
+let ctxReceived = false;
+let resolveCtx;
+const ctxPromise = new Promise(res => { resolveCtx = res; });
 
 window.addEventListener('message', e => {
   if (e.data?.type !== 'lmp-context') return;
   ctxProjectId = e.data.projectId || '';
+  ctxUserId = e.data.userId || '';
   ctxUserFields = e.data.userFields || {};
+  if (!ctxReceived) { ctxReceived = true; resolveCtx(); }
 });
 
 function esc(s) {
@@ -89,7 +92,6 @@ function renderField(f) {
   const desc = f.description ? `<div class="ff-desc">${esc(f.description)}</div>` : '';
   const ph = esc(f.placeholder || '');
   const type = f.type;
-
   if (type === 'text' || type === 'string') {
     return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<input class="ff-inp" id="ff-${fid}" type="text" placeholder="${ph}"></div>`;
   }
@@ -152,20 +154,40 @@ function showDone(html) {
   document.getElementById('done-screen').classList.add('on');
 }
 
+async function checkAlreadySubmitted() {
+  // noResubmit=true + 인증 프로젝트(projectId+userId 모두 있음): Firestore 조회
+  if (ctxProjectId && ctxUserId) {
+    try {
+      const userDoc = await db.collection('cms_users_' + ctxProjectId).doc(ctxUserId).get();
+      const subKey = 'formSubmitted_' + FORM_ID;
+      if (userDoc.exists && userDoc.data()[subKey]) return true;
+    } catch(e) {}
+    return false;
+  }
+  // 비인증 프로젝트: 사용자 식별 불가이므로 항상 false (재제출 허용)
+  return false;
+}
+
 async function init() {
   if (!FORM_ID) { showErr('폼 ID가 없습니다.'); return; }
-
-  const doneKey = 'form_done_' + FORM_ID;
 
   try {
     const snap = await db.collection('cms_form_configs').doc(FORM_ID).get();
     if (!snap.exists) { showErr('폼을 찾을 수 없습니다.'); return; }
     formConfig = snap.data();
 
-    if (formConfig.noResubmit && sessionStorage.getItem(doneKey)) {
-      showDone(formConfig.submitMsg || '이미 제출하셨습니다.');
-      window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
-      return;
+    // noResubmit인 경우 context 대기 (최대 600ms, 보통 이미 도착해 있음)
+    if (formConfig.noResubmit && !ctxReceived) {
+      await Promise.race([ctxPromise, new Promise(res => setTimeout(res, 600))]);
+    }
+
+    if (formConfig.noResubmit) {
+      const alreadyDone = await checkAlreadySubmitted();
+      if (alreadyDone) {
+        showDone(formConfig.submitMsg || '이미 제출하셨습니다.');
+        window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+        return;
+      }
     }
 
     document.getElementById('form-title').textContent = formConfig.title || '';
@@ -184,7 +206,6 @@ async function init() {
 
 async function submitForm() {
   if (!formConfig) return;
-  const doneKey = 'form_done_' + FORM_ID;
   const fields = (formConfig.fields || []).sort((a, b) => (a.order || 0) - (b.order || 0));
   const result = {};
   const errEl = document.getElementById('form-err');
@@ -230,11 +251,17 @@ async function submitForm() {
       submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
       projectId: ctxProjectId || '',
     };
-    if (ctxUserFields && Object.keys(ctxUserFields).length) {
-      docData._userFields = ctxUserFields;
-    }
+    if (ctxUserId) docData._userId = ctxUserId;
+    if (ctxUserFields && Object.keys(ctxUserFields).length) docData._userFields = ctxUserFields;
 
     await db.collection('cms_form_responses').doc(FORM_ID).collection('responses').add(docData);
+
+    // 인증 프로젝트에서 noResubmit이면 사용자 doc에 제출 완료 기록
+    if (formConfig.noResubmit && ctxProjectId && ctxUserId) {
+      const subKey = 'formSubmitted_' + FORM_ID;
+      db.collection('cms_users_' + ctxProjectId).doc(ctxUserId)
+        .update({ [subKey]: true }).catch(() => {});
+    }
 
     if (formConfig.sheetId) {
       try {
@@ -247,8 +274,6 @@ async function submitForm() {
         });
       } catch(e) {}
     }
-
-    if (formConfig.noResubmit) sessionStorage.setItem(doneKey, '1');
 
     window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
     showDone(formConfig.submitMsg || '제출이 완료됐어요!');

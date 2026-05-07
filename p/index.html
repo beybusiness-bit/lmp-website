@@ -881,6 +881,7 @@ function _lmpContext(){
   return {
     type:'lmp-context',
     projectId: typeof PROJECT_ID!=='undefined' ? PROJECT_ID : '',
+    userId: typeof USER_DOC_ID!=='undefined' ? USER_DOC_ID : '',
     boothType: (typeof user!=='undefined'&&user) ? (user.boothType||user.type||'') : '',
     keyColors: typeof KEY_COLORS!=='undefined' ? KEY_COLORS : [],
     userFields: (typeof user!=='undefined'&&user) ? user : {}
