@@ -824,6 +824,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-al-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','text')">≡</button>
         <button class="fmt-btn" id="fmt-clr-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','text')" style="padding:5px 7px;"><span id="fmt-clr-dot-text" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
         <button class="fmt-btn" id="fmt-bg-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','text')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-text" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+        <button class="fmt-btn" id="fmt-link-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','text')" title="텍스트 링크" style="font-size:13px;padding:4px 7px;">🔗</button>
         <button class="fmt-btn" id="fmt-hr-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','text')" title="구분선 삽입" style="font-size:11px;">—</button>
         <button class="fmt-btn" id="fmt-var-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','text')" style="display:none;font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
       </div>
@@ -949,6 +950,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <button class="bg-up-btn" onclick="document.getElementById('blk-mixed-file').click()" style="margin-bottom:8px;">📁 직접 업로드</button>
       <input type="file" id="blk-mixed-file" accept="image/*" style="display:none;" onchange="uploadBlockImage(event,'mixed-img-url','mixed-img-prev')">
       <img id="mixed-img-prev" class="img-prev">
+      <div style="margin-top:6px;margin-bottom:10px;">
+        <div class="ed-lbl" style="margin-bottom:4px;">이미지 링크 URL <span style="font-weight:400;opacity:.55;">(선택, 이미지 탭 시 이동)</span></div>
+        <input class="img-inp" id="mixed-img-link-url" type="url" placeholder="https://…" style="margin-bottom:0;">
+      </div>
       <div class="ed-lbl" style="margin-top:10px;margin-bottom:8px;">텍스트</div>
       <div class="fmt-bar">
         <button class="fmt-btn" id="fmt-bold-mixed" onpointerdown="epd(event)" onclick="fmtCmd('mixed','bold')"><b>B</b></button>
@@ -956,6 +961,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-al-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','mixed')">≡</button>
         <button class="fmt-btn" id="fmt-clr-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','mixed')" style="padding:5px 7px;"><span id="fmt-clr-dot-mixed" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
         <button class="fmt-btn" id="fmt-bg-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','mixed')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-mixed" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+        <button class="fmt-btn" id="fmt-link-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','mixed')" title="텍스트 링크" style="font-size:13px;padding:4px 7px;">🔗</button>
         <button class="fmt-btn" id="fmt-hr-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','mixed')" title="구분선 삽입" style="font-size:11px;">—</button>
         <button class="fmt-btn" id="fmt-var-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','mixed')" style="display:none;font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
       </div>
@@ -3093,6 +3099,7 @@ function openBlockModal(idx,insertAt){
   document.getElementById('img-url').value=b.type==='image'?(b.imageUrl||''):'';
   document.getElementById('img-link-url').value=b.type==='image'?(b.linkUrl||''):'';
   document.getElementById('mixed-img-url').value=b.type==='mixed'?(b.imageUrl||''):'';
+  document.getElementById('mixed-img-link-url').value=b.type==='mixed'?(b.imageLinkUrl||''):'';
   document.getElementById('ced-mixed').innerHTML=b.type==='mixed'?(b.textContent||''):'';
   document.getElementById('embed-url').value=b.type==='embed'?(b.embedUrl||''):'';
   const _isAutoH=b.type==='embed'&&(b.embedHeight===0);
@@ -3228,6 +3235,8 @@ function saveBlock(){
     if(lnk) b.linkUrl=lnk;
   } else if(curBlkType==='mixed'){
     b.imageUrl=document.getElementById('mixed-img-url').value.trim();
+    const mlnk=document.getElementById('mixed-img-link-url').value.trim();
+    if(mlnk) b.imageLinkUrl=mlnk;
     b.textContent=document.getElementById('ced-mixed').innerHTML;
     b.mixedLayout=curMixedLayout;
   } else if(curBlkType==='embed'){
@@ -3413,6 +3422,17 @@ function openFmtDd(btn,type,ctx){
       </div>
       <div style="display:flex;gap:4px;flex-wrap:wrap;">${sw}</div>
     </div>`;
+  } else if(type==='link'){
+    const curUrl=_detectLinkUrl();
+    html=`<div style="padding:10px 10px 10px;min-width:230px;">
+      <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:8px;">텍스트 링크</div>
+      <input id="fmt-link-inp" class="fi-sm" type="url" value="${curUrl}" placeholder="https://…" style="margin-bottom:8px;" onpointerdown="epd(event)"
+        onkeydown="if(event.key==='Enter'&&this.value.trim()){applyFmtLink('${ctx}',this.value.trim());closeFmtPopup();}">
+      <div style="display:flex;gap:6px;">
+        <button onpointerdown="epd(event)" onclick="applyFmtLink('${ctx}',document.getElementById('fmt-link-inp').value)" style="flex:1;padding:7px 0;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">링크 걸기</button>
+        <button onpointerdown="epd(event)" onclick="removeFmtLink('${ctx}')" style="padding:7px 10px;background:transparent;border:1.5px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">제거</button>
+      </div>
+    </div>`;
   } else if(type==='hr'){
     html=`<div style="padding:12px 12px 10px;min-width:200px;">
       <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:8px;">구분선 삽입</div>
@@ -3468,6 +3488,9 @@ function syncFmtBar(ctx){
   const bgClr=_detectBgClr();
   const bgDot=document.getElementById('fmt-bg-dot-'+ctx);
   if(bgDot) bgDot.style.background=bgClr||'rgba(0,0,0,.18)';
+
+  const linkBtn=document.getElementById('fmt-link-'+ctx);
+  if(linkBtn) linkBtn.classList.toggle('on',_isInLink());
 }
 
 /* ── 텍스트 내 구분선 삽입 ── */
@@ -3503,6 +3526,24 @@ function applyFmtBg(ctx,clr){
   document.execCommand('backColor',false,clr);
   const dot=document.getElementById('fmt-bg-dot-'+ctx);
   if(dot) dot.style.background=(clr==='rgba(0,0,0,0)'||clr==='transparent')?'rgba(0,0,0,.18)':clr;
+}
+function applyFmtLink(ctx,url){
+  if(!url||!url.trim())return;
+  focusEd(ctx);restoreRange(getEd(ctx));
+  document.execCommand('createLink',false,url.trim());
+  getEd(ctx)?.querySelectorAll('a[href]').forEach(a=>{a.setAttribute('target','_blank');a.setAttribute('rel','noopener');});
+  closeFmtPopup();scheduleBmPreview();
+}
+function removeFmtLink(ctx){
+  focusEd(ctx);restoreRange(getEd(ctx));
+  document.execCommand('unlink',false,null);
+  closeFmtPopup();scheduleBmPreview();
+}
+function _detectLinkUrl(){
+  try{const sel=window.getSelection();if(!sel.rangeCount)return '';let n=sel.getRangeAt(0).startContainer;if(n.nodeType===3)n=n.parentElement;return n.closest('a')?.getAttribute('href')||'';}catch(e){return '';}
+}
+function _isInLink(){
+  try{const sel=window.getSelection();if(!sel.rangeCount)return false;let n=sel.getRangeAt(0).startContainer;if(n.nodeType===3)n=n.parentElement;return !!n.closest('a');}catch(e){return false;}
 }
 function _detectSzRaw(ctx){
   try{
@@ -3541,7 +3582,7 @@ function _detectBgClr(){
 }
 document.addEventListener('click',e=>{
   const pop=document.getElementById('fmt-popup');
-  if(pop&&pop.style.display!=='none'&&!pop.contains(e.target)&&!e.target.closest('#fmt-sz-text,#fmt-al-text,#fmt-clr-text,#fmt-bg-text,#fmt-hr-text,#fmt-var-text,#fmt-sz-mixed,#fmt-al-mixed,#fmt-clr-mixed,#fmt-bg-mixed,#fmt-hr-mixed,#fmt-var-mixed,#fmt-sz-formpost,#fmt-al-formpost,#fmt-clr-formpost,#fmt-bg-formpost'))
+  if(pop&&pop.style.display!=='none'&&!pop.contains(e.target)&&!e.target.closest('#fmt-sz-text,#fmt-al-text,#fmt-clr-text,#fmt-bg-text,#fmt-link-text,#fmt-hr-text,#fmt-var-text,#fmt-sz-mixed,#fmt-al-mixed,#fmt-clr-mixed,#fmt-bg-mixed,#fmt-link-mixed,#fmt-hr-mixed,#fmt-var-mixed,#fmt-sz-formpost,#fmt-al-formpost,#fmt-clr-formpost,#fmt-bg-formpost'))
     closeFmtPopup();
 });
 

@@ -164,6 +164,8 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .guide-slide-item[data-valign] .g-block-mixed-split{flex:0 1 auto!important;max-height:100%;min-height:0;}
 .guide-slide-item[data-valign] .g-block-mixed-split .g-split-text{flex:1;min-height:0;overflow-y:auto;}
 .guide-slide-item[data-valign] .blk-check-outer{flex:0 1 auto!important;max-height:100%;min-height:0;display:flex;flex-direction:column;}
+/* 텍스트 콘텐츠 내 인라인 링크 */
+.g-block-text-inner a,.g-split-text a,.g-overlay-text-inner a{color:inherit;text-decoration:underline;cursor:pointer;}
 /* form block */
 .g-block-form{padding:24px 20px;}
 .ff-wrap{margin-bottom:22px;}
@@ -898,7 +900,12 @@ function closeGuide(){
 function showGuideEmpty(msg){ document.getElementById('guide-scroll-blocks').innerHTML='<div class="guide-empty">'+msg+'</div>'; document.getElementById('guide-scroll-body').style.display='block'; }
 /* 변수 치환: {{key}} → 로그인 사용자 값 */
 function applyVars(html){
-  try{const u=JSON.parse(sessionStorage.getItem('userSession')||'{}');return html.replace(/\{\{(\w+)\}\}/g,(_,k)=>u[k]??`{{${k}}}`);}catch(e){return html;}
+  try{
+    const u=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+    let h=html.replace(/\{\{(\w+)\}\}/g,(_,k)=>u[k]??`{{${k}}}`);
+    h=h.replace(/<a([^>]*?)>/gi,(m,attrs)=>/target=/i.test(attrs)?m:`<a${attrs} target="_blank" rel="noopener">`);
+    return h;
+  }catch(e){return html;}
 }
 function blockHtml(b){
   const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
@@ -915,9 +922,12 @@ function blockHtml(b){
   }
   if(b.type==='mixed'){
     const html=applyVars(b.textContent||'');
+    const imgEl=b.imageLinkUrl
+      ?`<a href="${b.imageLinkUrl}" target="_blank" rel="noopener" style="display:block;"><img src="${b.imageUrl||''}" alt="" loading="lazy"></a>`
+      :`<img src="${b.imageUrl||''}" alt="" loading="lazy">`;
     if(b.mixedLayout==='split')
-      return `<div class="g-block-mixed-split" style="${mS}${bgS}"><div class="g-split-img"><img src="${b.imageUrl||''}" alt="" loading="lazy"></div><div class="g-split-text" style="${txS}">${html}</div></div>`;
-    return `<div class="g-block-mixed-overlay" style="${mS}${bgS}"><img src="${b.imageUrl||''}" alt="" loading="lazy"><div class="g-overlay-text"><div class="g-overlay-text-inner" style="${txS}">${html}</div></div></div>`;
+      return `<div class="g-block-mixed-split" style="${mS}${bgS}"><div class="g-split-img">${imgEl}</div><div class="g-split-text" style="${txS}">${html}</div></div>`;
+    return `<div class="g-block-mixed-overlay" style="${mS}${bgS}">${imgEl}<div class="g-overlay-text"><div class="g-overlay-text-inner" style="${txS}">${html}</div></div></div>`;
   }
   if(b.type==='embed' && b.embedUrl){
     const _eh=b.embedHeight===0?'100%':(b.embedHeight||500);
