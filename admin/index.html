@@ -1892,7 +1892,7 @@ async function saveBulkUsers() {
 /* ══════════════════════════════════════
    Stage editor
 ══════════════════════════════════════ */
-function _stageInsertRow(pos){return `<div class="insert-row" onclick="insertStageAt(${pos})"><button class="insert-row-btn">+ 여기에 추가</button></div>`;}
+function _stageInsertRow(pos){return `<div class="insert-row" onclick="insertStageAt(${pos})"><button class="insert-row-btn">+</button></div>`;}
 function insertStageAt(pos){curStages.splice(pos,0,{id:uid(),title:'',displayType:'text',stageImageUrl:'',order:pos});renderStageList();schedulePreviewUpdate();projDirty=true;}
 function renderStageList() {
   const el = document.getElementById('stage-list');
@@ -2558,7 +2558,7 @@ async function doCopyFromStage() {
     setGuideType(curGuideDispType); renderBlockList(); scheduleGuidePreviewUpdate();
   } catch(e) { alert('복제 실패: '+e.message); }
 }
-function _blkInsertRow(pos){return `<div class="insert-row" onclick="openBlockModal(null,${pos})"><button class="insert-row-btn">+ 여기에 추가</button></div>`;}
+function _blkInsertRow(pos){return `<div class="insert-row" onclick="openBlockModal(null,${pos})"><button class="insert-row-btn">+</button></div>`;}
 function renderBlockList() {
   const el=document.getElementById('block-list');
   if(!curBlocks.length){el.innerHTML=_blkInsertRow(0)+'<div class="empty-msg" style="padding:10px 0;">블록이 없어요.</div>';return;}
