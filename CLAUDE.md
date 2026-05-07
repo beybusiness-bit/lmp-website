@@ -275,6 +275,7 @@ cms_projects/{projectId}
   ctaIconUrl, ctaText, ctaIconSize  ← ctaIconSize: 24~200px (새로 추가)
   ddayEnabled, ddayDate
   authEnabled, authCollection, authFields, authKeyField, authTitle, authDesc
+  greetingText: string  ← 로그인 후 인사 문구 ({{필드키}} 변수 치환 지원)
   bgImages: [{url, overlay, timing}]
   stages: [{id, title, displayType, stageImageUrl, order,
             trackProgress: boolean,    ← 진행률 표시 ON/OFF
@@ -287,26 +288,41 @@ cms_projects/{projectId}
 cms_projects/{projectId}/stage_content/{stageId}
   displayType: 'scroll' | 'slide'
   blocks: [{
-    id, type ('text'|'image'|'mixed'|'embed'|'form'), order,
+    id, type ('text'|'image'|'mixed'|'embed'|'form'|'tool'), order,
     textContent, imageUrl, mixedLayout, embedUrl, embedHeight,
     bgColor, marginV, marginH, linkUrl,
-    formId,        ← 폼 블록 전용
-    formTitle,     ← 폼 블록 제목 (시트명에도 사용: "{formTitle}의 응답")
     checkable,     ← 사용자 체크 가능 여부 (boolean)
-    sheetId        ← 연결된 Google Sheet ID (폼 응답 저장용)
+    -- type:'form' 전용 (레거시, 하위 호환 유지) --
+    formId, formTitle, formFields[], formConfig{submitBtnText,noResubmit,sheetId,sheetTab}
+    -- type:'tool' 전용 (신규) --
+    toolType,      ← 'form' | 'booth' | 'guide'
+    toolConfig,    ← { formId?, boothId?, guideId? } 선택한 인스턴스 ID
+    height,        ← iframe 높이 px (0=자동, min-height:60vh)
   }]
 
 cms_users_{projectId}/{userId}
   (프로젝트별 authFields에 따라 자유 구조)
   stageProgress: {stageId: [blockId, blockId, ...]}  ← 체크된 블록 ID 목록
 
-cms_form_configs/{formId}
+cms_form_configs/{formId}           ← 글로벌 폼 설정 (프로젝트 무관)
+  title: string                     ← 폼 이름 (도구 탭 식별용)
   fields: [{id, label, type ('text'|'textarea'|'number'|'select'|'file'),
             required, options (선택형 전용), order}]
-  submitMsg: string  ← 제출 완료 메시지
+  submitBtnText: string
+  submitMsg: string                 ← 제출 완료 메시지 (HTML)
+  noResubmit: boolean               ← 중복 제출 방지
+  sheetId: string                   ← Google Sheet ID
+  sheetTab: string                  ← 시트 탭명
+  createdAt, updatedAt: timestamp
 
 cms_form_responses/{formId}/responses/{responseId}
-  submittedAt, userId (인증 시), ...fieldValues
+  submittedAt, userId (인증 시), projectId, ...fieldValues
+  ← projectId: 도구 블록이 속한 프로젝트 (lmp-context로 전달받음)
+
+game_configs/booth                  ← 꾸미기 도구 구성 (컬렉션명 유지)
+  booths: [{id, name, ...}]
+
+game_configs/guide/forms/{formId}   ← 계산기·가이드 폼 설정
 
 cms_admin_settings/github
   pat: string
@@ -421,83 +437,277 @@ closeHelpPanel();
 **완료 ✅**
 - admin CMS 패널: 프로젝트 생성·편집, 스테이지 관리, 블록 에디터 (텍스트/이미지/혼합/임베드)
 - 블록 에디터: 포맷바(크기·정렬·컬러 드롭다운), 배경색, 마진, 복제
-- **admin 미리보기 시스템 전면 개편** (이번 세션 완료 ✅)
-  - 3개 미리보기(프로젝트·스테이지·블록) 모두 인라인 사이드 패널로 통일
-  - 프로젝트 편집 화면 `position:fixed;inset:0` 전체화면 전환
-  - 편집 콘텐츠 너비 `.ed-inner{max-width:720px}` 제한
-  - 사이드 패널 너비 `previewWidth+80px` 동적 확장
-  - `setPreviewSize()` ±30px 크기 조절 — 3개 패널 동기화
-  - 프로젝트 미리보기: `#preview-inner` 래퍼 추가 → 직접 크기 지정 방식 (overflow 잘림 해결)
-  - `_projDirtyLock`, `silent` 파라미터로 false dirty 오탐지 수정
-  - `schedulePreviewUpdate()` 에서 불필요한 guard 조건 제거
+- **admin 미리보기 패널 토글**: "미리보기" 버튼으로 열기/닫기, 모바일 모달 방식
 - p/ 플레이어: 프로젝트 렌더링, 사용자 인증, 스테이지 탐색
-- admin-link 우하단 스타일 (gmbf/po-c)
-- 블록 기능 테스트 더미데이터 시드
 - Apps Script 배포 완료 (GAS_URL 등록)
 - **CTA 아이콘 크기 조정** (admin에서 24~200px 슬라이더, CSS var(--cta-icon-size))
-- **폼 블록 빌더** (관리자)
-  - 항목 추가: 단문/장문/숫자/파일/선택, 필수여부, 순서
-  - 폼 제목 필드 (시트명 `{formTitle}의 응답`에 사용)
-  - 체크 가능(checkable) 토글 — 사용자 체크 여부 추적용
-- **폼 렌더링 + 제출** (플레이어)
-  - 숫자 필드: 비숫자 입력 차단
-  - 제출 → Firestore(`cms_form_responses`) + Google Sheets(POST) 저장
-  - `submitForm` GAS 호출: GET → POST로 수정 완료
-- **응답 관리 모달** (관리자)
-  - 응답 목록 보기 + CSV 다운로드
-  - Google Sheet 연결/생성 (기존 응답 백필 옵션)
-- **블록 체크 진행률 시스템** (플레이어)
-  - 인증 사용자: 블록별 체크/해제 → Firestore `stageProgress` 저장
-  - 스테이지 카드: `trackProgress: true`일 때만 진행률 바(%) + 상태 표시
-  - `checkableCount` 비정규화로 stage_content 전체 로드 없이 진행률 계산
-- **테스트 더미데이터**: block-test-demo 프로젝트 (8 스테이지, 다양한 trackProgress/checkable 조합)
-- **이미지 카드 디자인 개편** (플레이어 3개 파일: p/, gmbf-poc/, block-test-demo/)
-  - 어두운 오버레이 제거, CSS background-image → `<img>` 태그 (자연 비율 유지)
-  - 카드 헤더 바 (position:absolute;top:0): 검은 배경 + 상태 뱃지 + 제목
-  - 분리형: 뱃지·제목 색 = JS변수 `prepBg` 직접 주입 (CSS 변수 지연 문제 방지) / 병합형: `var(--body-bg)`
-  - 진행률 바: position:absolute;bottom:0, rgba(0,0,0,.4) 배경으로 가시성 확보
-- **사이드바 메뉴 뱃지 수정**: `s.status`(undefined) → `calcPct` 기반 상태값, trackProgress:true인 스테이지에만 표시
-- **상태 뱃지·메뉴 뱃지 텍스트**: 9px → 11px
-- **CLAUDE.md 명칭 사전**: 컬러·레이아웃·화면·카드 용어 통일 (📖 UI 명칭 사전 섹션)
-- **tools/booth 부스 꾸미기 도구** ✅
-  - HTML Canvas + DOM 아이템 레이어 하이브리드, 이미지 추가·이동·회전·리사이즈·프레임·그리기·내보내기
-  - lmp 스타일 적용, postMessage 프로젝트 연동, 배경 선택 모달
-  - vercel.json: /tools/* Cache-Control no-store, X-Frame-Options SAMEORIGIN
-- **임베드 블록 높이 auto**: admin에서 "자동" 체크 → embedHeight=0 저장, 플레이어에서 min-height:60vh 적용
-- **배경 갤러리 UI 겹침 수정**: flex 레이아웃 분리, data-idx 이벤트 위임으로 URL 인코딩 문제 해결
-- **admin 도구 탭** ✅
-  - /admin 상단에 "프로젝트 | 도구" 탭, 도구 목록 → 도구별 설정 화면
-  - 부스 꾸미기: 부스 종류 추가/삭제, 배경 업로드(Firebase Storage → game_configs/booth)
-  - 연결된 프로젝트·블록 목록: embedUrl에 'tools/booth' 포함된 블록 표시
-- **game → tool 전면 리네임** ✅
-  - games/ → tools/, 탭명·ID·함수명·URL 전면 치환 (국문: 도구)
-  - vercel.json: /games/:path* → /tools/:path* 301 리다이렉트 추가
-  - Firestore game_configs 컬렉션명은 데이터 보존을 위해 유지
-- **계산기 생성기 도구** (`tools/guide/index.html`) ✅
-  - admin 도구 탭 안에서 빌더 동작 (새 창 없이 패널 내 화면 전환)
-  - 블록 3종: choice(객관식+태그), numeric(숫자+변수), result(조건+계산식)
-  - {{expr}} 템플릿 계산식 엔진 (ceil/floor/round 지원)
-  - Firestore: game_configs/guide/forms/{formId}
-- **전역 왼쪽 도움말 패널** (`#help-panel`) ✅
-  - openHelpPanel(title, html) / closeHelpPanel() 전역 함수
-  - 계산기 생성기 사용법 가이드 내장
-  - 🗂️ 전역 UI 패턴 섹션에 재사용 규칙 문서화
+- **CTA 미설정 시 네모 박스 제거**: ctaIconUrl 없으면 텍스트만, 진행화면 사이드메뉴 버튼 ☰ 폴백 (color:#000)
+- **사이드바 position:fixed**: 모바일 주소바 대응, transform:translateX(calc(-50% - 100vw)) 완전 숨김
+- **로그인 사용자 인사 문구 시스템**: greetingText + {{변수명}} 치환, 홈화면·사이드바·복귀버튼에 표시
+  - admin 인증 탭에 greetingText 입력 + 변수 삽입 버튼 (클릭 → 커서 위치에 {{key}} 삽입)
+- **폼 블록 빌더** (관리자, 현재 블록 편집 안에 있음 — 다음 세션에 도구 탭으로 이전 예정)
+- **폼 렌더링 + 제출** (플레이어): Firestore + GAS Google Sheets 저장
+- **응답 관리 모달**: 응답 목록 보기 + CSV 다운로드 + Google Sheet 연결/생성
+- **블록 체크 진행률 시스템**: checkable 블록 체크 → stageProgress 저장 → 홈화면 진행률 바
+- **이미지 카드 디자인**: 카드 헤더 바, 상태 뱃지, 진행률 바
+- **tools/꾸미기 도구** (`tools/booth/index.html`): Canvas 기반 이미지 합성, lmp-context 연동
+- **tools/계산기·가이드** (`tools/guide/index.html`): 조건부 계산식 엔진, admin 빌더
+- **admin 도구 탭**: 도구 목록 → 도구별 설정 화면 (꾸미기 도구 구성, 계산기 빌더)
+- **전역 도움말 패널** (`#help-panel`): openHelpPanel() / closeHelpPanel()
 
 **미확인/이슈 🔶**
 - GAS `bulkAppend` 코드: `apps-script/Code.gs`에 추가됐으나 **GAS 편집기에서 재배포 필요**
-  → 재배포 안 하면 시트 생성 시 "Failed to fetch" 또는 기존 응답 백필 실패
   → 방법: script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
 
 **진행 예정 🔲**
-- GAS 재배포 확인 후 시트 생성 + 백필 기능 end-to-end 테스트
-- 블록 체크 진행률 시스템 end-to-end 테스트 (실제 사용자 로그인 후)
-- 폼 블록: 파일 업로드 타입 구현 (현재 미구현)
-- 폼 블록: 제출 완료 후 화면(submitMsg) 커스터마이즈
-- tools/booth: 관리자 페이지에서 부스 종류 등록 + 배경 업로드 실제 테스트
-- 계산기 생성기: 실사용 후 UX 피드백 반영
+- **🔲 [다음 세션] 도구 블록 신설 + 폼 도구화** ← 다음 세션 시작점 (아래 상세 설계 참고)
+- GAS 재배포 후 시트 생성 + 백필 end-to-end 테스트
+- 블록 체크 진행률 end-to-end 테스트
 
 **다음 세션 시작점**
-- 계산기 생성기 실사용 피드백 반영
+- 🔲 도구 블록 신설 + 폼 도구화 (아래 "📐 다음 세션 구현 설계" 섹션 전체 참고)
+
+---
+
+### 📐 다음 세션 구현 설계: 도구 블록 신설 + 폼 도구화
+
+> ⚠️ 이 섹션은 다음 세션에서 그대로 구현한다. 의사결정 완료된 설계임. 임의로 축약하거나 변경하지 말 것.
+
+#### 배경 및 목적
+- 현재 `type:'form'` 블록을 제거하고 새 `type:'tool'` 도구 블록으로 통합
+- 폼 관리(필드 빌더, 응답 관리)를 admin 도구 탭으로 이동
+- 도구 블록 완료(lmp-tool-complete) → 진행률 자동 카운트 연동
+
+#### 1. 도구 분류 체계 (앞으로 모든 신규 도구에 적용)
+
+| 분류 | 설명 | 현재 해당 도구 |
+|------|------|--------------|
+| **단일 도구(single)** | 인스턴스 선택 없이 도구 종류만 선택하면 바로 연결 | (현재 없음) |
+| **선택 도구(multi)** | 도구 종류 선택 후 → 생성된 인스턴스 목록에서 하나 선택 | 폼, 꾸미기 도구, 계산기·가이드 |
+
+- admin에서 새 도구를 등록할 때 이 분류를 명시해서 블록 편집 UI가 자동으로 맞춰지게 구현
+
+#### 2. 신규 블록 타입: `type:'tool'`
+
+```javascript
+// Firestore stage_content blocks[] 안의 도구 블록 구조
+{
+  id: uid(),
+  type: 'tool',
+  toolType: 'form' | 'booth' | 'guide',   // 도구 종류
+  toolConfig: {
+    formId: 'xxx',    // form 선택 시: cms_form_configs의 문서 ID
+    boothId: 'xxx',   // booth 선택 시: game_configs/booth booths[] 중 선택한 ID
+    guideId: 'xxx',   // guide 선택 시: game_configs/guide/forms의 문서 ID
+  },
+  height: 0,          // iframe 높이 px (0=자동 → min-height:60vh)
+  order: number,
+  bgColor: '',
+  marginV: 0,
+  marginH: 0,
+  // checkable 필드는 도구 블록에서 무시 (lmp-tool-complete로 대체)
+}
+```
+
+#### 3. 도구별 iframe URL 규칙
+
+| toolType | URL | 비고 |
+|----------|-----|------|
+| `form` | `/tools/form/?id={toolConfig.formId}` | 신규 파일 생성 필요 |
+| `booth` | `/tools/booth/?id={toolConfig.boothId}` | 기존 파일에 id 파라미터 추가 |
+| `guide` | `/tools/guide/?id={toolConfig.guideId}` | 기존 파일에 id 파라미터 수신 확인 |
+
+#### 4. postMessage 프로토콜 확장
+
+**플레이어 → 도구 (기존 lmp-context에 projectId 추가)**
+```javascript
+f.contentWindow.postMessage({
+  type: 'lmp-context',
+  projectId: PROJECT_ID,   // ← 추가 (플레이어 전역변수 PROJECT_ID 사용)
+  boothType: user?.boothType || '',
+  keyColors: KEY_COLORS,
+  userFields: user || {},
+}, '*');
+```
+- PROJECT_ID가 현재 플레이어에 없다면 `loadProjectSettings()` 에서 `let PROJECT_ID = ''` 글로벌 변수로 추가하고 프로젝트 로드 시 설정
+
+**도구 → 플레이어 (완료 신호)**
+```javascript
+// 각 도구에서 완료 시점에 발송
+window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+```
+
+**완료 시점 기준**
+| 도구 | 완료 시점 | 코드 위치 |
+|------|----------|----------|
+| 폼 | 폼 제출 성공 후 | `submitForm()` 성공 분기 |
+| 꾸미기 도구 | "완성" 버튼 클릭 (export 모달 열릴 때) | `openExport()` 함수 첫 줄 |
+| 계산기·가이드 | 결과 화면 렌더링 시 | `showResult()` 함수 첫 줄 |
+
+#### 5. 플레이어 변경 (p/index.html + block-test-demo/ + gmbf-poc/ 동기화 필수)
+
+**checkableCount 계산 수정**
+```javascript
+// 기존 (admin/index.html과 p/index.html 두 곳 모두 수정)
+const actualCnt = blocks.filter(b => b.checkable || b.type === 'form').length;
+// 변경
+const actualCnt = blocks.filter(b => b.checkable || b.type === 'form' || b.type === 'tool').length;
+```
+
+**블록 렌더링에 type:'tool' 추가**
+```javascript
+// blockHtml() 함수 안, type:'embed' 처리 다음에 추가
+if(b.type === 'tool') {
+  const toolUrls = {
+    form:  `/tools/form/?id=${b.toolConfig?.formId||''}`,
+    booth: `/tools/booth/?id=${b.toolConfig?.boothId||''}`,
+    guide: `/tools/guide/?id=${b.toolConfig?.guideId||''}`,
+  };
+  const src = toolUrls[b.toolType] || '';
+  const h = b.height || 0;
+  const heightCss = h ? `height:${h}px` : `min-height:60vh`;
+  return `<iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}"></iframe>`;
+}
+```
+
+**lmp-tool-complete 수신 처리 (window.addEventListener('message') 핸들러에 추가)**
+```javascript
+// 기존 lmp-ready 처리 핸들러와 별개로 또는 같은 핸들러 안에서 분기
+if(e.data?.type === 'lmp-tool-complete') {
+  document.querySelectorAll('iframe[data-tool-block]').forEach(f => {
+    try {
+      if(f.contentWindow === e.source) {
+        autoCheckBlock(f.getAttribute('data-tool-block'));
+      }
+    } catch(_) {}
+  });
+  return;
+}
+```
+
+**autoCheckBlock() 함수 신규 추가**
+```javascript
+function autoCheckBlock(blockId) {
+  if(!blockId) return;
+  const stageId = curStageId;
+  if(!userProgress[stageId]) userProgress[stageId] = new Set();
+  if(userProgress[stageId].has(blockId)) return; // 이미 완료
+  userProgress[stageId].add(blockId);
+  refreshStageProgress();
+  if(!AUTH_ENABLED || !USER_DOC_ID) return;
+  const u = JSON.parse(sessionStorage.getItem('userSession') || '{}');
+  if(!u.stageProgress) u.stageProgress = {};
+  u.stageProgress[stageId] = [...userProgress[stageId]];
+  sessionStorage.setItem('userSession', JSON.stringify(u));
+  db.collection(AUTH_COLLECTION).doc(USER_DOC_ID).update({
+    ['stageProgress.' + stageId]: firebase.firestore.FieldValue.arrayUnion(blockId)
+  }).catch(console.error);
+}
+```
+
+**하위 호환**: `type:'form'` 블록은 기존 inline 렌더링 그대로 유지 (코드 삭제 금지)
+
+#### 6. 신규 파일: tools/form/index.html
+
+- URL 파라미터: `?id={formId}`
+- Firestore에서 `cms_form_configs/{formId}` 읽어 폼 렌더링
+- 스타일: `body { background: transparent }` + 검정(#000) 테두리, lmp-btn 스타일 (부스 도구 방식)
+- lmp-context 수신: projectId, userFields 저장 → 제출 시 포함
+- 제출 저장: `cms_form_responses/{formId}/responses/` 에 `{ submittedAt, projectId, userId, ...fieldValues }`
+- GAS 연동: `formConfig.sheetId` 있으면 기존 submitForm 방식과 동일하게 GAS_URL POST
+- 재제출 방지: `noResubmit=true`면 sessionStorage `form_done_{formId}` 키 확인
+- 제출 성공 시: `window.parent.postMessage({ type: 'lmp-tool-complete' }, '*')` 발송 후 완료 화면 표시
+- 완료 화면: formConfig.submitMsg (HTML) 렌더링
+
+#### 7. 기존 도구 파일 수정
+
+**tools/booth/index.html**
+- `openExport()` 함수 맨 앞에 추가:
+  ```javascript
+  window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+  ```
+- URL 파라미터 `?id={boothId}` 수신 기능 추가 (현재 boothId 개념 미구현 → 추후)
+  - 우선은 무시해도 됨, 도구 블록에서 booth 선택 시 boothId 없이도 동작하게
+
+**tools/guide/index.html**
+- `showResult()` 함수 (결과 화면 렌더링) 맨 앞에 추가:
+  ```javascript
+  window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+  ```
+- URL 파라미터 `?id={guideId}` 수신: 이미 `vs.formId`로 구현됐는지 확인 후 없으면 추가
+
+#### 8. admin/index.html 변경
+
+##### 8-1. 도구 탭에 폼 관리 섹션 추가
+
+도구 탭 안에 "폼" 항목 추가 (꾸미기 도구, 계산기·가이드와 같은 레벨):
+- 폼 목록: `cms_form_configs` 전체 조회, 폼 이름·필드수 표시
+- "새 폼 만들기" 버튼 → 폼 이름 입력 → Firestore에 빈 폼 문서 생성 → 편집 화면으로 이동
+- 폼 편집 화면:
+  - 폼 이름(title) 입력
+  - 필드 빌더 (기존 `#blk-form` 안의 필드 추가/편집/삭제 UI를 여기로 이동)
+  - 제출 버튼 텍스트, 완료 메시지, 재제출 방지, Google Sheet 연결/생성
+  - 응답 보기 (기존 form-resp-modal 기능)
+- 기존 `openFieldModal()`, `saveField()`, `removeField()` 등 폼 블록 전용 함수들을 도구 탭 폼 편집 맥락으로 이동/재활용
+
+##### 8-2. 블록 편집에 "도구" 탭 추가
+
+블록 타입 탭 버튼에 "도구" 추가:
+```html
+<button class="blk-tab" id="btab-tool" onclick="switchBlkTab('tool')">도구</button>
+```
+
+도구 탭 패널 (`#blk-tool`) 구조:
+1. **도구 종류 선택** (라디오 버튼 또는 버튼 그룹):
+   - 폼 / 꾸미기 도구 / 계산기·가이드
+2. **인스턴스 선택 드롭다운** (선택한 도구 종류에 따라 동적 로드):
+   - 폼: `cms_form_configs` 목록 + "도구 탭에서 새 폼 만들기" 링크
+   - 꾸미기 도구: `game_configs/booth` booths[] 목록
+   - 계산기·가이드: `game_configs/guide/forms` 목록
+3. **높이 설정**: px 입력 (0=자동)
+
+##### 8-3. 기존 폼 블록 탭 제거
+
+- `btab-form` 탭 버튼 제거
+- `#blk-form` 패널 제거 (단, 필드 빌더 UI 코드는 도구 탭 폼 편집으로 이전)
+- `form-field-modal` (`#form-field-modal`) 유지 (도구 탭 폼 편집에서 재사용)
+- `form-resp-modal` (`#form-resp-modal`) 유지 (도구 탭으로 이전)
+- `checkableCount` 저장 로직: `b.type==='form'` 조건 유지 (하위 호환)
+
+##### 8-4. 블록 목록 렌더링 수정
+
+```javascript
+// 블록 타입 표시 레이블
+const tl = b.type==='text' ? '텍스트'
+         : b.type==='image' ? '이미지'
+         : b.type==='mixed' ? '혼합'
+         : b.type==='embed' ? '임베드'
+         : b.type==='tool'  ? '도구'
+         : b.type==='form'  ? '폼(구)' : '';  // 레거시 폼 블록 식별
+
+// 도구 블록 서브 라벨
+const subLbl = b.type==='tool'
+  ? `${b.toolType} · ${b.toolConfig?.formId || b.toolConfig?.boothId || b.toolConfig?.guideId || ''}`
+  : b.type==='form' ? (b.formFields?.length ? `필드 ${b.formFields.length}개` : '(필드 없음)') : '';
+```
+
+#### 9. vercel.json 추가
+
+```json
+{ "source": "/tools/form/:path*", "destination": "/tools/form/index.html" }
+```
+기존 `/tools/:path*` 라우팅과 충돌 여부 확인 후 추가 (tools/form이 더 구체적이므로 앞에 배치)
+
+#### 10. 작업 순서 (권장)
+
+1. `tools/form/index.html` 신규 생성
+2. `tools/booth/index.html` — `openExport()` 에 lmp-tool-complete 추가
+3. `tools/guide/index.html` — `showResult()` 에 lmp-tool-complete 추가
+4. `p/index.html` — tool 블록 렌더링 + autoCheckBlock + lmp-tool-complete 수신 + projectId in context
+5. `admin/index.html` — 도구 탭 폼 섹션 추가 + 블록 편집 도구 탭 추가 + 폼 블록 탭 제거
+6. `block-test-demo/index.html`, `gmbf-poc/index.html` — p/와 동기화
+7. `vercel.json` — /tools/form/ 라우팅 추가
+8. CLAUDE.md 갱신 (이 섹션을 완료 항목으로 이동)
 
 ---
 
