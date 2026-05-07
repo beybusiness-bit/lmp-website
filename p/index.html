@@ -91,6 +91,11 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .menu-item:last-child{border-bottom:none;}
 .menu-item:active{opacity:.6;}
 .menu-dot{width:36px;height:36px;border-radius:50%;background:#000;color:var(--menu-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;text-align:center;line-height:1.3;}
+/* user greeting */
+#menu-greeting{display:none;padding:14px 20px 12px;border-bottom:1px solid rgba(0,0,0,.12);font-size:13px;font-weight:700;line-height:1.65;letter-spacing:-.2px;color:var(--menu-bg);background:#000;word-break:keep-all;}
+#prep-greeting{display:none;padding:16px 20px 2px;font-size:13px;font-weight:700;line-height:1.65;letter-spacing:-.2px;color:var(--c);word-break:keep-all;}
+#merged-greeting{display:none;padding:0 0 14px;font-size:13px;font-weight:700;line-height:1.65;letter-spacing:-.2px;color:rgba(255,255,255,.85);word-break:keep-all;}
+#return-greeting{display:none;position:absolute;bottom:calc(100px + 44px + 10px);right:24px;z-index:29;text-align:right;font-size:12px;font-weight:700;line-height:1.5;color:var(--c);max-width:220px;word-break:keep-all;}
 .menu-title{font-size:16px;font-weight:800;color:#000;letter-spacing:-.3px;}
 /* guide viewer */
 .guide-scroll-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
@@ -196,6 +201,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
   <!-- 사이드 메뉴 (separate / merged 공용) -->
   <div id="side-menu">
     <div class="menu-header"><div class="menu-close" onclick="closeMenu()">✕</div></div>
+    <div id="menu-greeting"></div>
     <div id="menu-list"></div>
   </div>
 
@@ -228,11 +234,13 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
     <div id="merged-stage-wrap">
       <div id="merged-edition"></div>
       <div id="merged-dday"></div>
+      <div id="merged-greeting"></div>
       <div id="merged-stage-list"></div>
     </div>
   </div>
 
   <div id="return-btn" onclick="reopenPrep()">↑</div>
+  <div id="return-greeting"></div>
 
   <div id="error-screen">
     <div class="error-msg" id="error-msg">프로젝트를 찾을 수 없어요.</div>
@@ -251,7 +259,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
       <div class="topbar-center" id="topbar-title">준비</div>
       <div class="topbar-right" onclick="closePrep()">↓</div>
     </div>
-    <div class="screen-body"><div id="stage-list"></div></div>
+    <div class="screen-body"><div id="prep-greeting"></div><div id="stage-list"></div></div>
   </div>
 
   <!-- Guide viewer -->
@@ -317,6 +325,7 @@ let AUTH_ENABLED   = false;
 let AUTH_COLLECTION = '';
 let AUTH_FIELDS    = [];
 let AUTH_KEY_FIELD = '';
+let GREETING_TEXT  = '';
 let STAGES         = [];
 let STATS          = [];   // [{id, label, collection, countType, unit, enabled}]
 let ELEMENT_ORDER  = ['edition','logo','dday','stats'];
@@ -399,6 +408,7 @@ function applySettings(d){
   AUTH_COLLECTION = 'cms_users_' + PROJECT_ID;
   AUTH_FIELDS     = d.authFields     || [{key:'name',label:'이름',type:'string',required:true}];
   AUTH_KEY_FIELD  = d.authKeyField   || (AUTH_FIELDS[0]?.key||'name');
+  GREETING_TEXT   = d.greetingText   || '';
   STAGES = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0)).map(s=>({
     id:s.id||'',title:s.title||'',
     trackProgress:!!s.trackProgress,checkableCount:s.checkableCount||0,
@@ -694,6 +704,7 @@ async function confirmAuth(){
       USER_DOC_ID=snap.docs[0].id;
       sessionStorage.setItem('userSession',JSON.stringify({...u,project:PROJECT_ID,_docId:USER_DOC_ID}));
       loadUserProgress(u);
+      applyGreeting(u);
       closeModal('auth-modal');
       if(LAYOUT_TYPE==='merged') renderMergedStages();
       else openPrep();
@@ -723,8 +734,24 @@ function closePrep(){
   history.replaceState(null,'','#');
   if(sessionStorage.getItem('userSession')) showReturnBtn();
 }
-function showReturnBtn(){ const b=document.getElementById('return-btn'); b.style.display='flex'; b.style.background=prepBg; }
-function hideReturnBtn(){ document.getElementById('return-btn').style.display='none'; }
+function showReturnBtn(){
+  const b=document.getElementById('return-btn'); b.style.display='flex'; b.style.background=prepBg;
+  const g=document.getElementById('return-greeting');
+  if(g.textContent) g.style.display='block';
+}
+function hideReturnBtn(){
+  document.getElementById('return-btn').style.display='none';
+  document.getElementById('return-greeting').style.display='none';
+}
+function applyGreeting(userRecord){
+  if(!GREETING_TEXT||!userRecord) return;
+  const text=GREETING_TEXT.replace(/\{\{([^}]+)\}\}/g,(_,k)=>String(userRecord[k.trim()]??''));
+  ['prep-greeting','menu-greeting','merged-greeting'].forEach(id=>{
+    const el=document.getElementById(id); if(el){el.textContent=text;el.style.display='block';}
+  });
+  /* return-greeting: 텍스트만 설정하고 showReturnBtn이 표시 여부 결정 */
+  const rg=document.getElementById('return-greeting'); if(rg) rg.textContent=text;
+}
 
 /* ── Side menu (both layouts) ── */
 function renderMenu(){
@@ -1103,12 +1130,13 @@ async function init(){
   /* merged + auth: show modal immediately */
   if(LAYOUT_TYPE==='merged'&&AUTH_ENABLED){
     if(!loggedIn) openAuthModal();
-    else { renderMergedStages(); await restoreFromHash(saved); }
+    else { applyGreeting(saved); renderMergedStages(); await restoreFromHash(saved); }
   }
   /* separate: restore session */
   if(LAYOUT_TYPE==='separate'){
     if(loggedIn){
       prepBg=sessionStorage.getItem('prepBgColor')||KEY_COLORS[0];
+      applyGreeting(saved);
       await restoreFromHash(saved);
     }
   }

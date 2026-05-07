@@ -425,6 +425,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl">인증 모달 설명</div>
               <input class="fi" id="p-auth-desc" placeholder="예: 신청 시 입력한 휴대폰 번호로 인증해주세요.">
             </div>
+            <div class="sect-head">로그인 후 인사 문구</div>
+            <div class="ed-sect">
+              <div class="ed-lbl">인사 문구 <span style="font-weight:400;opacity:.55;">(로그인한 사용자에게 표시)</span></div>
+              <input class="fi" id="p-greeting-text" placeholder="예: 안녕하세요, {{이름}}님. 환영합니다.">
+              <div id="p-greeting-hint" style="font-size:11px;color:rgba(0,0,0,.45);margin-top:4px;line-height:1.7;">
+                사용 가능한 변수: <span id="p-greeting-vars">—</span><br>
+                예) <code>{{이름}}</code> → 해당 사용자의 이름으로 자동 치환
+              </div>
+            </div>
             <div class="sect-head">사용자 목록</div>
             <div class="ed-sect">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
@@ -1517,6 +1526,9 @@ function renderAuthFields() {
   const sel = document.getElementById('auth-key-sel');
   sel.innerHTML = curAuthFields.map(f=>`<option value="${f.key}"${f.key===curAuthKeyField?' selected':''}>${f.label} (${f.key})</option>`).join('');
   sel.onchange = () => { curAuthKeyField = sel.value; renderAuthFields(); };
+  /* 인사 문구 변수 힌트 */
+  const hint = document.getElementById('p-greeting-vars');
+  if(hint) hint.innerHTML = curAuthFields.map(f=>`<code>{{${f.key}}}</code>`).join(', ') || '—';
 }
 function setAuthKey(key) {
   curAuthKeyField = key;
@@ -1885,8 +1897,9 @@ async function editProject(id) {
     curAuthCollection = 'cms_users_' + id;
     document.getElementById('p-auth-col').value = curAuthCollection;
     updateAuthColDisplay();
-    document.getElementById('p-auth-title').value = d.authTitle||'';
-    document.getElementById('p-auth-desc').value  = d.authDesc||'';
+    document.getElementById('p-auth-title').value   = d.authTitle||'';
+    document.getElementById('p-auth-desc').value    = d.authDesc||'';
+    document.getElementById('p-greeting-text').value = d.greetingText||'';
 
     document.getElementById('proj-del').style.display = 'block';
     updateUrlPreview();
@@ -1929,6 +1942,7 @@ async function saveProject(deploy=true) {
     authKeyField: curAuthKeyField,
     authTitle:    document.getElementById('p-auth-title').value.trim(),
     authDesc:     document.getElementById('p-auth-desc').value.trim(),
+    greetingText: document.getElementById('p-greeting-text').value.trim(),
     bgImages:     curBgImages,
     stages:       curStages.map((s,i)=>({...s,order:i})),
     stats:        curStats,
@@ -1997,6 +2011,7 @@ async function seedTestData() {
     authKeyField: '',
     authTitle: '',
     authDesc: '',
+    greetingText: '',
     bgImages: [],
     stages,
     stats: [],
