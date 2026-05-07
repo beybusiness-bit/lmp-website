@@ -512,6 +512,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div class="pi-name">계산기 생성기</div>
             <div class="pi-meta">질문·숫자입력·결과카드로 맞춤 가이드 제작</div>
           </div>
+          <div class="proj-item" onclick="openTool('youtube-playlist')" style="cursor:pointer;">
+            <div class="pi-name">유튜브 뮤직 재생목록</div>
+            <div class="pi-meta">프로젝트별 곡 신청 현황 조회·CSV 내보내기</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 유튜브 뮤직 재생목록 관리 화면 -->
+      <div id="tool-youtube-playlist-view" style="display:none;flex-direction:column;overflow:hidden;">
+        <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
+          <span class="back-btn" onclick="closeTool()">←</span>
+          <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">유튜브 뮤직 재생목록</span>
+          <div style="margin-left:auto;display:flex;gap:8px;">
+            <button class="prev-btn" onclick="ytExportCSV()" title="CSV 다운로드">CSV</button>
+            <button class="prev-btn" onclick="ytCopyUrls()" title="URL 목록 복사">URL 복사</button>
+          </div>
+        </div>
+        <div style="padding:14px 16px;border-bottom:1.5px solid rgba(0,0,0,.1);flex-shrink:0;display:flex;gap:8px;align-items:center;">
+          <label style="font-size:12px;font-weight:700;white-space:nowrap;">프로젝트</label>
+          <select class="fi-sm" id="yt-proj-sel" style="flex:1;margin-bottom:0;" onchange="ytLoadSubmissions()">
+            <option value="">— 프로젝트 선택 —</option>
+          </select>
+          <button class="prev-btn" onclick="ytLoadSubmissions()">새로고침</button>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:0 16px 20px;">
+          <div id="yt-submissions-list" style="margin-top:12px;">
+            <div style="padding:40px 0;text-align:center;font-size:13px;color:rgba(0,0,0,.4);">프로젝트를 선택하세요.</div>
+          </div>
         </div>
       </div>
 
@@ -813,14 +841,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <div id="bpanel-tool" style="display:none;">
       <div class="ed-lbl" style="margin-bottom:10px;">도구 종류</div>
       <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-        <button class="blk-tab on" id="ttab-form"  onclick="switchToolType('form')"  style="font-size:12px;padding:6px 12px;">폼</button>
-        <button class="blk-tab"    id="ttab-booth" onclick="switchToolType('booth')" style="font-size:12px;padding:6px 12px;">꾸미기 도구</button>
-        <button class="blk-tab"    id="ttab-guide" onclick="switchToolType('guide')" style="font-size:12px;padding:6px 12px;">계산기·가이드</button>
+        <button class="blk-tab on" id="ttab-form"              onclick="switchToolType('form')"              style="font-size:12px;padding:6px 12px;">폼</button>
+        <button class="blk-tab"    id="ttab-booth"             onclick="switchToolType('booth')"             style="font-size:12px;padding:6px 12px;">꾸미기 도구</button>
+        <button class="blk-tab"    id="ttab-guide"             onclick="switchToolType('guide')"             style="font-size:12px;padding:6px 12px;">계산기·가이드</button>
+        <button class="blk-tab"    id="ttab-youtube-playlist"  onclick="switchToolType('youtube-playlist')"  style="font-size:12px;padding:6px 12px;">유튜브 뮤직</button>
       </div>
-      <div class="ed-lbl" style="margin-bottom:6px;">인스턴스 선택</div>
-      <select class="fi-sm" id="tool-inst-sel" style="margin-bottom:4px;cursor:pointer;">
-        <option value="">— 선택하세요 —</option>
-      </select>
+      <div id="tool-inst-section">
+        <div class="ed-lbl" style="margin-bottom:6px;">인스턴스 선택</div>
+        <select class="fi-sm" id="tool-inst-sel" style="margin-bottom:4px;cursor:pointer;">
+          <option value="">— 선택하세요 —</option>
+        </select>
+      </div>
+      <div id="tool-single-notice" style="display:none;font-size:13px;color:rgba(0,0,0,.55);margin-bottom:14px;padding:10px 12px;border:1.5px solid rgba(0,0,0,.1);background:rgba(0,0,0,.03);">
+        단일 도구입니다. 인스턴스 선택 없이 바로 연결됩니다.
+      </div>
       <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:14px;">
         <a id="tool-manage-link" href="#" onclick="openToolManageLink(event)" style="color:rgba(0,0,0,.5);text-decoration:underline;">도구 탭에서 관리하기 →</a>
       </div>
@@ -2588,7 +2622,11 @@ function renderBlockList() {
   if(!curBlocks.length){el.innerHTML=_blkInsertRow(0)+'<div class="empty-msg" style="padding:10px 0;">블록이 없어요.</div>';return;}
   const items=curBlocks.map((b,i)=>{
     const tl=b.type==='text'?'텍스트':b.type==='image'?'이미지':b.type==='mixed'?'혼합':b.type==='embed'?'임베드':b.type==='tool'?'도구':b.type==='spacer'?'스페이서':b.type==='divider'?'구분선':'폼(구)';
-    const toolSubLbl=b.type==='tool'?`${b.toolType||'?'} · ${b.toolConfig?.formId||b.toolConfig?.boothId||b.toolConfig?.guideId||'(미선택)'}` :'';
+    const _ttMap={'form':'폼','booth':'꾸미기','guide':'계산기','youtube-playlist':'유튜브 뮤직'};
+    const _ttLabel=_ttMap[b.toolType]||b.toolType||'?';
+    const _tcId=b.toolConfig?.formId||b.toolConfig?.boothId||b.toolConfig?.guideId||'';
+    const toolSubLbl=b.type==='tool'?(_ttLabel+(_tcId?' · '+_tcId:'')):'';
+
     const pv=b.type==='text'?(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,32):
              b.type==='image'?(b.imageUrl?'[이미지]'+(b.linkUrl?' 🔗':''):'(URL 없음)'):
              b.type==='mixed'?'['+(b.mixedLayout==='split'?'분리':'오버레이')+'] '+(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,22):
@@ -2969,10 +3007,15 @@ function openBlockModal(idx,insertAt){
     curBlkToolType=b.toolType||'form';
     curBlkToolConfig={...b.toolConfig||{}};
     curBlkCompleteTrigger=b.completeTrigger||'tool-signal';
-    ['form','booth','guide'].forEach(k=>{
+    ['form','booth','guide','youtube-playlist'].forEach(k=>{
       const el=document.getElementById('ttab-'+k);
       if(el) el.classList.toggle('on',k===curBlkToolType);
     });
+    const _isSingle=SINGLE_TOOL_TYPES.includes(curBlkToolType);
+    const _instSec=document.getElementById('tool-inst-section');
+    const _singleN=document.getElementById('tool-single-notice');
+    if(_instSec) _instSec.style.display=_isSingle?'none':'';
+    if(_singleN) _singleN.style.display=_isSingle?'':'none';
     const hi=document.getElementById('tool-height');
     if(hi) hi.value=b.height||0;
     document.querySelectorAll('input[name="complete-trigger"]').forEach(r=>{
@@ -3148,12 +3191,17 @@ function switchBlkTab(t){
     });
   }
 }
+const SINGLE_TOOL_TYPES = ['youtube-playlist'];
 function switchToolType(tt){
   curBlkToolType=tt;
-  ['form','booth','guide'].forEach(k=>{
-    document.getElementById('ttab-'+k).classList.toggle('on',k===tt);
+  ['form','booth','guide','youtube-playlist'].forEach(k=>{
+    const el=document.getElementById('ttab-'+k);
+    if(el) el.classList.toggle('on',k===tt);
   });
-  loadToolInstList(tt);
+  const isSingle=SINGLE_TOOL_TYPES.includes(tt);
+  document.getElementById('tool-inst-section').style.display=isSingle?'none':'';
+  document.getElementById('tool-single-notice').style.display=isSingle?'':'none';
+  if(!isSingle) loadToolInstList(tt);
 }
 async function loadToolInstList(tt){
   const sel=document.getElementById('tool-inst-sel');
@@ -3553,6 +3601,7 @@ function openTool(toolId) {
   if(toolId === 'deco') { decoShowList(); }
   if(toolId === 'guide') { gbShowList(); }
   if(toolId === 'form-mgr') { toolFormMgrList(); }
+  if(toolId === 'youtube-playlist') { ytMgrInit(); }
 }
 
 function closeTool() {
@@ -3562,6 +3611,97 @@ function closeTool() {
   }
   document.getElementById('tools-list-view').style.display = '';
 }
+
+/* ════════════════════════════════════════════
+   유튜브 뮤직 재생목록 관리
+════════════════════════════════════════════ */
+let ytSubmissions = [];
+
+async function ytMgrInit() {
+  // 프로젝트 셀렉트 채우기
+  const sel = document.getElementById('yt-proj-sel');
+  sel.innerHTML = '<option value="">— 프로젝트 선택 —</option>';
+  try {
+    const snap = await db.collection('cms_projects').orderBy('name').get();
+    snap.docs.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.id;
+      opt.textContent = d.data().name || d.id;
+      sel.appendChild(opt);
+    });
+  } catch(e) {
+    console.error('[ytMgrInit]', e);
+  }
+  ytSubmissions = [];
+  document.getElementById('yt-submissions-list').innerHTML =
+    '<div style="padding:40px 0;text-align:center;font-size:13px;color:rgba(0,0,0,.4);">프로젝트를 선택하세요.</div>';
+}
+
+async function ytLoadSubmissions() {
+  const projId = document.getElementById('yt-proj-sel').value;
+  const listEl = document.getElementById('yt-submissions-list');
+  if (!projId) {
+    listEl.innerHTML = '<div style="padding:40px 0;text-align:center;font-size:13px;color:rgba(0,0,0,.4);">프로젝트를 선택하세요.</div>';
+    return;
+  }
+  listEl.innerHTML = '<div style="padding:20px 0;text-align:center;font-size:13px;color:rgba(0,0,0,.4);">불러오는 중…</div>';
+  ytSubmissions = [];
+  try {
+    const snap = await db.collection('cms_youtube_submissions').doc(projId).collection('songs')
+      .orderBy('submittedAt', 'desc').limit(200).get();
+    if (snap.empty) {
+      listEl.innerHTML = '<div style="padding:40px 0;text-align:center;font-size:13px;color:rgba(0,0,0,.4);">제출된 곡이 없어요.</div>';
+      return;
+    }
+    ytSubmissions = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+    listEl.innerHTML = `
+      <div style="font-size:12px;font-weight:700;opacity:.45;margin-bottom:10px;">총 ${ytSubmissions.length}곡</div>
+      ${ytSubmissions.map(v => {
+        const ts = v.submittedAt?.toDate ? v.submittedAt.toDate().toLocaleString('ko') : '';
+        const userLabel = v.userFields ? Object.values(v.userFields).filter(Boolean).slice(0,2).join(' · ') : (v.userId || '');
+        return `<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.08);align-items:center;">
+          <img src="${v.thumbnailUrl||''}" style="width:60px;height:40px;object-fit:cover;border:1px solid rgba(0,0,0,.1);flex-shrink:0;background:#f0f0f0;" onerror="this.style.display='none'">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:700;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(v.title||'')}</div>
+            <div style="font-size:11px;color:rgba(0,0,0,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(v.channelTitle||'')}${userLabel?' · '+escHtml(userLabel):''}</div>
+            ${ts?`<div style="font-size:10px;color:rgba(0,0,0,.3);">${escHtml(ts)}</div>`:''}
+          </div>
+          <a href="https://youtu.be/${escHtml(v.videoId||'')}" target="_blank" style="font-size:11px;color:rgba(0,0,0,.5);text-decoration:underline;flex-shrink:0;">▶</a>
+        </div>`;
+      }).join('')}`;
+  } catch(e) {
+    console.error('[ytLoadSubmissions]', e);
+    listEl.innerHTML = '<div style="padding:20px 0;text-align:center;font-size:13px;color:#c00;">불러오기 실패. 다시 시도해주세요.</div>';
+  }
+}
+
+function ytExportCSV() {
+  if (!ytSubmissions.length) { alert('먼저 프로젝트를 선택하고 조회해주세요.'); return; }
+  const headers = ['제목', '채널', '유튜브 URL', '제출일시', '사용자ID', '사용자정보'];
+  const rows = ytSubmissions.map(v => {
+    const ts = v.submittedAt?.toDate ? v.submittedAt.toDate().toLocaleString('ko') : '';
+    const userInfo = v.userFields ? Object.entries(v.userFields).map(([k,val])=>`${k}:${val}`).join(' / ') : '';
+    return [
+      v.title||'', v.channelTitle||'',
+      v.videoId ? `https://youtu.be/${v.videoId}` : '',
+      ts, v.userId||'', userInfo
+    ].map(c => `"${String(c).replace(/"/g,'""')}"`).join(',');
+  });
+  const csv = '﻿' + [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `youtube-songs-${document.getElementById('yt-proj-sel').value}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function ytCopyUrls() {
+  if (!ytSubmissions.length) { alert('먼저 프로젝트를 선택하고 조회해주세요.'); return; }
+  const urls = ytSubmissions.filter(v => v.videoId).map(v => `https://youtu.be/${v.videoId}`).join('\n');
+  navigator.clipboard.writeText(urls).then(() => alert(`${ytSubmissions.length}개 URL이 클립보드에 복사됐어요.`));
+}
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 /* ════════════════════════════════════════════
    폼 생성기 (tool form manager)

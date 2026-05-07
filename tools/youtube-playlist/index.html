@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>유튜브 뮤직 재생목록</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:transparent;color:#000;}
+
+.lmp-btn{display:block;width:100%;padding:14px 18px;background:#000;color:#fff;border:2px solid #000;border-radius:0;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.2px;transition:background .15s,color .15s;}
+.lmp-btn:hover,.lmp-btn:active{background:#fff;color:#000;}
+.lmp-btn:disabled{opacity:.35;cursor:default;}
+.lmp-btn.outline{background:#fff;color:#000;}
+.lmp-btn.outline:hover,.lmp-btn.outline:active{background:#000;color:#fff;}
+.lmp-btn.sm{padding:10px 14px;font-size:13px;}
+
+#app{padding:20px 16px 32px;}
+
+/* 검색 바 */
+.search-row{display:flex;gap:8px;margin-bottom:16px;}
+.search-inp{flex:1;border:2px solid #000;border-radius:0;padding:12px 14px;font-size:15px;font-family:inherit;background:#fff;outline:none;-webkit-appearance:none;}
+.search-inp:focus{box-shadow:0 0 0 3px rgba(0,0,0,.08);}
+.search-btn{flex-shrink:0;padding:12px 16px;background:#000;color:#fff;border:2px solid #000;border-radius:0;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.search-btn:active{background:#fff;color:#000;}
+
+/* 탭 */
+.tab-row{display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid #000;}
+.tab-btn{flex:1;padding:10px 8px;background:#fff;border:none;border-bottom:3px solid transparent;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:-2px;}
+.tab-btn.on{border-bottom-color:#000;}
+
+/* 검색 결과 */
+.result-list{display:flex;flex-direction:column;gap:0;}
+.result-item{display:flex;gap:12px;padding:12px 0;border-bottom:1.5px solid rgba(0,0,0,.1);cursor:pointer;align-items:center;}
+.result-item:last-child{border-bottom:none;}
+.result-item:active{background:rgba(0,0,0,.04);}
+.result-thumb{width:80px;height:52px;object-fit:cover;flex-shrink:0;border:1.5px solid rgba(0,0,0,.1);background:#f0f0f0;}
+.result-info{flex:1;min-width:0;}
+.result-title{font-size:13px;font-weight:700;line-height:1.4;margin-bottom:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.result-ch{font-size:11px;color:rgba(0,0,0,.5);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.result-add-btn{flex-shrink:0;width:32px;height:32px;border:2px solid #000;background:#fff;border-radius:0;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;}
+.result-add-btn.added{background:#000;color:#fff;}
+
+/* 미리듣기 */
+#preview-wrap{margin-bottom:16px;display:none;}
+#preview-wrap.on{display:block;}
+.preview-title{font-size:12px;font-weight:700;opacity:.5;margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase;}
+#preview-iframe{width:100%;height:0;border:none;display:block;}
+#preview-iframe.on{height:180px;}
+.preview-video-title{font-size:13px;font-weight:700;margin-top:8px;line-height:1.4;}
+
+/* 선택 목록 */
+.selected-list{display:flex;flex-direction:column;gap:0;}
+.selected-item{display:flex;gap:10px;padding:10px 0;border-bottom:1.5px solid rgba(0,0,0,.1);align-items:center;}
+.selected-item:last-child{border-bottom:none;}
+.sel-thumb{width:60px;height:40px;object-fit:cover;flex-shrink:0;border:1.5px solid rgba(0,0,0,.1);background:#f0f0f0;}
+.sel-info{flex:1;min-width:0;}
+.sel-title{font-size:12px;font-weight:700;line-height:1.4;margin-bottom:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.sel-ch{font-size:11px;color:rgba(0,0,0,.45);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sel-del-btn{flex-shrink:0;width:28px;height:28px;border:2px solid #000;background:#fff;border-radius:0;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.6;}
+.sel-del-btn:hover,.sel-del-btn:active{opacity:1;background:#000;color:#fff;}
+
+.empty-msg{padding:40px 0;text-align:center;font-size:14px;color:rgba(0,0,0,.4);font-weight:600;line-height:1.6;}
+
+/* 로딩·에러 */
+#loading{padding:60px 20px;text-align:center;font-size:14px;color:rgba(0,0,0,.5);}
+#err-screen{display:none;padding:40px 20px;text-align:center;font-size:14px;color:#c00;font-weight:700;line-height:1.6;}
+#err-screen.on{display:block;}
+
+/* 완료 화면 */
+#done-screen{display:none;padding:40px 16px;text-align:center;}
+#done-screen.on{display:block;}
+.done-icon{font-size:48px;margin-bottom:16px;}
+.done-title{font-size:18px;font-weight:800;margin-bottom:8px;}
+.done-sub{font-size:14px;color:rgba(0,0,0,.5);line-height:1.6;margin-bottom:24px;}
+
+/* 제출 카운트 뱃지 */
+.submit-row{margin-top:20px;}
+.submit-count-label{font-size:12px;font-weight:700;opacity:.5;margin-bottom:8px;text-align:center;}
+
+/* 이전 제출 현황 */
+.prev-section{margin-bottom:20px;}
+.prev-section-title{font-size:12px;font-weight:700;opacity:.45;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase;}
+.prev-list{display:flex;flex-direction:column;gap:0;}
+.prev-item{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.07);align-items:center;}
+.prev-item:last-child{border-bottom:none;}
+.prev-thumb{width:48px;height:32px;object-fit:cover;flex-shrink:0;border:1px solid rgba(0,0,0,.08);background:#f0f0f0;}
+.prev-info{flex:1;min-width:0;}
+.prev-title{font-size:12px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;}
+.prev-ch{font-size:10px;color:rgba(0,0,0,.4);}
+
+/* 로딩 스피너 애니메이션 */
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{width:20px;height:20px;border:2.5px solid rgba(0,0,0,.15);border-top-color:#000;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px;}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  불러오는 중…
+</div>
+<div id="err-screen"></div>
+
+<div id="app" style="display:none;">
+
+  <!-- 이전 제출 현황 -->
+  <div class="prev-section" id="prev-section" style="display:none;">
+    <div class="prev-section-title">내가 신청한 곡</div>
+    <div class="prev-list" id="prev-list"></div>
+  </div>
+
+  <!-- 탭 -->
+  <div class="tab-row">
+    <button class="tab-btn on" id="tab-search" onclick="switchTab('search')">검색</button>
+    <button class="tab-btn" id="tab-selected" onclick="switchTab('selected')">선택 목록 <span id="sel-count-badge"></span></button>
+  </div>
+
+  <!-- 검색 탭 -->
+  <div id="pane-search">
+    <div class="search-row">
+      <input class="search-inp" id="search-inp" type="text" placeholder="곡 이름, 아티스트 검색…" onkeydown="if(event.key==='Enter')doSearch()">
+      <button class="search-btn" onclick="doSearch()">검색</button>
+    </div>
+
+    <!-- 미리듣기 -->
+    <div id="preview-wrap">
+      <div class="preview-title">미리듣기</div>
+      <iframe id="preview-iframe" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+      <div class="preview-video-title" id="preview-title-text"></div>
+    </div>
+
+    <div id="search-status" style="font-size:12px;color:rgba(0,0,0,.4);font-weight:600;margin-bottom:10px;min-height:16px;"></div>
+    <div class="result-list" id="result-list">
+      <div class="empty-msg">검색어를 입력하고 검색 버튼을 눌러주세요.</div>
+    </div>
+    <div id="next-page-wrap" style="margin-top:16px;display:none;">
+      <button class="lmp-btn outline sm" onclick="loadNextPage()">더 보기</button>
+    </div>
+  </div>
+
+  <!-- 선택 목록 탭 -->
+  <div id="pane-selected" style="display:none;">
+    <div class="selected-list" id="selected-list"></div>
+    <div class="submit-row" id="submit-row" style="display:none;">
+      <div class="submit-count-label" id="submit-count-label"></div>
+      <button class="lmp-btn" id="submit-btn" onclick="submitSelected()">신청하기</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- 완료 화면 -->
+<div id="done-screen">
+  <div class="done-icon">🎵</div>
+  <div class="done-title">신청 완료!</div>
+  <div class="done-sub" id="done-sub">곡을 신청해 주셔서 감사해요.</div>
+  <button class="lmp-btn outline" onclick="resetForMore()" style="margin-top:4px;">곡 더 추가하기</button>
+</div>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
+  authDomain: "beyhome-admin.firebaseapp.com",
+  projectId: "beyhome-admin",
+  storageBucket: "beyhome-admin.firebasestorage.app",
+  messagingSenderId: "849320781553",
+  appId: "1:849320781553:web:9d844044e85995c0aa2b50"
+};
+const YT_API_KEY = 'AIzaSyBCTa8cLOUif1Fm2TkpHzNZvdenweQ7K0s';
+
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+
+// context
+let ctxProjectId = '';
+let ctxUserId = '';
+let ctxUserFields = {};
+let ctxReceived = false;
+let resolveCtx;
+const ctxPromise = new Promise(res => { resolveCtx = res; });
+
+window.addEventListener('message', e => {
+  if (e.data?.type !== 'lmp-context') return;
+  ctxProjectId = e.data.projectId || '';
+  ctxUserId = e.data.userId || e.data.userFields?._id || '';
+  ctxUserFields = e.data.userFields || {};
+  if (!ctxReceived) { ctxReceived = true; resolveCtx(); }
+});
+
+// state
+let selectedVideos = [];  // [{videoId, title, channelTitle, thumbnailUrl}]
+let nextPageToken = '';
+let lastQuery = '';
+let curPreviewId = '';
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── 탭 전환 ──
+function switchTab(tab) {
+  document.getElementById('tab-search').classList.toggle('on', tab === 'search');
+  document.getElementById('tab-selected').classList.toggle('on', tab === 'selected');
+  document.getElementById('pane-search').style.display = tab === 'search' ? '' : 'none';
+  document.getElementById('pane-selected').style.display = tab === 'selected' ? '' : 'none';
+  if (tab === 'selected') renderSelectedList();
+}
+
+// ── 선택 목록 뱃지 업데이트 ──
+function updateBadge() {
+  const n = selectedVideos.length;
+  document.getElementById('sel-count-badge').textContent = n ? `(${n})` : '';
+  const submitRow = document.getElementById('submit-row');
+  submitRow.style.display = n > 0 ? '' : 'none';
+  const lbl = document.getElementById('submit-count-label');
+  lbl.textContent = `${n}곡 선택됨`;
+}
+
+// ── 검색 ──
+async function doSearch(pageToken) {
+  const q = document.getElementById('search-inp').value.trim();
+  if (!q) return;
+  if (!pageToken) {
+    lastQuery = q;
+    nextPageToken = '';
+    document.getElementById('result-list').innerHTML = '<div class="empty-msg"><div class="spinner"></div>검색 중…</div>';
+    document.getElementById('search-status').textContent = '';
+    document.getElementById('next-page-wrap').style.display = 'none';
+    setPreview(null);
+  }
+  try {
+    const params = new URLSearchParams({
+      part: 'snippet',
+      q,
+      type: 'video',
+      videoCategoryId: '10',
+      maxResults: '10',
+      key: YT_API_KEY,
+      ...(pageToken ? { pageToken } : {})
+    });
+    const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
+    const data = await res.json();
+    if (data.error) {
+      document.getElementById('result-list').innerHTML = `<div class="empty-msg">검색 오류: ${esc(data.error.message)}</div>`;
+      return;
+    }
+    const items = data.items || [];
+    nextPageToken = data.nextPageToken || '';
+    const statusEl = document.getElementById('search-status');
+    statusEl.textContent = items.length ? `검색 결과 ${items.length}건` : '';
+    if (!items.length) {
+      document.getElementById('result-list').innerHTML = '<div class="empty-msg">검색 결과가 없어요.</div>';
+      return;
+    }
+    const html = items.map(item => {
+      const vid = item.id.videoId;
+      const title = item.snippet.title;
+      const ch = item.snippet.channelTitle;
+      const thumb = item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url || '';
+      const isAdded = selectedVideos.some(v => v.videoId === vid);
+      return `<div class="result-item" onclick="setPreview('${esc(vid)}','${esc(title.replace(/'/g,"\\'"))}')">
+        <img class="result-thumb" src="${esc(thumb)}" alt="" loading="lazy" onerror="this.style.display='none'">
+        <div class="result-info">
+          <div class="result-title">${esc(title)}</div>
+          <div class="result-ch">${esc(ch)}</div>
+        </div>
+        <button class="result-add-btn${isAdded?' added':''}" onclick="event.stopPropagation();toggleAdd('${esc(vid)}','${esc(title.replace(/'/g,"\\'"))}','${esc(ch.replace(/'/g,"\\'"))}','${esc(thumb)}')" title="${isAdded?'제거':'추가'}">${isAdded?'✓':'+'}</button>
+      </div>`;
+    }).join('');
+    if (pageToken) {
+      document.getElementById('result-list').insertAdjacentHTML('beforeend', html);
+    } else {
+      document.getElementById('result-list').innerHTML = html;
+    }
+    document.getElementById('next-page-wrap').style.display = nextPageToken ? '' : 'none';
+  } catch(e) {
+    console.error('[search]', e);
+    document.getElementById('result-list').innerHTML = '<div class="empty-msg">검색에 실패했어요. 잠시 후 다시 시도해주세요.</div>';
+  }
+}
+
+function loadNextPage() {
+  if (nextPageToken) doSearch(nextPageToken);
+}
+
+// ── 미리듣기 ──
+function setPreview(videoId, title) {
+  const wrap = document.getElementById('preview-wrap');
+  const iframe = document.getElementById('preview-iframe');
+  const titleEl = document.getElementById('preview-title-text');
+  if (!videoId || videoId === curPreviewId) {
+    // 동일 영상 클릭 시 토글
+    if (videoId === curPreviewId) {
+      curPreviewId = '';
+      wrap.classList.remove('on');
+      iframe.classList.remove('on');
+      iframe.src = '';
+      titleEl.textContent = '';
+      return;
+    }
+  }
+  curPreviewId = videoId;
+  iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+  iframe.classList.add('on');
+  wrap.classList.add('on');
+  titleEl.textContent = title || '';
+}
+
+// ── 선택 추가/제거 ──
+function toggleAdd(videoId, title, channelTitle, thumbnailUrl) {
+  const idx = selectedVideos.findIndex(v => v.videoId === videoId);
+  if (idx >= 0) {
+    selectedVideos.splice(idx, 1);
+  } else {
+    selectedVideos.push({ videoId, title, channelTitle, thumbnailUrl });
+  }
+  updateBadge();
+  // 버튼 상태 업데이트 (재렌더 없이)
+  document.querySelectorAll(`.result-add-btn`).forEach(btn => {
+    const item = btn.closest('.result-item');
+    if (!item) return;
+    // videoId는 onclick attr에서 추출하기 어려우므로 전체 재렌더
+  });
+  // 현재 결과 목록 버튼 상태 갱신
+  refreshResultButtons();
+}
+
+function refreshResultButtons() {
+  document.querySelectorAll('.result-add-btn').forEach(btn => {
+    const onclick = btn.getAttribute('onclick') || '';
+    const m = onclick.match(/toggleAdd\('([^']+)'/);
+    if (!m) return;
+    const vid = m[1];
+    const isAdded = selectedVideos.some(v => v.videoId === vid);
+    btn.classList.toggle('added', isAdded);
+    btn.textContent = isAdded ? '✓' : '+';
+    btn.title = isAdded ? '제거' : '추가';
+  });
+}
+
+// ── 선택 목록 렌더 ──
+function renderSelectedList() {
+  const el = document.getElementById('selected-list');
+  if (!selectedVideos.length) {
+    el.innerHTML = '<div class="empty-msg">선택한 곡이 없어요.<br>검색 탭에서 곡을 추가해주세요.</div>';
+    document.getElementById('submit-row').style.display = 'none';
+    return;
+  }
+  el.innerHTML = selectedVideos.map((v, i) => `
+    <div class="selected-item">
+      <img class="sel-thumb" src="${esc(v.thumbnailUrl)}" alt="" loading="lazy" onerror="this.style.display='none'">
+      <div class="sel-info">
+        <div class="sel-title">${esc(v.title)}</div>
+        <div class="sel-ch">${esc(v.channelTitle)}</div>
+      </div>
+      <button class="sel-del-btn" onclick="removeSelected(${i})" title="제거">×</button>
+    </div>`).join('');
+  document.getElementById('submit-row').style.display = '';
+  document.getElementById('submit-count-label').textContent = `${selectedVideos.length}곡 선택됨`;
+}
+
+function removeSelected(idx) {
+  selectedVideos.splice(idx, 1);
+  updateBadge();
+  renderSelectedList();
+  refreshResultButtons();
+}
+
+// ── 제출 ──
+async function submitSelected() {
+  if (!selectedVideos.length) return;
+
+  // context 대기 (최대 500ms)
+  if (!ctxReceived) {
+    await Promise.race([ctxPromise, new Promise(r => setTimeout(r, 500))]);
+  }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = '제출 중…';
+
+  try {
+    const now = firebase.firestore.FieldValue.serverTimestamp();
+    const projId = ctxProjectId || 'unknown';
+    const batch = db.batch();
+    const colRef = db.collection('cms_youtube_submissions').doc(projId).collection('songs');
+
+    for (const v of selectedVideos) {
+      const docRef = colRef.doc();
+      const data = {
+        videoId: v.videoId,
+        title: v.title,
+        channelTitle: v.channelTitle,
+        thumbnailUrl: v.thumbnailUrl,
+        submittedAt: now,
+      };
+      if (ctxUserId) data.userId = ctxUserId;
+      if (ctxUserFields && Object.keys(ctxUserFields).length) data.userFields = ctxUserFields;
+      batch.set(docRef, data);
+    }
+    await batch.commit();
+
+    window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+
+    const count = selectedVideos.length;
+    selectedVideos = [];
+    updateBadge();
+
+    document.getElementById('done-sub').textContent = `${count}곡을 신청해 주셔서 감사해요.`;
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('done-screen').classList.add('on');
+
+    // 이후 제출을 위해 이전 제출 목록 갱신
+    loadPrevSubmissions();
+  } catch(e) {
+    console.error('[submit]', e);
+    btn.disabled = false;
+    btn.textContent = '신청하기';
+    alert('제출에 실패했어요. 잠시 후 다시 시도해주세요.');
+  }
+}
+
+// ── 추가 제출 (완료 후 더 추가하기) ──
+function resetForMore() {
+  document.getElementById('done-screen').classList.remove('on');
+  document.getElementById('app').style.display = '';
+  switchTab('search');
+  document.getElementById('search-inp').value = '';
+  document.getElementById('result-list').innerHTML = '<div class="empty-msg">검색어를 입력하고 검색 버튼을 눌러주세요.</div>';
+  setPreview(null);
+  nextPageToken = '';
+  lastQuery = '';
+  loadPrevSubmissions();
+}
+
+// ── 이전 제출 현황 ──
+async function loadPrevSubmissions() {
+  if (!ctxProjectId || !ctxUserId) return;
+  try {
+    const snap = await db.collection('cms_youtube_submissions')
+      .doc(ctxProjectId).collection('songs')
+      .where('userId', '==', ctxUserId)
+      .orderBy('submittedAt', 'desc')
+      .limit(20)
+      .get();
+    if (snap.empty) { document.getElementById('prev-section').style.display = 'none'; return; }
+    const items = snap.docs.map(d => d.data());
+    document.getElementById('prev-list').innerHTML = items.map(v => `
+      <div class="prev-item">
+        <img class="prev-thumb" src="${esc(v.thumbnailUrl||'')}" alt="" loading="lazy" onerror="this.style.display='none'">
+        <div class="prev-info">
+          <div class="prev-title">${esc(v.title)}</div>
+          <div class="prev-ch">${esc(v.channelTitle)}</div>
+        </div>
+      </div>`).join('');
+    document.getElementById('prev-section').style.display = '';
+  } catch(e) {
+    // 조회 실패 시 조용히 숨김
+    document.getElementById('prev-section').style.display = 'none';
+  }
+}
+
+// ── 초기화 ──
+async function init() {
+  // context 대기 (최대 600ms)
+  if (!ctxReceived) {
+    await Promise.race([ctxPromise, new Promise(r => setTimeout(r, 600))]);
+  }
+  await loadPrevSubmissions();
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app').style.display = '';
+  updateBadge();
+}
+
+window.parent.postMessage({ type: 'lmp-ready' }, '*');
+init();
+</script>
+</body>
+</html>
