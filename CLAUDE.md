@@ -454,12 +454,15 @@ closeHelpPanel();
 - **tools/계산기·가이드** (`tools/guide/index.html`): 조건부 계산식 엔진, admin 빌더
 - **admin 도구 탭**: 도구 목록 → 도구별 설정 화면 (꾸미기 도구 구성, 계산기 빌더)
 - **전역 도움말 패널** (`#help-panel`): openHelpPanel() / closeHelpPanel()
-- **✅ 도구 블록 신설 + 폼 도구화** (이번 세션 완료):
+- **✅ 도구 블록 신설 + 폼 도구화**:
   - `tools/form/index.html` 신규 생성: cms_form_configs 기반 폼 도구 iframe
   - `type:'tool'` 블록: 블록 편집 "도구" 탭 → 폼/꾸미기/계산기 선택 → 인스턴스 선택
   - lmp-tool-complete 신호: 도구 완료 시 플레이어가 autoCheckBlock으로 자동 체크
   - admin 도구 탭에 폼 생성기 추가: 폼 목록·생성·편집·필드 빌더·응답 보기
-  - lmp-context에 projectId 추가, p/+block-test-demo+gmbf-poc 동기화
+  - lmp-context에 projectId + userId 추가, p/+block-test-demo+gmbf-poc 동기화
+- **✅ 슬라이드형 도구 블록 스크롤 지원**: tool/embed 슬라이드 아이템에 overflow-y:auto 동적 적용
+- **✅ noResubmit Firestore 기반 중복 방지**: `cms_users_{projectId}/{userId}.formSubmitted_{formId}` 필드로 영구 저장
+- **✅ 도구 블록 완료 조건 관리자 설정**: `completeTrigger` 필드 — `tool-signal`(기본) / `open`(열면 완료) / `manual`(수동 체크만)
 
 **미확인/이슈 🔶**
 - GAS `bulkAppend` 코드: `apps-script/Code.gs`에 추가됐으나 **GAS 편집기에서 재배포 필요**
@@ -467,11 +470,28 @@ closeHelpPanel();
 
 **진행 예정 🔲**
 - GAS 재배포 후 시트 생성 + 백필 end-to-end 테스트
-- 블록 체크 진행률 end-to-end 테스트
 - 도구 블록 end-to-end 테스트 (폼 생성 → 블록 연결 → 플레이어 제출 → 진행률 반영)
+- **유튜브 뮤직 재생목록 도구** (`tools/youtube-playlist/index.html`) 신규 구현
 
 **다음 세션 시작점**
-- 🔲 end-to-end 테스트 및 버그 수정 (도구 블록, 폼 생성기, lmp-tool-complete 흐름 검증)
+- 🔲 유튜브 뮤직 재생목록 도구 구현 (YouTube Data API 키 필요 — 사용자가 발급 후 전달 예정)
+
+#### 📐 유튜브 뮤직 재생목록 도구 설계
+
+- **파일**: `tools/youtube-playlist/index.html` (단일 도구, 인스턴스 선택 없음)
+- **YouTube Data API 키**: 사용자가 Google Cloud Console에서 발급 → 코드에 삽입
+- **기능**:
+  - 인앱 유튜브 검색 (YouTube Data API v3, type=video, videoCategoryId=10 음악)
+  - 검색 결과 목록 (썸네일·제목·채널명)
+  - 선택한 영상 유튜브 플레이어로 미리 듣기 (iframe)
+  - 선택 목록 구성 후 일괄 제출
+  - 누적 제출 가능 (이후 추가 제출 허용, 곡 단위 저장)
+- **Firestore 저장**: `cms_youtube_submissions/{projectId}/songs/{docId}`
+  - `videoId, title, channelTitle, thumbnailUrl, submittedAt, userId (인증 시), userFields`
+- **admin 관리**: 도구 탭에서 제출 목록 조회 + CSV 내보내기 + URL 목록 복사
+- **lmp-tool-complete**: 제출 완료 시 발송
+- **도구 분류**: 단일 도구 (toolType:'youtube-playlist', toolConfig 불필요)
+- **admin 블록 에디터**: 도구 탭에 'youtube-playlist' 옵션 추가 (인스턴스 선택 없음)
 
 ---
 
