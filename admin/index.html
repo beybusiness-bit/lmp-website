@@ -3233,7 +3233,7 @@ function saveBlock(){
   const _mh=parseInt(document.getElementById('blk-margin-h')?.value)||0;
   if(_mv) b.marginV=_mv; else delete b.marginV;
   if(_mh) b.marginH=_mh; else delete b.marginH;
-  if(curBlkVerticalAlign&&curBlkVerticalAlign!=='center') b.verticalAlign=curBlkVerticalAlign; else delete b.verticalAlign;
+  b.verticalAlign = curBlkVerticalAlign||'center';
   b.checkable=!!document.getElementById('blk-checkable-sw')?.classList.contains('on');
   b.checkBeforeText=document.getElementById('blk-check-before')?.value.trim()||'';
   b.checkAfterText=document.getElementById('blk-check-after')?.value.trim()||'';
@@ -3323,10 +3323,20 @@ function openFmtDd(btn,type,ctx){
   _fmtPopType=type;_fmtPopCtx=ctx;
   let html='';
   if(type==='sz'){
-    const cur=_detectSz(ctx);
-    html=[['S',13],['M',16],['L',20],['XL',26]].map(([lbl,px])=>
-      `<button class="fmt-pop-opt${cur===px?' cur':''}" onpointerdown="epd(event)" onclick="applyFmtSz('${ctx}',${px})">${lbl}<span style="font-weight:400;font-size:10px;opacity:.5;margin-left:6px;">${px}px</span></button>`
-    ).join('');
+    const curPx=_detectSzRaw(ctx)||14;
+    const presets=[8,10,12,14,16,18,20,24,28,32,40,48];
+    const presetBtns=presets.map(px=>`<button onpointerdown="epd(event)" onclick="applyFmtSzPx('${ctx}',${px})" style="padding:4px 7px;border:1.5px solid ${curPx===px?'#000':'rgba(0,0,0,.22)'};background:${curPx===px?'#000':'transparent'};color:${curPx===px?'#fff':'#000'};font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">${px}</button>`).join('');
+    html=`<div style="padding:10px 12px 12px;min-width:190px;">
+      <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:8px;">폰트 크기 (px)</div>
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
+        <input id="fmt-sz-inp" type="number" min="6" max="200" value="${curPx}" onpointerdown="epd(event)"
+          style="width:64px;padding:6px 8px;border:2px solid #000;font-size:15px;font-weight:700;outline:none;font-family:inherit;text-align:center;box-sizing:border-box;"
+          oninput="applyFmtSzPx('${ctx}',parseInt(this.value)||0)"
+          onkeydown="if(event.key==='Enter'){applyFmtSzPx('${ctx}',parseInt(this.value)||0);closeFmtPopup();}">
+        <span style="font-size:12px;color:rgba(0,0,0,.5);font-weight:700;">px</span>
+      </div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;">${presetBtns}</div>
+    </div>`;
   } else if(type==='al'){
     const cur=_detectAl();
     html=[['←','left','왼쪽'],['≡','center','가운데'],['→','right','오른쪽']].map(([icon,val,lbl])=>
@@ -3396,12 +3406,11 @@ function applyFmtVar(ctx,key){focusEd(ctx);document.execCommand('insertText',fal
 function syncFmtBar(ctx){
   const bold=document.queryCommandState('bold');
   const boldBtn=document.getElementById('fmt-bold-'+ctx);
-  if(boldBtn){boldBtn.classList.toggle('on',bold);}
+  if(boldBtn) boldBtn.classList.toggle('on',bold);
 
-  const szPx=_detectSz(ctx);
-  const szLbl={13:'S',16:'M',20:'L',26:'XL'};
+  const szPx=_detectSzRaw(ctx);
   const szBtn=document.getElementById('fmt-sz-'+ctx);
-  if(szBtn) szBtn.textContent=szLbl[szPx]||'Aa';
+  if(szBtn) szBtn.textContent=szPx?szPx+'px':'Aa';
 
   const al=_detectAl();
   const alIc={left:'←',center:'≡',right:'→'};
@@ -3421,12 +3430,12 @@ function insertHr(ctx){
   closeFmtPopup();
   scheduleBmPreview();
 }
-function applyFmtSz(ctx,px){
+function applyFmtSzPx(ctx,px){
+  if(!px||isNaN(px)||px<1)return;
   fmtSz(ctx,px);
-  const lbl={13:'S',16:'M',20:'L',26:'XL'};
-  const b=document.getElementById('fmt-sz-'+ctx);if(b)b.textContent=lbl[px]||'Aa';
-  closeFmtPopup();
+  const btn=document.getElementById('fmt-sz-'+ctx);if(btn)btn.textContent=px+'px';
 }
+function applyFmtSz(ctx,px){ applyFmtSzPx(ctx,px); closeFmtPopup(); }
 function applyFmtAlign(ctx,dir){
   fmtAlign(ctx,dir);
   const ic={left:'←',center:'≡',right:'→'};
@@ -3437,14 +3446,14 @@ function applyFmtClr(ctx,clr){
   fmtClr(ctx,clr);
   const dot=document.getElementById('fmt-clr-dot-'+ctx);if(dot)dot.style.background=clr;
 }
-function _detectSz(ctx){
+function _detectSzRaw(ctx){
   try{
     const sel=window.getSelection();if(!sel.rangeCount)return null;
     let n=sel.getRangeAt(0).startContainer;if(n.nodeType===3)n=n.parentElement;
-    const px=parseInt(window.getComputedStyle(n).fontSize);
-    return [13,16,20,26].reduce((a,b)=>Math.abs(b-px)<Math.abs(a-px)?b:a);
+    return parseInt(window.getComputedStyle(n).fontSize)||null;
   }catch(e){return null;}
 }
+function _detectSz(ctx){ return _detectSzRaw(ctx); }
 function _detectAl(){
   if(document.queryCommandValue('justifyCenter')==='true')return 'center';
   if(document.queryCommandValue('justifyRight')==='true')return 'right';
