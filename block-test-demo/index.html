@@ -899,7 +899,9 @@ function renderGuideSlide(blocks){
     const mS=(b.marginV||b.marginH)?`padding:${b.marginV||0}px ${b.marginH||0}px;`:'';
     const bStripped={...b,bgColor:'',marginV:0,marginH:0};
     const inner=attachCheck(blockHtml(bStripped),b);
-    return `<div class="guide-slide-item" style="width:${100/N}%;${bgS}${mS}">${inner}</div>`;
+    const scrollable=(b.type==='tool'||b.type==='embed');
+    const scrollS=scrollable?'overflow-y:auto;justify-content:flex-start;':'';
+    return `<div class="guide-slide-item" style="width:${100/N}%;${bgS}${mS}${scrollS}">${inner}</div>`;
   }).join('');
   track.style.width=(N*100)+'%';
   updateDots(); document.getElementById('guide-slide-body').style.display='flex';
