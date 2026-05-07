@@ -152,6 +152,15 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .guide-slide-item .g-block-mixed-split{flex:1;display:flex;flex-direction:column;min-height:0;}
 .guide-slide-item .g-block-mixed-split .g-split-img{flex-shrink:0;}
 .guide-slide-item .g-block-mixed-split .g-split-text{flex:1;overflow-y:auto;}
+/* 세로 정렬 설정 시: 블록이 자연 높이만 차지 (flex:1 해제) */
+.guide-slide-item[data-valign] .g-block-text,
+.guide-slide-item[data-valign] .g-block-image,
+.guide-slide-item[data-valign] .g-block-mixed-overlay,
+.guide-slide-item[data-valign] .g-block-mixed-split{flex:0 0 auto!important;}
+.guide-slide-item[data-valign] .g-block-text .g-block-text-inner,
+.guide-slide-item[data-valign] .g-block-mixed-split .g-split-text{flex:unset;overflow-y:visible;}
+.guide-slide-item[data-valign] .g-block-image img,
+.guide-slide-item[data-valign] .g-block-mixed-overlay img{height:auto;max-height:100%;}
 /* form block */
 .g-block-form{padding:24px 20px;}
 .ff-wrap{margin-bottom:22px;}
@@ -1018,9 +1027,10 @@ function renderGuideSlide(blocks){
     const inner=attachCheck(blockHtml(bStripped),b);
     const scrollable=(b.type==='tool'||b.type==='embed');
     const vaMap={top:'flex-start',center:'center',bottom:'flex-end'};
+    const va=b.verticalAlign&&b.verticalAlign!=='center'?b.verticalAlign:'';
     const jc=scrollable?'flex-start':(vaMap[b.verticalAlign]||'center');
     const scrollS=scrollable?'overflow-y:auto;':'';
-    return `<div class="guide-slide-item" style="width:${100/N}%;justify-content:${jc};${bgS}${mS}${scrollS}">${inner}</div>`;
+    return `<div class="guide-slide-item"${va?` data-valign="${va}"`:''}  style="width:${100/N}%;justify-content:${jc};${bgS}${mS}${scrollS}">${inner}</div>`;
   }).join('');
   track.style.width=(N*100)+'%';
   updateDots(); document.getElementById('guide-slide-body').style.display='flex';
