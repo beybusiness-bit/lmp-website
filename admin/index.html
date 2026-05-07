@@ -2997,7 +2997,7 @@ function setCheckPos(pos){
   document.querySelectorAll('.chk-pos-btn').forEach(b=>{b.classList.toggle('on',b.dataset.pos===pos);});
 }
 function saveRange(el){if(_fmtPopType)return;const sel=window.getSelection();if(sel.rangeCount)savedRange={el,range:sel.getRangeAt(0).cloneRange()};}
-function restoreRange(el){if(savedRange&&savedRange.el===el){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}}
+function restoreRange(el){if(!savedRange||savedRange.el!==el)return;const sel=window.getSelection();if(sel.rangeCount&&!sel.getRangeAt(0).collapsed&&el.contains(sel.anchorNode))return;sel.removeAllRanges();sel.addRange(savedRange.range);}
 function renderBlkKeyColors(){
   const kc = curKeyColors.length ? curKeyColors.map(k=>k.color||k) : ['#00CE6B','#FFF100'];
   const bgEl = document.getElementById('blk-kc-bg');
