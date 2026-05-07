@@ -745,12 +745,17 @@ async function submitRegistration(){
   try{
     const keyVal=data[AUTH_KEY_FIELD];
     const dup=await db.collection(AUTH_COLLECTION).where(AUTH_KEY_FIELD,'==',keyVal).limit(1).get();
-    if(!dup.empty){ document.getElementById('reg-err').textContent='이미 등록된 정보예요.'; btn.textContent='등록'; btn.disabled=false; return; }
-    const ref=await db.collection(AUTH_COLLECTION).add(data);
-    USER_DOC_ID=ref.id;
-    sessionStorage.setItem('userSession',JSON.stringify({...data,project:PROJECT_ID,_docId:USER_DOC_ID}));
-    loadUserProgress(data);
-    applyGreeting(data);
+    let u, docId;
+    if(!dup.empty){
+      u=dup.docs[0].data(); docId=dup.docs[0].id;
+    } else {
+      const ref=await db.collection(AUTH_COLLECTION).add(data);
+      u=data; docId=ref.id;
+    }
+    USER_DOC_ID=docId;
+    sessionStorage.setItem('userSession',JSON.stringify({...u,project:PROJECT_ID,_docId:USER_DOC_ID}));
+    loadUserProgress(u);
+    applyGreeting(u);
     closeModal('reg-modal');
     if(LAYOUT_TYPE==='merged') renderMergedStages();
     else openPrep();
