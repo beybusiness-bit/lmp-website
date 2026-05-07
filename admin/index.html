@@ -823,6 +823,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-sz-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','text')">Aa</button>
         <button class="fmt-btn" id="fmt-al-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','text')">≡</button>
         <button class="fmt-btn" id="fmt-clr-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','text')" style="padding:5px 7px;"><span id="fmt-clr-dot-text" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+        <button class="fmt-btn" id="fmt-bg-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','text')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-text" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
         <button class="fmt-btn" id="fmt-hr-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','text')" title="구분선 삽입" style="font-size:11px;">—</button>
         <button class="fmt-btn" id="fmt-var-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','text')" style="display:none;font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
       </div>
@@ -926,6 +927,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <button class="fmt-btn" id="fmt-sz-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','formpost')">Aa</button>
           <button class="fmt-btn" id="fmt-al-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','formpost')">≡</button>
           <button class="fmt-btn" id="fmt-clr-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','formpost')" style="padding:5px 7px;"><span id="fmt-clr-dot-formpost" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+          <button class="fmt-btn" id="fmt-bg-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','formpost')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-formpost" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
         </div>
         <div class="ced" id="ced-formpost" contenteditable="true" data-ph="제출 완료 후 표시할 메시지를 입력하세요…" onblur="saveRange(this)" style="min-height:80px;"></div>
       </div>
@@ -953,6 +955,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-sz-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','mixed')">Aa</button>
         <button class="fmt-btn" id="fmt-al-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','mixed')">≡</button>
         <button class="fmt-btn" id="fmt-clr-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','mixed')" style="padding:5px 7px;"><span id="fmt-clr-dot-mixed" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+        <button class="fmt-btn" id="fmt-bg-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','mixed')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-mixed" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
         <button class="fmt-btn" id="fmt-hr-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','mixed')" title="구분선 삽입" style="font-size:11px;">—</button>
         <button class="fmt-btn" id="fmt-var-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','mixed')" style="display:none;font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
       </div>
@@ -3393,6 +3396,23 @@ function openFmtDd(btn,type,ctx){
       </div>
       <div style="display:flex;gap:4px;flex-wrap:wrap;">${sw}</div>
     </div>`;
+  } else if(type==='bg'){
+    const cur=_detectBgClr();
+    const kc=curKeyColors.length?curKeyColors.map(k=>k.color||k):['#00CE6B','#FFF100','#F95548','#0BC6FF'];
+    const sw=kc.map(c=>{const b=c.toLowerCase()==='#ffffff'?'#ccc':'#000';
+      return `<div onpointerdown="epd(event)" onclick="applyFmtBg('${ctx}','${c}')" title="${c}" style="width:20px;height:20px;background:${c};border:2px solid ${b};cursor:pointer;border-radius:2px;flex-shrink:0;"></div>`;
+    }).join('');
+    html=`<div style="padding:10px 10px 8px;min-width:190px;">
+      <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:8px;">텍스트 배경색</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+        <input type="color" value="${cur||'#ffff00'}" onpointerdown="epd(event)" style="width:28px;height:28px;border:1.5px solid #000;padding:0;cursor:pointer;flex-shrink:0;"
+          oninput="applyFmtBg('${ctx}',this.value);document.getElementById('fmt-pop-bg-hex').value=this.value.toUpperCase()">
+        <input id="fmt-pop-bg-hex" class="fi-sm" value="${(cur||'').toUpperCase()}" placeholder="#RRGGBB" style="margin-bottom:0;width:76px;"
+          oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value))applyFmtBg('${ctx}',this.value)">
+        <button onpointerdown="epd(event)" onclick="applyFmtBg('${ctx}','rgba(0,0,0,0)');closeFmtPopup();" style="padding:4px 8px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">없음</button>
+      </div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;">${sw}</div>
+    </div>`;
   } else if(type==='hr'){
     html=`<div style="padding:12px 12px 10px;min-width:200px;">
       <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:8px;">구분선 삽입</div>
@@ -3444,6 +3464,10 @@ function syncFmtBar(ctx){
   const alIc={left:'←',center:'≡',right:'→'};
   const alBtn=document.getElementById('fmt-al-'+ctx);
   if(alBtn) alBtn.textContent=alIc[al]||'≡';
+
+  const bgClr=_detectBgClr();
+  const bgDot=document.getElementById('fmt-bg-dot-'+ctx);
+  if(bgDot) bgDot.style.background=bgClr||'rgba(0,0,0,.18)';
 }
 
 /* ── 텍스트 내 구분선 삽입 ── */
@@ -3474,6 +3498,12 @@ function applyFmtClr(ctx,clr){
   fmtClr(ctx,clr);
   const dot=document.getElementById('fmt-clr-dot-'+ctx);if(dot)dot.style.background=clr;
 }
+function applyFmtBg(ctx,clr){
+  focusEd(ctx);
+  document.execCommand('backColor',false,clr);
+  const dot=document.getElementById('fmt-bg-dot-'+ctx);
+  if(dot) dot.style.background=(clr==='rgba(0,0,0,0)'||clr==='transparent')?'rgba(0,0,0,.18)':clr;
+}
 function _detectSzRaw(ctx){
   try{
     const sel=window.getSelection();if(!sel.rangeCount)return null;
@@ -3497,9 +3527,21 @@ function _detectClr(){
     return '#000000';
   }catch(e){return '#000000';}
 }
+function _detectBgClr(){
+  try{
+    const v=document.queryCommandValue('backColor');
+    if(!v||v==='transparent')return '';
+    const ma=v.match(/^rgba\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/);
+    if(ma)return parseFloat(ma[4])===0?'':'#'+[ma[1],ma[2],ma[3]].map(x=>parseInt(x).toString(16).padStart(2,'0')).join('');
+    const m=v.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+    if(m)return '#'+[m[1],m[2],m[3]].map(x=>parseInt(x).toString(16).padStart(2,'0')).join('');
+    if(/^#/.test(v))return v;
+    return '';
+  }catch(e){return '';}
+}
 document.addEventListener('click',e=>{
   const pop=document.getElementById('fmt-popup');
-  if(pop&&pop.style.display!=='none'&&!pop.contains(e.target)&&!e.target.closest('#fmt-sz-text,#fmt-al-text,#fmt-clr-text,#fmt-hr-text,#fmt-var-text,#fmt-sz-mixed,#fmt-al-mixed,#fmt-clr-mixed,#fmt-hr-mixed,#fmt-var-mixed,#fmt-sz-formpost,#fmt-al-formpost,#fmt-clr-formpost'))
+  if(pop&&pop.style.display!=='none'&&!pop.contains(e.target)&&!e.target.closest('#fmt-sz-text,#fmt-al-text,#fmt-clr-text,#fmt-bg-text,#fmt-hr-text,#fmt-var-text,#fmt-sz-mixed,#fmt-al-mixed,#fmt-clr-mixed,#fmt-bg-mixed,#fmt-hr-mixed,#fmt-var-mixed,#fmt-sz-formpost,#fmt-al-formpost,#fmt-clr-formpost,#fmt-bg-formpost'))
     closeFmtPopup();
 });
 
