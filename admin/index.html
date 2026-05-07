@@ -2880,7 +2880,7 @@ function setCheckPos(pos){
   curCheckPos=pos;
   document.querySelectorAll('.chk-pos-btn').forEach(b=>{b.classList.toggle('on',b.dataset.pos===pos);});
 }
-function saveRange(el){const sel=window.getSelection();if(sel.rangeCount)savedRange={el,range:sel.getRangeAt(0).cloneRange()};}
+function saveRange(el){if(_fmtPopType)return;const sel=window.getSelection();if(sel.rangeCount)savedRange={el,range:sel.getRangeAt(0).cloneRange()};}
 function restoreRange(el){if(savedRange&&savedRange.el===el){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}}
 function renderBlkKeyColors(){
   const kc = curKeyColors.length ? curKeyColors.map(k=>k.color||k) : ['#00CE6B','#FFF100'];
@@ -3164,6 +3164,7 @@ let _fmtPopCtx=null,_fmtPopType=null;
 function openFmtDd(btn,type,ctx){
   const pop=document.getElementById('fmt-popup');
   if(pop.style.display!=='none'&&_fmtPopType===type&&_fmtPopCtx===ctx){closeFmtPopup();return;}
+  const _ed=getEd(ctx);if(_ed)saveRange(_ed);
   _fmtPopType=type;_fmtPopCtx=ctx;
   let html='';
   if(type==='sz'){
