@@ -463,6 +463,16 @@ closeHelpPanel();
 - **✅ 슬라이드형 도구 블록 스크롤 지원**: tool/embed 슬라이드 아이템에 overflow-y:auto 동적 적용
 - **✅ noResubmit Firestore 기반 중복 방지**: `cms_users_{projectId}/{userId}.formSubmitted_{formId}` 필드로 영구 저장
 - **✅ 도구 블록 완료 조건 관리자 설정**: `completeTrigger` 필드 — `tool-signal`(기본) / `open`(열면 완료) / `manual`(수동 체크만)
+- **✅ 블록 텍스트 편집기 기능 확장** (이번 세션):
+  - 체크 완료 텍스트 색상 커스터마이징 (`checkTextColor`)
+  - 슬라이드형 세로정렬 + 긴 텍스트 스크롤 동시 지원 (flex:0 1 auto, min-height:0)
+  - 텍스트 배경색(하이라이트) 지정 (`execCommand('backColor')`)
+  - 이미지 링크 (이미지형 전체 / 혼합형 이미지만), 텍스트 인라인 링크
+  - 선택 없이 커서만 있어도 포맷 미리 적용 (pending span 방식)
+- **✅ 이미지 배치 설정** (이번 세션): 이미지형·혼합형 블록에 배치 방법 선택 추가
+  - 원본비율 / 크롭채움(`cover`) / 비율유지(`contain`) / 늘려채움(`fill`)
+  - 높이(px) 입력 + 9방향 기준점 그리드 (크롭채움·비율유지 시)
+  - Firestore 필드: `imageFit`, `imagePosition`, `imageHeight`
 
 **미확인/이슈 🔶**
 - GAS `bulkAppend` 코드: `apps-script/Code.gs`에 추가됐으나 **GAS 편집기에서 재배포 필요**
@@ -474,7 +484,9 @@ closeHelpPanel();
 - **유튜브 뮤직 재생목록 도구** (`tools/youtube-playlist/index.html`) 신규 구현
 
 **다음 세션 시작점**
+- 🔲 이미지 배치 설정 end-to-end 테스트 (admin 저장 → 플레이어 렌더링 확인)
 - 🔲 유튜브 뮤직 재생목록 도구 구현 (YouTube Data API 키 필요 — 사용자가 발급 후 전달 예정)
+- PAT: 다음 세션 시작 시 사용자에게 요청 (또는 새로 발급)
 
 #### 📐 유튜브 뮤직 재생목록 도구 설계
 
