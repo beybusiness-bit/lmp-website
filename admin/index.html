@@ -429,10 +429,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div class="ed-sect">
               <div class="ed-lbl">인사 문구 <span style="font-weight:400;opacity:.55;">(로그인한 사용자에게 표시)</span></div>
               <input class="fi" id="p-greeting-text" placeholder="예: 안녕하세요, {{이름}}님. 환영합니다.">
-              <div id="p-greeting-hint" style="font-size:11px;color:rgba(0,0,0,.45);margin-top:4px;line-height:1.7;">
-                사용 가능한 변수: <span id="p-greeting-vars">—</span><br>
-                예) <code>{{이름}}</code> → 해당 사용자의 이름으로 자동 치환
-              </div>
+              <div id="p-greeting-vars" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;"></div>
+              <div style="font-size:11px;color:rgba(0,0,0,.38);margin-top:5px;">버튼 클릭 시 커서 위치에 변수 삽입</div>
             </div>
             <div class="sect-head">사용자 목록</div>
             <div class="ed-sect">
@@ -1528,7 +1526,14 @@ function renderAuthFields() {
   sel.onchange = () => { curAuthKeyField = sel.value; renderAuthFields(); };
   /* 인사 문구 변수 힌트 */
   const hint = document.getElementById('p-greeting-vars');
-  if(hint) hint.innerHTML = curAuthFields.map(f=>`<code>{{${f.key}}}</code>`).join(', ') || '—';
+  if(hint) hint.innerHTML = curAuthFields.map(f=>`<button onclick="insertGreetingVar('${f.key}')" style="padding:4px 9px;background:#000;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:2px;">{{${f.key}}}<span style="opacity:.6;font-weight:400;"> ${f.label}</span></button>`).join('');
+}
+function insertGreetingVar(key){
+  const el=document.getElementById('p-greeting-text');
+  const ins=`{{${key}}}`;
+  const s=el.selectionStart??el.value.length, e=el.selectionEnd??el.value.length;
+  el.setRangeText(ins,s,e,'end');
+  el.focus();
 }
 function setAuthKey(key) {
   curAuthKeyField = key;
