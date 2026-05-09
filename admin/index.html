@@ -526,6 +526,168 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div class="pi-name">유튜브 뮤직 재생목록</div>
             <div class="pi-meta">프로젝트별 곡 신청 현황 조회·CSV 내보내기</div>
           </div>
+          <div class="proj-item" onclick="openTool('schedule')" style="cursor:pointer;">
+            <div class="pi-name">일정 잡기</div>
+            <div class="pi-meta">구글 캘린더 연동 예약 슬롯 관리</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 일정 잡기 관리 화면 -->
+      <div id="tool-schedule-view" style="display:none;flex-direction:column;overflow:hidden;">
+        <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
+          <span class="back-btn" id="sc-back-btn" onclick="scBack()">←</span>
+          <span id="sc-header-title" style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">일정 잡기</span>
+          <div style="flex:1;"></div>
+          <div id="sc-header-actions" style="display:flex;gap:6px;"></div>
+        </div>
+
+        <!-- 일정 목록 화면 -->
+        <div id="sc-list-screen" style="padding:16px;overflow-y:auto;flex:1;">
+          <!-- 구글 캘린더 연결 -->
+          <div style="padding:14px;border:2px solid rgba(0,0,0,.12);margin-bottom:16px;">
+            <div style="font-size:12px;font-weight:800;margin-bottom:8px;">📅 구글 캘린더 연결 <span style="font-weight:400;opacity:.5;">(전체 공용)</span></div>
+            <div style="font-size:12px;color:rgba(0,0,0,.55);margin-bottom:10px;line-height:1.6;">GAS에 배포된 구글 계정의 캘린더를 선택합니다. 모든 일정 잡기 도구가 이 캘린더를 사용합니다.</div>
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+              <select class="fi-sm" id="sc-cal-sel" style="flex:1;margin-bottom:0;">
+                <option value="">— 캘린더를 불러오세요 —</option>
+              </select>
+              <button class="prev-btn" onclick="scLoadCalendars()">불러오기</button>
+            </div>
+            <button class="save-btn" style="width:100%;" onclick="scSaveCalendar()">캘린더 저장</button>
+            <div id="sc-cal-saved" style="font-size:11px;color:rgba(0,0,0,.4);margin-top:6px;"></div>
+          </div>
+          <button class="save-btn" onclick="scCreate()" style="width:100%;margin-bottom:16px;">+ 새 일정 만들기</button>
+          <div id="sc-schedule-list"><div class="empty-msg">불러오는 중…</div></div>
+        </div>
+
+        <!-- 일정 편집 화면 -->
+        <div id="sc-edit-screen" style="display:none;flex-direction:column;overflow:hidden;">
+          <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;align-items:center;gap:10px;">
+            <button class="mbtn-cancel" style="flex:0 0 auto;" onclick="scShowList()">← 목록</button>
+            <button class="save-btn" style="flex:1;" onclick="scSave()">저장</button>
+          </div>
+          <div style="padding:16px;overflow-y:auto;flex:1;">
+
+            <!-- 기본 정보 -->
+            <div class="sect-head" style="margin-bottom:8px;">기본 정보</div>
+            <div class="ed-sect">
+              <div class="ed-lbl">일정 제목 <span style="font-weight:400;opacity:.55;">({{변수}} 지원)</span></div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input class="fi" id="sc-title" placeholder="예: {{name}}님의 상담 예약" style="flex:1;margin-bottom:0;">
+                <button class="prev-btn" onclick="scInsertVar('sc-title')">&#123;x&#125;</button>
+              </div>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">일정 설명 <span style="font-weight:400;opacity:.55;">({{변수}} 지원)</span></div>
+              <div style="display:flex;gap:6px;align-items:flex-start;">
+                <textarea class="fi-sm" id="sc-desc" placeholder="예: 30분간 1:1 상담을 진행합니다." rows="3" style="flex:1;resize:vertical;margin-bottom:0;"></textarea>
+                <button class="prev-btn" onclick="scInsertVar('sc-desc')" style="flex-shrink:0;">&#123;x&#125;</button>
+              </div>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">타임존</div>
+              <select class="fi-sm" id="sc-tz" style="margin-bottom:0;">
+                <option value="Asia/Seoul">Asia/Seoul (KST, UTC+9)</option>
+                <option value="Asia/Tokyo">Asia/Tokyo (JST, UTC+9)</option>
+                <option value="America/New_York">America/New_York (EST/EDT)</option>
+                <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+                <option value="Europe/London">Europe/London (GMT/BST)</option>
+                <option value="UTC">UTC</option>
+              </select>
+            </div>
+
+            <!-- 일정 설정 -->
+            <div class="sect-head" style="margin-top:20px;margin-bottom:8px;">일정 설정</div>
+            <div class="ed-sect">
+              <div class="ed-lbl" style="margin-bottom:6px;">진행 시간</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;" id="sc-dur-btns">
+                <button class="img-fit-btn on" data-dur="30" onclick="scSetDur(30)">30분</button>
+                <button class="img-fit-btn" data-dur="60" onclick="scSetDur(60)">60분</button>
+                <button class="img-fit-btn" data-dur="90" onclick="scSetDur(90)">90분</button>
+                <button class="img-fit-btn" data-dur="120" onclick="scSetDur(120)">120분</button>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+                <span style="font-size:12px;color:rgba(0,0,0,.5);">직접 입력:</span>
+                <input class="fi-sm" type="number" id="sc-dur-custom" min="10" max="480" step="5" placeholder="분" style="width:80px;margin-bottom:0;" oninput="scSetDurCustom()">
+                <span style="font-size:12px;color:rgba(0,0,0,.5);">분</span>
+              </div>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl" style="margin-bottom:6px;">예약 가능 기간</div>
+              <div style="display:flex;gap:6px;margin-bottom:10px;">
+                <button class="img-fit-btn on" id="sc-win-range" onclick="scSetWindow('range')">기간 설정</button>
+                <button class="img-fit-btn" id="sc-win-unlimited" onclick="scSetWindow('unlimited')">무기한</button>
+              </div>
+              <div id="sc-win-range-inputs">
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <input class="fi-sm" type="date" id="sc-win-start" style="flex:1;margin-bottom:0;">
+                  <span style="font-size:12px;">~</span>
+                  <input class="fi-sm" type="date" id="sc-win-end" style="flex:1;margin-bottom:0;">
+                </div>
+              </div>
+            </div>
+
+            <!-- 가용 시간 규칙 -->
+            <div class="sect-head" style="margin-top:20px;margin-bottom:4px;">예약 가능 시간대</div>
+            <div class="ed-lbl" style="margin-bottom:10px;color:rgba(0,0,0,.5);">체크된 요일·시간대에만 슬롯이 생성됩니다.</div>
+            <div id="sc-avail-hours" style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px;"></div>
+
+            <!-- 버퍼 규칙 -->
+            <div class="sect-head" style="margin-top:20px;margin-bottom:4px;">버퍼 규칙</div>
+            <div class="ed-lbl" style="margin-bottom:10px;color:rgba(0,0,0,.5);">슬롯 앞뒤로 여유 시간을 두어 연속 예약을 방지합니다.</div>
+            <div class="ed-sect">
+              <div class="ed-lbl" style="margin-bottom:6px;">기존 일정 (구글 캘린더 일정) 앞뒤</div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <span style="font-size:12px;">앞</span>
+                <input class="fi-sm" type="number" id="sc-buf-ex-b" min="0" max="120" placeholder="0" style="width:64px;margin-bottom:0;">
+                <span style="font-size:12px;">분</span>
+                <span style="font-size:12px;">뒤</span>
+                <input class="fi-sm" type="number" id="sc-buf-ex-a" min="0" max="120" placeholder="0" style="width:64px;margin-bottom:0;">
+                <span style="font-size:12px;">분</span>
+              </div>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl" style="margin-bottom:6px;">신규 예약 앞뒤</div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <span style="font-size:12px;">앞</span>
+                <input class="fi-sm" type="number" id="sc-buf-nw-b" min="0" max="120" placeholder="0" style="width:64px;margin-bottom:0;">
+                <span style="font-size:12px;">분</span>
+                <span style="font-size:12px;">뒤</span>
+                <input class="fi-sm" type="number" id="sc-buf-nw-a" min="0" max="120" placeholder="0" style="width:64px;margin-bottom:0;">
+                <span style="font-size:12px;">분</span>
+              </div>
+            </div>
+
+            <!-- 수집 정보 필드 -->
+            <div class="sect-head" style="margin-top:20px;margin-bottom:8px;">수집 정보 필드</div>
+            <div id="sc-field-list"></div>
+            <button class="add-btn" style="font-size:12px;padding:8px 0;margin-top:8px;" onclick="scOpenFieldModal(null)">+ 필드 추가</button>
+
+            <!-- 완료 안내 메시지 -->
+            <div class="sect-head" style="margin-top:20px;margin-bottom:8px;">완료 안내 메시지</div>
+            <div class="ed-sect">
+              <div style="display:flex;gap:6px;align-items:flex-start;">
+                <textarea class="fi-sm" id="sc-confirm-msg" placeholder="예약해 주셔서 감사해요!" rows="3" style="flex:1;resize:vertical;margin-bottom:0;"></textarea>
+                <button class="prev-btn" onclick="scInsertVar('sc-confirm-msg')" style="flex-shrink:0;">&#123;x&#125;</button>
+              </div>
+            </div>
+
+            <!-- 기타 설정 -->
+            <div class="sect-head" style="margin-top:20px;margin-bottom:8px;">기타 설정</div>
+            <div class="ed-sect">
+              <div class="switch-row" style="margin-bottom:0;">
+                <div class="switch" id="sc-no-resubmit-sw" onclick="this.classList.toggle('on')"></div>
+                <span class="switch-lbl">중복 예약 방지 <span style="font-weight:400;opacity:.6;">(로그인 사용자 기준)</span></span>
+              </div>
+            </div>
+
+            <!-- 연결 위치 -->
+            <div class="sect-head" style="margin-top:20px;margin-bottom:4px;">연결 위치</div>
+            <div class="ed-lbl" style="margin-bottom:10px;color:rgba(0,0,0,.5);">이 일정이 연결된 프로젝트·스테이지·블록 목록이에요.</div>
+            <div id="sc-connections"><div class="empty-msg">저장 후 <button class="prev-btn" onclick="scLoadConnections()" style="font-size:11px;vertical-align:middle;">스캔하기</button></div></div>
+
+          </div>
         </div>
       </div>
 
@@ -902,6 +1064,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="blk-tab"    id="ttab-booth"             onclick="switchToolType('booth')"             style="font-size:12px;padding:6px 12px;">꾸미기 도구</button>
         <button class="blk-tab"    id="ttab-guide"             onclick="switchToolType('guide')"             style="font-size:12px;padding:6px 12px;">계산기·가이드</button>
         <button class="blk-tab"    id="ttab-youtube-playlist"  onclick="switchToolType('youtube-playlist')"  style="font-size:12px;padding:6px 12px;">유튜브 뮤직</button>
+        <button class="blk-tab"    id="ttab-schedule"          onclick="switchToolType('schedule')"          style="font-size:12px;padding:6px 12px;">일정 잡기</button>
       </div>
       <div id="tool-inst-section">
         <div class="ed-lbl" style="margin-bottom:6px;">인스턴스 선택</div>
@@ -995,7 +1158,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         </div>
         <div id="mixed-height-row" style="display:none;margin-bottom:8px;">
           <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:3px;">높이 <span style="font-weight:400;">(px, 비워두면 260)</span></div>
-          <input class="fi-sm" id="mixed-height-val" type="number" min="60" max="1200" placeholder="260" style="width:80px;margin-bottom:0;" oninput="scheduleBmPreview()">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input class="fi-sm" id="mixed-height-val" type="number" min="60" max="1200" placeholder="260" style="width:80px;margin-bottom:0;" oninput="curMixedHeightFull=false;document.getElementById('mixed-height-full-btn').classList.remove('on');scheduleBmPreview()">
+            <button class="img-fit-btn" id="mixed-height-full-btn" onpointerdown="epd(event)" onclick="setMixedHeightFull()" style="white-space:nowrap;">전체화면</button>
+          </div>
         </div>
         <div id="mixed-pos-row" style="display:none;">
           <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">기준점</div>
@@ -1010,6 +1176,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <button class="img-pos-btn" data-ctx="mixed" data-pos="center bottom" onpointerdown="epd(event)" onclick="setMixedImgPos('center bottom')">↓</button>
             <button class="img-pos-btn" data-ctx="mixed" data-pos="right bottom" onpointerdown="epd(event)" onclick="setMixedImgPos('right bottom')">↘</button>
           </div>
+        </div>
+      </div>
+      <div id="overlay-valign-row" style="margin-top:10px;margin-bottom:8px;display:none;">
+        <div class="ed-lbl" style="margin-bottom:6px;">텍스트 세로 정렬 <span style="font-weight:400;opacity:.55;">(오버레이형)</span></div>
+        <div style="display:flex;gap:6px;">
+          <button class="img-fit-btn on" id="ova-top"    onclick="setOverlayVAlign('top')"    onpointerdown="epd(event)">상단</button>
+          <button class="img-fit-btn"    id="ova-center" onclick="setOverlayVAlign('center')" onpointerdown="epd(event)">중앙</button>
+          <button class="img-fit-btn"    id="ova-bottom" onclick="setOverlayVAlign('bottom')" onpointerdown="epd(event)">하단</button>
         </div>
       </div>
       <div class="ed-lbl" style="margin-top:10px;margin-bottom:8px;">텍스트</div>
@@ -2756,7 +2930,7 @@ function renderBlockList() {
   if(!curBlocks.length){el.innerHTML=_blkInsertRow(0)+'<div class="empty-msg" style="padding:10px 0;">블록이 없어요.</div>';return;}
   const items=curBlocks.map((b,i)=>{
     const tl=b.type==='text'?'텍스트':b.type==='image'?'이미지':b.type==='mixed'?'혼합':b.type==='embed'?'임베드':b.type==='tool'?'도구':b.type==='spacer'?'스페이서':b.type==='divider'?'구분선':'폼(구)';
-    const _ttMap={'form':'폼','booth':'꾸미기','guide':'계산기','youtube-playlist':'유튜브 뮤직'};
+    const _ttMap={'form':'폼','booth':'꾸미기','guide':'계산기','youtube-playlist':'유튜브 뮤직','schedule':'일정잡기'};
     const _ttLabel=_ttMap[b.toolType]||b.toolType||'?';
     const _tcId=b.toolConfig?.formId||b.toolConfig?.boothId||b.toolConfig?.guideId||'';
     const toolSubLbl=b.type==='tool'?(_ttLabel+(_tcId?' · '+_tcId:'')):'';
@@ -2883,6 +3057,10 @@ function saveFormField() {
   if(formFieldCtx==='tool'){
     tfFields=curFormFields;
     renderTfFieldList();
+    formFieldCtx='block';
+  } else if(formFieldCtx==='schedule'){
+    scFields=curFormFields;
+    scRenderFieldList();
     formFieldCtx='block';
   } else {
     renderFormFields();
@@ -3077,13 +3255,14 @@ function exportRespCsv() {
 }
 
 /* ── Block editor ── */
-let curBlkIdx=null,curBlkInsertAt=null,curBlkType='text',curMixedLayout='overlay',savedRange=null;
+let curBlkIdx=null,curBlkInsertAt=null,curBlkType='text',curMixedLayout='overlay',curOverlayVAlign='bottom',savedRange=null;
 let curBlkBgColor='';
 let curBlkCheckColor='';
 let curBlkCheckTextColor='';
 let curBlkVerticalAlign='center';
 let curImgFit='natural',curImgPos='center';
-let curMixedImgFit='cover',curMixedImgPos='center';
+let curMixedImgFit='cover',curMixedImgPos='center',curMixedHeightFull=false;
+function setMixedHeightFull(){curMixedHeightFull=true;document.getElementById('mixed-height-val').value='';document.getElementById('mixed-height-full-btn').classList.add('on');scheduleBmPreview();}
 function setImgFit(fit){
   curImgFit=fit;
   document.querySelectorAll('.img-fit-btn[data-ctx="img"]').forEach(b=>b.classList.toggle('on',b.dataset.fit===fit));
@@ -3199,7 +3378,7 @@ function openBlockModal(idx,insertAt){
     curBlkToolType=b.toolType||'form';
     curBlkToolConfig={...b.toolConfig||{}};
     curBlkCompleteTrigger=b.completeTrigger||'tool-signal';
-    ['form','booth','guide','youtube-playlist'].forEach(k=>{
+    ['form','booth','guide','youtube-playlist','schedule'].forEach(k=>{
       const el=document.getElementById('ttab-'+k);
       if(el) el.classList.toggle('on',k===curBlkToolType);
     });
@@ -3233,8 +3412,10 @@ function openBlockModal(idx,insertAt){
   const _ihv=document.getElementById('img-height-val'); if(_ihv) _ihv.value=b.type==='image'?(b.imageHeight||''):'';
   setMixedImgFit(b.type==='mixed'?(b.imageFit||'cover'):'cover');
   setMixedImgPos(b.type==='mixed'?(b.imagePosition||'center'):'center');
-  const _mhv=document.getElementById('mixed-height-val'); if(_mhv) _mhv.value=b.type==='mixed'?(b.imageHeight||''):'';
-  setMixedLayout(curMixedLayout);savedRange=null;
+  curMixedHeightFull=b.type==='mixed'&&b.imageHeight==='full';
+  const _mhv=document.getElementById('mixed-height-val'); if(_mhv) _mhv.value=b.type==='mixed'&&b.imageHeight!=='full'?(b.imageHeight||''):'';
+  const _mhfb=document.getElementById('mixed-height-full-btn'); if(_mhfb) _mhfb.classList.toggle('on',curMixedHeightFull);
+  curOverlayVAlign=b.type==='mixed'?(b.overlayTextVAlign||'bottom'):'bottom';setOverlayVAlign(curOverlayVAlign);setMixedLayout(curMixedLayout);savedRange=null;
   /* spacer 블록 */
   const _sh=document.getElementById('blk-spacer-height');
   if(_sh) _sh.value=b.type==='spacer'?(b.spacerHeight||40):40;
@@ -3291,7 +3472,8 @@ function _buildCurrentBlock(){
     b.textContent=document.getElementById('ced-mixed')?.innerHTML||'';
     b.mixedLayout=curMixedLayout;
     b.imageFit=curMixedImgFit; b.imagePosition=curMixedImgPos;
-    const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0; if(_mh) b.imageHeight=_mh;
+    if(curMixedHeightFull){b.imageHeight='full';}else{const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0; if(_mh) b.imageHeight=_mh;}
+    if(curMixedLayout==='overlay') b.overlayTextVAlign=curOverlayVAlign||'bottom';
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url')?.value||'';
     b.embedHeight=document.getElementById('embed-height-auto')?.checked?0:(parseInt(document.getElementById('embed-height')?.value)||500);
@@ -3343,8 +3525,8 @@ function saveBlock(){
     b.textContent=document.getElementById('ced-mixed').innerHTML;
     b.mixedLayout=curMixedLayout;
     b.imageFit=curMixedImgFit||'cover'; b.imagePosition=curMixedImgPos||'center';
-    const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0;
-    if(_mh) b.imageHeight=_mh; else delete b.imageHeight;
+    if(curMixedHeightFull){b.imageHeight='full';}else{const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0;if(_mh) b.imageHeight=_mh; else delete b.imageHeight;}
+    if(curMixedLayout==='overlay') b.overlayTextVAlign=curOverlayVAlign||'bottom'; else delete b.overlayTextVAlign;
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url').value.trim();
     b.embedHeight=document.getElementById('embed-height-auto').checked?0:(parseInt(document.getElementById('embed-height').value)||500);
@@ -3354,6 +3536,7 @@ function saveBlock(){
     if(curBlkToolType==='form') tc.formId=selV;
     else if(curBlkToolType==='booth') tc.boothId=selV;
     else if(curBlkToolType==='guide') tc.guideId=selV;
+    else if(curBlkToolType==='schedule') tc.scheduleId=selV;
     b.toolType=curBlkToolType;
     b.toolConfig=tc;
     b.height=parseInt(document.getElementById('tool-height')?.value)||0;
@@ -3409,10 +3592,10 @@ function switchBlkTab(t){
     });
   }
 }
-const SINGLE_TOOL_TYPES = ['youtube-playlist'];
+const SINGLE_TOOL_TYPES = ['youtube-playlist']; // schedule은 multi(인스턴스 선택)
 function switchToolType(tt){
   curBlkToolType=tt;
-  ['form','booth','guide','youtube-playlist'].forEach(k=>{
+  ['form','booth','guide','youtube-playlist','schedule'].forEach(k=>{
     const el=document.getElementById('ttab-'+k);
     if(el) el.classList.toggle('on',k===tt);
   });
@@ -3436,9 +3619,12 @@ async function loadToolInstList(tt){
     } else if(tt==='guide'){
       const snap=await db.collection('game_configs').where('_type','==','guide_form').get();
       toolInstList=snap.docs.map(d=>({id:d.id,...d.data()}));
+    } else if(tt==='schedule'){
+      const snap=await db.collection('cms_schedule_configs').orderBy('createdAt','desc').get();
+      toolInstList=snap.docs.map(d=>({id:d.id,...d.data()}));
     }
   }catch(e){ console.error('[loadToolInstList]',e); }
-  const cur=tt==='form'?curBlkToolConfig?.formId:tt==='booth'?curBlkToolConfig?.boothId:curBlkToolConfig?.guideId;
+  const cur=tt==='form'?curBlkToolConfig?.formId:tt==='booth'?curBlkToolConfig?.boothId:tt==='guide'?curBlkToolConfig?.guideId:tt==='schedule'?curBlkToolConfig?.scheduleId:'';
   sel.innerHTML='<option value="">— 선택하세요 —</option>'+toolInstList.map(x=>`<option value="${x.id}"${x.id===cur?' selected':''}>${x.name||x.title||x.id}</option>`).join('');
 }
 function openToolManageLink(e){
@@ -3446,7 +3632,8 @@ function openToolManageLink(e){
   document.getElementById('block-modal').classList.remove('on');
   openTool('form-mgr');
 }
-function setMixedLayout(l){curMixedLayout=l;document.getElementById('ml-overlay').classList.toggle('on',l==='overlay');document.getElementById('ml-split').classList.toggle('on',l==='split');}
+function setMixedLayout(l){curMixedLayout=l;document.getElementById('ml-overlay').classList.toggle('on',l==='overlay');document.getElementById('ml-split').classList.toggle('on',l==='split');const ovRow=document.getElementById('overlay-valign-row');if(ovRow)ovRow.style.display=l==='overlay'?'':'none';}
+function setOverlayVAlign(v){curOverlayVAlign=v;['top','center','bottom'].forEach(k=>document.getElementById('ova-'+k)?.classList.toggle('on',k===v));scheduleBmPreview();}
 function toggleEmbedHeightAuto(checked){document.getElementById('embed-height-wrap').style.display=checked?'none':'';}
 
 function getEd(ctx){
@@ -3785,13 +3972,17 @@ function gBlockHtml(b,S){
     return `<div style="${mS}${bgS}"><img src="${b.imageUrl||''}" style="${imgS}" alt=""></div>`;
   }
   if(b.type==='mixed'){
-    const mfit=b.imageFit||'cover', mpos=b.imagePosition||'center', mih=Math.round((b.imageHeight||260)*S);
+    const mfit=b.imageFit||'cover', mpos=b.imagePosition||'center';
+    const _rawMih=b.imageHeight==='full'?null:(b.imageHeight||260);
+    const mih=_rawMih?Math.round(_rawMih*S):Math.round(260*S);
+    const mihCss=b.imageHeight==='full'?'min-height:200px;':`height:${mih}px;`;
     if(b.mixedLayout==='split'){
-      const spS=mfit==='natural'?`width:100%;display:block;max-height:${mih}px;object-fit:contain;object-position:${mpos};margin-bottom:${Math.round(6*S)}px;`:`width:100%;height:${mih}px;object-fit:${mfit};object-position:${mpos};display:block;margin-bottom:${Math.round(6*S)}px;`;
+      const spS=mfit==='natural'?`width:100%;display:block;max-height:${mih}px;object-fit:contain;object-position:${mpos};margin-bottom:${Math.round(6*S)}px;`:`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;margin-bottom:${Math.round(6*S)}px;`;
       return `<div style="${mS}${bgS}${pad}"><img src="${b.imageUrl||''}" style="${spS}" alt=""><div style="${txS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div></div>`;
     }
-    const ovS=mfit==='natural'?'width:100%;display:block;':`width:100%;height:${mih}px;object-fit:${mfit};object-position:${mpos};display:block;`;
-    return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="${ovS}" alt=""><div style="position:absolute;inset:0;display:flex;align-items:flex-end;${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;">${b.textContent||''}</div></div></div>`;
+    const ovS=mfit==='natural'?'width:100%;display:block;':`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;`;
+    const _ova=b.overlayTextVAlign||'bottom';const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};const _ai=_aiMap[_ova]||'flex-end';const _grad={top:`to bottom`,center:`to bottom, transparent 0%,rgba(0,0,0,.55) 50%,transparent 100%`,bottom:`to top`}[_ova];const _gradFull=_ova==='center'?`linear-gradient(${_grad})`:`linear-gradient(${_grad},rgba(0,0,0,.65) 0%,transparent 60%)`;
+    return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="${ovS}" alt=""><div style="position:absolute;inset:0;display:flex;align-items:${_ai};background:${_gradFull};${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;">${b.textContent||''}</div></div></div>`;
   }
   if(b.type==='embed'){
     if(!b.embedUrl) return `<div style="${mS}${bgS}${pad};text-align:center;font-size:${Math.round(11*S)}px;color:rgba(0,0,0,.4);">임베드 URL 없음</div>`;
@@ -4016,6 +4207,7 @@ function openTool(toolId) {
   if(toolId === 'guide') { gbShowList(); }
   if(toolId === 'form-mgr') { toolFormMgrList(); }
   if(toolId === 'youtube-playlist') { ytMgrInit(); }
+  if(toolId === 'schedule') { scInit(); }
 }
 
 function closeTool() {
@@ -4024,6 +4216,311 @@ function closeTool() {
     curTool = null;
   }
   document.getElementById('tools-list-view').style.display = '';
+}
+
+/* ════════════════════════════════════════════
+   일정 잡기 관리 (Schedule Manager)
+════════════════════════════════════════════ */
+const SC_DAYS = ['일','월','화','수','목','금','토'];
+let scCurId = null;
+let scFields = [];
+let scDuration = 30;
+let scWindowType = 'range';
+let scAvailHours = [
+  {day:1,enabled:true,start:'09:00',end:'18:00'},
+  {day:2,enabled:true,start:'09:00',end:'18:00'},
+  {day:3,enabled:true,start:'09:00',end:'18:00'},
+  {day:4,enabled:true,start:'09:00',end:'18:00'},
+  {day:5,enabled:true,start:'09:00',end:'18:00'},
+  {day:6,enabled:false,start:'09:00',end:'18:00'},
+  {day:0,enabled:false,start:'09:00',end:'18:00'},
+];
+
+async function scInit() {
+  scShowList();
+  const calSnap = await db.collection('cms_admin_settings').doc('google_calendar').get().catch(()=>null);
+  if(calSnap?.exists) {
+    const d = calSnap.data();
+    const sel = document.getElementById('sc-cal-sel');
+    if(d.calendarId) {
+      sel.innerHTML = `<option value="${d.calendarId}">${d.calendarName||d.calendarId}</option>`;
+      document.getElementById('sc-cal-saved').textContent = '연결됨: ' + (d.calendarName||d.calendarId);
+    }
+  }
+}
+
+async function scLoadCalendars() {
+  const sel = document.getElementById('sc-cal-sel');
+  sel.innerHTML = '<option value="">불러오는 중…</option>';
+  try {
+    const res = await fetch(GAS_URL + '?action=getCalendars');
+    const data = await res.json();
+    if(!data.success) throw new Error(data.error);
+    sel.innerHTML = '<option value="">— 캘린더 선택 —</option>' +
+      data.calendars.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  } catch(e) { sel.innerHTML = '<option value="">불러오기 실패: ' + e.message + '</option>'; }
+}
+
+async function scSaveCalendar() {
+  const sel = document.getElementById('sc-cal-sel');
+  const id = sel.value;
+  const name = sel.options[sel.selectedIndex]?.text || id;
+  if(!id) { alert('캘린더를 선택해주세요.'); return; }
+  try {
+    await db.collection('cms_admin_settings').doc('google_calendar').set({ calendarId:id, calendarName:name }, { merge:true });
+    document.getElementById('sc-cal-saved').textContent = '저장됨: ' + name;
+  } catch(e) { alert('저장 실패: ' + e.message); }
+}
+
+function scBack() { closeTool(); }
+
+function scShowList() {
+  scCurId = null;
+  document.getElementById('sc-list-screen').style.display = '';
+  document.getElementById('sc-edit-screen').style.display = 'none';
+  document.getElementById('sc-header-title').textContent = '일정 잡기';
+  document.getElementById('sc-header-actions').innerHTML = '';
+  loadScList();
+}
+
+async function loadScList() {
+  const el = document.getElementById('sc-schedule-list');
+  if(!el) return;
+  el.innerHTML = '<div class="empty-msg">불러오는 중…</div>';
+  try {
+    const snap = await db.collection('cms_schedule_configs').orderBy('createdAt','desc').get();
+    if(!snap.docs.length) { el.innerHTML = '<div class="empty-msg">일정이 없어요. 새 일정을 만들어보세요.</div>'; return; }
+    el.innerHTML = snap.docs.map(d => {
+      const data = d.data();
+      const durLabel = data.duration ? `${data.duration}분` : '30분';
+      return `<div class="proj-item" style="cursor:pointer;" onclick="scEdit('${d.id}')">
+        <div class="pi-name">${data.title||'(제목 없음)'}</div>
+        <div class="pi-meta">${durLabel} · 필드 ${(data.fields||[]).length}개</div>
+        <div class="blk-acts" style="margin-top:6px;">
+          <button class="b-btn" onclick="event.stopPropagation();scViewBookings('${d.id}')">📋 예약 현황</button>
+          <button class="b-btn" onclick="event.stopPropagation();if(confirm('이 일정을 삭제할까요?'))scDelete('${d.id}')">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = '<div class="empty-msg">불러오기 실패</div>'; }
+}
+
+async function scCreate() {
+  const name = prompt('새 일정 이름을 입력하세요.');
+  if(!name) return;
+  try {
+    const ref = await db.collection('cms_schedule_configs').add({
+      title: name, description: '', timezone: 'Asia/Seoul',
+      duration: 30, bookingWindow: { type:'range', start:null, end:null },
+      availableHours: [{day:1,start:'09:00',end:'18:00'},{day:2,start:'09:00',end:'18:00'},{day:3,start:'09:00',end:'18:00'},{day:4,start:'09:00',end:'18:00'},{day:5,start:'09:00',end:'18:00'}],
+      bufferExisting: {before:0,after:0}, bufferNew: {before:0,after:0},
+      fields: [], confirmMsg: '예약해 주셔서 감사해요!', noResubmit: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    scEdit(ref.id);
+  } catch(e) { alert('생성 실패: ' + e.message); }
+}
+
+async function scEdit(docId) {
+  scCurId = docId;
+  document.getElementById('sc-list-screen').style.display = 'none';
+  document.getElementById('sc-edit-screen').style.display = 'flex';
+  document.getElementById('sc-edit-screen').style.flexDirection = 'column';
+  document.getElementById('sc-header-title').textContent = '일정 편집';
+  document.getElementById('sc-header-actions').innerHTML =
+    `<button class="prev-btn" onclick="scViewBookings('${docId}')">📋 예약</button>`;
+  try {
+    const snap = await db.collection('cms_schedule_configs').doc(docId).get();
+    const d = snap.data() || {};
+    scFields = JSON.parse(JSON.stringify(d.fields || []));
+    scDuration = d.duration || 30;
+    scWindowType = d.bookingWindow?.type || 'range';
+
+    document.getElementById('sc-title').value = d.title || '';
+    document.getElementById('sc-desc').value = d.description || '';
+    document.getElementById('sc-tz').value = d.timezone || 'Asia/Seoul';
+    scSetDur(scDuration, true);
+    scSetWindow(scWindowType);
+    if(d.bookingWindow?.start) {
+      const s = d.bookingWindow.start.toDate ? d.bookingWindow.start.toDate() : new Date(d.bookingWindow.start);
+      document.getElementById('sc-win-start').value = s.toISOString().slice(0,10);
+    }
+    if(d.bookingWindow?.end) {
+      const e = d.bookingWindow.end.toDate ? d.bookingWindow.end.toDate() : new Date(d.bookingWindow.end);
+      document.getElementById('sc-win-end').value = e.toISOString().slice(0,10);
+    }
+    document.getElementById('sc-buf-ex-b').value = d.bufferExisting?.before || 0;
+    document.getElementById('sc-buf-ex-a').value = d.bufferExisting?.after || 0;
+    document.getElementById('sc-buf-nw-b').value = d.bufferNew?.before || 0;
+    document.getElementById('sc-buf-nw-a').value = d.bufferNew?.after || 0;
+    document.getElementById('sc-confirm-msg').value = d.confirmMsg || '';
+    document.getElementById('sc-no-resubmit-sw').classList.toggle('on', !!d.noResubmit);
+
+    // 가용 시간 규칙 — Firestore 데이터 기반 재구성
+    const savedHours = d.availableHours || [];
+    scAvailHours = [1,2,3,4,5,6,0].map(day => {
+      const found = savedHours.find(r => r.day === day);
+      return { day, enabled: !!found, start: found?.start || '09:00', end: found?.end || '18:00' };
+    });
+    scRenderAvailHours();
+    scRenderFieldList();
+  } catch(e) { alert('로드 실패: ' + e.message); }
+}
+
+function scRenderAvailHours() {
+  const el = document.getElementById('sc-avail-hours');
+  el.innerHTML = scAvailHours.map((r,i) => `
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="switch${r.enabled?' on':''}" style="flex-shrink:0;width:32px;height:18px;" onclick="scToggleDay(${i})"></div>
+      <span style="font-size:13px;font-weight:700;width:18px;flex-shrink:0;">${SC_DAYS[r.day]}</span>
+      <input type="time" value="${r.start}" style="border:1.5px solid rgba(0,0,0,.3);padding:4px 6px;font-size:12px;font-family:inherit;width:90px;${r.enabled?'':'opacity:.3;'}" onchange="scAvailHours[${i}].start=this.value" ${r.enabled?'':'disabled'}>
+      <span style="font-size:12px;color:rgba(0,0,0,.4);">~</span>
+      <input type="time" value="${r.end}" style="border:1.5px solid rgba(0,0,0,.3);padding:4px 6px;font-size:12px;font-family:inherit;width:90px;${r.enabled?'':'opacity:.3;'}" onchange="scAvailHours[${i}].end=this.value" ${r.enabled?'':'disabled'}>
+    </div>`).join('');
+}
+
+function scToggleDay(i) {
+  scAvailHours[i].enabled = !scAvailHours[i].enabled;
+  scRenderAvailHours();
+}
+
+function scSetDur(dur, noRender) {
+  scDuration = dur;
+  document.querySelectorAll('#sc-dur-btns .img-fit-btn').forEach(b => b.classList.toggle('on', +b.dataset.dur === dur));
+  const custom = document.getElementById('sc-dur-custom');
+  const presets = [30,60,90,120];
+  if(custom && !presets.includes(dur)) custom.value = dur;
+  else if(custom && !noRender) custom.value = '';
+}
+function scSetDurCustom() {
+  const v = parseInt(document.getElementById('sc-dur-custom').value) || 0;
+  if(v >= 10) { scDuration = v; document.querySelectorAll('#sc-dur-btns .img-fit-btn').forEach(b=>b.classList.remove('on')); }
+}
+function scSetWindow(type) {
+  scWindowType = type;
+  document.getElementById('sc-win-range').classList.toggle('on', type==='range');
+  document.getElementById('sc-win-unlimited').classList.toggle('on', type==='unlimited');
+  document.getElementById('sc-win-range-inputs').style.display = type==='range' ? '' : 'none';
+}
+
+function scInsertVar(targetId) {
+  const el = document.getElementById(targetId);
+  if(!el) return;
+  const vars = Object.keys(curAuthFields||{}).length
+    ? Object.keys(curAuthFields).map(k=>`{{${k}}}`).join(' ')
+    : '{{name}}';
+  const pick = prompt('삽입할 변수키를 입력하세요. (예: name)', 'name');
+  if(!pick) return;
+  const tag = `{{${pick.trim()}}}`;
+  const s = el.selectionStart, e2 = el.selectionEnd;
+  el.value = el.value.slice(0,s) + tag + el.value.slice(e2);
+  el.setSelectionRange(s+tag.length, s+tag.length);
+  el.focus();
+}
+
+function scOpenFieldModal(idx) {
+  formFieldCtx = 'schedule';
+  curFormFields = scFields;
+  openFormFieldModal(idx);
+}
+
+function scRenderFieldList() {
+  const el = document.getElementById('sc-field-list');
+  if(!el) return;
+  if(!scFields.length) { el.innerHTML = '<div class="empty-msg" style="padding:6px 0;">필드가 없어요.</div>'; return; }
+  const typeLabel = {string:'짧은텍스트',textarea:'긴텍스트',number:'숫자',select:'선택'};
+  el.innerHTML = scFields.map((f,i) => `<div class="field-item">
+    <div class="field-info">
+      <div class="field-name">${f.label}</div>
+      <div class="field-meta">${f.key} · ${typeLabel[f.type]||f.type}${f.required?' · 필수':''}</div>
+    </div>
+    <div class="field-badges">
+      ${i>0?`<span class="fbadge" onclick="mvScField(${i},-1)">↑</span>`:''}
+      ${i<scFields.length-1?`<span class="fbadge" onclick="mvScField(${i},1)">↓</span>`:''}
+      <span class="fbadge" onclick="scOpenFieldModal(${i})">편집</span>
+      <span class="fbadge danger" onclick="rmScField(${i})">삭제</span>
+    </div>
+  </div>`).join('');
+}
+function mvScField(i,d){const j=i+d;if(j<0||j>=scFields.length)return;[scFields[i],scFields[j]]=[scFields[j],scFields[i]];scRenderFieldList();}
+function rmScField(i){if(!confirm('이 필드를 삭제할까요?'))return;scFields.splice(i,1);scRenderFieldList();}
+
+async function scSave() {
+  if(!scCurId) return;
+  const title = document.getElementById('sc-title').value.trim();
+  if(!title) { alert('일정 제목을 입력해주세요.'); return; }
+  const availableHours = scAvailHours.filter(r=>r.enabled).map(r=>({day:r.day,start:r.start,end:r.end}));
+  if(!availableHours.length) { alert('가용 시간을 최소 하나 이상 설정해주세요.'); return; }
+
+  const winStart = document.getElementById('sc-win-start').value;
+  const winEnd = document.getElementById('sc-win-end').value;
+  const bookingWindow = {type:scWindowType};
+  if(scWindowType==='range' && winStart) bookingWindow.start = firebase.firestore.Timestamp.fromDate(new Date(winStart));
+  if(scWindowType==='range' && winEnd) bookingWindow.end = firebase.firestore.Timestamp.fromDate(new Date(winEnd+'T23:59:59'));
+
+  const data = {
+    title, description: document.getElementById('sc-desc').value.trim(),
+    timezone: document.getElementById('sc-tz').value,
+    duration: scDuration, bookingWindow, availableHours,
+    bufferExisting: { before: parseInt(document.getElementById('sc-buf-ex-b').value)||0, after: parseInt(document.getElementById('sc-buf-ex-a').value)||0 },
+    bufferNew: { before: parseInt(document.getElementById('sc-buf-nw-b').value)||0, after: parseInt(document.getElementById('sc-buf-nw-a').value)||0 },
+    fields: scFields,
+    confirmMsg: document.getElementById('sc-confirm-msg').value.trim(),
+    noResubmit: document.getElementById('sc-no-resubmit-sw').classList.contains('on'),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  try {
+    await db.collection('cms_schedule_configs').doc(scCurId).update(data);
+    alert('저장됐어요!');
+    loadScList();
+  } catch(e) { alert('저장 실패: ' + e.message); }
+}
+
+async function scDelete(id) {
+  try { await db.collection('cms_schedule_configs').doc(id).delete(); loadScList(); }
+  catch(e) { alert('삭제 실패: ' + e.message); }
+}
+
+async function scViewBookings(scheduleId) {
+  const sid = scheduleId || scCurId;
+  if(!sid) return;
+  try {
+    const snap = await db.collection('cms_schedule_bookings').doc(sid).collection('bookings').orderBy('startTime','desc').limit(50).get();
+    if(!snap.docs.length) { alert('예약 내역이 없어요.'); return; }
+    const tz = 'Asia/Seoul';
+    const fmt = d => new Intl.DateTimeFormat('ko-KR',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(d.toDate());
+    const lines = snap.docs.map(d=>{
+      const b=d.data();
+      const ans=Object.entries(b.answers||{}).map(([k,v])=>`${k}: ${v}`).join(', ');
+      return `${fmt(b.startTime)} | ${b.userFields?.name||b.userId||'비로그인'} | ${ans}`;
+    });
+    alert(`예약 ${snap.docs.length}건:\n\n` + lines.join('\n'));
+  } catch(e) { alert('불러오기 실패: '+e.message); }
+}
+
+async function scLoadConnections() {
+  const el = document.getElementById('sc-connections');
+  if(!el||!scCurId) return;
+  el.innerHTML = '<div class="empty-msg">스캔 중…</div>';
+  const found = [];
+  try {
+    const projs = await db.collection('cms_projects').get();
+    for(const pDoc of projs.docs) {
+      const stages = await db.collection('cms_projects').doc(pDoc.id).collection('stage_content').get();
+      for(const sDoc of stages.docs) {
+        const blocks = sDoc.data()?.blocks || [];
+        blocks.forEach(b => {
+          if(b.type==='tool'&&b.toolType==='schedule'&&b.toolConfig?.scheduleId===scCurId) {
+            found.push({proj:pDoc.data()?.name||pDoc.id, stage:sDoc.id, block:b.id});
+          }
+        });
+      }
+    }
+    el.innerHTML = found.length
+      ? found.map(f=>`<div class="proj-item" style="padding:8px 12px;"><div class="pi-name" style="font-size:12px;">${f.proj}</div><div class="pi-meta">${f.stage} · 블록 ${f.block}</div></div>`).join('')
+      : '<div class="empty-msg">연결된 블록이 없어요.</div>';
+  } catch(e) { el.innerHTML = '<div class="empty-msg">스캔 실패: '+e.message+'</div>'; }
 }
 
 /* ════════════════════════════════════════════

@@ -55,6 +55,31 @@ function doGet(e) {
     }
   }
 
+  if (action === 'getCalendars') {
+    try {
+      const cals = CalendarApp.getAllCalendars();
+      return json({ success: true, calendars: cals.map(c => ({ id: c.getId(), name: c.getName() })) });
+    } catch(err) { return json({ success: false, error: err.message }); }
+  }
+
+  if (action === 'getCalendarEvents') {
+    try {
+      const calId = e.parameter.calendarId;
+      const cal   = calId ? CalendarApp.getCalendarById(calId) : CalendarApp.getDefaultCalendar();
+      if (!cal) return json({ success: false, error: '캘린더를 찾을 수 없습니다.' });
+      const start = new Date(e.parameter.start);
+      const end   = new Date(e.parameter.end);
+      const events = cal.getEvents(start, end)
+        .filter(ev => !ev.isAllDayEvent())
+        .map(ev => ({
+          id: ev.getId(), title: ev.getTitle(),
+          start: ev.getStartTime().toISOString(),
+          end:   ev.getEndTime().toISOString()
+        }));
+      return json({ success: true, events });
+    } catch(err) { return json({ success: false, error: err.message }); }
+  }
+
   return json({ success: false, error: '알 수 없는 action: ' + action });
 }
 
@@ -98,6 +123,19 @@ function doPost(e) {
 
       sheet.appendRow(row);
       return json({ success: true });
+    }
+
+    if (action === 'createCalendarEvent') {
+      const calId = data.calendarId;
+      const cal   = calId ? CalendarApp.getCalendarById(calId) : CalendarApp.getDefaultCalendar();
+      if (!cal) return json({ success: false, error: '캘린더를 찾을 수 없습니다.' });
+      const ev = cal.createEvent(
+        data.title,
+        new Date(data.start),
+        new Date(data.end),
+        { description: data.description || '' }
+      );
+      return json({ success: true, eventId: ev.getId() });
     }
 
     return json({ success: false, error: '알 수 없는 action: ' + action });

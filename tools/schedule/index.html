@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>일정 잡기</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:transparent;color:#000;}
+#app{min-height:60vh;padding:0 0 48px;}
+.sc-screen{display:none;}
+.sc-screen.on{display:block;}
+
+/* 공통 */
+.sc-ttl{font-size:18px;font-weight:900;letter-spacing:-.4px;line-height:1.3;margin-bottom:8px;}
+.sc-desc{font-size:14px;color:rgba(0,0,0,.6);line-height:1.7;margin-bottom:12px;white-space:pre-wrap;}
+.sc-badge{display:inline-block;padding:4px 10px;border:1.5px solid #000;font-size:12px;font-weight:700;margin-bottom:20px;}
+.sc-top{padding:20px 20px 0;}
+.sc-divider{border:none;border-top:1.5px solid rgba(0,0,0,.1);margin:16px 0;}
+
+/* 캘린더 */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;}
+.cal-nav-month{font-size:16px;font-weight:800;}
+.cal-nav-btn{background:none;border:none;font-size:18px;cursor:pointer;padding:4px 8px;color:#000;}
+.cal-nav-btn:disabled{opacity:.25;cursor:default;}
+.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);padding:0 12px;margin-bottom:4px;}
+.cal-dow span{text-align:center;font-size:11px;font-weight:700;color:rgba(0,0,0,.4);padding:4px 0;}
+.cal-dow span:first-child{color:#c00;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);padding:0 12px 16px;gap:2px;}
+.cal-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;border-radius:50%;cursor:default;position:relative;}
+.cal-cell.avail{cursor:pointer;background:#000;color:#fff;font-weight:700;}
+.cal-cell.avail:active{opacity:.7;}
+.cal-cell.selected{background:#000;color:#fff;outline:3px solid #000;outline-offset:2px;}
+.cal-cell.today{border:2px solid #000;}
+.cal-cell.other-month{color:rgba(0,0,0,.2);}
+.cal-cell.disabled{color:rgba(0,0,0,.2);}
+.cal-cell.loading{color:rgba(0,0,0,.35);}
+.cal-loading{text-align:center;padding:8px 0;font-size:12px;color:rgba(0,0,0,.4);}
+
+/* 슬롯 */
+.slot-date-hd{padding:0 20px 12px;font-size:14px;font-weight:700;color:rgba(0,0,0,.5);}
+.slot-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 20px;}
+.slot-btn{padding:12px 8px;border:2px solid #000;background:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-align:center;}
+.slot-btn.on{background:#000;color:#fff;}
+.slot-btn:active{opacity:.7;}
+.slot-empty{padding:20px;text-align:center;font-size:14px;color:rgba(0,0,0,.4);}
+.slot-next-btn{display:block;width:calc(100% - 40px);margin:16px 20px 0;padding:14px;background:#000;color:#fff;border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
+.slot-next-btn:disabled{opacity:.35;cursor:default;}
+
+/* 폼 */
+.ff-wrap{margin-bottom:20px;padding:0 20px;}
+.ff-label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;line-height:1.4;}
+.ff-desc{font-size:12px;color:rgba(0,0,0,.5);margin-bottom:6px;font-weight:500;line-height:1.6;}
+.ff-inp,.ff-ta,.ff-sel{width:100%;border:2px solid #000;border-radius:0;padding:11px 13px;font-size:15px;font-family:inherit;background:#fff;outline:none;-webkit-appearance:none;appearance:none;}
+.ff-ta{min-height:80px;resize:vertical;}
+.ff-inp:focus,.ff-ta:focus,.ff-sel:focus{box-shadow:0 0 0 3px rgba(0,0,0,.08);}
+.ff-sel-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.ff-sel-btn{padding:8px 14px;border:2px solid #000;background:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.ff-sel-btn.on{background:#000;color:#fff;}
+.ff-err{color:#c00;font-size:13px;font-weight:700;margin:0 20px 12px;min-height:16px;}
+.ff-req{color:#c00;}
+.lmp-btn{display:block;width:calc(100% - 40px);margin:0 20px;padding:14px;background:#000;color:#fff;border:2px solid #000;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
+.lmp-btn:hover,.lmp-btn:active{background:#fff;color:#000;}
+.lmp-btn:disabled{opacity:.35;cursor:default;}
+.lmp-btn-out{background:#fff;color:#000;}
+.lmp-btn-out:hover,.lmp-btn-out:active{background:#000;color:#fff;}
+.back-link{display:flex;align-items:center;gap:6px;padding:14px 20px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:none;font-family:inherit;color:rgba(0,0,0,.5);}
+.back-link:hover{color:#000;}
+
+/* 완료 */
+.confirm-card{margin:20px;padding:20px;border:2px solid #000;}
+.confirm-card-ttl{font-size:13px;font-weight:700;color:rgba(0,0,0,.4);margin-bottom:6px;}
+.confirm-card-main{font-size:16px;font-weight:800;margin-bottom:4px;line-height:1.4;}
+.confirm-card-sub{font-size:14px;color:rgba(0,0,0,.6);line-height:1.6;}
+.share-row{display:flex;flex-direction:column;gap:8px;padding:0 20px;}
+#loading-screen{padding:60px 20px;text-align:center;font-size:14px;color:rgba(0,0,0,.4);}
+#err-screen{display:none;padding:60px 20px;text-align:center;font-size:14px;color:#c00;font-weight:700;}
+</style>
+</head>
+<body>
+<div id="loading-screen">불러오는 중…</div>
+<div id="err-screen"></div>
+<div id="app" style="display:none;">
+
+  <!-- 날짜 선택 화면 -->
+  <div class="sc-screen" id="sc-calendar">
+    <div class="sc-top">
+      <div class="sc-ttl" id="sc-title-cal"></div>
+      <div class="sc-desc" id="sc-desc-cal"></div>
+      <div class="sc-badge" id="sc-dur-badge"></div>
+    </div>
+    <hr class="sc-divider">
+    <div class="cal-nav">
+      <button class="cal-nav-btn" id="cal-prev" onclick="calNavigate(-1)">‹</button>
+      <div class="cal-nav-month" id="cal-month-label"></div>
+      <button class="cal-nav-btn" id="cal-next" onclick="calNavigate(1)">›</button>
+    </div>
+    <div class="cal-dow">
+      <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="cal-loading" id="cal-loading" style="display:none;">날짜 계산 중…</div>
+  </div>
+
+  <!-- 시간 슬롯 화면 -->
+  <div class="sc-screen" id="sc-slots">
+    <button class="back-link" onclick="showScreen('sc-calendar')">← 날짜 다시 선택</button>
+    <div class="slot-date-hd" id="slot-date-hd"></div>
+    <div class="slot-grid" id="slot-grid"></div>
+    <div class="slot-empty" id="slot-empty" style="display:none;">이 날은 예약 가능한 슬롯이 없어요.</div>
+    <button class="slot-next-btn" id="slot-next-btn" onclick="goToForm()" disabled>시간 선택 후 다음 →</button>
+  </div>
+
+  <!-- 정보 입력 화면 -->
+  <div class="sc-screen" id="sc-form">
+    <button class="back-link" onclick="showScreen('sc-slots')">← 시간 다시 선택</button>
+    <div class="sc-top" style="padding-bottom:16px;">
+      <div class="sc-ttl" id="sc-form-date-ttl"></div>
+    </div>
+    <div id="sc-form-fields"></div>
+    <div class="ff-err" id="sc-form-err"></div>
+    <button class="lmp-btn" id="sc-submit-btn" onclick="submitBooking()">예약 확정</button>
+  </div>
+
+  <!-- 완료 화면 -->
+  <div class="sc-screen" id="sc-confirm">
+    <div class="sc-top" style="padding-top:28px;">
+      <div style="font-size:28px;margin-bottom:12px;">✅</div>
+      <div class="sc-ttl">예약이 완료됐어요!</div>
+      <div class="sc-desc" id="sc-confirm-msg"></div>
+    </div>
+    <div class="confirm-card">
+      <div class="confirm-card-ttl">예약 일정</div>
+      <div class="confirm-card-main" id="confirm-schedule-name"></div>
+      <div class="confirm-card-sub" id="confirm-datetime"></div>
+    </div>
+    <div style="padding:16px 20px 12px;font-size:13px;font-weight:700;color:rgba(0,0,0,.5);">저장 및 공유</div>
+    <div class="share-row">
+      <button class="lmp-btn" id="btn-gcal" onclick="shareGoogleCal()">📅 구글 캘린더에 추가</button>
+      <button class="lmp-btn lmp-btn-out" id="btn-share" onclick="shareGeneral()">📤 공유하기</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const FIREBASE_CONFIG={apiKey:"AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",authDomain:"beyhome-admin.firebaseapp.com",projectId:"beyhome-admin",storageBucket:"beyhome-admin.firebasestorage.app",messagingSenderId:"849320781553",appId:"1:849320781553:web:9d844044e85995c0aa2b50"};
+const GAS_URL='https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1weS1u1eML_R8nKpMXSP6U-IDGDsazUg-duw/exec';
+firebase.initializeApp(FIREBASE_CONFIG);
+const db=firebase.firestore();
+
+const SCHEDULE_ID=new URLSearchParams(location.search).get('id')||'';
+let config=null, calendarId='';
+let calYear=0, calMonth=0;
+let monthCache={}; // 'YYYY-M' → {gasEvents,bookings,availDates}
+let monthLoading={}; // 'YYYY-M' → Promise
+let selectedDateStr=null; // 'YYYY-MM-DD'
+let selectedSlotIdx=null;
+let computedSlots=[]; // for selected date
+let formAnswers={};
+let confirmedBooking=null;
+
+let ctxProjectId='',ctxUserId='',ctxUserFields={};
+let resolveCtx; const ctxPromise=new Promise(r=>{resolveCtx=r;});
+window.addEventListener('message',e=>{
+  if(e.data?.type!=='lmp-context')return;
+  ctxProjectId=e.data.projectId||'';
+  ctxUserId=e.data.userId||e.data.userFields?.[e.data.authKeyField||'']||'';
+  ctxUserFields=e.data.userFields||{};
+  if(!resolveCtx._done){resolveCtx();resolveCtx._done=true;}
+});
+setTimeout(()=>{if(!resolveCtx._done){resolveCtx();resolveCtx._done=true;}},2500);
+
+/* ── 유틸 ── */
+function showErr(msg){document.getElementById('loading-screen').style.display='none';const e=document.getElementById('err-screen');e.textContent=msg;e.style.display='block';}
+function showScreen(id){
+  document.querySelectorAll('.sc-screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  document.getElementById('app').style.display='';
+  document.getElementById('loading-screen').style.display='none';
+}
+function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36);}
+function applyVars(text,fields){
+  if(!text)return '';
+  let s=text;
+  Object.entries(fields||{}).forEach(([k,v])=>{s=s.replaceAll(`{{${k}}}`,v||'');});
+  return s;
+}
+
+/* ── 타임존 유틸 ── */
+function getUTCFromLocal(year,month0,day,hour,minute,tz){
+  const estimate=new Date(Date.UTC(year,month0,day,hour,minute));
+  const parts=new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(estimate).reduce((a,p)=>({...a,[p.type]:p.value}),{});
+  const lh=parseInt(parts.hour)%24,lm=parseInt(parts.minute);
+  let diff=(lh*60+lm)-(hour*60+minute);
+  if(diff>720)diff-=1440;if(diff<-720)diff+=1440;
+  return new Date(estimate.getTime()-diff*60000);
+}
+function tzDateStr(date,tz){
+  return new Intl.DateTimeFormat('sv-SE',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
+}
+function tzHour(date,tz){return parseInt(new Intl.DateTimeFormat('en-US',{timeZone:tz,hour:'2-digit',hour12:false}).format(date))%24;}
+function tzMinute(date,tz){return parseInt(new Intl.DateTimeFormat('en-US',{timeZone:tz,minute:'2-digit'}).format(date));}
+function fmtTime(date,tz){return new Intl.DateTimeFormat('ko-KR',{timeZone:tz,hour:'2-digit',minute:'2-digit',hour12:false}).format(date);}
+function fmtFullDate(date,tz){return new Intl.DateTimeFormat('ko-KR',{timeZone:tz,year:'numeric',month:'long',day:'numeric',weekday:'short'}).format(date);}
+function fmtDateShort(date,tz){return new Intl.DateTimeFormat('ko-KR',{timeZone:tz,month:'long',day:'numeric',weekday:'short'}).format(date);}
+
+/* ── 초기화 ── */
+async function init(){
+  if(!SCHEDULE_ID){showErr('일정 ID가 없습니다.');return;}
+  try{
+    await ctxPromise;
+    const snap=await db.collection('cms_schedule_configs').doc(SCHEDULE_ID).get();
+    if(!snap.exists){showErr('일정 설정을 찾을 수 없습니다.');return;}
+    config=snap.data();
+    const calSnap=await db.collection('cms_admin_settings').doc('google_calendar').get();
+    calendarId=calSnap.data()?.calendarId||'';
+
+    // noResubmit 체크
+    if(config.noResubmit&&ctxUserId){
+      const bSnap=await db.collection('cms_schedule_bookings').doc(SCHEDULE_ID).collection('bookings').where('userId','==',ctxUserId).limit(1).get();
+      if(!bSnap.empty){
+        document.getElementById('loading-screen').style.display='none';
+        document.getElementById('app').style.display='';
+        showScreen('sc-confirm');
+        document.getElementById('sc-confirm-msg').textContent='이미 예약하셨습니다.';
+        document.getElementById('confirm-schedule-name').textContent=applyVars(config.title,ctxUserFields);
+        document.getElementById('confirm-datetime').textContent='';
+        document.getElementById('btn-gcal').style.display='none';
+        document.getElementById('btn-share').style.display='none';
+        return;
+      }
+    }
+    setupCalendar();
+  }catch(e){showErr('로드 오류: '+e.message);}
+}
+
+/* ── 캘린더 초기화 ── */
+function setupCalendar(){
+  const tz=config.timezone||'Asia/Seoul';
+  const now=new Date();
+  calYear=parseInt(new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric'}).format(now));
+  calMonth=parseInt(new Intl.DateTimeFormat('en-US',{timeZone:tz,month:'numeric'}).format(now))-1;
+
+  document.getElementById('sc-title-cal').textContent=applyVars(config.title,ctxUserFields);
+  document.getElementById('sc-desc-cal').textContent=applyVars(config.description||'',ctxUserFields);
+  document.getElementById('sc-dur-badge').textContent=`⏱ ${config.duration||30}분`;
+  renderCalendar();
+  showScreen('sc-calendar');
+  loadMonthData(calYear,calMonth);
+}
+
+/* ── 캘린더 렌더 ── */
+function renderCalendar(){
+  const tz=config.timezone||'Asia/Seoul';
+  const y=calYear,m=calMonth;
+  document.getElementById('cal-month-label').textContent=`${y}년 ${m+1}월`;
+  document.getElementById('cal-prev').disabled=(y===new Date().getFullYear()&&m<=new Date().getMonth());
+
+  const firstDay=new Date(Date.UTC(y,m,1));
+  const firstDow=parseInt(new Intl.DateTimeFormat('en-US',{timeZone:tz,weekday:'numeric'}).format(firstDay))%7;
+  const daysInMonth=new Date(Date.UTC(y,m+1,0)).getUTCDate();
+  const prevDays=new Date(Date.UTC(y,m,0)).getUTCDate();
+
+  const todayStr=tzDateStr(new Date(),tz);
+  const monthKey=`${y}-${m}`;
+  const cache=monthCache[monthKey];
+  const availDates=cache?.availDates||null;
+
+  const cells=[];
+  // 이전 달 채우기
+  for(let i=firstDow-1;i>=0;i--){
+    cells.push(`<div class="cal-cell other-month">${prevDays-i}</div>`);
+  }
+  for(let d=1;d<=daysInMonth;d++){
+    const mm=String(m+1).padStart(2,'0');
+    const dd=String(d).padStart(2,'0');
+    const dateStr=`${y}-${mm}-${dd}`;
+    const past=dateStr<todayStr;
+    const inWindow=isDateInWindow(dateStr);
+    const hasDow=hasDayOfWeek(dateStr);
+    const isAvail=!past&&inWindow&&hasDow&&availDates&&availDates.has(dateStr);
+    const isLoading=!past&&inWindow&&hasDow&&!availDates;
+    const isToday=dateStr===todayStr;
+    const isSel=dateStr===selectedDateStr;
+    let cls='cal-cell';
+    if(isSel)cls+=' selected';
+    else if(isAvail)cls+=' avail';
+    else if(isLoading)cls+=' loading';
+    else cls+=' disabled';
+    if(isToday&&!isSel)cls+=' today';
+    if(!past&&inWindow&&hasDow&&(isAvail||isLoading)){
+      cells.push(`<div class="${cls}" onclick="selectDate('${dateStr}')">${d}</div>`);
+    }else{
+      cells.push(`<div class="${cls}">${d}</div>`);
+    }
+  }
+  // 다음 달 채우기 (6주 고정)
+  const total=42;
+  for(let n=1;cells.length<total;n++){cells.push(`<div class="cal-cell other-month">${n}</div>`);}
+  document.getElementById('cal-grid').innerHTML=cells.join('');
+}
+
+function calNavigate(dir){
+  calMonth+=dir;
+  if(calMonth<0){calMonth=11;calYear--;}
+  if(calMonth>11){calMonth=0;calYear++;}
+  renderCalendar();
+  loadMonthData(calYear,calMonth);
+}
+
+function isDateInWindow(dateStr){
+  if(!config)return false;
+  const w=config.bookingWindow||{type:'unlimited'};
+  const today=tzDateStr(new Date(),config.timezone||'Asia/Seoul');
+  if(dateStr<today)return false;
+  if(w.type==='range'){
+    const st=w.start?.toDate?w.start.toDate():new Date(w.start||'2000-01-01');
+    const en=w.end?.toDate?w.end.toDate():new Date(w.end||'2099-12-31');
+    const s=tzDateStr(st,config.timezone||'Asia/Seoul');
+    const e=tzDateStr(en,config.timezone||'Asia/Seoul');
+    return dateStr>=s&&dateStr<=e;
+  }
+  return true;
+}
+function hasDayOfWeek(dateStr){
+  if(!config?.availableHours?.length)return false;
+  const d=new Date(dateStr+'T00:00:00Z');
+  const dow=parseInt(new Intl.DateTimeFormat('en-US',{timeZone:config.timezone||'Asia/Seoul',weekday:'numeric'}).format(d))%7;
+  return config.availableHours.some(r=>r.day===dow);
+}
+
+/* ── 월 데이터 로드 ── */
+async function loadMonthData(y,m){
+  const key=`${y}-${m}`;
+  if(monthCache[key])return;
+  if(monthLoading[key])return monthLoading[key];
+  document.getElementById('cal-loading').style.display='';
+
+  const tz=config.timezone||'Asia/Seoul';
+  const monthStart=getUTCFromLocal(y,m,1,0,0,tz);
+  const monthEnd=getUTCFromLocal(y,m+1,0,23,59,tz);
+
+  monthLoading[key]=Promise.all([
+    fetchGasEvents(monthStart,monthEnd),
+    fetchBookings(monthStart,monthEnd)
+  ]).then(([gasEvents,bookings])=>{
+    const availDates=computeMonthAvailDates(y,m,gasEvents,bookings);
+    monthCache[key]={gasEvents,bookings,availDates};
+    if(calYear===y&&calMonth===m){
+      document.getElementById('cal-loading').style.display='none';
+      renderCalendar();
+    }
+  }).catch(e=>{
+    console.error('[loadMonthData]',e);
+    monthCache[key]={gasEvents:[],bookings:[],availDates:new Set()};
+    if(calYear===y&&calMonth===m){document.getElementById('cal-loading').style.display='none';renderCalendar();}
+  });
+  return monthLoading[key];
+}
+
+async function fetchGasEvents(start,end){
+  if(!calendarId)return[];
+  try{
+    const url=GAS_URL+`?action=getCalendarEvents&calendarId=${encodeURIComponent(calendarId)}&start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`;
+    const res=await fetch(url);
+    const data=await res.json();
+    return data.success?data.events:[];
+  }catch{return[];}
+}
+async function fetchBookings(start,end){
+  try{
+    const snap=await db.collection('cms_schedule_bookings').doc(SCHEDULE_ID).collection('bookings')
+      .where('startTime','>=',firebase.firestore.Timestamp.fromDate(start))
+      .where('startTime','<=',firebase.firestore.Timestamp.fromDate(end)).get();
+    return snap.docs.map(d=>d.data());
+  }catch{return[];}
+}
+
+function computeMonthAvailDates(y,m,gasEvents,bookings){
+  const daysInMonth=new Date(Date.UTC(y,m+1,0)).getUTCDate();
+  const availDates=new Set();
+  const tz=config.timezone||'Asia/Seoul';
+  const todayStr=tzDateStr(new Date(),tz);
+  for(let d=1;d<=daysInMonth;d++){
+    const mm=String(m+1).padStart(2,'0');
+    const dd=String(d).padStart(2,'0');
+    const dateStr=`${y}-${mm}-${dd}`;
+    if(dateStr<todayStr)continue;
+    if(!isDateInWindow(dateStr))continue;
+    if(!hasDayOfWeek(dateStr))continue;
+    const slots=computeSlots(dateStr,gasEvents,bookings);
+    if(slots.length)availDates.add(dateStr);
+  }
+  return availDates;
+}
+
+/* ── 슬롯 계산 ── */
+function computeSlots(dateStr,gasEvents,bookings){
+  const tz=config.timezone||'Asia/Seoul';
+  const [y,m,d]=dateStr.split('-').map(Number);
+  const dow=parseInt(new Intl.DateTimeFormat('en-US',{timeZone:tz,weekday:'numeric'}).format(new Date(dateStr+'T00:00:00Z')))%7;
+  const rule=config.availableHours?.find(r=>r.day===dow);
+  if(!rule)return[];
+  const [sh,sm]=rule.start.split(':').map(Number);
+  const [eh,em]=rule.end.split(':').map(Number);
+  const dur=config.duration||30;
+  const bfExB=(config.bufferExisting?.before||0)*60000;
+  const bfExA=(config.bufferExisting?.after||0)*60000;
+  const bfNwB=(config.bufferNew?.before||0)*60000;
+  const bfNwA=(config.bufferNew?.after||0)*60000;
+  const now=Date.now();
+
+  const blocked=[
+    ...gasEvents.map(ev=>({s:new Date(ev.start).getTime()-bfExB,e:new Date(ev.end).getTime()+bfExA})),
+    ...bookings.map(bk=>({s:bk.startTime.toDate().getTime()-bfNwB,e:bk.endTime.toDate().getTime()+bfNwA}))
+  ];
+
+  const slots=[];
+  let curH=sh,curM=sm;
+  while(curH*60+curM+dur<=eh*60+em){
+    const start=getUTCFromLocal(y,m-1,d,curH,curM,tz);
+    const end=new Date(start.getTime()+dur*60000);
+    if(start.getTime()>now){
+      const cs=start.getTime()-bfNwB;
+      const ce=end.getTime()+bfNwA;
+      if(!blocked.some(b=>cs<b.e&&ce>b.s))slots.push({start,end});
+    }
+    curM+=dur;curH+=Math.floor(curM/60);curM%=60;
+  }
+  return slots;
+}
+
+/* ── 날짜/슬롯 선택 ── */
+function selectDate(dateStr){
+  const key=`${calYear}-${calMonth}`;
+  const cache=monthCache[key];
+  if(!cache)return;
+  selectedDateStr=dateStr;
+  selectedSlotIdx=null;
+  computedSlots=computeSlots(dateStr,cache.gasEvents,cache.bookings);
+  renderCalendar();
+  renderSlots();
+  showScreen('sc-slots');
+}
+
+function renderSlots(){
+  const tz=config.timezone||'Asia/Seoul';
+  const [y,m,d]=selectedDateStr.split('-').map(Number);
+  const dateDisp=fmtDateShort(new Date(Date.UTC(y,m-1,d)),tz);
+  document.getElementById('slot-date-hd').textContent=dateDisp;
+  const grid=document.getElementById('slot-grid');
+  const empty=document.getElementById('slot-empty');
+  if(!computedSlots.length){grid.innerHTML='';empty.style.display='';document.getElementById('slot-next-btn').disabled=true;return;}
+  empty.style.display='none';
+  grid.innerHTML=computedSlots.map((s,i)=>`<button class="slot-btn${i===selectedSlotIdx?' on':''}" onclick="selectSlot(${i})">${fmtTime(s.start,tz)}</button>`).join('');
+  document.getElementById('slot-next-btn').disabled=selectedSlotIdx===null;
+}
+
+function selectSlot(idx){
+  selectedSlotIdx=idx;
+  document.querySelectorAll('.slot-btn').forEach((b,i)=>b.classList.toggle('on',i===idx));
+  document.getElementById('slot-next-btn').disabled=false;
+}
+
+function goToForm(){
+  if(selectedSlotIdx===null)return;
+  const tz=config.timezone||'Asia/Seoul';
+  const s=computedSlots[selectedSlotIdx];
+  document.getElementById('sc-form-date-ttl').textContent=`${fmtDateShort(s.start,tz)} ${fmtTime(s.start,tz)} ~ ${fmtTime(s.end,tz)}`;
+  renderFormFields();
+  showScreen('sc-form');
+}
+
+/* ── 폼 렌더 ── */
+function renderFormFields(){
+  const fields=config.fields||[];
+  const el=document.getElementById('sc-form-fields');
+  if(!fields.length){el.innerHTML='';return;}
+  el.innerHTML=fields.map(f=>{
+    const req=f.required?`<span class="ff-req"> *</span>`:'';
+    const desc=f.description?`<div class="ff-desc">${f.description}</div>`:'';
+    let inp='';
+    if(f.type==='textarea') inp=`<textarea class="ff-ta" id="ff-${f.id}" placeholder="${f.placeholder||''}"></textarea>`;
+    else if(f.type==='number') inp=`<input type="number" class="ff-inp" id="ff-${f.id}" placeholder="${f.placeholder||''}">`;
+    else if(f.type==='select'){
+      if(f.selectMode==='buttons'){
+        inp=`<div class="ff-sel-btns" id="ff-${f.id}">${(f.options||[]).map(o=>`<button class="ff-sel-btn" onclick="toggleSelBtn(this,'${f.id}','${f.selectMode}','${o}')">${o}</button>`).join('')}</div>`;
+      }else{
+        inp=`<select class="ff-sel" id="ff-${f.id}"><option value="">선택하세요</option>${(f.options||[]).map(o=>`<option>${o}</option>`).join('')}</select>`;
+      }
+    }else inp=`<input type="text" class="ff-inp" id="ff-${f.id}" placeholder="${f.placeholder||''}">`;
+    return `<div class="ff-wrap"><label class="ff-label">${f.label}${req}</label>${desc}${inp}</div>`;
+  }).join('');
+}
+
+function toggleSelBtn(btn,fid,mode,val){
+  const wrap=document.getElementById('ff-'+fid);
+  if(mode!=='buttons')return;
+  wrap.querySelectorAll('.ff-sel-btn').forEach(b=>b.classList.toggle('on',b===btn));
+}
+
+/* ── 예약 제출 ── */
+async function submitBooking(){
+  const fields=config.fields||[];
+  formAnswers={};
+  for(const f of fields){
+    let val='';
+    if(f.selectMode==='buttons'){
+      const sel=document.getElementById('ff-'+f.id)?.querySelector('.ff-sel-btn.on');
+      val=sel?sel.textContent:'';
+    }else{
+      val=(document.getElementById('ff-'+f.id)?.value||'').trim();
+    }
+    if(f.required&&!val){document.getElementById('sc-form-err').textContent=`"${f.label}"을(를) 입력해주세요.`;return;}
+    formAnswers[f.key]=val;
+  }
+  document.getElementById('sc-form-err').textContent='';
+  const btn=document.getElementById('sc-submit-btn');
+  btn.disabled=true;btn.textContent='처리 중…';
+
+  const slot=computedSlots[selectedSlotIdx];
+  const tz=config.timezone||'Asia/Seoul';
+
+  // 캘린더 이벤트 제목 구성
+  const nameVal=ctxUserFields.name||ctxUserFields[Object.keys(ctxUserFields)[0]]||'';
+  const scheduleTitle=applyVars(config.title,ctxUserFields);
+  const evTitle=nameVal?`${nameVal}의 ${scheduleTitle}`:scheduleTitle;
+  // 메모 구성
+  const noteLines=(config.fields||[]).map(f=>`${f.label}: ${formAnswers[f.key]||''}`);
+  const evDesc=['■ 예약 정보',...noteLines].join('\n');
+
+  try{
+    // GAS 캘린더 이벤트 생성
+    let eventId='';
+    if(calendarId){
+      const gasRes=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'createCalendarEvent',calendarId,title:evTitle,start:slot.start.toISOString(),end:slot.end.toISOString(),description:evDesc})});
+      const gasData=await gasRes.json();
+      if(gasData.success)eventId=gasData.eventId||'';
+    }
+    // Firestore 예약 저장
+    const booking={
+      startTime:firebase.firestore.Timestamp.fromDate(slot.start),
+      endTime:firebase.firestore.Timestamp.fromDate(slot.end),
+      projectId:ctxProjectId||'',
+      userId:ctxUserId||'',
+      userFields:ctxUserFields,
+      answers:formAnswers,
+      calendarEventId:eventId,
+      submittedAt:firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await db.collection('cms_schedule_bookings').doc(SCHEDULE_ID).collection('bookings').add(booking);
+    confirmedBooking={...booking,start:slot.start,end:slot.end,evTitle,evDesc};
+    showConfirm();
+    window.parent.postMessage({type:'lmp-tool-complete'},'*');
+  }catch(e){
+    document.getElementById('sc-form-err').textContent='오류: '+e.message;
+    btn.disabled=false;btn.textContent='예약 확정';
+  }
+}
+
+/* ── 완료 화면 ── */
+function showConfirm(){
+  const tz=config.timezone||'Asia/Seoul';
+  const msg=applyVars(config.confirmMsg||'예약해 주셔서 감사해요!',ctxUserFields);
+  document.getElementById('sc-confirm-msg').textContent=msg;
+  document.getElementById('confirm-schedule-name').textContent=confirmedBooking.evTitle;
+  document.getElementById('confirm-datetime').textContent=
+    `${fmtFullDate(confirmedBooking.start,tz)} ${fmtTime(confirmedBooking.start,tz)} ~ ${fmtTime(confirmedBooking.end,tz)}`;
+  showScreen('sc-confirm');
+}
+
+function shareGoogleCal(){
+  if(!confirmedBooking)return;
+  const fmt=d=>d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+  const params=new URLSearchParams({
+    action:'TEMPLATE',
+    text:confirmedBooking.evTitle,
+    dates:`${fmt(confirmedBooking.start)}/${fmt(confirmedBooking.end)}`,
+    details:confirmedBooking.evDesc,
+    ctz:config.timezone||'Asia/Seoul'
+  });
+  window.open('https://calendar.google.com/calendar/event?'+params,'_blank');
+}
+
+function shareGeneral(){
+  if(!confirmedBooking)return;
+  const tz=config.timezone||'Asia/Seoul';
+  const text=`📅 ${confirmedBooking.evTitle}\n📆 ${fmtFullDate(confirmedBooking.start,tz)} ${fmtTime(confirmedBooking.start,tz)} ~ ${fmtTime(confirmedBooking.end,tz)}`;
+  if(navigator.share){navigator.share({title:confirmedBooking.evTitle,text});}
+  else{navigator.clipboard?.writeText(text).then(()=>alert('클립보드에 복사됐어요!'));}
+}
+
+init();
+</script>
+</body>
+</html>

@@ -925,9 +925,12 @@ function blockHtml(b){
   }
   if(b.type==='mixed'){
     const html=applyVars(b.textContent||'');
-    const mfit=b.imageFit||'cover', mpos=b.imagePosition||'center', mih=b.imageHeight||260;
-    const spS=mfit==='natural'?`width:100%;display:block;max-height:${mih}px;object-fit:contain;object-position:${mpos};`:`width:100%;height:${mih}px;object-fit:${mfit};object-position:${mpos};display:block;`;
-    const ovS=mfit==='natural'?'width:100%;display:block;':`width:100%;height:${mih}px;object-fit:${mfit};object-position:${mpos};display:block;`;
+    const mfit=b.imageFit||'cover', mpos=b.imagePosition||'center';
+    const _mihFull=b.imageHeight==='full';
+    const mih=_mihFull?'100svh':(b.imageHeight||260);
+    const mihCss=_mihFull?`height:100svh;`:`height:${mih}px;`;
+    const spS=mfit==='natural'?`width:100%;display:block;max-height:${_mihFull?'100svh':`${mih}px`};object-fit:contain;object-position:${mpos};`:`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;`;
+    const ovS=mfit==='natural'?'width:100%;display:block;':`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;`;
     if(b.mixedLayout==='split'){
       const imgEl=b.imageLinkUrl
         ?`<a href="${b.imageLinkUrl}" target="_blank" rel="noopener" style="display:block;"><img src="${b.imageUrl||''}" alt="" loading="lazy" style="${spS}"></a>`
@@ -935,9 +938,13 @@ function blockHtml(b){
       return `<div class="g-block-mixed-split" style="${mS}${bgS}"><div class="g-split-img">${imgEl}</div><div class="g-split-text" style="${txS}">${html}</div></div>`;
     }
     const imgEl=b.imageLinkUrl
-      ?`<a href="${b.imageLinkUrl}" target="_blank" rel="noopener" style="display:block;"><img src="${b.imageUrl||''}" alt="" loading="lazy" style="${ovS}"></a>`
+      ?`<a href="${b.imageLinkUrl}" target="_blank" rel="noopener" style="display:block;${_mihFull?'height:100%;':''}"><img src="${b.imageUrl||''}" alt="" loading="lazy" style="${ovS}"></a>`
       :`<img src="${b.imageUrl||''}" alt="" loading="lazy" style="${ovS}">`;
-    return `<div class="g-block-mixed-overlay" style="${mS}${bgS}">${imgEl}<div class="g-overlay-text"><div class="g-overlay-text-inner" style="${txS}">${html}</div></div></div>`;
+    const _ova=b.overlayTextVAlign||'bottom';
+    const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};
+    const _gradMap={top:'linear-gradient(to bottom,rgba(0,0,0,.65) 0%,transparent 60%)',center:'linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.55) 50%,transparent 100%)',bottom:'linear-gradient(to top,rgba(0,0,0,.65) 0%,transparent 60%)'};
+    const _ovTextStyle=`align-items:${_aiMap[_ova]||'flex-end'};background:${_gradMap[_ova]||_gradMap.bottom};`;
+    return `<div class="g-block-mixed-overlay" style="${mS}${bgS}">${imgEl}<div class="g-overlay-text" style="${_ovTextStyle}"><div class="g-overlay-text-inner" style="${txS}">${html}</div></div></div>`;
   }
   if(b.type==='embed' && b.embedUrl){
     const _eh=b.embedHeight===0?'100%':(b.embedHeight||500);
@@ -950,6 +957,7 @@ function blockHtml(b){
       booth:`/tools/booth/?id=${b.toolConfig?.boothId||''}`,
       guide:`/tools/guide/?id=${b.toolConfig?.guideId||''}`,
       'youtube-playlist':'/tools/youtube-playlist/',
+      schedule:`/tools/schedule/?id=${b.toolConfig?.scheduleId||''}`,
     };
     const src=toolUrls[b.toolType]||'';
     const h=b.height||0;
@@ -1050,13 +1058,15 @@ function renderGuideSlide(blocks){
     const bStripped={...b,bgColor:'',marginV:0,marginH:0};
     const inner=attachCheck(blockHtml(bStripped),b);
     const scrollable=(b.type==='tool'||b.type==='embed');
+    const fullH=b.imageHeight==='full';
     const vaMap={top:'flex-start',center:'center',bottom:'flex-end'};
-    const va=scrollable?'':(b.verticalAlign||'');
-    const jc=scrollable?'flex-start':(vaMap[b.verticalAlign]||'center');
+    const va=scrollable||fullH?'':(b.verticalAlign||'');
+    const jc=scrollable||fullH?'flex-start':(vaMap[b.verticalAlign]||'center');
     const scrollS=scrollable?'overflow-y:auto;':'';
     return `<div class="guide-slide-item"${va?` data-valign="${va}"`:''}  style="width:${100/N}%;justify-content:${jc};${bgS}${mS}${scrollS}">${inner}</div>`;
   }).join('');
   track.style.width=(N*100)+'%';
+  track.style.transform='translateX(0)';
   updateDots(); document.getElementById('guide-slide-body').style.display='flex';
   _sendContextToEmbeds();
   const sb=document.getElementById('guide-slide-body');
