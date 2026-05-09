@@ -954,6 +954,7 @@ function blockHtml(b){
       booth:`/tools/booth/?id=${b.toolConfig?.boothId||''}`,
       guide:`/tools/guide/?id=${b.toolConfig?.guideId||''}`,
       'youtube-playlist':'/tools/youtube-playlist/',
+      schedule:`/tools/schedule/?id=${b.toolConfig?.scheduleId||''}`,
     };
     const src=toolUrls[b.toolType]||'';
     const h=b.height||0;
