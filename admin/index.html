@@ -1158,7 +1158,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         </div>
         <div id="mixed-height-row" style="display:none;margin-bottom:8px;">
           <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:3px;">높이 <span style="font-weight:400;">(px, 비워두면 260)</span></div>
-          <input class="fi-sm" id="mixed-height-val" type="number" min="60" max="1200" placeholder="260" style="width:80px;margin-bottom:0;" oninput="scheduleBmPreview()">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input class="fi-sm" id="mixed-height-val" type="number" min="60" max="1200" placeholder="260" style="width:80px;margin-bottom:0;" oninput="curMixedHeightFull=false;document.getElementById('mixed-height-full-btn').classList.remove('on');scheduleBmPreview()">
+            <button class="img-fit-btn" id="mixed-height-full-btn" onpointerdown="epd(event)" onclick="setMixedHeightFull()" style="white-space:nowrap;">전체화면</button>
+          </div>
         </div>
         <div id="mixed-pos-row" style="display:none;">
           <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">기준점</div>
@@ -3258,7 +3261,8 @@ let curBlkCheckColor='';
 let curBlkCheckTextColor='';
 let curBlkVerticalAlign='center';
 let curImgFit='natural',curImgPos='center';
-let curMixedImgFit='cover',curMixedImgPos='center';
+let curMixedImgFit='cover',curMixedImgPos='center',curMixedHeightFull=false;
+function setMixedHeightFull(){curMixedHeightFull=true;document.getElementById('mixed-height-val').value='';document.getElementById('mixed-height-full-btn').classList.add('on');scheduleBmPreview();}
 function setImgFit(fit){
   curImgFit=fit;
   document.querySelectorAll('.img-fit-btn[data-ctx="img"]').forEach(b=>b.classList.toggle('on',b.dataset.fit===fit));
@@ -3408,7 +3412,9 @@ function openBlockModal(idx,insertAt){
   const _ihv=document.getElementById('img-height-val'); if(_ihv) _ihv.value=b.type==='image'?(b.imageHeight||''):'';
   setMixedImgFit(b.type==='mixed'?(b.imageFit||'cover'):'cover');
   setMixedImgPos(b.type==='mixed'?(b.imagePosition||'center'):'center');
-  const _mhv=document.getElementById('mixed-height-val'); if(_mhv) _mhv.value=b.type==='mixed'?(b.imageHeight||''):'';
+  curMixedHeightFull=b.type==='mixed'&&b.imageHeight==='full';
+  const _mhv=document.getElementById('mixed-height-val'); if(_mhv) _mhv.value=b.type==='mixed'&&b.imageHeight!=='full'?(b.imageHeight||''):'';
+  const _mhfb=document.getElementById('mixed-height-full-btn'); if(_mhfb) _mhfb.classList.toggle('on',curMixedHeightFull);
   curOverlayVAlign=b.type==='mixed'?(b.overlayTextVAlign||'bottom'):'bottom';setOverlayVAlign(curOverlayVAlign);setMixedLayout(curMixedLayout);savedRange=null;
   /* spacer 블록 */
   const _sh=document.getElementById('blk-spacer-height');
@@ -3466,7 +3472,7 @@ function _buildCurrentBlock(){
     b.textContent=document.getElementById('ced-mixed')?.innerHTML||'';
     b.mixedLayout=curMixedLayout;
     b.imageFit=curMixedImgFit; b.imagePosition=curMixedImgPos;
-    const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0; if(_mh) b.imageHeight=_mh;
+    if(curMixedHeightFull){b.imageHeight='full';}else{const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0; if(_mh) b.imageHeight=_mh;}
     if(curMixedLayout==='overlay') b.overlayTextVAlign=curOverlayVAlign||'bottom';
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url')?.value||'';
@@ -3519,8 +3525,7 @@ function saveBlock(){
     b.textContent=document.getElementById('ced-mixed').innerHTML;
     b.mixedLayout=curMixedLayout;
     b.imageFit=curMixedImgFit||'cover'; b.imagePosition=curMixedImgPos||'center';
-    const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0;
-    if(_mh) b.imageHeight=_mh; else delete b.imageHeight;
+    if(curMixedHeightFull){b.imageHeight='full';}else{const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0;if(_mh) b.imageHeight=_mh; else delete b.imageHeight;}
     if(curMixedLayout==='overlay') b.overlayTextVAlign=curOverlayVAlign||'bottom'; else delete b.overlayTextVAlign;
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url').value.trim();
@@ -3967,12 +3972,15 @@ function gBlockHtml(b,S){
     return `<div style="${mS}${bgS}"><img src="${b.imageUrl||''}" style="${imgS}" alt=""></div>`;
   }
   if(b.type==='mixed'){
-    const mfit=b.imageFit||'cover', mpos=b.imagePosition||'center', mih=Math.round((b.imageHeight||260)*S);
+    const mfit=b.imageFit||'cover', mpos=b.imagePosition||'center';
+    const _rawMih=b.imageHeight==='full'?null:(b.imageHeight||260);
+    const mih=_rawMih?Math.round(_rawMih*S):Math.round(260*S);
+    const mihCss=b.imageHeight==='full'?'min-height:200px;':`height:${mih}px;`;
     if(b.mixedLayout==='split'){
-      const spS=mfit==='natural'?`width:100%;display:block;max-height:${mih}px;object-fit:contain;object-position:${mpos};margin-bottom:${Math.round(6*S)}px;`:`width:100%;height:${mih}px;object-fit:${mfit};object-position:${mpos};display:block;margin-bottom:${Math.round(6*S)}px;`;
+      const spS=mfit==='natural'?`width:100%;display:block;max-height:${mih}px;object-fit:contain;object-position:${mpos};margin-bottom:${Math.round(6*S)}px;`:`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;margin-bottom:${Math.round(6*S)}px;`;
       return `<div style="${mS}${bgS}${pad}"><img src="${b.imageUrl||''}" style="${spS}" alt=""><div style="${txS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div></div>`;
     }
-    const ovS=mfit==='natural'?'width:100%;display:block;':`width:100%;height:${mih}px;object-fit:${mfit};object-position:${mpos};display:block;`;
+    const ovS=mfit==='natural'?'width:100%;display:block;':`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;`;
     const _ova=b.overlayTextVAlign||'bottom';const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};const _ai=_aiMap[_ova]||'flex-end';const _grad={top:`to bottom`,center:`to bottom, transparent 0%,rgba(0,0,0,.55) 50%,transparent 100%`,bottom:`to top`}[_ova];const _gradFull=_ova==='center'?`linear-gradient(${_grad})`:`linear-gradient(${_grad},rgba(0,0,0,.65) 0%,transparent 60%)`;
     return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="${ovS}" alt=""><div style="position:absolute;inset:0;display:flex;align-items:${_ai};background:${_gradFull};${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;">${b.textContent||''}</div></div></div>`;
   }
