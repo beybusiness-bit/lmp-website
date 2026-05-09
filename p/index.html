@@ -1062,6 +1062,7 @@ function renderGuideSlide(blocks){
     return `<div class="guide-slide-item"${va?` data-valign="${va}"`:''}  style="width:${100/N}%;justify-content:${jc};${bgS}${mS}${scrollS}">${inner}</div>`;
   }).join('');
   track.style.width=(N*100)+'%';
+  track.style.transform='translateX(0)';
   updateDots(); document.getElementById('guide-slide-body').style.display='flex';
   _sendContextToEmbeds();
   const sb=document.getElementById('guide-slide-body');
