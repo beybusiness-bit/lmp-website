@@ -119,6 +119,7 @@ const db = firebase.firestore();
 const CONFIG_ID = new URLSearchParams(location.search).get('id') || '';
 let config = null;
 let styleSelections = {};
+let customStyleText = {};
 let allPhrases = [];
 let ctxProjectId = '';
 let ctxUserId = '';
@@ -173,9 +174,17 @@ function renderStyleDim(dim) {
     `<button type="button" class="style-pill${styleSelections[dim.key] === c.value ? ' on' : ''}"
       onclick="toggleStylePill(this,'${esc(dim.key)}','${esc(c.value)}')">${esc(c.label)}</button>`
   ).join('');
+  const hasCustom = dim.choices.some(c => c.value === 'custom');
+  const customInp = hasCustom
+    ? `<input type="text" id="style-custom-${esc(dim.key)}" class="ff-inp"
+        placeholder="분위기를 직접 입력해주세요 (예: 귀여운, 학구적인…)"
+        style="display:${styleSelections[dim.key]==='custom'?'block':'none'};margin-top:10px;"
+        oninput="customStyleText['${esc(dim.key)}']=this.value">`
+    : '';
   const inner = `<div class="style-dim">
     <div class="style-dim-lbl">${esc(dim.label)}</div>
     <div class="style-pills" id="style-pills-${esc(dim.key)}">${pills}</div>
+    ${customInp}
   </div>`;
   if (dim.key === 'speech_level') {
     return `<div id="speech-level-dim" style="display:none;">${inner}</div>`;
@@ -190,6 +199,12 @@ function toggleStylePill(btn, key, value) {
   container.querySelectorAll('.style-pill').forEach(p => p.classList.remove('on'));
   if (!isOn) { btn.classList.add('on'); styleSelections[key] = value; }
   else { delete styleSelections[key]; }
+  const customInp = document.getElementById('style-custom-' + key);
+  if (customInp) {
+    const show = !isOn && value === 'custom';
+    customInp.style.display = show ? 'block' : 'none';
+    if (show) { customInp.value = customStyleText[key] || ''; customInp.focus(); }
+  }
   if (key === 'format') updateSpeechLevelVisibility();
 }
 
@@ -269,10 +284,21 @@ async function callAPI(existingPhrases) {
   const fields = collectFields();
   if (fields === null) return null;
 
+  // 'custom' 값은 사용자가 입력한 텍스트로 교체
+  const resolvedSelections = {};
+  Object.entries(styleSelections).forEach(([k, v]) => {
+    if (v === 'custom') {
+      const txt = (customStyleText[k] || '').trim();
+      if (txt) resolvedSelections[k] = txt;
+    } else if (v) {
+      resolvedSelections[k] = v;
+    }
+  });
+
   const refs = (config.references || []).map(r => r.text).filter(Boolean);
   const body = {
     fields,
-    styleSelections,
+    styleSelections: resolvedSelections,
     references: refs,
     outputConfig: config.outputConfig || { count: 5 },
     existingPhrases,

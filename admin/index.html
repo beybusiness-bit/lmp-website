@@ -6040,6 +6040,7 @@ const PREDEFINED_STYLE_OPTIONS = [
   { key:'format', label:'형식', choices:[
     {value:'bullet',      label:'개조식 (항목별 나열)'},
     {value:'prose',       label:'문장식 (자연스러운 문단)'},
+    {value:'noun_ending', label:'명사형 종결 (~소개, ~운영 예정 등)'},
     {value:'slogan',      label:'슬로건형 (짧고 강렬한 한 줄)'},
     {value:'question',    label:'질문형 (궁금증 유발)'},
     {value:'storytelling',label:'스토리텔링형 (서사 흐름)'},
@@ -6056,38 +6057,30 @@ const PREDEFINED_STYLE_OPTIONS = [
     {value:'inner',  label:'독백형 (내면의 목소리)'},
   ]},
   { key:'formality', label:'격식', choices:[
-    {value:'formal',        label:'격식체'},
+    {value:'intimate',      label:'친밀한 (친구처럼)'},
     {value:'casual',        label:'편안한 톤'},
     {value:'neutral',       label:'중립적인'},
-    {value:'intimate',      label:'친밀한 (친구처럼)'},
+    {value:'formal',        label:'격식체'},
     {value:'authoritative', label:'권위 있는'},
   ]},
-  { key:'mood', label:'분위기', choices:[
-    {value:'friendly',  label:'친근한'},
-    {value:'solemn',    label:'장엄한'},
-    {value:'humorous',  label:'유머러스한'},
-    {value:'exciting',  label:'설레는'},
-    {value:'calm',      label:'차분한'},
-    {value:'urgent',    label:'긴박한'},
-    {value:'touching',  label:'감동적인'},
-    {value:'mysterious',label:'신비로운'},
-  ]},
-  { key:'length_feel', label:'길이감', choices:[
-    {value:'oneliner', label:'한 줄 (초단문)'},
-    {value:'concise',  label:'간결한 (2~3줄)'},
-    {value:'normal',   label:'보통'},
-    {value:'rich',     label:'풍성한'},
-    {value:'narrative',label:'서술형 (긴 호흡)'},
-  ]},
-  { key:'emotion', label:'감성', choices:[
+  { key:'mood', label:'분위기·감성', allowCustom:true, choices:[
     {value:'warm',        label:'따뜻한'},
-    {value:'professional',label:'전문적인'},
-    {value:'intense',     label:'강렬한'},
+    {value:'friendly',    label:'친근한'},
     {value:'playful',     label:'유쾌한'},
+    {value:'exciting',    label:'설레는'},
     {value:'touching',    label:'감동적인'},
-    {value:'trustworthy', label:'신뢰감 있는'},
-    {value:'challenging', label:'도전적인'},
     {value:'lyrical',     label:'감성적인'},
+    {value:'mysterious',  label:'신비로운'},
+    {value:'calm',        label:'차분한'},
+    {value:'serious',     label:'진지한'},
+    {value:'professional',label:'전문적인'},
+    {value:'trustworthy', label:'신뢰감 있는'},
+    {value:'solemn',      label:'장엄한'},
+    {value:'intense',     label:'강렬한'},
+    {value:'urgent',      label:'긴박한'},
+    {value:'cold',        label:'냉정한'},
+    {value:'rigid',       label:'딱딱한'},
+    {value:'custom',      label:'기타…'},
   ]},
 ];
 let cgCurDocId = null;
@@ -6210,10 +6203,12 @@ function cgRenderStyleList(){
   el.innerHTML=PREDEFINED_STYLE_OPTIONS.map(s=>{
     const mode=cgStyleModes[s.key]||'user-select';
     const fixedVal=cgFixedValues[s.key]||'';
-    const fixedOpts=s.choices.map(c=>`<option value="${c.value}"${fixedVal===c.value?' selected':''}>${c.label}</option>`).join('');
+    const fixableChoices=s.choices.filter(c=>c.value!=='custom');
+    const fixedOpts=fixableChoices.map(c=>`<option value="${c.value}"${fixedVal===c.value?' selected':''}>${c.label}</option>`).join('');
+    const choicePreview=fixableChoices.map(c=>c.label).join(' / ')+(s.allowCustom?' / 기타':'');
     return `<div style="padding:12px 0;border-bottom:1px solid rgba(0,0,0,.08);">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:${mode==='fixed'?'8px':'0'};">
-        <span style="font-size:13px;font-weight:700;flex:1;">${s.label} <span style="font-weight:400;font-size:11px;color:rgba(0,0,0,.4);">(${s.choices.map(c=>c.label).join(' / ')})</span>${s.proseOnly?` <span style="font-size:10px;font-weight:600;color:rgba(0,0,0,.4);">문장식 전용</span>`:''}
+        <span style="font-size:13px;font-weight:700;flex:1;">${s.label} <span style="font-weight:400;font-size:11px;color:rgba(0,0,0,.4);">(${choicePreview})</span>${s.proseOnly?` <span style="font-size:10px;font-weight:600;color:rgba(0,0,0,.4);">문장식 전용</span>`:''}
 </span>
         <div style="display:flex;gap:4px;flex-shrink:0;">
           <button class="tgl-btn${mode==='user-select'?' on':''}" onclick="cgSetStyleMode('${s.key}','user-select')">사용자 선택</button>
