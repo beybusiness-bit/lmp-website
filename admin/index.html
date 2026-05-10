@@ -1037,9 +1037,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         </div>
         <div id="img-pos-row" style="display:none;">
           <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">초점 위치 <span style="font-weight:400;">(이미지를 클릭·드래그해서 설정)</span></div>
-          <div id="img-focal-wrap" style="position:relative;overflow:hidden;cursor:crosshair;touch-action:none;border:1.5px solid rgba(0,0,0,.2);border-radius:2px;user-select:none;" onpointerdown="focalDown(event,'img')" onpointermove="focalMove(event,'img')" onpointerup="focalUp(event)">
-            <img id="img-focal-thumb" src="" alt="" style="width:100%;height:120px;object-fit:cover;object-position:50% 50%;display:block;pointer-events:none;">
-            <div id="img-focal-dot" style="position:absolute;width:16px;height:16px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #000,0 2px 6px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none;left:50%;top:50%;"></div>
+          <div id="img-focal-wrap" style="position:relative;overflow:hidden;cursor:crosshair;touch-action:none;border:2px solid rgba(0,0,0,.25);border-radius:4px;user-select:none;" onpointerdown="focalDown(event,'img')" onpointermove="focalMove(event,'img')" onpointerup="focalUp(event)">
+            <img id="img-focal-thumb" src="" alt="" style="width:100%;height:180px;object-fit:cover;object-position:50% 50%;display:block;pointer-events:none;">
+            <div id="img-focal-dot" style="position:absolute;width:18px;height:18px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #000,0 2px 8px rgba(0,0,0,.6);transform:translate(-50%,-50%);pointer-events:none;left:50%;top:50%;"></div>
           </div>
         </div>
       </div>
@@ -1170,10 +1170,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           </div>
         </div>
         <div id="mixed-pos-row" style="display:none;">
-          <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">초점 위치 <span style="font-weight:400;">(이미지를 클릭·드래그해서 설정)</span></div>
-          <div id="mixed-focal-wrap" style="position:relative;overflow:hidden;cursor:crosshair;touch-action:none;border:1.5px solid rgba(0,0,0,.2);border-radius:2px;user-select:none;" onpointerdown="focalDown(event,'mixed')" onpointermove="focalMove(event,'mixed')" onpointerup="focalUp(event)">
-            <img id="mixed-focal-thumb" src="" alt="" style="width:100%;height:120px;object-fit:cover;object-position:50% 50%;display:block;pointer-events:none;">
-            <div id="mixed-focal-dot" style="position:absolute;width:16px;height:16px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #000,0 2px 6px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none;left:50%;top:50%;"></div>
+          <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:6px;">초점 위치 <span style="font-weight:400;">(이미지를 클릭·드래그해서 설정)</span></div>
+          <div style="display:flex;justify-content:center;">
+            <div id="mixed-focal-wrap" style="position:relative;overflow:hidden;cursor:crosshair;touch-action:none;border:2px solid rgba(0,0,0,.25);border-radius:6px;user-select:none;width:180px;aspect-ratio:9/16;flex-shrink:0;" onpointerdown="focalDown(event,'mixed')" onpointermove="focalMove(event,'mixed')" onpointerup="focalUp(event)">
+              <img id="mixed-focal-thumb" src="" alt="" style="width:100%;height:100%;object-fit:cover;object-position:50% 50%;display:block;pointer-events:none;">
+              <div id="mixed-focal-dot" style="position:absolute;width:18px;height:18px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #000,0 2px 8px rgba(0,0,0,.6);transform:translate(-50%,-50%);pointer-events:none;left:50%;top:50%;"></div>
+            </div>
           </div>
         </div>
       </div>
