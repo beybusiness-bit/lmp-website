@@ -242,7 +242,7 @@ async function init() {
     window.parent.postMessage({ type: 'lmp-ready' }, '*');
   } catch (e) {
     console.error('[copy-gen init]', e);
-    showErr('불러오기에 실패했어요. 다시 시도해주세요.');
+    showErr('불러오기에 실패했어요: ' + (e.code || e.message || '알 수 없는 오류'));
   }
 }
 

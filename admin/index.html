@@ -4039,6 +4039,8 @@ function openFmtDd(btn,type,ctx){
         <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;" id="tool-picker-tabs">
           <button onpointerdown="epd(event)" onclick="loadToolPicker('form',this)" style="padding:4px 8px;border:1.5px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">폼</button>
           <button onpointerdown="epd(event)" onclick="loadToolPicker('schedule',this)" style="padding:4px 8px;border:1.5px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">일정</button>
+          <button onpointerdown="epd(event)" onclick="loadToolPicker('guide',this)" style="padding:4px 8px;border:1.5px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">계산기·가이드</button>
+          <button onpointerdown="epd(event)" onclick="loadToolPicker('booth',this)" style="padding:4px 8px;border:1.5px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">꾸미기</button>
           <button onpointerdown="epd(event)" onclick="loadToolPicker('copy-gen',this)" style="padding:4px 8px;border:1.5px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">문구 생성기</button>
         </div>
         <div id="tool-picker-list" style="max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;"></div>
@@ -4203,19 +4205,36 @@ function _detectLinkUrl(){
 async function loadToolPicker(toolType, btn){
   const el=document.getElementById('tool-picker-list');
   if(!el) return;
-  document.getElementById('tool-picker-tabs')?.querySelectorAll('button').forEach(b=>b.style.background='transparent');
+  document.getElementById('tool-picker-tabs')?.querySelectorAll('button').forEach(b=>{b.style.background='transparent';b.style.color='';});
   if(btn) btn.style.background='#000',btn.style.color='#fff';
   el.innerHTML='<div style="font-size:11px;color:rgba(0,0,0,.4);padding:4px 0;">불러오는 중…</div>';
-  const colMap={'form':'cms_form_configs','schedule':'cms_schedule_configs','copy-gen':'cms_copy_gen_configs'};
-  const urlPfx={'form':'/tools/form/?id=','schedule':'/tools/schedule/?id=','copy-gen':'/tools/copy-gen/?id='};
+  const urlPfx={
+    'form':'/tools/form/?id=',
+    'schedule':'/tools/schedule/?id=',
+    'copy-gen':'/tools/copy-gen/?id=',
+    'guide':'/tools/guide/?id=',
+    'booth':'/tools/booth/?config=',
+  };
   try{
-    const snap=await db.collection(colMap[toolType]).orderBy('createdAt','desc').get();
-    if(!snap.docs.length){el.innerHTML='<div style="font-size:11px;color:rgba(0,0,0,.4);padding:4px 0;">인스턴스가 없어요.</div>';return;}
-    el.innerHTML=snap.docs.map(d=>`
+    let docs=[];
+    if(toolType==='guide'){
+      const snap=await db.collection('game_configs').doc('guide').collection('forms').get();
+      docs=snap.docs;
+    } else if(toolType==='booth'){
+      const snap=await db.collection('game_configs').where('_type','==','deco_config').get();
+      docs=snap.docs;
+    } else {
+      const colMap={'form':'cms_form_configs','schedule':'cms_schedule_configs','copy-gen':'cms_copy_gen_configs'};
+      const snap=await db.collection(colMap[toolType]).orderBy('createdAt','desc').get();
+      docs=snap.docs;
+    }
+    if(!docs.length){el.innerHTML='<div style="font-size:11px;color:rgba(0,0,0,.4);padding:4px 0;">인스턴스가 없어요.</div>';return;}
+    const nameKey=toolType==='booth'?'name':'title';
+    el.innerHTML=docs.map(d=>`
       <button onpointerdown="epd(event)" onclick="selectToolUrl('${urlPfx[toolType]+d.id}')" style="text-align:left;padding:5px 8px;border:1.5px solid rgba(0,0,0,.2);background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
-        title="${(d.data().title||'').replace(/"/g,'&quot;')}">${d.data().title||'(제목 없음)'} <span style="font-weight:400;color:rgba(0,0,0,.4);font-size:10px;">${d.id.slice(0,8)}…</span></button>
+        title="${(d.data()[nameKey]||'').replace(/"/g,'&quot;')}">${d.data()[nameKey]||'(제목 없음)'} <span style="font-weight:400;color:rgba(0,0,0,.4);font-size:10px;">${d.id.slice(0,8)}…</span></button>
     `).join('');
-  }catch(e){el.innerHTML='<div style="font-size:11px;color:#c00;padding:4px 0;">불러오기 실패</div>';}
+  }catch(e){el.innerHTML='<div style="font-size:11px;color:#c00;padding:4px 0;">불러오기 실패: '+e.message+'</div>';}
 }
 function selectToolUrl(url){
   const inp=document.getElementById('fmt-link-inp');
