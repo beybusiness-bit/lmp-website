@@ -2409,12 +2409,14 @@ function startNewProject() {
   setLogoType('image'); setLayoutType('separate'); setDday(false); setAuth(false);
   renderKeyColorList(); renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList();
   switchInnerTab('basic'); showProjView('edit');
+  history.pushState({v:'proj'}, '', '#edit/new/basic');
   setTimeout(()=>{ _projDirtyLock=false; projDirty=false; }, 300);
 }
 async function editProject(id) {
   if(projDirty && curProjId && curProjId!==id && !confirm('저장하지 않은 변경사항이 있어요. 저장 없이 다른 프로젝트로 이동하시겠어요?')) return;
   projDirty=false; _projDirtyLock=true;
   showProjView('edit');
+  history.pushState({v:'proj', id}, '', '#edit/'+id+'/basic');
   try {
     const doc = await db.collection('cms_projects').doc(id).get();
     if (!doc.exists) return;
@@ -2811,6 +2813,7 @@ async function openStageContent(i) {
     }
   }
   document.getElementById('stage-content-overlay').style.display = 'flex';
+  history.pushState({v:'stage', idx:i}, '', '#edit/'+curProjId+'/stages/'+i);
   applyPreviewSize();
   window.scrollTo(0,0);
   try {
@@ -3509,6 +3512,7 @@ function openBlockModal(idx,insertAt){
   const showVar = curAuthEnabled && curAuthFields.length > 0;
   ['text','mixed'].forEach(c=>{const b=document.getElementById('fmt-var-'+c);if(b)b.style.display=showVar?'':'none';});
   document.getElementById('block-modal').classList.add('on');
+  history.pushState({v:'block'}, '', '#edit/'+curProjId+'/stages/'+(curEditingStageIdx??0)+'/block');
   updateBmPreview();
 }
 function closeBlockModal(){document.getElementById('block-modal').classList.remove('on');}
@@ -4340,6 +4344,33 @@ window.addEventListener('load', () => {
   }
   window.addEventListener('beforeunload', e => {
     if(projDirty || stageDirty) { e.preventDefault(); e.returnValue=''; }
+  });
+  window.addEventListener('popstate', function() {
+    const bm = document.getElementById('block-modal');
+    const sco = document.getElementById('stage-content-overlay');
+    const pev = document.getElementById('proj-edit-view');
+    if (bm && bm.classList.contains('on')) {
+      bm.classList.remove('on');
+      return;
+    }
+    if (sco && sco.style.display !== 'none') {
+      if (stageDirty && !confirm('저장하지 않은 변경사항이 있어요. 저장 없이 닫으시겠어요?')) {
+        history.forward(); return;
+      }
+      stageDirty = false;
+      sco.style.display = 'none';
+      curEditingStageIdx = null; curBlocks = [];
+      return;
+    }
+    if (pev && pev.style.display !== 'none') {
+      if (projDirty && !confirm('저장하지 않은 변경사항이 있어요. 저장 없이 나가시겠어요?')) {
+        history.forward(); return;
+      }
+      projDirty = false; _projDirtyLock = true;
+      showProjView('list');
+      curProjId = null; curStages = []; curBgImages = []; curAuthFields = []; curUsers = []; curAuthCollection = '';
+      setTimeout(() => { _projDirtyLock = false; }, 200);
+    }
   });
 });
 

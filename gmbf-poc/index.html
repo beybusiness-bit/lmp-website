@@ -881,7 +881,7 @@ async function openStageContent(stage){
   document.getElementById('guide-scroll-body').style.display='none';
   document.getElementById('guide-slide-body').style.display='none';
   document.getElementById('guide-screen').classList.add('open');
-  history.replaceState(null,'','#stage/'+stage.id);
+  history.pushState({stageId:stage.id},'','#stage/'+stage.id);
   try{
     const doc=await db.collection('cms_projects').doc(PROJECT_ID)
       .collection('stage_content').doc(stage.id).get();
@@ -895,9 +895,14 @@ async function openStageContent(stage){
   }catch(e){ console.error('stage_content load error:',e); showGuideEmpty('불러오기에 실패했어요.'+(e.code?'\n('+e.code+')':'')); }
 }
 function closeGuide(){
-  document.getElementById('guide-screen').classList.remove('open');
-  history.replaceState(null,'','#prep');
+  history.back();
 }
+window.addEventListener('popstate', function() {
+  const guide = document.getElementById('guide-screen');
+  if (guide && guide.classList.contains('open')) {
+    guide.classList.remove('open');
+  }
+});
 function showGuideEmpty(msg){ document.getElementById('guide-scroll-blocks').innerHTML='<div class="guide-empty">'+msg+'</div>'; document.getElementById('guide-scroll-body').style.display='block'; }
 /* 변수 치환: {{key}} → 로그인 사용자 값 */
 function applyVars(html){
