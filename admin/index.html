@@ -3759,7 +3759,17 @@ function fmtClr(ctx,clr){
   focusEd(ctx);
   const sel=window.getSelection();
   if(sel&&sel.isCollapsed){const span=_getPendingSpan(ctx);if(span){span.style.color=clr;return;}}
-  document.execCommand('foreColor',false,clr);
+  /* #000000은 브라우저가 "기본색"으로 인식해 color 속성을 붙이지 않는 버그 우회:
+     #000001(거의 검정)로 먼저 적용 후 즉시 #000000으로 교체 */
+  const applyClr=clr==='#000000'?'#000001':clr;
+  document.execCommand('foreColor',false,applyClr);
+  if(clr==='#000000'){
+    const ed=getEd(ctx);if(!ed)return;
+    ed.querySelectorAll('font[color]').forEach(f=>{
+      if(f.getAttribute('color')==='#000001'||f.style.color==='rgb(1, 1, 1)'){f.style.color='#000000';f.removeAttribute('color');}
+    });
+    ed.querySelectorAll('[style*="rgb(1, 1, 1)"]').forEach(el=>{el.style.color='#000000';});
+  }
 }
 function prevImg(id,url){const el=document.getElementById(id);if(url&&url.startsWith('http')){el.src=url;el.style.display='block';}else el.style.display='none';}
 
