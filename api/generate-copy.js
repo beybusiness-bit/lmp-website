@@ -60,7 +60,13 @@ export default async function handler(req, res) {
   };
 
   const styleLines = Object.entries(styleSelections || {})
-    .map(([k, v]) => styleNames[k] ? `- ${styleNames[k].label}: ${styleNames[k].choices[v] || v}` : null)
+    .map(([k, v]) => {
+      if (!styleNames[k]) return null;
+      const dim = styleNames[k];
+      // v may be a comma-joined multi-select string
+      const label = v.split(',').map(p => dim.choices[p.trim()] || p.trim()).filter(Boolean).join(', ');
+      return `- ${dim.label}: ${label}`;
+    })
     .filter(Boolean).join('\n');
 
   const charLimit = [

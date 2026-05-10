@@ -6088,10 +6088,12 @@ let cgFields = [];
 let cgRefs = [];
 let cgStyleModes = {};
 let cgFixedValues = {};
+let cgMultiSelect = {};
+let cgMaxSelect = {};
 
 function cgBack(){ closeTool(); }
 function cgShowList(){
-  cgCurDocId=null; cgFields=[]; cgRefs=[]; cgStyleModes={}; cgFixedValues={};
+  cgCurDocId=null; cgFields=[]; cgRefs=[]; cgStyleModes={}; cgFixedValues={}; cgMultiSelect={}; cgMaxSelect={};
   document.getElementById('cg-list-screen').style.display='';
   document.getElementById('cg-edit-screen').style.display='none';
   document.getElementById('cg-header-title').textContent='문구 생성기';
@@ -6163,9 +6165,14 @@ async function cgEdit(docId){
     const d=snap.data()||{};
     cgFields=JSON.parse(JSON.stringify(d.fields||[]));
     cgRefs=JSON.parse(JSON.stringify(d.references||[]));
-    cgStyleModes={}; cgFixedValues={};
+    cgStyleModes={}; cgFixedValues={}; cgMultiSelect={}; cgMaxSelect={};
     const styleOpts=d.styleOptions||PREDEFINED_STYLE_OPTIONS.map(s=>({...s,mode:'user-select',fixedValue:''}));
-    styleOpts.forEach(s=>{ cgStyleModes[s.key]=s.mode||'user-select'; cgFixedValues[s.key]=s.fixedValue||''; });
+    styleOpts.forEach(s=>{
+      cgStyleModes[s.key]=s.mode||'user-select';
+      cgFixedValues[s.key]=s.fixedValue||'';
+      cgMultiSelect[s.key]=s.multiSelect||false;
+      cgMaxSelect[s.key]=s.maxSelect||2;
+    });
     document.getElementById('cg-title').value=d.title||'';
     document.getElementById('cg-desc').value=d.description||'';
     document.getElementById('cg-count').value=d.outputConfig?.count||5;
@@ -6202,12 +6209,15 @@ function cgRenderStyleList(){
   const el=document.getElementById('cg-style-list');
   el.innerHTML=PREDEFINED_STYLE_OPTIONS.map(s=>{
     const mode=cgStyleModes[s.key]||'user-select';
+    const multiSel=cgMultiSelect[s.key]||false;
+    const maxSel=cgMaxSelect[s.key]||2;
     const fixedVal=cgFixedValues[s.key]||'';
     const fixableChoices=s.choices.filter(c=>c.value!=='custom');
     const fixedOpts=fixableChoices.map(c=>`<option value="${c.value}"${fixedVal===c.value?' selected':''}>${c.label}</option>`).join('');
     const choicePreview=fixableChoices.map(c=>c.label).join(' / ')+(s.allowCustom?' / 기타':'');
+    const maxChoices=fixableChoices.length+(s.allowCustom?1:0);
     return `<div style="padding:12px 0;border-bottom:1px solid rgba(0,0,0,.08);">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:${mode==='fixed'?'8px':'0'};">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
         <span style="font-size:13px;font-weight:700;flex:1;">${s.label} <span style="font-weight:400;font-size:11px;color:rgba(0,0,0,.4);">(${choicePreview})</span>${s.proseOnly?` <span style="font-size:10px;font-weight:600;color:rgba(0,0,0,.4);">문장식 전용</span>`:''}
 </span>
         <div style="display:flex;gap:4px;flex-shrink:0;">
@@ -6215,13 +6225,21 @@ function cgRenderStyleList(){
           <button class="tgl-btn${mode==='fixed'?' on':''}" onclick="cgSetStyleMode('${s.key}','fixed')">고정</button>
         </div>
       </div>
-      <div id="cg-fixed-row-${s.key}" style="display:${mode==='fixed'?'':'none'};">
+      ${mode==='user-select'?`<div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;color:rgba(0,0,0,.5);">중복선택</span>
+        <div class="switch${multiSel?' on':''}" onclick="cgToggleMultiSelect('${s.key}')"></div>
+        ${multiSel?`<span style="font-size:12px;color:rgba(0,0,0,.5);">최대</span>
+          <input type="number" class="fi-sm" style="width:52px;padding:4px 8px;margin-bottom:0;" value="${maxSel}" min="2" max="${maxChoices}" oninput="cgMaxSelect['${s.key}']=Math.min(Math.max(parseInt(this.value)||2,2),${maxChoices})">
+          <span style="font-size:12px;color:rgba(0,0,0,.5);">개까지</span>`:''}
+      </div>`:''}
+      <div id="cg-fixed-row-${s.key}" style="display:${mode==='fixed'?'':'none'};margin-top:6px;">
         <select class="fi-sm" style="margin-bottom:0;" onchange="cgFixedValues['${s.key}']=this.value;">${fixedOpts}</select>
       </div>
     </div>`;
   }).join('');
 }
 function cgSetStyleMode(key,mode){ cgStyleModes[key]=mode; cgRenderStyleList(); }
+function cgToggleMultiSelect(key){ cgMultiSelect[key]=!cgMultiSelect[key]; if(!cgMultiSelect[key]) delete cgMaxSelect[key]; cgRenderStyleList(); }
 function cgRenderRefList(){
   const el=document.getElementById('cg-ref-list-admin');
   if(!cgRefs.length){ el.innerHTML='<div class="empty-msg" style="padding:6px 0;">참고 문구가 없어요.</div>'; return; }
@@ -6243,6 +6261,7 @@ async function cgSave(){
   if(!title){ alert('제목을 입력해주세요.'); return; }
   const styleOptions=PREDEFINED_STYLE_OPTIONS.map(s=>({
     ...s, mode:cgStyleModes[s.key]||'user-select', fixedValue:cgFixedValues[s.key]||'',
+    multiSelect:cgMultiSelect[s.key]||false, maxSelect:cgMaxSelect[s.key]||2,
   }));
   const outputConfig={
     count:Math.min(Math.max(parseInt(document.getElementById('cg-count')?.value)||5,1),10),

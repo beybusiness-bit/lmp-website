@@ -43,6 +43,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .style-pill{padding:8px 14px;border:2px solid rgba(0,0,0,.3);background:transparent;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.7);}
 .style-pill.on{background:#000;color:#fff;border-color:#000;}
 
+/* style hint */
+.style-hint{font-size:11px;color:rgba(0,0,0,.45);font-weight:600;margin-top:6px;}
+.style-pill:disabled{opacity:.3;cursor:default;}
+
 /* title / description */
 .cg-header{margin-bottom:22px;}
 .cg-title{font-size:18px;font-weight:800;line-height:1.4;margin-bottom:6px;}
@@ -126,7 +130,34 @@ firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.firestore();
 
 const CONFIG_ID = new URLSearchParams(location.search).get('id') || '';
+const PREDEFINED_STYLE_OPTIONS = [
+  { key:'format', label:'형식', choices:[
+    {value:'bullet',label:'개조식 (항목별 나열)'},{value:'prose',label:'문장식 (자연스러운 문단)'},
+    {value:'noun_ending',label:'명사형 종결'},{value:'slogan',label:'슬로건형'},
+    {value:'question',label:'질문형'},{value:'storytelling',label:'스토리텔링형'},
+  ]},
+  { key:'speech_level', label:'어미', proseOnly:true, choices:[
+    {value:'honorific',label:'경어 (합니다체)'},{value:'plain',label:'평어 (한다체)'},
+  ]},
+  { key:'register', label:'말투', choices:[
+    {value:'spoken',label:'구어체'},{value:'written',label:'문어체'},
+    {value:'sns',label:'소셜미디어체'},{value:'letter',label:'편지체'},{value:'inner',label:'독백형'},
+  ]},
+  { key:'formality', label:'격식', choices:[
+    {value:'intimate',label:'친밀한'},{value:'casual',label:'편안한 톤'},
+    {value:'neutral',label:'중립적인'},{value:'formal',label:'격식체'},{value:'authoritative',label:'권위 있는'},
+  ]},
+  { key:'mood', label:'분위기·감성', allowCustom:true, choices:[
+    {value:'warm',label:'따뜻한'},{value:'friendly',label:'친근한'},{value:'playful',label:'유쾌한'},
+    {value:'exciting',label:'설레는'},{value:'touching',label:'감동적인'},{value:'lyrical',label:'감성적인'},
+    {value:'mysterious',label:'신비로운'},{value:'calm',label:'차분한'},{value:'serious',label:'진지한'},
+    {value:'professional',label:'전문적인'},{value:'trustworthy',label:'신뢰감 있는'},{value:'solemn',label:'장엄한'},
+    {value:'intense',label:'강렬한'},{value:'urgent',label:'긴박한'},{value:'cold',label:'냉정한'},
+    {value:'rigid',label:'딱딱한'},{value:'custom',label:'기타…'},
+  ]},
+];
 let config = null;
+let mergedStyleOptions = [];
 let styleSelections = {};
 let customStyleText = {};
 let allPhrases = [];
@@ -179,20 +210,34 @@ function renderField(f) {
 }
 
 function renderStyleDim(dim) {
-  const pills = dim.choices.map(c =>
-    `<button type="button" class="style-pill${styleSelections[dim.key] === c.value ? ' on' : ''}"
-      onclick="toggleStylePill(this,'${esc(dim.key)}','${esc(c.value)}')">${esc(c.label)}</button>`
-  ).join('');
+  const multiSel = dim.multiSelect || false;
+  const maxSel = dim.maxSelect || 2;
+  const curSel = styleSelections[dim.key];
+  const selArr = multiSel ? (Array.isArray(curSel) ? curSel : []) : null;
+
+  const pills = dim.choices.map(c => {
+    const isOn = multiSel ? selArr.includes(c.value) : curSel === c.value;
+    return `<button type="button" class="style-pill${isOn ? ' on' : ''}"
+      onclick="toggleStylePill(this,'${esc(dim.key)}','${esc(c.value)}')">${esc(c.label)}</button>`;
+  }).join('');
+
   const hasCustom = dim.choices.some(c => c.value === 'custom');
+  const showCustom = hasCustom && (multiSel ? selArr.includes('custom') : curSel === 'custom');
   const customInp = hasCustom
     ? `<input type="text" id="style-custom-${esc(dim.key)}" class="ff-inp"
         placeholder="분위기를 직접 입력해주세요 (예: 귀여운, 학구적인…)"
-        style="display:${styleSelections[dim.key]==='custom'?'block':'none'};margin-top:10px;"
+        style="display:${showCustom?'block':'none'};margin-top:10px;"
         oninput="customStyleText['${esc(dim.key)}']=this.value">`
     : '';
+
+  const hint = multiSel
+    ? `<div class="style-hint" id="style-hint-${esc(dim.key)}">여러 개 선택 가능 (최대 ${maxSel}개, 현재 ${selArr.length}개 선택됨)</div>`
+    : '';
+
   const inner = `<div class="style-dim">
     <div class="style-dim-lbl">${esc(dim.label)}</div>
     <div class="style-pills" id="style-pills-${esc(dim.key)}">${pills}</div>
+    ${hint}
     ${customInp}
   </div>`;
   if (dim.key === 'speech_level') {
@@ -204,15 +249,43 @@ function renderStyleDim(dim) {
 function toggleStylePill(btn, key, value) {
   const container = document.getElementById('style-pills-' + key);
   if (!container) return;
-  const isOn = btn.classList.contains('on');
-  container.querySelectorAll('.style-pill').forEach(p => p.classList.remove('on'));
-  if (!isOn) { btn.classList.add('on'); styleSelections[key] = value; }
-  else { delete styleSelections[key]; }
-  const customInp = document.getElementById('style-custom-' + key);
-  if (customInp) {
-    const show = !isOn && value === 'custom';
-    customInp.style.display = show ? 'block' : 'none';
-    if (show) { customInp.value = customStyleText[key] || ''; customInp.focus(); }
+  const dim = mergedStyleOptions.find(d => d.key === key);
+  const multiSel = dim?.multiSelect || false;
+  const maxSel = dim?.maxSelect || 2;
+
+  if (multiSel) {
+    if (!Array.isArray(styleSelections[key])) styleSelections[key] = [];
+    const isOn = btn.classList.contains('on');
+    if (isOn) {
+      styleSelections[key] = styleSelections[key].filter(v => v !== value);
+      btn.classList.remove('on');
+    } else {
+      if (styleSelections[key].length >= maxSel) return;
+      styleSelections[key].push(value);
+      btn.classList.add('on');
+    }
+    if (!styleSelections[key].length) delete styleSelections[key];
+    // update hint count
+    const hint = document.getElementById('style-hint-' + key);
+    if (hint) hint.textContent = `여러 개 선택 가능 (최대 ${maxSel}개, 현재 ${(styleSelections[key]||[]).length}개 선택됨)`;
+    // show/hide custom input
+    const customInp = document.getElementById('style-custom-' + key);
+    if (customInp) {
+      const sel = styleSelections[key] || [];
+      customInp.style.display = sel.includes('custom') ? 'block' : 'none';
+      if (sel.includes('custom') && value === 'custom') { customInp.value = customStyleText[key] || ''; customInp.focus(); }
+    }
+  } else {
+    const isOn = btn.classList.contains('on');
+    container.querySelectorAll('.style-pill').forEach(p => p.classList.remove('on'));
+    if (!isOn) { btn.classList.add('on'); styleSelections[key] = value; }
+    else { delete styleSelections[key]; }
+    const customInp = document.getElementById('style-custom-' + key);
+    if (customInp) {
+      const show = !isOn && value === 'custom';
+      customInp.style.display = show ? 'block' : 'none';
+      if (show) { customInp.value = customStyleText[key] || ''; customInp.focus(); }
+    }
   }
   if (key === 'format') updateSpeechLevelVisibility();
 }
@@ -244,8 +317,17 @@ async function init() {
       document.getElementById('cg-header').style.display = '';
     }
 
+    // PREDEFINED와 저장된 styleOptions를 병합 — 구 형식 config도 모든 차원이 표시되도록
+    const savedByKey = {};
+    (config.styleOptions || []).forEach(s => { savedByKey[s.key] = s; });
+    mergedStyleOptions = PREDEFINED_STYLE_OPTIONS.map(pred => {
+      const saved = savedByKey[pred.key] || {};
+      return { ...pred, mode: saved.mode || 'user-select', fixedValue: saved.fixedValue || '',
+               multiSelect: saved.multiSelect || false, maxSelect: saved.maxSelect || 2 };
+    });
+
     // admin이 고정한 스타일 값을 초기 선택으로 세팅
-    (config.styleOptions || []).forEach(dim => {
+    mergedStyleOptions.forEach(dim => {
       if (dim.mode === 'fixed' && dim.fixedValue) styleSelections[dim.key] = dim.fixedValue;
     });
 
@@ -261,7 +343,7 @@ async function init() {
     document.getElementById('cg-field-list').innerHTML = fields.map(renderField).join('');
 
     // 스타일 선택 UI (user-select 항목만)
-    const userStyleDims = (config.styleOptions || []).filter(d => d.mode === 'user-select');
+    const userStyleDims = mergedStyleOptions.filter(d => d.mode === 'user-select');
     if (userStyleDims.length) {
       document.getElementById('cg-style-section').style.display = '';
       document.getElementById('cg-style-dims').innerHTML = userStyleDims.map(renderStyleDim).join('');
@@ -301,10 +383,13 @@ async function callAPI(existingPhrases) {
   const fields = collectFields();
   if (fields === null) return null;
 
-  // 'custom' 값은 사용자가 입력한 텍스트로 교체
+  // 'custom' 값 교체 + 배열(중복선택) 처리
   const resolvedSelections = {};
   Object.entries(styleSelections).forEach(([k, v]) => {
-    if (v === 'custom') {
+    if (Array.isArray(v)) {
+      const resolved = v.map(val => val === 'custom' ? (customStyleText[k]||'').trim() : val).filter(Boolean);
+      if (resolved.length) resolvedSelections[k] = resolved.join(', ');
+    } else if (v === 'custom') {
       const txt = (customStyleText[k] || '').trim();
       if (txt) resolvedSelections[k] = txt;
     } else if (v) {
