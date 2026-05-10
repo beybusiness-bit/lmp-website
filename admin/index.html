@@ -2484,6 +2484,22 @@ async function restoreFromHash() {
     await editProject(parts[1]);
     const tab = parts[2];
     if (tab && ['basic','design','auth','stages'].includes(tab)) switchInnerTab(tab);
+    return;
+  }
+  if (parts[0]==='tools' && parts[1]) {
+    switchTab('tools');
+    const urlSeg = parts[1];
+    const docId  = parts[2];
+    const toolIdMap = { 'form': 'form-mgr' };
+    const realToolId = toolIdMap[urlSeg] || urlSeg;
+    _navRestore = true;
+    openTool(realToolId);
+    if (docId) {
+      if (realToolId === 'copy-gen') await cgEdit(docId);
+      else if (realToolId === 'schedule') await scEdit(docId);
+      else if (realToolId === 'form-mgr') await toolFormEdit(docId);
+    }
+    _navRestore = false;
   }
 }
 function showProjView(v) {
@@ -4929,7 +4945,6 @@ async function scSave() {
   try {
     await db.collection('cms_schedule_configs').doc(scCurId).update(data);
     alert('저장됐어요!');
-    loadScList();
   } catch(e) { alert('저장 실패: ' + e.message); }
 }
 
