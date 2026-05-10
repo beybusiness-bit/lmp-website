@@ -4036,13 +4036,9 @@ function openFmtDd(btn,type,ctx){
       </div>
       <div style="margin-top:8px;border-top:1px solid rgba(0,0,0,.1);padding-top:8px;">
         <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:6px;">도구 직접 연결</div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;" id="tool-picker-tabs">
-          <button onpointerdown="epd(event)" onclick="loadToolPicker('form',this)" style="padding:4px 8px;border:1.5px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">폼</button>
-          <button onpointerdown="epd(event)" onclick="loadToolPicker('schedule',this)" style="padding:4px 8px;border:1.5px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">일정</button>
-          <button onpointerdown="epd(event)" onclick="loadToolPicker('guide',this)" style="padding:4px 8px;border:1.5px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">계산기·가이드</button>
-          <button onpointerdown="epd(event)" onclick="loadToolPicker('booth',this)" style="padding:4px 8px;border:1.5px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">꾸미기</button>
-          <button onpointerdown="epd(event)" onclick="loadToolPicker('copy-gen',this)" style="padding:4px 8px;border:1.5px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">문구 생성기</button>
-        </div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;" id="tool-picker-tabs">${
+          TOOL_LINK_REGISTRY.map(t=>`<button onpointerdown="epd(event)" onclick="loadToolPicker('${t.id}',this)" style="padding:4px 8px;border:1.5px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">${t.label}</button>`).join('')
+        }</div>
         <div id="tool-picker-list" style="max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;"></div>
       </div>
     </div>`;
@@ -4202,39 +4198,86 @@ function removeFmtLink(ctx){
 function _detectLinkUrl(){
   try{const sel=window.getSelection();if(!sel.rangeCount)return '';let n=sel.getRangeAt(0).startContainer;if(n.nodeType===3)n=n.parentElement;return n.closest('a')?.getAttribute('href')||'';}catch(e){return '';}
 }
-async function loadToolPicker(toolType, btn){
-  const el=document.getElementById('tool-picker-list');
+/* ─── 도구 링크 레지스트리 ───────────────────────────────────
+   새 도구 추가 시 이 배열에만 항목 추가하면 링크 피커에 자동 반영.
+   단일 도구(인스턴스 없음): url 필드만 지정, getInstances 생략.
+   다중 도구(인스턴스 선택): urlPrefix + getInstances 지정.
+──────────────────────────────────────────────────────────── */
+const TOOL_LINK_REGISTRY = [
+  {
+    id: 'form', label: '폼',
+    urlPrefix: '/tools/form/?id=',
+    getInstances: async () => {
+      const s = await db.collection('cms_form_configs').orderBy('createdAt','desc').get();
+      return s.docs.map(d => ({ id: d.id, name: d.data().title }));
+    },
+  },
+  {
+    id: 'schedule', label: '일정',
+    urlPrefix: '/tools/schedule/?id=',
+    getInstances: async () => {
+      const s = await db.collection('cms_schedule_configs').orderBy('createdAt','desc').get();
+      return s.docs.map(d => ({ id: d.id, name: d.data().title }));
+    },
+  },
+  {
+    id: 'guide', label: '계산기·가이드',
+    urlPrefix: '/tools/guide/?id=',
+    getInstances: async () => {
+      const s = await db.collection('game_configs').doc('guide').collection('forms').get();
+      return s.docs.map(d => ({ id: d.id, name: d.data().title }));
+    },
+  },
+  {
+    id: 'booth', label: '꾸미기',
+    urlPrefix: '/tools/booth/?config=',
+    getInstances: async () => {
+      const s = await db.collection('game_configs').where('_type','==','deco_config').get();
+      return s.docs.map(d => ({ id: d.id, name: d.data().name }));
+    },
+  },
+  {
+    id: 'copy-gen', label: '문구 생성기',
+    urlPrefix: '/tools/copy-gen/?id=',
+    getInstances: async () => {
+      const s = await db.collection('cms_copy_gen_configs').orderBy('createdAt','desc').get();
+      return s.docs.map(d => ({ id: d.id, name: d.data().title }));
+    },
+  },
+  /* 새 도구 추가 예시:
+  {
+    id: 'youtube-playlist', label: '유튜브 재생목록',
+    url: '/tools/youtube-playlist/',   // 단일 도구: 클릭하면 바로 URL 삽입
+  },
+  */
+];
+
+async function loadToolPicker(toolId, btn){
+  const tool = TOOL_LINK_REGISTRY.find(t => t.id === toolId);
+  if(!tool) return;
+
+  /* 단일 도구: 인스턴스 선택 없이 URL 바로 삽입 */
+  if(tool.url){
+    selectToolUrl(tool.url);
+    return;
+  }
+
+  const el = document.getElementById('tool-picker-list');
   if(!el) return;
   document.getElementById('tool-picker-tabs')?.querySelectorAll('button').forEach(b=>{b.style.background='transparent';b.style.color='';});
-  if(btn) btn.style.background='#000',btn.style.color='#fff';
+  if(btn) btn.style.background='#000', btn.style.color='#fff';
   el.innerHTML='<div style="font-size:11px;color:rgba(0,0,0,.4);padding:4px 0;">불러오는 중…</div>';
-  const urlPfx={
-    'form':'/tools/form/?id=',
-    'schedule':'/tools/schedule/?id=',
-    'copy-gen':'/tools/copy-gen/?id=',
-    'guide':'/tools/guide/?id=',
-    'booth':'/tools/booth/?config=',
-  };
   try{
-    let docs=[];
-    if(toolType==='guide'){
-      const snap=await db.collection('game_configs').doc('guide').collection('forms').get();
-      docs=snap.docs;
-    } else if(toolType==='booth'){
-      const snap=await db.collection('game_configs').where('_type','==','deco_config').get();
-      docs=snap.docs;
-    } else {
-      const colMap={'form':'cms_form_configs','schedule':'cms_schedule_configs','copy-gen':'cms_copy_gen_configs'};
-      const snap=await db.collection(colMap[toolType]).orderBy('createdAt','desc').get();
-      docs=snap.docs;
-    }
-    if(!docs.length){el.innerHTML='<div style="font-size:11px;color:rgba(0,0,0,.4);padding:4px 0;">인스턴스가 없어요.</div>';return;}
-    const nameKey=toolType==='booth'?'name':'title';
-    el.innerHTML=docs.map(d=>`
-      <button onpointerdown="epd(event)" onclick="selectToolUrl('${urlPfx[toolType]+d.id}')" style="text-align:left;padding:5px 8px;border:1.5px solid rgba(0,0,0,.2);background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
-        title="${(d.data()[nameKey]||'').replace(/"/g,'&quot;')}">${d.data()[nameKey]||'(제목 없음)'} <span style="font-weight:400;color:rgba(0,0,0,.4);font-size:10px;">${d.id.slice(0,8)}…</span></button>
-    `).join('');
-  }catch(e){el.innerHTML='<div style="font-size:11px;color:#c00;padding:4px 0;">불러오기 실패: '+e.message+'</div>';}
+    const instances = await tool.getInstances();
+    if(!instances.length){ el.innerHTML='<div style="font-size:11px;color:rgba(0,0,0,.4);padding:4px 0;">인스턴스가 없어요.</div>'; return; }
+    el.innerHTML = instances.map(inst => {
+      const safeName = (inst.name||'(제목 없음)').replace(/"/g,'&quot;');
+      const url = tool.urlPrefix + inst.id;
+      return `<button onpointerdown="epd(event)" onclick="selectToolUrl('${url}')"
+        style="text-align:left;padding:5px 8px;border:1.5px solid rgba(0,0,0,.2);background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+        title="${safeName}">${safeName} <span style="font-weight:400;color:rgba(0,0,0,.4);font-size:10px;">${inst.id.slice(0,8)}…</span></button>`;
+    }).join('');
+  }catch(e){ el.innerHTML='<div style="font-size:11px;color:#c00;padding:4px 0;">불러오기 실패: '+e.message+'</div>'; }
 }
 function selectToolUrl(url){
   const inp=document.getElementById('fmt-link-inp');
