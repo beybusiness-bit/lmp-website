@@ -942,7 +942,8 @@ function blockHtml(b){
       :`<img src="${b.imageUrl||''}" alt="" loading="lazy" style="${ovS}">`;
     const _ova=b.overlayTextVAlign||'bottom';
     const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};
-    const _ovTextStyle=`align-items:${_aiMap[_ova]||'flex-end'};background:rgba(0,0,0,.4);`;
+    const _sha=b.overlayShadow??0.4;
+    const _ovTextStyle=`align-items:${_aiMap[_ova]||'flex-end'};background:rgba(0,0,0,${_sha});`;
     return `<div class="g-block-mixed-overlay" style="${mS}${bgS}">${imgEl}<div class="g-overlay-text" style="${_ovTextStyle}"><div class="g-overlay-text-inner" style="${txS}">${html}</div></div></div>`;
   }
   if(b.type==='embed' && b.embedUrl){

@@ -968,7 +968,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <span class="back-btn" onclick="closeBlockModal()">←</span>
     <span style="font-size:14px;font-weight:800;flex:1;" id="bm-title">블록 추가</span>
     <button class="prev-btn" onclick="togglePreviewPanel('bm-preview-panel')" id="bm-pv-btn" style="font-size:12px;">미리보기</button>
-    <button class="save-btn" onclick="saveBlock()">완료</button>
+    <button class="save-btn" onclick="saveBlock()">저장</button>
   </div>
   <div class="bm-layout">
   <div class="bm-body">
@@ -1184,6 +1184,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <button class="img-fit-btn on" id="ova-top"    onclick="setOverlayVAlign('top')"    onpointerdown="epd(event)">상단</button>
           <button class="img-fit-btn"    id="ova-center" onclick="setOverlayVAlign('center')" onpointerdown="epd(event)">중앙</button>
           <button class="img-fit-btn"    id="ova-bottom" onclick="setOverlayVAlign('bottom')" onpointerdown="epd(event)">하단</button>
+        </div>
+      </div>
+      <div id="overlay-shadow-row" style="margin-top:8px;margin-bottom:8px;display:none;">
+        <div class="ed-lbl" style="margin-bottom:6px;">어두운 오버레이 <span style="font-weight:400;opacity:.55;">(0%=없음 · 100%=완전 검정)</span></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="range" id="overlay-shadow-slider" min="0" max="1" step="0.05" value="0.4" style="flex:1;cursor:pointer;" oninput="curOverlayShadow=parseFloat(this.value);document.getElementById('overlay-shadow-val').textContent=Math.round(this.value*100)+'%';scheduleBmPreview();">
+          <span id="overlay-shadow-val" style="font-size:11px;width:32px;text-align:right;font-weight:700;">40%</span>
         </div>
       </div>
       <div class="ed-lbl" style="margin-top:10px;margin-bottom:8px;">텍스트</div>
@@ -3262,6 +3269,7 @@ let curBlkCheckTextColor='';
 let curBlkVerticalAlign='center';
 let curImgFit='natural',curImgPos='center';
 let curMixedImgFit='cover',curMixedImgPos='center',curMixedHeightFull=false;
+let curOverlayShadow=0.4;
 function setMixedHeightFull(){curMixedHeightFull=true;document.getElementById('mixed-height-val').value='';document.getElementById('mixed-height-full-btn').classList.add('on');scheduleBmPreview();}
 function setImgFit(fit){
   curImgFit=fit;
@@ -3351,9 +3359,10 @@ function onBlkBgPick(v){
   curBlkBgColor=v;
   const h=document.getElementById('blk-bg-hex'); if(h) h.value=v.toUpperCase();
   const p=document.getElementById('blk-bg-color'); if(p) p.value=v;
+  scheduleBmPreview();
 }
 function onBlkBgHex(v){ if(/^#[0-9a-fA-F]{6}$/.test(v)) onBlkBgPick(v); }
-function clearBlkBg(){ curBlkBgColor=''; const h=document.getElementById('blk-bg-hex'); if(h) h.value=''; const p=document.getElementById('blk-bg-color'); if(p) p.value='#ffffff'; }
+function clearBlkBg(){ curBlkBgColor=''; const h=document.getElementById('blk-bg-hex'); if(h) h.value=''; const p=document.getElementById('blk-bg-color'); if(p) p.value='#ffffff'; scheduleBmPreview(); }
 function openBlockModal(idx,insertAt){
   curBlkIdx=idx;
   curBlkInsertAt=(idx===null&&insertAt!==undefined&&insertAt!==null)?insertAt:null;
@@ -3415,7 +3424,10 @@ function openBlockModal(idx,insertAt){
   curMixedHeightFull=b.type==='mixed'&&b.imageHeight==='full';
   const _mhv=document.getElementById('mixed-height-val'); if(_mhv) _mhv.value=b.type==='mixed'&&b.imageHeight!=='full'?(b.imageHeight||''):'';
   const _mhfb=document.getElementById('mixed-height-full-btn'); if(_mhfb) _mhfb.classList.toggle('on',curMixedHeightFull);
-  curOverlayVAlign=b.type==='mixed'?(b.overlayTextVAlign||'bottom'):'bottom';setOverlayVAlign(curOverlayVAlign);setMixedLayout(curMixedLayout);savedRange=null;
+  curOverlayVAlign=b.type==='mixed'?(b.overlayTextVAlign||'bottom'):'bottom';setOverlayVAlign(curOverlayVAlign);
+  curOverlayShadow=b.type==='mixed'?(b.overlayShadow??0.4):0.4;
+  const _ssl=document.getElementById('overlay-shadow-slider');if(_ssl){_ssl.value=curOverlayShadow;document.getElementById('overlay-shadow-val').textContent=Math.round(curOverlayShadow*100)+'%';}
+  setMixedLayout(curMixedLayout);savedRange=null;
   /* spacer 블록 */
   const _sh=document.getElementById('blk-spacer-height');
   if(_sh) _sh.value=b.type==='spacer'?(b.spacerHeight||40):40;
@@ -3473,7 +3485,7 @@ function _buildCurrentBlock(){
     b.mixedLayout=curMixedLayout;
     b.imageFit=curMixedImgFit; b.imagePosition=curMixedImgPos;
     if(curMixedHeightFull){b.imageHeight='full';}else{const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0; if(_mh) b.imageHeight=_mh;}
-    if(curMixedLayout==='overlay') b.overlayTextVAlign=curOverlayVAlign||'bottom';
+    if(curMixedLayout==='overlay'){b.overlayTextVAlign=curOverlayVAlign||'bottom';b.overlayShadow=curOverlayShadow;}
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url')?.value||'';
     b.embedHeight=document.getElementById('embed-height-auto')?.checked?0:(parseInt(document.getElementById('embed-height')?.value)||500);
@@ -3526,7 +3538,7 @@ function saveBlock(){
     b.mixedLayout=curMixedLayout;
     b.imageFit=curMixedImgFit||'cover'; b.imagePosition=curMixedImgPos||'center';
     if(curMixedHeightFull){b.imageHeight='full';}else{const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0;if(_mh) b.imageHeight=_mh; else delete b.imageHeight;}
-    if(curMixedLayout==='overlay') b.overlayTextVAlign=curOverlayVAlign||'bottom'; else delete b.overlayTextVAlign;
+    if(curMixedLayout==='overlay'){b.overlayTextVAlign=curOverlayVAlign||'bottom';b.overlayShadow=curOverlayShadow;}else{delete b.overlayTextVAlign;delete b.overlayShadow;}
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url').value.trim();
     b.embedHeight=document.getElementById('embed-height-auto').checked?0:(parseInt(document.getElementById('embed-height').value)||500);
@@ -3572,8 +3584,10 @@ function saveBlock(){
   else if(curBlkInsertAt!==null)curBlocks.splice(curBlkInsertAt,0,b);
   else curBlocks.push(b);
   stageDirty=true;
-  renderBlockList();closeBlockModal();scheduleGuidePreviewUpdate();
+  renderBlockList();scheduleGuidePreviewUpdate();
   _autoSaveStage();
+  const _sb=document.querySelector('.bm-top .save-btn');
+  if(_sb){const _orig=_sb.textContent;_sb.textContent='저장됨 ✓';_sb.style.background='#1a7a4a';_sb.style.borderColor='#1a7a4a';setTimeout(()=>{_sb.textContent=_orig;_sb.style.background='';_sb.style.borderColor='';},1200);}
 }
 function switchBlkTab(t){
   curBlkType=t;
@@ -3632,7 +3646,7 @@ function openToolManageLink(e){
   document.getElementById('block-modal').classList.remove('on');
   openTool('form-mgr');
 }
-function setMixedLayout(l){curMixedLayout=l;document.getElementById('ml-overlay').classList.toggle('on',l==='overlay');document.getElementById('ml-split').classList.toggle('on',l==='split');const ovRow=document.getElementById('overlay-valign-row');if(ovRow)ovRow.style.display=l==='overlay'?'':'none';}
+function setMixedLayout(l){curMixedLayout=l;document.getElementById('ml-overlay').classList.toggle('on',l==='overlay');document.getElementById('ml-split').classList.toggle('on',l==='split');const ovRow=document.getElementById('overlay-valign-row');if(ovRow)ovRow.style.display=l==='overlay'?'':'none';const shRow=document.getElementById('overlay-shadow-row');if(shRow)shRow.style.display=l==='overlay'?'':'none';scheduleBmPreview();}
 function setOverlayVAlign(v){curOverlayVAlign=v;['top','center','bottom'].forEach(k=>document.getElementById('ova-'+k)?.classList.toggle('on',k===v));scheduleBmPreview();}
 function toggleEmbedHeightAuto(checked){document.getElementById('embed-height-wrap').style.display=checked?'none':'';}
 
@@ -3981,8 +3995,8 @@ function gBlockHtml(b,S){
       return `<div style="${mS}${bgS}${pad}"><img src="${b.imageUrl||''}" style="${spS}" alt=""><div style="${txS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div></div>`;
     }
     const ovS=mfit==='natural'?'width:100%;display:block;':`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;`;
-    const _ova=b.overlayTextVAlign||'bottom';const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};const _ai=_aiMap[_ova]||'flex-end';
-    return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="${ovS}" alt=""><div style="position:absolute;inset:0;display:flex;align-items:${_ai};background:rgba(0,0,0,.4);${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;">${b.textContent||''}</div></div></div>`;
+    const _ova=b.overlayTextVAlign||'bottom';const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};const _ai=_aiMap[_ova]||'flex-end';const _sha=b.overlayShadow??0.4;
+    return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="${ovS}" alt=""><div style="position:absolute;inset:0;display:flex;align-items:${_ai};background:rgba(0,0,0,${_sha});${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;">${b.textContent||''}</div></div></div>`;
   }
   if(b.type==='embed'){
     if(!b.embedUrl) return `<div style="${mS}${bgS}${pad};text-align:center;font-size:${Math.round(11*S)}px;color:rgba(0,0,0,.4);">임베드 URL 없음</div>`;
