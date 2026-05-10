@@ -5904,13 +5904,58 @@ async function deleteBoothBg(idx) {
    문구 생성기 관리 (Copy Generator Manager)
 ════════════════════════════════════════════ */
 const PREDEFINED_STYLE_OPTIONS = [
-  { key:'format',      label:'형식',   choices:[{value:'bullet',label:'개조식'},{value:'prose',label:'문장식'},{value:'slogan',label:'슬로건형'}] },
-  { key:'speech_level',label:'어미',   choices:[{value:'honorific',label:'경어 (합니다체)'},{value:'plain',label:'평어 (한다체)'}], proseOnly:true },
-  { key:'register',    label:'말투',   choices:[{value:'spoken',label:'구어체'},{value:'written',label:'문어체'},{value:'sns',label:'소셜미디어체'}] },
-  { key:'formality',   label:'격식',   choices:[{value:'formal',label:'격식체'},{value:'casual',label:'편안한 톤'},{value:'neutral',label:'중립적인'}] },
-  { key:'mood',        label:'분위기', choices:[{value:'friendly',label:'친근한'},{value:'solemn',label:'장엄한'},{value:'humorous',label:'유머러스한'},{value:'exciting',label:'설레는'}] },
-  { key:'length_feel', label:'길이감', choices:[{value:'concise',label:'간결한'},{value:'normal',label:'보통'},{value:'rich',label:'풍성한'}] },
-  { key:'emotion',     label:'감성',   choices:[{value:'warm',label:'따뜻한'},{value:'professional',label:'전문적인'},{value:'intense',label:'강렬한'},{value:'playful',label:'유쾌한'}] },
+  { key:'format', label:'형식', choices:[
+    {value:'bullet',      label:'개조식 (항목별 나열)'},
+    {value:'prose',       label:'문장식 (자연스러운 문단)'},
+    {value:'slogan',      label:'슬로건형 (짧고 강렬한 한 줄)'},
+    {value:'question',    label:'질문형 (궁금증 유발)'},
+    {value:'storytelling',label:'스토리텔링형 (서사 흐름)'},
+  ]},
+  { key:'speech_level', label:'어미', proseOnly:true, choices:[
+    {value:'honorific', label:'경어 (합니다체)'},
+    {value:'plain',     label:'평어 (한다체)'},
+  ]},
+  { key:'register', label:'말투', choices:[
+    {value:'spoken', label:'구어체 (말하듯 자연스럽게)'},
+    {value:'written',label:'문어체 (정제된 글투)'},
+    {value:'sns',    label:'소셜미디어체 (해시태그·이모지 허용)'},
+    {value:'letter', label:'편지체 (독자에게 직접 말 걸기)'},
+    {value:'inner',  label:'독백형 (내면의 목소리)'},
+  ]},
+  { key:'formality', label:'격식', choices:[
+    {value:'formal',        label:'격식체'},
+    {value:'casual',        label:'편안한 톤'},
+    {value:'neutral',       label:'중립적인'},
+    {value:'intimate',      label:'친밀한 (친구처럼)'},
+    {value:'authoritative', label:'권위 있는'},
+  ]},
+  { key:'mood', label:'분위기', choices:[
+    {value:'friendly',  label:'친근한'},
+    {value:'solemn',    label:'장엄한'},
+    {value:'humorous',  label:'유머러스한'},
+    {value:'exciting',  label:'설레는'},
+    {value:'calm',      label:'차분한'},
+    {value:'urgent',    label:'긴박한'},
+    {value:'touching',  label:'감동적인'},
+    {value:'mysterious',label:'신비로운'},
+  ]},
+  { key:'length_feel', label:'길이감', choices:[
+    {value:'oneliner', label:'한 줄 (초단문)'},
+    {value:'concise',  label:'간결한 (2~3줄)'},
+    {value:'normal',   label:'보통'},
+    {value:'rich',     label:'풍성한'},
+    {value:'narrative',label:'서술형 (긴 호흡)'},
+  ]},
+  { key:'emotion', label:'감성', choices:[
+    {value:'warm',        label:'따뜻한'},
+    {value:'professional',label:'전문적인'},
+    {value:'intense',     label:'강렬한'},
+    {value:'playful',     label:'유쾌한'},
+    {value:'touching',    label:'감동적인'},
+    {value:'trustworthy', label:'신뢰감 있는'},
+    {value:'challenging', label:'도전적인'},
+    {value:'lyrical',     label:'감성적인'},
+  ]},
 ];
 let cgCurDocId = null;
 let cgFields = [];

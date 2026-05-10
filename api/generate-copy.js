@@ -12,13 +12,58 @@ export default async function handler(req, res) {
   const maxChars = outputConfig?.maxChars || 0;
 
   const styleNames = {
-    format:      { label: '형식',   choices: { bullet: '개조식', prose: '문장식', slogan: '슬로건형 (짧고 강렬한 한 줄)' } },
-    register:    { label: '말투',   choices: { spoken: '구어체', written: '문어체', sns: '소셜미디어체 (해시태그·이모지 허용)' } },
-    formality:   { label: '격식',   choices: { formal: '격식체', casual: '편안한 톤', neutral: '중립적인' } },
-    mood:        { label: '분위기', choices: { friendly: '친근한', solemn: '장엄한', humorous: '유머러스한', exciting: '설레는' } },
-    length_feel: { label: '길이감', choices: { concise: '간결한', normal: '보통', rich: '풍성한' } },
-    emotion:     { label: '감성',   choices: { warm: '따뜻한', professional: '전문적인', intense: '강렬한', playful: '유쾌한' } },
-    speech_level:{ label: '어미',   choices: { honorific: '경어 (합니다체)', plain: '평어 (한다체)' } },
+    format:      { label: '형식',   choices: {
+      bullet:      '개조식 (항목별 나열)',
+      prose:       '문장식 (자연스러운 문단)',
+      slogan:      '슬로건형 (짧고 강렬한 한 줄)',
+      question:    '질문형 (궁금증 유발)',
+      storytelling:'스토리텔링형 (서사 흐름)',
+    }},
+    register:    { label: '말투',   choices: {
+      spoken:  '구어체 (말하듯 자연스럽게)',
+      written: '문어체 (정제된 글투)',
+      sns:     '소셜미디어체 (해시태그·이모지 허용)',
+      letter:  '편지체 (독자에게 직접 말 걸기)',
+      inner:   '독백형 (내면의 목소리)',
+    }},
+    formality:   { label: '격식',   choices: {
+      formal:     '격식체',
+      casual:     '편안한 톤',
+      neutral:    '중립적인',
+      intimate:   '친밀한 (친구처럼)',
+      authoritative:'권위 있는',
+    }},
+    mood:        { label: '분위기', choices: {
+      friendly:  '친근한',
+      solemn:    '장엄한',
+      humorous:  '유머러스한',
+      exciting:  '설레는',
+      calm:      '차분한',
+      urgent:    '긴박한',
+      touching:  '감동적인',
+      mysterious:'신비로운',
+    }},
+    length_feel: { label: '길이감', choices: {
+      oneliner: '한 줄 (초단문)',
+      concise:  '간결한 (2~3줄)',
+      normal:   '보통',
+      rich:     '풍성한',
+      narrative:'서술형 (긴 호흡)',
+    }},
+    emotion:     { label: '감성',   choices: {
+      warm:        '따뜻한',
+      professional:'전문적인',
+      intense:     '강렬한',
+      playful:     '유쾌한',
+      touching:    '감동적인',
+      trustworthy: '신뢰감 있는',
+      challenging: '도전적인',
+      lyrical:     '감성적인',
+    }},
+    speech_level:{ label: '어미',   choices: {
+      honorific: '경어 (합니다체)',
+      plain:     '평어 (한다체)',
+    }},
   };
 
   const styleLines = Object.entries(styleSelections || {})
