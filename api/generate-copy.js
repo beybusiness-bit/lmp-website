@@ -12,12 +12,12 @@ export default async function handler(req, res) {
   const maxChars = outputConfig?.maxChars || 0;
 
   const styleNames = {
-    format:      { label: '형식',   choices: { bullet: '개조식', prose: '문장식' } },
-    register:    { label: '말투',   choices: { spoken: '구어체', written: '문어체' } },
-    formality:   { label: '격식',   choices: { formal: '격식체', casual: '편안한 톤' } },
-    mood:        { label: '분위기', choices: { friendly: '친근한', solemn: '장엄한' } },
-    length_feel: { label: '길이감', choices: { concise: '간결한', rich: '풍성한' } },
-    emotion:     { label: '감성',   choices: { warm: '따뜻한', professional: '전문적인' } },
+    format:      { label: '형식',   choices: { bullet: '개조식', prose: '문장식', slogan: '슬로건형 (짧고 강렬한 한 줄)' } },
+    register:    { label: '말투',   choices: { spoken: '구어체', written: '문어체', sns: '소셜미디어체 (해시태그·이모지 허용)' } },
+    formality:   { label: '격식',   choices: { formal: '격식체', casual: '편안한 톤', neutral: '중립적인' } },
+    mood:        { label: '분위기', choices: { friendly: '친근한', solemn: '장엄한', humorous: '유머러스한', exciting: '설레는' } },
+    length_feel: { label: '길이감', choices: { concise: '간결한', normal: '보통', rich: '풍성한' } },
+    emotion:     { label: '감성',   choices: { warm: '따뜻한', professional: '전문적인', intense: '강렬한', playful: '유쾌한' } },
     speech_level:{ label: '어미',   choices: { honorific: '경어 (합니다체)', plain: '평어 (한다체)' } },
   };
 

@@ -4688,11 +4688,23 @@ async function loadScList() {
         <div class="pi-meta">${durLabel} · 필드 ${(data.fields||[]).length}개</div>
         <div class="blk-acts" style="margin-top:6px;">
           <button class="b-btn" onclick="event.stopPropagation();scViewBookings('${d.id}')">📋 예약 현황</button>
+          <button class="b-btn" onclick="event.stopPropagation();scDuplicate('${d.id}',this)" title="복제">⧉</button>
           <button class="b-btn" onclick="event.stopPropagation();if(confirm('이 일정을 삭제할까요?'))scDelete('${d.id}')">✕</button>
         </div>
       </div>`;
     }).join('');
   } catch(e) { el.innerHTML = '<div class="empty-msg">불러오기 실패</div>'; }
+}
+
+async function scDuplicate(docId, btn){
+  if(btn){ btn.disabled=true; btn.textContent='…'; }
+  try{
+    const snap=await db.collection('cms_schedule_configs').doc(docId).get();
+    if(!snap.exists) return;
+    const d=snap.data();
+    await db.collection('cms_schedule_configs').add({...d, title:(d.title||'(제목 없음)')+' (복사본)', createdAt:firebase.firestore.FieldValue.serverTimestamp(), updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    loadScList();
+  }catch(e){ alert('복제 실패: '+e.message); if(btn){btn.disabled=false;btn.textContent='⧉';} }
 }
 
 async function scCreate() {
@@ -5070,11 +5082,22 @@ async function loadTfList(){
         <div class="pi-meta">필드 ${(data.fields||[]).length}개 · ID: ${d.id}</div>
         <div class="blk-acts" style="margin-top:6px;">
           <button class="b-btn" onclick="event.stopPropagation();toolFormEditResponses('${d.id}')">📋 응답</button>
+          <button class="b-btn" onclick="event.stopPropagation();toolFormDuplicate('${d.id}',this)" title="복제">⧉</button>
           <button class="b-btn" onclick="event.stopPropagation();if(confirm('이 폼을 삭제할까요?'))toolFormDelete('${d.id}')">✕</button>
         </div>
       </div>`;
     }).join('');
   }catch(e){el.innerHTML='<div class="empty-msg">불러오기 실패</div>';}
+}
+async function toolFormDuplicate(docId, btn){
+  if(btn){ btn.disabled=true; btn.textContent='…'; }
+  try{
+    const snap=await db.collection('cms_form_configs').doc(docId).get();
+    if(!snap.exists) return;
+    const d=snap.data();
+    await db.collection('cms_form_configs').add({...d, title:(d.title||'(제목 없음)')+' (복사본)', createdAt:firebase.firestore.FieldValue.serverTimestamp(), updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    loadTfList();
+  }catch(e){ alert('복제 실패: '+e.message); if(btn){btn.disabled=false;btn.textContent='⧉';} }
 }
 async function toolFormCreate(){
   const name=prompt('새 폼 이름을 입력하세요.');
@@ -5881,13 +5904,13 @@ async function deleteBoothBg(idx) {
    문구 생성기 관리 (Copy Generator Manager)
 ════════════════════════════════════════════ */
 const PREDEFINED_STYLE_OPTIONS = [
-  { key:'format',      label:'형식',   choices:[{value:'bullet',label:'개조식'},{value:'prose',label:'문장식'}] },
+  { key:'format',      label:'형식',   choices:[{value:'bullet',label:'개조식'},{value:'prose',label:'문장식'},{value:'slogan',label:'슬로건형'}] },
   { key:'speech_level',label:'어미',   choices:[{value:'honorific',label:'경어 (합니다체)'},{value:'plain',label:'평어 (한다체)'}], proseOnly:true },
-  { key:'register',    label:'말투',   choices:[{value:'spoken',label:'구어체'},{value:'written',label:'문어체'}] },
-  { key:'formality',   label:'격식',   choices:[{value:'formal',label:'격식체'},{value:'casual',label:'편안한 톤'}] },
-  { key:'mood',        label:'분위기', choices:[{value:'friendly',label:'친근한'},{value:'solemn',label:'장엄한'}] },
-  { key:'length_feel', label:'길이감', choices:[{value:'concise',label:'간결한'},{value:'rich',label:'풍성한'}] },
-  { key:'emotion',     label:'감성',   choices:[{value:'warm',label:'따뜻한'},{value:'professional',label:'전문적인'}] },
+  { key:'register',    label:'말투',   choices:[{value:'spoken',label:'구어체'},{value:'written',label:'문어체'},{value:'sns',label:'소셜미디어체'}] },
+  { key:'formality',   label:'격식',   choices:[{value:'formal',label:'격식체'},{value:'casual',label:'편안한 톤'},{value:'neutral',label:'중립적인'}] },
+  { key:'mood',        label:'분위기', choices:[{value:'friendly',label:'친근한'},{value:'solemn',label:'장엄한'},{value:'humorous',label:'유머러스한'},{value:'exciting',label:'설레는'}] },
+  { key:'length_feel', label:'길이감', choices:[{value:'concise',label:'간결한'},{value:'normal',label:'보통'},{value:'rich',label:'풍성한'}] },
+  { key:'emotion',     label:'감성',   choices:[{value:'warm',label:'따뜻한'},{value:'professional',label:'전문적인'},{value:'intense',label:'강렬한'},{value:'playful',label:'유쾌한'}] },
 ];
 let cgCurDocId = null;
 let cgFields = [];
@@ -5916,11 +5939,22 @@ async function cgLoadList(){
         <div class="pi-meta">필드 ${(data.fields||[]).length}개 · ID: ${d.id}</div>
         <div class="blk-acts" style="margin-top:6px;">
           <button class="b-btn" onclick="event.stopPropagation();cgViewResultsById('${d.id}')">결과</button>
+          <button class="b-btn" onclick="event.stopPropagation();cgDuplicate('${d.id}',this)" title="복제">⧉</button>
           <button class="b-btn" onclick="event.stopPropagation();if(confirm('삭제할까요?'))cgDeleteById('${d.id}')">✕</button>
         </div>
       </div>`;
     }).join('');
   }catch(e){ el.innerHTML='<div class="empty-msg">불러오기 실패</div>'; }
+}
+async function cgDuplicate(docId, btn){
+  if(btn){ btn.disabled=true; btn.textContent='…'; }
+  try{
+    const snap=await db.collection('cms_copy_gen_configs').doc(docId).get();
+    if(!snap.exists) return;
+    const d=snap.data();
+    await db.collection('cms_copy_gen_configs').add({...d, title:(d.title||'(제목 없음)')+' (복사본)', createdAt:firebase.firestore.FieldValue.serverTimestamp(), updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    cgLoadList();
+  }catch(e){ alert('복제 실패: '+e.message); if(btn){btn.disabled=false;btn.textContent='⧉';} }
 }
 async function cgCreate(){
   const name=prompt('새 문구 생성기 이름을 입력하세요.');
