@@ -360,6 +360,7 @@ let SELF_REG_CTA   = '등록하기';
 let SELF_REG_SUCCESS_MSG = '';
 let GREETING_TEXT  = '';
 let STAGES         = [];
+let _navRestore    = false;
 let STATS          = [];   // [{id, label, collection, countType, unit, enabled}]
 let ELEMENT_ORDER  = ['edition','logo','dday','stats'];
 
@@ -881,7 +882,7 @@ async function openStageContent(stage){
   document.getElementById('guide-scroll-body').style.display='none';
   document.getElementById('guide-slide-body').style.display='none';
   document.getElementById('guide-screen').classList.add('open');
-  history.pushState({stageId:stage.id},'','#stage/'+stage.id);
+  if (!_navRestore) history.pushState({stageId:stage.id},'','#stage/'+stage.id);
   try{
     const doc=await db.collection('cms_projects').doc(PROJECT_ID)
       .collection('stage_content').doc(stage.id).get();
@@ -897,10 +898,15 @@ async function openStageContent(stage){
 function closeGuide(){
   history.back();
 }
-window.addEventListener('popstate', function() {
+window.addEventListener('popstate', function(e) {
   const guide = document.getElementById('guide-screen');
-  if (guide && guide.classList.contains('open')) {
-    guide.classList.remove('open');
+  if (e.state && e.state.stageId) {
+    if (guide && !guide.classList.contains('open')) {
+      const stage = STAGES.find(s => s.id === e.state.stageId);
+      if (stage) { _navRestore=true; openStageContent(stage).finally(()=>{ _navRestore=false; }); }
+    }
+  } else {
+    if (guide && guide.classList.contains('open')) guide.classList.remove('open');
   }
 });
 function showGuideEmpty(msg){ document.getElementById('guide-scroll-blocks').innerHTML='<div class="guide-empty">'+msg+'</div>'; document.getElementById('guide-scroll-body').style.display='block'; }
