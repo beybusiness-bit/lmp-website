@@ -1024,22 +1024,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <input class="img-inp" id="img-link-url" type="url" placeholder="https://…" style="margin-bottom:0;">
       </div>
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,.1);">
-        <div class="ed-lbl" style="font-size:10px;margin-bottom:6px;">이미지 배치</div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">
-          <button class="img-fit-btn on" data-ctx="img" data-fit="natural" onpointerdown="epd(event)" onclick="setImgFit('natural')">원본비율</button>
-          <button class="img-fit-btn" data-ctx="img" data-fit="cover" onpointerdown="epd(event)" onclick="setImgFit('cover')">크롭채움</button>
-          <button class="img-fit-btn" data-ctx="img" data-fit="contain" onpointerdown="epd(event)" onclick="setImgFit('contain')">비율유지</button>
-          <button class="img-fit-btn" data-ctx="img" data-fit="fill" onpointerdown="epd(event)" onclick="setImgFit('fill')">늘려채움</button>
-        </div>
-        <div id="img-height-row" style="display:none;margin-bottom:8px;">
-          <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:3px;">높이 <span style="font-weight:400;">(px, 비워두면 260)</span></div>
-          <input class="fi-sm" id="img-height-val" type="number" min="60" max="1200" placeholder="260" style="width:80px;margin-bottom:0;" oninput="scheduleBmPreview()">
-        </div>
-        <div id="img-pos-row" style="display:none;">
-          <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">초점 위치 <span style="font-weight:400;">(이미지를 클릭·드래그해서 설정)</span></div>
-          <div id="img-focal-wrap" style="position:relative;overflow:hidden;cursor:crosshair;touch-action:none;border:2px solid rgba(0,0,0,.25);border-radius:4px;user-select:none;" onpointerdown="focalDown(event,'img')" onpointermove="focalMove(event,'img')" onpointerup="focalUp(event)">
-            <img id="img-focal-thumb" src="" alt="" style="width:100%;height:180px;object-fit:cover;object-position:50% 50%;display:block;pointer-events:none;">
-            <div id="img-focal-dot" style="position:absolute;width:18px;height:18px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #000,0 2px 8px rgba(0,0,0,.6);transform:translate(-50%,-50%);pointer-events:none;left:50%;top:50%;"></div>
+        <div style="display:grid;grid-template-columns:1fr 110px;gap:10px;align-items:start;">
+          <div>
+            <div class="ed-lbl" style="font-size:10px;margin-bottom:6px;">이미지 배치</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">
+              <button class="img-fit-btn on" data-ctx="img" data-fit="natural" onpointerdown="epd(event)" onclick="setImgFit('natural')">원본비율</button>
+              <button class="img-fit-btn" data-ctx="img" data-fit="cover" onpointerdown="epd(event)" onclick="setImgFit('cover')">크롭채움</button>
+              <button class="img-fit-btn" data-ctx="img" data-fit="contain" onpointerdown="epd(event)" onclick="setImgFit('contain')">비율유지</button>
+              <button class="img-fit-btn" data-ctx="img" data-fit="fill" onpointerdown="epd(event)" onclick="setImgFit('fill')">늘려채움</button>
+            </div>
+            <div id="img-height-row" style="display:none;">
+              <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:3px;">높이 <span style="font-weight:400;">(px, 비워두면 260)</span></div>
+              <input class="fi-sm" id="img-height-val" type="number" min="60" max="1200" placeholder="260" style="width:80px;margin-bottom:0;" oninput="scheduleBmPreview()">
+            </div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">초점 위치 <span style="font-weight:400;font-size:9px;">(드래그)</span></div>
+            <div id="img-focal-wrap" style="position:relative;overflow:hidden;cursor:crosshair;touch-action:none;border:2px solid rgba(0,0,0,.25);border-radius:6px;user-select:none;aspect-ratio:9/16;opacity:0.35;pointer-events:none;" onpointerdown="focalDown(event,'img')" onpointermove="focalMove(event,'img')" onpointerup="focalUp(event)">
+              <img id="img-focal-thumb" src="" alt="" style="width:100%;height:100%;object-fit:cover;object-position:50% 50%;display:block;pointer-events:none;">
+              <div id="img-focal-dot" style="position:absolute;width:16px;height:16px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #000,0 2px 8px rgba(0,0,0,.6);transform:translate(-50%,-50%);pointer-events:none;left:50%;top:50%;"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -1155,26 +1159,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <input class="img-inp" id="mixed-img-link-url" type="url" placeholder="https://…" style="margin-bottom:0;">
       </div>
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,.1);">
-        <div class="ed-lbl" style="font-size:10px;margin-bottom:6px;">이미지 배치 <span style="font-weight:400;opacity:.55;">(오버레이형에만 적용)</span></div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">
-          <button class="img-fit-btn" data-ctx="mixed" data-fit="natural" onpointerdown="epd(event)" onclick="setMixedImgFit('natural')">원본비율</button>
-          <button class="img-fit-btn on" data-ctx="mixed" data-fit="cover" onpointerdown="epd(event)" onclick="setMixedImgFit('cover')">크롭채움</button>
-          <button class="img-fit-btn" data-ctx="mixed" data-fit="contain" onpointerdown="epd(event)" onclick="setMixedImgFit('contain')">비율유지</button>
-          <button class="img-fit-btn" data-ctx="mixed" data-fit="fill" onpointerdown="epd(event)" onclick="setMixedImgFit('fill')">늘려채움</button>
-        </div>
-        <div id="mixed-height-row" style="display:none;margin-bottom:8px;">
-          <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:3px;">높이 <span style="font-weight:400;">(px, 비워두면 260)</span></div>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <input class="fi-sm" id="mixed-height-val" type="number" min="60" max="1200" placeholder="260" style="width:80px;margin-bottom:0;" oninput="curMixedHeightFull=false;document.getElementById('mixed-height-full-btn').classList.remove('on');scheduleBmPreview()">
-            <button class="img-fit-btn" id="mixed-height-full-btn" onpointerdown="epd(event)" onclick="setMixedHeightFull()" style="white-space:nowrap;">전체화면</button>
+        <div style="display:grid;grid-template-columns:1fr 110px;gap:10px;align-items:start;">
+          <div>
+            <div class="ed-lbl" style="font-size:10px;margin-bottom:6px;">이미지 배치 <span style="font-weight:400;opacity:.55;">(오버레이형에만 적용)</span></div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">
+              <button class="img-fit-btn" data-ctx="mixed" data-fit="natural" onpointerdown="epd(event)" onclick="setMixedImgFit('natural')">원본비율</button>
+              <button class="img-fit-btn on" data-ctx="mixed" data-fit="cover" onpointerdown="epd(event)" onclick="setMixedImgFit('cover')">크롭채움</button>
+              <button class="img-fit-btn" data-ctx="mixed" data-fit="contain" onpointerdown="epd(event)" onclick="setMixedImgFit('contain')">비율유지</button>
+              <button class="img-fit-btn" data-ctx="mixed" data-fit="fill" onpointerdown="epd(event)" onclick="setMixedImgFit('fill')">늘려채움</button>
+            </div>
+            <div id="mixed-height-row" style="display:none;">
+              <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:3px;">높이 <span style="font-weight:400;">(px, 비워두면 260)</span></div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <input class="fi-sm" id="mixed-height-val" type="number" min="60" max="1200" placeholder="260" style="width:80px;margin-bottom:0;" oninput="curMixedHeightFull=false;document.getElementById('mixed-height-full-btn').classList.remove('on');scheduleBmPreview()">
+                <button class="img-fit-btn" id="mixed-height-full-btn" onpointerdown="epd(event)" onclick="setMixedHeightFull()" style="white-space:nowrap;">전체화면</button>
+              </div>
+            </div>
           </div>
-        </div>
-        <div id="mixed-pos-row" style="display:none;">
-          <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:6px;">초점 위치 <span style="font-weight:400;">(이미지를 클릭·드래그해서 설정)</span></div>
-          <div style="display:flex;justify-content:center;">
-            <div id="mixed-focal-wrap" style="position:relative;overflow:hidden;cursor:crosshair;touch-action:none;border:2px solid rgba(0,0,0,.25);border-radius:6px;user-select:none;width:180px;aspect-ratio:9/16;flex-shrink:0;" onpointerdown="focalDown(event,'mixed')" onpointermove="focalMove(event,'mixed')" onpointerup="focalUp(event)">
+          <div>
+            <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">초점 위치 <span style="font-weight:400;font-size:9px;">(드래그)</span></div>
+            <div id="mixed-focal-wrap" style="position:relative;overflow:hidden;cursor:crosshair;touch-action:none;border:2px solid rgba(0,0,0,.25);border-radius:6px;user-select:none;aspect-ratio:9/16;" onpointerdown="focalDown(event,'mixed')" onpointermove="focalMove(event,'mixed')" onpointerup="focalUp(event)">
               <img id="mixed-focal-thumb" src="" alt="" style="width:100%;height:100%;object-fit:cover;object-position:50% 50%;display:block;pointer-events:none;">
-              <div id="mixed-focal-dot" style="position:absolute;width:18px;height:18px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #000,0 2px 8px rgba(0,0,0,.6);transform:translate(-50%,-50%);pointer-events:none;left:50%;top:50%;"></div>
+              <div id="mixed-focal-dot" style="position:absolute;width:16px;height:16px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #000,0 2px 8px rgba(0,0,0,.6);transform:translate(-50%,-50%);pointer-events:none;left:50%;top:50%;"></div>
             </div>
           </div>
         </div>
@@ -1990,6 +1996,10 @@ async function uploadBlockImage(event, urlFieldId, prevId) {
     const url = await ref.getDownloadURL();
     if (urlField) urlField.value = url;
     prevImg(prevId, url);
+    // 초점 썸네일도 업데이트
+    const _focalMap={'img-url':'img-focal-thumb','mixed-img-url':'mixed-focal-thumb'};
+    const _fthumb=document.getElementById(_focalMap[urlFieldId]||'');
+    if(_fthumb)_fthumb.src=url;
   } catch(err) {
     if (urlField) urlField.value = origVal;
     alert('업로드 실패: ' + err.message + '\n\nFirebase Console → Storage → Rules에서 인증된 쓰기를 허용해야 해요.\nallow write: if request.auth != null;');
@@ -3292,9 +3302,10 @@ function setImgFit(fit){
   document.querySelectorAll('.img-fit-btn[data-ctx="img"]').forEach(b=>b.classList.toggle('on',b.dataset.fit===fit));
   const showPos=fit==='cover'||fit==='contain';
   const showH=fit!=='natural';
-  const pr=document.getElementById('img-pos-row'); if(pr) pr.style.display=showPos?'':'none';
   const hr=document.getElementById('img-height-row'); if(hr) hr.style.display=showH?'':'none';
-  if(showPos) updateFocalDot('img',curImgPos);
+  const fw=document.getElementById('img-focal-wrap');
+  if(fw){fw.style.opacity=showPos?'1':'0.35';fw.style.pointerEvents=showPos?'':'none';}
+  updateFocalDot('img',curImgPos);
   scheduleBmPreview();
 }
 function setImgPos(pos){
@@ -3308,9 +3319,10 @@ function setMixedImgFit(fit){
   document.querySelectorAll('.img-fit-btn[data-ctx="mixed"]').forEach(b=>b.classList.toggle('on',b.dataset.fit===fit));
   const showPos=fit==='cover'||fit==='contain';
   const showH=fit!=='natural';
-  const pr=document.getElementById('mixed-pos-row'); if(pr) pr.style.display=showPos?'':'none';
   const hr=document.getElementById('mixed-height-row'); if(hr) hr.style.display=showH?'':'none';
-  if(showPos) updateFocalDot('mixed',curMixedImgPos);
+  const fw=document.getElementById('mixed-focal-wrap');
+  if(fw){fw.style.opacity=showPos?'1':'0.35';fw.style.pointerEvents=showPos?'':'none';}
+  updateFocalDot('mixed',curMixedImgPos);
   scheduleBmPreview();
 }
 function setMixedImgPos(pos){
