@@ -1355,7 +1355,9 @@ async function restoreFromHash(saved){
         renderSeparateStages();
         document.getElementById('prep-screen').classList.add('open');
       }
+      _navRestore=true;
       await openStageContent(stage);
+      _navRestore=false;
     }
   } else if(parts[0]==='prep'&&LAYOUT_TYPE==='separate'){
     prepBg=sessionStorage.getItem('prepBgColor')||KEY_COLORS[0];

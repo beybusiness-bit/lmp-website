@@ -252,7 +252,7 @@ async function init() {
     updateSpeechLevelVisibility();
 
     document.getElementById('loading').style.display = 'none';
-    document.getElementById('app').style.display = '';
+    document.getElementById('app').style.display = 'block';
     showScreen('screen-input');
     window.parent.postMessage({ type: 'lmp-ready' }, '*');
   } catch (e) {
