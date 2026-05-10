@@ -3981,8 +3981,8 @@ function gBlockHtml(b,S){
       return `<div style="${mS}${bgS}${pad}"><img src="${b.imageUrl||''}" style="${spS}" alt=""><div style="${txS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div></div>`;
     }
     const ovS=mfit==='natural'?'width:100%;display:block;':`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;`;
-    const _ova=b.overlayTextVAlign||'bottom';const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};const _ai=_aiMap[_ova]||'flex-end';const _grad={top:`to bottom`,center:`to bottom, transparent 0%,rgba(0,0,0,.55) 50%,transparent 100%`,bottom:`to top`}[_ova];const _gradFull=_ova==='center'?`linear-gradient(${_grad})`:`linear-gradient(${_grad},rgba(0,0,0,.65) 0%,transparent 60%)`;
-    return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="${ovS}" alt=""><div style="position:absolute;inset:0;display:flex;align-items:${_ai};background:${_gradFull};${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;">${b.textContent||''}</div></div></div>`;
+    const _ova=b.overlayTextVAlign||'bottom';const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};const _ai=_aiMap[_ova]||'flex-end';
+    return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="${ovS}" alt=""><div style="position:absolute;inset:0;display:flex;align-items:${_ai};background:rgba(0,0,0,.4);${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;">${b.textContent||''}</div></div></div>`;
   }
   if(b.type==='embed'){
     if(!b.embedUrl) return `<div style="${mS}${bgS}${pad};text-align:center;font-size:${Math.round(11*S)}px;color:rgba(0,0,0,.4);">임베드 URL 없음</div>`;

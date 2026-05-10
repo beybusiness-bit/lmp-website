@@ -110,7 +110,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .g-block-image img{width:100%;display:block;}
 .g-block-mixed-overlay{position:relative;}
 .g-block-mixed-overlay img{width:100%;display:block;}
-.g-overlay-text{position:absolute;inset:0;display:flex;align-items:flex-end;background:linear-gradient(to top,rgba(0,0,0,.65) 0%,transparent 60%);padding:20px;overflow:hidden;}
+.g-overlay-text{position:absolute;inset:0;display:flex;align-items:flex-end;background:rgba(0,0,0,.4);padding:20px;overflow:hidden;}
 .g-overlay-text-inner{color:#fff;font-size:15px;line-height:1.6;overflow-y:auto;white-space:pre-wrap;word-break:break-word;}
 .g-block-mixed-split{display:flex;flex-direction:column;}
 .g-split-img img{width:100%;display:block;}
@@ -942,8 +942,7 @@ function blockHtml(b){
       :`<img src="${b.imageUrl||''}" alt="" loading="lazy" style="${ovS}">`;
     const _ova=b.overlayTextVAlign||'bottom';
     const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};
-    const _gradMap={top:'linear-gradient(to bottom,rgba(0,0,0,.65) 0%,transparent 60%)',center:'linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.55) 50%,transparent 100%)',bottom:'linear-gradient(to top,rgba(0,0,0,.65) 0%,transparent 60%)'};
-    const _ovTextStyle=`align-items:${_aiMap[_ova]||'flex-end'};background:${_gradMap[_ova]||_gradMap.bottom};`;
+    const _ovTextStyle=`align-items:${_aiMap[_ova]||'flex-end'};background:rgba(0,0,0,.4);`;
     return `<div class="g-block-mixed-overlay" style="${mS}${bgS}">${imgEl}<div class="g-overlay-text" style="${_ovTextStyle}"><div class="g-overlay-text-inner" style="${txS}">${html}</div></div></div>`;
   }
   if(b.type==='embed' && b.embedUrl){
