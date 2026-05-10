@@ -5,13 +5,35 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { fields, styleSelections, references, outputConfig, existingPhrases } = req.body || {};
+  const { fields, styleSelections, references, outputConfig, existingPhrases, referenceRole } = req.body || {};
 
   const count = Math.min(Math.max(outputConfig?.count || 5, 1), 10);
   const minChars = outputConfig?.minChars || 0;
   const maxChars = outputConfig?.maxChars || 0;
 
   const styleNames = {
+    purpose:     { label: '용도',     choices: {
+      instagram:    '인스타그램 게시물',
+      poster:       '포스터·배너 헤드라인',
+      email_subject:'이메일 제목줄',
+      web_headline: '웹사이트 헤드라인',
+      event_notice: '행사·이벤트 안내문',
+      press_release:'보도자료·공식 문서',
+      youtube:      '유튜브 제목·썸네일',
+      outdoor:      '현수막·옥외광고',
+      product:      '제품·서비스 소개',
+    }},
+    target:      { label: '타겟 독자', choices: {
+      teens:        '10대',
+      young_adult:  '20-30대',
+      office_worker:'직장인',
+      parent:       '부모·학부모',
+      entrepreneur: '소상공인·창업자',
+      middle_age:   '40-50대 중장년',
+      senior:       '시니어·60대 이상',
+      professional: '전문직',
+      general:      '일반 대중',
+    }},
     format:      { label: '형식',   choices: {
       bullet:      '개조식 (항목별 나열)',
       prose:       '문장식 (자연스러운 문단)',
@@ -76,18 +98,27 @@ export default async function handler(req, res) {
     maxChars ? `최대 ${maxChars}자` : '',
   ].filter(Boolean).join(', ');
 
+  const refInstruction = (references || []).length
+    ? (referenceRole === 'similar'
+        ? '참고 문구와 유사한 구조·표현 방식으로 작성하세요 (내용은 입력 내용 기준):\n' + references.map(r => `- ${r}`).join('\n')
+        : '아래 문구들의 분위기와 톤만 참고하고, 내용은 입력 내용 기준으로 새로 작성하세요:\n' + references.map(r => `- ${r}`).join('\n'))
+    : '';
+
   const systemPrompt = [
-    '당신은 행사·프로젝트용 카피라이터입니다.',
+    '당신은 한국어 카피라이터입니다.',
     '사용자의 입력을 바탕으로 자연스럽고 매력적인 한국어 문구를 작성하세요.',
     styleLines ? `\n스타일 조건:\n${styleLines}` : '',
     charLimit ? `\n글자 수 조건: ${charLimit}` : '',
-    '\n반드시 JSON 배열 형식으로만 응답하세요. 예: ["문구1", "문구2", "문구3"]',
-    '설명, 머리말, JSON 외 텍스트는 절대 포함하지 마세요.',
+    '\n중요 규칙:',
+    '- 각 문구는 구조·시작 방식·표현 접근법이 서로 달라야 합니다 (비슷한 변형 금지)',
+    '- 한국인에게 자연스럽고 실제로 쓰일 법한 문구를 작성하세요',
+    '- 반드시 JSON 배열 형식으로만 응답하세요. 예: ["문구1", "문구2", "문구3"]',
+    '- 설명, 머리말, JSON 외 텍스트는 절대 포함하지 마세요.',
   ].filter(Boolean).join('\n');
 
   const userPrompt = [
     `입력 내용:\n${Object.entries(fields || {}).map(([k, v]) => `${k}: ${v}`).join('\n')}`,
-    (references || []).length ? '참고 문구 예시:\n' + references.map(r => `- ${r}`).join('\n') : '',
+    refInstruction,
     (existingPhrases || []).length ? '이미 생성된 문구(중복 금지):\n' + existingPhrases.map(p => `- ${p}`).join('\n') : '',
     `\n위 내용을 참고해 ${count}개의 문구를 JSON 배열로 작성하세요.`,
   ].filter(Boolean).join('\n\n');

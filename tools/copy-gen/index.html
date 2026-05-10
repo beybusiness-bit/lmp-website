@@ -132,6 +132,30 @@ const db = firebase.firestore();
 
 const CONFIG_ID = new URLSearchParams(location.search).get('id') || '';
 const PREDEFINED_STYLE_OPTIONS = [
+  { key:'purpose', label:'용도', allowCustom:true, choices:[
+    {value:'instagram',    label:'인스타그램 게시물'},
+    {value:'poster',       label:'포스터·배너 헤드라인'},
+    {value:'email_subject',label:'이메일 제목줄'},
+    {value:'web_headline', label:'웹사이트 헤드라인'},
+    {value:'event_notice', label:'행사·이벤트 안내'},
+    {value:'press_release',label:'보도자료·공식 문서'},
+    {value:'youtube',      label:'유튜브 제목·썸네일'},
+    {value:'outdoor',      label:'현수막·옥외광고'},
+    {value:'product',      label:'제품·서비스 소개'},
+    {value:'custom',       label:'기타…'},
+  ]},
+  { key:'target', label:'타겟 독자', allowCustom:true, choices:[
+    {value:'teens',        label:'10대'},
+    {value:'young_adult',  label:'20-30대'},
+    {value:'office_worker',label:'직장인'},
+    {value:'parent',       label:'부모·학부모'},
+    {value:'entrepreneur', label:'소상공인·창업자'},
+    {value:'middle_age',   label:'40-50대 중장년'},
+    {value:'senior',       label:'시니어·60대 이상'},
+    {value:'professional', label:'전문직'},
+    {value:'general',      label:'일반 대중'},
+    {value:'custom',       label:'기타…'},
+  ]},
   { key:'format', label:'형식', choices:[
     {value:'bullet',label:'개조식 (항목별 나열)'},{value:'prose',label:'문장식 (자연스러운 문단)'},
     {value:'noun_ending',label:'명사형 종결'},{value:'slogan',label:'슬로건형'},
@@ -247,9 +271,9 @@ function renderStyleDim(dim) {
     ${customInp}
   </div>`;
   if (dim.key === 'speech_level') {
-    return `<div id="speech-level-dim" style="display:none;">${inner}</div>`;
+    return `<div id="dim-wrap-speech_level" style="display:none;">${inner}</div>`;
   }
-  return inner;
+  return `<div id="dim-wrap-${esc(dim.key)}">${inner}</div>`;
 }
 
 function toggleStylePill(btn, key, value) {
@@ -293,19 +317,36 @@ function toggleStylePill(btn, key, value) {
       if (show) { customInp.value = customStyleText[key] || ''; customInp.focus(); }
     }
   }
-  if (key === 'format') updateSpeechLevelVisibility();
+  if (key === 'format') updateFormatDependentDims();
 }
 
-function updateSpeechLevelVisibility() {
-  const wrap = document.getElementById('speech-level-dim');
-  if (!wrap) return;
-  const show = styleSelections.format === 'prose';
-  wrap.style.display = show ? '' : 'none';
-  if (!show) {
+// 슬로건 선택 시 어미/말투/격식 숨김, 문장식 선택 시 어미만 표시
+const SLOGAN_HIDDEN = ['speech_level', 'register', 'formality'];
+function updateFormatDependentDims() {
+  const fmt = styleSelections.format;
+  const isSlogan = fmt === 'slogan';
+  const isProse  = fmt === 'prose';
+
+  // 어미: 문장식일 때만 표시 (슬로건이면 어차피 숨겨짐)
+  const speechWrap = document.getElementById('dim-wrap-speech_level');
+  if (speechWrap) speechWrap.style.display = (isProse && !isSlogan) ? '' : 'none';
+  if (!isProse) {
     delete styleSelections.speech_level;
-    const c = document.getElementById('style-pills-speech_level');
-    if (c) c.querySelectorAll('.style-pill').forEach(p => p.classList.remove('on'));
+    document.getElementById('style-pills-speech_level')?.querySelectorAll('.style-pill').forEach(p => p.classList.remove('on'));
   }
+
+  // 슬로건이면 말투·격식 숨김 + 선택 초기화
+  ['register', 'formality'].forEach(k => {
+    const wrap = document.getElementById('dim-wrap-' + k);
+    if (!wrap) return;
+    if (isSlogan) {
+      wrap.style.display = 'none';
+      delete styleSelections[k];
+      wrap.querySelectorAll('.style-pill').forEach(p => p.classList.remove('on'));
+    } else {
+      wrap.style.display = '';
+    }
+  });
 }
 
 async function init() {
@@ -354,7 +395,7 @@ async function init() {
       document.getElementById('cg-style-section').style.display = '';
       document.getElementById('cg-style-dims').innerHTML = userStyleDims.map(renderStyleDim).join('');
     }
-    updateSpeechLevelVisibility();
+    updateFormatDependentDims();
 
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = 'block';
@@ -406,6 +447,7 @@ async function callAPI(existingPhrases) {
   const refs = (config.references || []).map(r => r.text).filter(Boolean);
   const body = {
     fields,
+    referenceRole: config.referenceRole || 'style',
     styleSelections: resolvedSelections,
     references: refs,
     outputConfig: config.outputConfig || { count: 5 },
