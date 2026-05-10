@@ -546,6 +546,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div class="pi-name">일정 잡기</div>
             <div class="pi-meta">구글 캘린더 연동 예약 슬롯 관리</div>
           </div>
+          <div class="proj-item" onclick="openTool('copy-gen')" style="cursor:pointer;">
+            <div class="pi-name">문구 생성기</div>
+            <div class="pi-meta">AI 카피 자동 생성 · 스타일 조합 · 결과 기록 관리</div>
+          </div>
         </div>
       </div>
 
@@ -893,6 +897,70 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           </div>
         </div>
       </div>
+
+      <!-- 문구 생성기 관리 화면 -->
+      <div id="tool-copy-gen-view" style="display:none;flex-direction:column;overflow:hidden;">
+        <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
+          <span class="back-btn" onclick="cgBack()">←</span>
+          <span id="cg-header-title" style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">문구 생성기</span>
+          <div style="flex:1;"></div>
+        </div>
+        <!-- 목록 화면 -->
+        <div id="cg-list-screen" style="padding:16px;overflow-y:auto;flex:1;">
+          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">사용자가 입력한 내용을 바탕으로 AI가 문구를 자동 생성해요. 도구 블록에 연결해서 사용자에게 공개하세요.</div>
+          <button class="save-btn" onclick="cgCreate()" style="width:100%;margin-bottom:16px;">+ 새 문구 생성기 만들기</button>
+          <div id="cg-config-list"><div class="empty-msg">불러오는 중…</div></div>
+        </div>
+        <!-- 편집 화면 -->
+        <div id="cg-edit-screen" style="display:none;flex-direction:column;overflow:hidden;">
+          <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;align-items:center;gap:8px;">
+            <button class="mbtn-cancel" style="flex:0 0 auto;" onclick="cgShowList()">← 목록</button>
+            <button class="save-btn" style="flex:1;" onclick="cgSave()">저장</button>
+            <button class="prev-btn" onclick="cgViewResults()" style="font-size:11px;padding:6px 10px;">결과 보기</button>
+            <button class="prev-btn" onclick="cgDelete()" style="font-size:11px;padding:6px 10px;color:#c00;border-color:#c00;">삭제</button>
+          </div>
+          <div style="padding:16px;overflow-y:auto;flex:1;">
+            <!-- 기본 정보 -->
+            <div class="ed-sect">
+              <div class="ed-lbl">제목</div>
+              <input class="fi" id="cg-title" placeholder="예: 행사 홍보 문구 생성기" style="margin-bottom:0;">
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
+              <input class="fi-sm" id="cg-desc" placeholder="사용자에게 표시될 설명" style="margin-bottom:0;">
+            </div>
+            <!-- 입력 필드 -->
+            <div class="sect-head">입력 필드</div>
+            <div id="cg-field-list-admin"></div>
+            <button class="add-btn" style="font-size:12px;padding:8px 0;margin-top:8px;width:100%;" onclick="cgOpenFieldModal(null)">+ 필드 추가</button>
+            <!-- 스타일 옵션 -->
+            <div class="sect-head">스타일 옵션</div>
+            <div class="ed-lbl" style="margin-bottom:12px;color:rgba(0,0,0,.5);">"사용자 선택"은 사용자가 직접 고르고, "고정"은 관리자가 값을 지정합니다.</div>
+            <div id="cg-style-list"></div>
+            <!-- 출력 설정 -->
+            <div class="sect-head">출력 설정</div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:80px;">
+                <div class="ed-lbl" style="margin-bottom:4px;">생성 개수 <span style="font-weight:400;opacity:.55;">(1~10)</span></div>
+                <input class="fi-sm" id="cg-count" type="number" min="1" max="10" value="5" style="margin-bottom:0;">
+              </div>
+              <div style="flex:1;min-width:80px;">
+                <div class="ed-lbl" style="margin-bottom:4px;">최소 글자 수</div>
+                <input class="fi-sm" id="cg-min-chars" type="number" min="0" placeholder="제한 없음" style="margin-bottom:0;">
+              </div>
+              <div style="flex:1;min-width:80px;">
+                <div class="ed-lbl" style="margin-bottom:4px;">최대 글자 수</div>
+                <input class="fi-sm" id="cg-max-chars" type="number" min="0" placeholder="제한 없음" style="margin-bottom:0;">
+              </div>
+            </div>
+            <!-- 참고 문구 -->
+            <div class="sect-head">참고 문구</div>
+            <div class="ed-lbl" style="margin-bottom:12px;color:rgba(0,0,0,.5);">AI에게 전달할 예시 문구. "사용자에게 표시"를 켜면 사용자 화면에도 노출됩니다.</div>
+            <div id="cg-ref-list-admin"></div>
+            <button class="add-btn" style="font-size:12px;padding:8px 0;margin-top:8px;width:100%;" onclick="cgAddRef()">+ 참고 문구 추가</button>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -1078,6 +1146,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="blk-tab"    id="ttab-guide"             onclick="switchToolType('guide')"             style="font-size:12px;padding:6px 12px;">계산기·가이드</button>
         <button class="blk-tab"    id="ttab-youtube-playlist"  onclick="switchToolType('youtube-playlist')"  style="font-size:12px;padding:6px 12px;">유튜브 뮤직</button>
         <button class="blk-tab"    id="ttab-schedule"          onclick="switchToolType('schedule')"          style="font-size:12px;padding:6px 12px;">일정 잡기</button>
+        <button class="blk-tab"    id="ttab-copy-gen"          onclick="switchToolType('copy-gen')"          style="font-size:12px;padding:6px 12px;">문구 생성기</button>
       </div>
       <div id="tool-inst-section">
         <div class="ed-lbl" style="margin-bottom:6px;">인스턴스 선택</div>
@@ -1539,6 +1608,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <div class="modal-footer" style="margin-top:8px;">
       <button class="mbtn-cancel" onclick="closeModal('form-resp-modal')">닫기</button>
       <button class="mbtn-ok" onclick="exportRespCsv()">CSV 내보내기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 문구 생성기 결과 모달 -->
+<div class="modal-ov" id="cg-results-modal">
+  <div class="modal-box" style="max-width:700px;width:95vw;">
+    <div class="modal-ttl">복사된 문구 결과</div>
+    <div class="modal-scroll" id="cg-results-scroll">
+      <div class="empty-msg">불러오는 중…</div>
+    </div>
+    <div class="modal-footer">
+      <button class="mbtn-cancel" onclick="closeModal('cg-results-modal')">닫기</button>
     </div>
   </div>
 </div>
@@ -2978,9 +3060,9 @@ function renderBlockList() {
   if(!curBlocks.length){el.innerHTML=_blkInsertRow(0)+'<div class="empty-msg" style="padding:10px 0;">블록이 없어요.</div>';return;}
   const items=curBlocks.map((b,i)=>{
     const tl=b.type==='text'?'텍스트':b.type==='image'?'이미지':b.type==='mixed'?'혼합':b.type==='embed'?'임베드':b.type==='tool'?'도구':b.type==='spacer'?'스페이서':b.type==='divider'?'구분선':'폼(구)';
-    const _ttMap={'form':'폼','booth':'꾸미기','guide':'계산기','youtube-playlist':'유튜브 뮤직','schedule':'일정잡기'};
+    const _ttMap={'form':'폼','booth':'꾸미기','guide':'계산기','youtube-playlist':'유튜브 뮤직','schedule':'일정잡기','copy-gen':'문구 생성기'};
     const _ttLabel=_ttMap[b.toolType]||b.toolType||'?';
-    const _tcId=b.toolConfig?.formId||b.toolConfig?.boothId||b.toolConfig?.guideId||'';
+    const _tcId=b.toolConfig?.formId||b.toolConfig?.boothId||b.toolConfig?.guideId||b.toolConfig?.copyGenId||'';
     const toolSubLbl=b.type==='tool'?(_ttLabel+(_tcId?' · '+_tcId:'')):'';
 
     const pv=b.type==='text'?(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,32):
@@ -3109,6 +3191,10 @@ function saveFormField() {
   } else if(formFieldCtx==='schedule'){
     scFields=curFormFields;
     scRenderFieldList();
+    formFieldCtx='block';
+  } else if(formFieldCtx==='copy-gen'){
+    cgFields=curFormFields;
+    cgRenderFieldList();
     formFieldCtx='block';
   } else {
     renderFormFields();
@@ -3602,6 +3688,7 @@ function saveBlock(){
     else if(curBlkToolType==='booth') tc.boothId=selV;
     else if(curBlkToolType==='guide') tc.guideId=selV;
     else if(curBlkToolType==='schedule') tc.scheduleId=selV;
+    else if(curBlkToolType==='copy-gen') tc.copyGenId=selV;
     b.toolType=curBlkToolType;
     b.toolConfig=tc;
     b.height=parseInt(document.getElementById('tool-height')?.value)||0;
@@ -3670,7 +3757,7 @@ function switchBlkTab(t){
 const SINGLE_TOOL_TYPES = ['youtube-playlist']; // schedule은 multi(인스턴스 선택)
 function switchToolType(tt){
   curBlkToolType=tt;
-  ['form','booth','guide','youtube-playlist','schedule'].forEach(k=>{
+  ['form','booth','guide','youtube-playlist','schedule','copy-gen'].forEach(k=>{
     const el=document.getElementById('ttab-'+k);
     if(el) el.classList.toggle('on',k===tt);
   });
@@ -3697,9 +3784,12 @@ async function loadToolInstList(tt){
     } else if(tt==='schedule'){
       const snap=await db.collection('cms_schedule_configs').orderBy('createdAt','desc').get();
       toolInstList=snap.docs.map(d=>({id:d.id,...d.data()}));
+    } else if(tt==='copy-gen'){
+      const snap=await db.collection('cms_copy_gen_configs').orderBy('createdAt','desc').get();
+      toolInstList=snap.docs.map(d=>({id:d.id,...d.data()}));
     }
   }catch(e){ console.error('[loadToolInstList]',e); }
-  const cur=tt==='form'?curBlkToolConfig?.formId:tt==='booth'?curBlkToolConfig?.boothId:tt==='guide'?curBlkToolConfig?.guideId:tt==='schedule'?curBlkToolConfig?.scheduleId:'';
+  const cur=tt==='form'?curBlkToolConfig?.formId:tt==='booth'?curBlkToolConfig?.boothId:tt==='guide'?curBlkToolConfig?.guideId:tt==='schedule'?curBlkToolConfig?.scheduleId:tt==='copy-gen'?curBlkToolConfig?.copyGenId:'';
   sel.innerHTML='<option value="">— 선택하세요 —</option>'+toolInstList.map(x=>`<option value="${x.id}"${x.id===cur?' selected':''}>${x.name||x.title||x.id}</option>`).join('');
 }
 function openToolManageLink(e){
@@ -4485,6 +4575,7 @@ function openTool(toolId) {
   if(toolId === 'form-mgr') { toolFormMgrList(); }
   if(toolId === 'youtube-playlist') { ytMgrInit(); }
   if(toolId === 'schedule') { scInit(); }
+  if(toolId === 'copy-gen') { cgShowList(); }
 }
 
 function closeTool() {
@@ -5763,6 +5854,202 @@ async function deleteBoothBg(idx) {
   } catch(e) {
     alert('삭제 실패: ' + e.message);
   }
+}
+/* ════════════════════════════════════════════
+   문구 생성기 관리 (Copy Generator Manager)
+════════════════════════════════════════════ */
+const PREDEFINED_STYLE_OPTIONS = [
+  { key:'format',     label:'형식',   choices:[{value:'bullet',label:'개조식'},{value:'prose',label:'문장식'}] },
+  { key:'register',   label:'말투',   choices:[{value:'spoken',label:'구어체'},{value:'written',label:'문어체'}] },
+  { key:'formality',  label:'격식',   choices:[{value:'formal',label:'격식체'},{value:'casual',label:'편안한 톤'}] },
+  { key:'mood',       label:'분위기', choices:[{value:'friendly',label:'친근한'},{value:'solemn',label:'장엄한'}] },
+  { key:'length_feel',label:'길이감', choices:[{value:'concise',label:'간결한'},{value:'rich',label:'풍성한'}] },
+  { key:'emotion',    label:'감성',   choices:[{value:'warm',label:'따뜻한'},{value:'professional',label:'전문적인'}] },
+];
+let cgCurDocId = null;
+let cgFields = [];
+let cgRefs = [];
+let cgStyleModes = {};
+let cgFixedValues = {};
+
+function cgBack(){ closeTool(); }
+function cgShowList(){
+  cgCurDocId=null; cgFields=[]; cgRefs=[]; cgStyleModes={}; cgFixedValues={};
+  document.getElementById('cg-list-screen').style.display='';
+  document.getElementById('cg-edit-screen').style.display='none';
+  document.getElementById('cg-header-title').textContent='문구 생성기';
+  cgLoadList();
+}
+async function cgLoadList(){
+  const el=document.getElementById('cg-config-list');
+  el.innerHTML='<div class="empty-msg">불러오는 중…</div>';
+  try{
+    const snap=await db.collection('cms_copy_gen_configs').orderBy('createdAt','desc').get();
+    if(!snap.docs.length){ el.innerHTML='<div class="empty-msg">아직 없어요. 새로 만들어 보세요.</div>'; return; }
+    el.innerHTML=snap.docs.map(d=>{
+      const data=d.data();
+      return `<div class="proj-item" style="cursor:pointer;" onclick="cgEdit('${d.id}')">
+        <div class="pi-name">${data.title||'(제목 없음)'}</div>
+        <div class="pi-meta">필드 ${(data.fields||[]).length}개 · ID: ${d.id}</div>
+        <div class="blk-acts" style="margin-top:6px;">
+          <button class="b-btn" onclick="event.stopPropagation();cgViewResultsById('${d.id}')">결과</button>
+          <button class="b-btn" onclick="event.stopPropagation();if(confirm('삭제할까요?'))cgDeleteById('${d.id}')">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){ el.innerHTML='<div class="empty-msg">불러오기 실패</div>'; }
+}
+async function cgCreate(){
+  const name=prompt('새 문구 생성기 이름을 입력하세요.');
+  if(!name) return;
+  try{
+    const ref=await db.collection('cms_copy_gen_configs').add({
+      title:name, description:'', fields:[],
+      styleOptions: PREDEFINED_STYLE_OPTIONS.map(s=>({...s,mode:'user-select',fixedValue:''})),
+      outputConfig:{count:5,minChars:0,maxChars:0},
+      references:[],
+      createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    cgEdit(ref.id);
+  }catch(e){ alert('생성 실패: '+e.message); }
+}
+async function cgEdit(docId){
+  cgCurDocId=docId;
+  document.getElementById('cg-list-screen').style.display='none';
+  document.getElementById('cg-edit-screen').style.display='flex';
+  document.getElementById('cg-edit-screen').style.flexDirection='column';
+  document.getElementById('cg-header-title').textContent='문구 생성기 편집';
+  try{
+    const snap=await db.collection('cms_copy_gen_configs').doc(docId).get();
+    const d=snap.data()||{};
+    cgFields=JSON.parse(JSON.stringify(d.fields||[]));
+    cgRefs=JSON.parse(JSON.stringify(d.references||[]));
+    cgStyleModes={}; cgFixedValues={};
+    const styleOpts=d.styleOptions||PREDEFINED_STYLE_OPTIONS.map(s=>({...s,mode:'user-select',fixedValue:''}));
+    styleOpts.forEach(s=>{ cgStyleModes[s.key]=s.mode||'user-select'; cgFixedValues[s.key]=s.fixedValue||''; });
+    document.getElementById('cg-title').value=d.title||'';
+    document.getElementById('cg-desc').value=d.description||'';
+    document.getElementById('cg-count').value=d.outputConfig?.count||5;
+    document.getElementById('cg-min-chars').value=d.outputConfig?.minChars||'';
+    document.getElementById('cg-max-chars').value=d.outputConfig?.maxChars||'';
+    cgRenderFieldList(); cgRenderStyleList(); cgRenderRefList();
+  }catch(e){ alert('불러오기 실패: '+e.message); }
+}
+function cgRenderFieldList(){
+  const el=document.getElementById('cg-field-list-admin');
+  if(!cgFields.length){ el.innerHTML='<div class="empty-msg" style="padding:6px 0;">필드가 없어요.</div>'; return; }
+  const tl={string:'짧은텍스트',text:'짧은텍스트',textarea:'긴텍스트',select:'선택'};
+  el.innerHTML=cgFields.map((f,i)=>`<div class="field-item">
+    <div class="field-info">
+      <div class="field-name">${f.label}</div>
+      <div class="field-meta">${f.key||f.id} · ${tl[f.type]||f.type}${f.required?' · 필수':''}</div>
+    </div>
+    <div class="field-badges">
+      ${i>0?`<span class="fbadge" onclick="cgMvField(${i},-1)">↑</span>`:''}
+      ${i<cgFields.length-1?`<span class="fbadge" onclick="cgMvField(${i},1)">↓</span>`:''}
+      <span class="fbadge" onclick="cgOpenFieldModal(${i})">편집</span>
+      <span class="fbadge danger" onclick="cgRmField(${i})">삭제</span>
+    </div>
+  </div>`).join('');
+}
+function cgMvField(i,d){ const j=i+d; if(j<0||j>=cgFields.length)return; [cgFields[i],cgFields[j]]=[cgFields[j],cgFields[i]]; cgRenderFieldList(); }
+function cgRmField(i){ if(!confirm('이 필드를 삭제할까요?'))return; cgFields.splice(i,1); cgRenderFieldList(); }
+function cgOpenFieldModal(idx){
+  formFieldCtx='copy-gen';
+  curFormFields=cgFields;
+  openFormFieldModal(idx);
+}
+function cgRenderStyleList(){
+  const el=document.getElementById('cg-style-list');
+  el.innerHTML=PREDEFINED_STYLE_OPTIONS.map(s=>{
+    const mode=cgStyleModes[s.key]||'user-select';
+    const fixedVal=cgFixedValues[s.key]||'';
+    const fixedOpts=s.choices.map(c=>`<option value="${c.value}"${fixedVal===c.value?' selected':''}>${c.label}</option>`).join('');
+    return `<div style="padding:12px 0;border-bottom:1px solid rgba(0,0,0,.08);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:${mode==='fixed'?'8px':'0'};">
+        <span style="font-size:13px;font-weight:700;flex:1;">${s.label} <span style="font-weight:400;font-size:11px;color:rgba(0,0,0,.4);">(${s.choices.map(c=>c.label).join(' / ')})</span></span>
+        <div style="display:flex;gap:4px;flex-shrink:0;">
+          <button class="tgl-btn${mode==='user-select'?' on':''}" onclick="cgSetStyleMode('${s.key}','user-select')">사용자 선택</button>
+          <button class="tgl-btn${mode==='fixed'?' on':''}" onclick="cgSetStyleMode('${s.key}','fixed')">고정</button>
+        </div>
+      </div>
+      <div id="cg-fixed-row-${s.key}" style="display:${mode==='fixed'?'':'none'};">
+        <select class="fi-sm" style="margin-bottom:0;" onchange="cgFixedValues['${s.key}']=this.value;">${fixedOpts}</select>
+      </div>
+    </div>`;
+  }).join('');
+}
+function cgSetStyleMode(key,mode){ cgStyleModes[key]=mode; cgRenderStyleList(); }
+function cgRenderRefList(){
+  const el=document.getElementById('cg-ref-list-admin');
+  if(!cgRefs.length){ el.innerHTML='<div class="empty-msg" style="padding:6px 0;">참고 문구가 없어요.</div>'; return; }
+  el.innerHTML=cgRefs.map((r,i)=>`<div style="padding:10px 0;border-bottom:1px solid rgba(0,0,0,.08);display:flex;gap:8px;align-items:flex-start;">
+    <div style="flex:1;">
+      <input class="fi-sm" value="${String(r.text||'').replace(/"/g,'&quot;')}" style="margin-bottom:6px;" oninput="cgRefs[${i}].text=this.value">
+      <div class="switch-row" style="align-items:center;gap:8px;">
+        <div class="switch${r.showToUser?' on':''}" onclick="cgRefs[${i}].showToUser=!cgRefs[${i}].showToUser;this.classList.toggle('on')"></div>
+        <span style="font-size:12px;font-weight:600;">사용자에게 표시</span>
+      </div>
+    </div>
+    <button class="b-btn" onclick="cgRefs.splice(${i},1);cgRenderRefList()">✕</button>
+  </div>`).join('');
+}
+function cgAddRef(){ cgRefs.push({id:uid(),text:'',showToUser:false}); cgRenderRefList(); }
+async function cgSave(){
+  if(!cgCurDocId) return;
+  const title=document.getElementById('cg-title')?.value.trim()||'';
+  if(!title){ alert('제목을 입력해주세요.'); return; }
+  const styleOptions=PREDEFINED_STYLE_OPTIONS.map(s=>({
+    ...s, mode:cgStyleModes[s.key]||'user-select', fixedValue:cgFixedValues[s.key]||'',
+  }));
+  const outputConfig={
+    count:Math.min(Math.max(parseInt(document.getElementById('cg-count')?.value)||5,1),10),
+    minChars:parseInt(document.getElementById('cg-min-chars')?.value)||0,
+    maxChars:parseInt(document.getElementById('cg-max-chars')?.value)||0,
+  };
+  try{
+    await db.collection('cms_copy_gen_configs').doc(cgCurDocId).update({
+      title, description:document.getElementById('cg-desc')?.value.trim()||'',
+      fields:cgFields, styleOptions, outputConfig, references:cgRefs,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    alert('저장됐어요!');
+  }catch(e){ alert('저장 실패: '+e.message); }
+}
+async function cgDelete(){
+  if(!cgCurDocId||!confirm('이 문구 생성기를 삭제할까요?')) return;
+  try{ await db.collection('cms_copy_gen_configs').doc(cgCurDocId).delete(); cgShowList(); }
+  catch(e){ alert('삭제 실패: '+e.message); }
+}
+async function cgDeleteById(docId){
+  try{ await db.collection('cms_copy_gen_configs').doc(docId).delete(); cgLoadList(); }
+  catch(e){ alert('삭제 실패: '+e.message); }
+}
+function cgViewResults(){ if(cgCurDocId) cgViewResultsById(cgCurDocId); }
+async function cgViewResultsById(configId){
+  document.getElementById('cg-results-modal').classList.add('on');
+  const el=document.getElementById('cg-results-scroll');
+  el.innerHTML='<div class="empty-msg">불러오는 중…</div>';
+  try{
+    let q=db.collection('cms_copy_gen_results').where('configId','==',configId);
+    const snap=await q.get();
+    const docs=snap.docs.slice().sort((a,b)=>{
+      const ta=a.data().copiedAt?.toMillis?.()||0;
+      const tb=b.data().copiedAt?.toMillis?.()||0;
+      return tb-ta;
+    }).slice(0,100);
+    if(!docs.length){ el.innerHTML='<div class="empty-msg">아직 복사된 문구가 없어요.</div>'; return; }
+    el.innerHTML=`<div class="user-table-wrap"><table class="user-table">
+      <thead><tr><th>문구</th><th>사용자</th><th>날짜</th></tr></thead>
+      <tbody>${docs.map(d=>{
+        const r=d.data();
+        const dt=r.copiedAt?.toDate?r.copiedAt.toDate().toLocaleDateString('ko-KR'):'-';
+        const user=r.userDisplayName||r.userId||'(비로그인)';
+        return `<tr><td style="max-width:300px;word-break:keep-all;white-space:pre-wrap;">${r.copiedText||''}</td><td>${user}</td><td style="white-space:nowrap;">${dt}</td></tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  }catch(e){ el.innerHTML='<div class="empty-msg">불러오기 실패: '+e.message+'</div>'; }
 }
 </script>
 <div id="fmt-popup" style="display:none;position:fixed;background:#fff;border:2px solid #000;z-index:600;box-shadow:3px 3px 0 rgba(0,0,0,.1);min-width:110px;"><div id="fmt-popup-inner"></div></div>

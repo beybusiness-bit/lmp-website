@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>문구 생성기</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:transparent;color:#000;}
+
+#loading{padding:40px 20px;text-align:center;font-size:14px;color:rgba(0,0,0,.5);}
+#err-screen{display:none;padding:40px 20px;text-align:center;font-size:14px;color:#c00;font-weight:700;}
+#app{display:none;padding:24px 20px 48px;}
+
+/* screens */
+.cg-screen{display:none;}
+.cg-screen.on{display:block;}
+
+/* references */
+.ref-section{margin-bottom:20px;padding:14px 16px;border:1.5px solid rgba(0,0,0,.12);background:rgba(0,0,0,.02);}
+.ref-ttl{font-size:11px;font-weight:800;letter-spacing:.5px;color:rgba(0,0,0,.4);margin-bottom:10px;}
+.ref-item{font-size:13px;color:rgba(0,0,0,.65);line-height:1.7;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.06);}
+.ref-item:last-child{border-bottom:none;}
+
+/* form fields */
+.ff-wrap{margin-bottom:20px;}
+.ff-label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;line-height:1.4;}
+.ff-desc{font-size:12px;color:rgba(0,0,0,.5);margin-bottom:6px;font-weight:500;line-height:1.6;}
+.ff-inp,.ff-textarea,.ff-sel{width:100%;border:2px solid #000;border-radius:0;padding:11px 13px;font-size:15px;font-family:inherit;background:#fff;outline:none;-webkit-appearance:none;appearance:none;}
+.ff-textarea{min-height:100px;resize:vertical;}
+.ff-inp:focus,.ff-textarea:focus,.ff-sel:focus{box-shadow:0 0 0 3px rgba(0,0,0,.08);}
+.ff-err{color:#c00;font-size:13px;font-weight:700;margin-bottom:12px;min-height:16px;}
+.ff-required{color:#c00;}
+
+/* style selectors */
+.style-section{margin-bottom:20px;}
+.style-section-ttl{font-size:11px;font-weight:800;letter-spacing:.5px;color:rgba(0,0,0,.4);margin-bottom:14px;}
+.style-dim{margin-bottom:14px;}
+.style-dim-lbl{font-size:12px;font-weight:700;margin-bottom:8px;color:rgba(0,0,0,.7);}
+.style-pills{display:flex;flex-wrap:wrap;gap:8px;}
+.style-pill{padding:8px 14px;border:2px solid rgba(0,0,0,.3);background:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.7);}
+.style-pill.on{background:#000;color:#fff;border-color:#000;}
+
+/* generate button */
+.gen-btn{display:block;width:100%;padding:14px;background:#000;color:#fff;border:2px solid #000;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;}
+.gen-btn:disabled{opacity:.35;cursor:default;}
+
+/* loading screen */
+.cg-loading-wrap{padding:60px 20px;text-align:center;}
+.cg-spinner{width:34px;height:34px;border:3px solid rgba(0,0,0,.1);border-top-color:#000;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.cg-loading-msg{font-size:14px;color:rgba(0,0,0,.5);}
+
+/* results */
+.results-ttl{font-size:11px;font-weight:800;letter-spacing:.5px;color:rgba(0,0,0,.4);margin-bottom:14px;}
+.phrase-card{border:2px solid #000;padding:16px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start;}
+.phrase-text{flex:1;font-size:15px;font-weight:600;line-height:1.7;word-break:keep-all;white-space:pre-wrap;}
+.copy-btn{flex-shrink:0;padding:8px 12px;border:1.5px solid #000;background:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;align-self:flex-start;transition:background .12s,color .12s;}
+.copy-btn.done{background:#000;color:#fff;border-color:#000;}
+.results-actions{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
+.more-btn{padding:12px;background:#fff;border:2px solid #000;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.more-btn:disabled{opacity:.35;cursor:default;}
+.edit-btn{padding:12px;background:transparent;border:2px solid rgba(0,0,0,.25);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.55);}
+</style>
+</head>
+<body>
+<div id="loading">불러오는 중…</div>
+<div id="err-screen"></div>
+
+<div id="app">
+  <!-- 입력 화면 -->
+  <div class="cg-screen" id="screen-input">
+    <div id="cg-ref-section" style="display:none;" class="ref-section">
+      <div class="ref-ttl">참고 문구</div>
+      <div id="cg-ref-list"></div>
+    </div>
+    <div id="cg-field-list"></div>
+    <div id="cg-style-section" class="style-section" style="display:none;">
+      <div class="style-section-ttl">스타일 선택</div>
+      <div id="cg-style-dims"></div>
+    </div>
+    <div class="ff-err" id="cg-err"></div>
+    <button class="gen-btn" id="gen-btn" onclick="generate()">문구 생성</button>
+  </div>
+
+  <!-- 로딩 화면 -->
+  <div class="cg-screen" id="screen-loading">
+    <div class="cg-loading-wrap">
+      <div class="cg-spinner"></div>
+      <div class="cg-loading-msg">문구를 만들고 있어요…</div>
+    </div>
+  </div>
+
+  <!-- 결과 화면 -->
+  <div class="cg-screen" id="screen-results">
+    <div class="results-ttl" id="results-ttl">생성된 문구</div>
+    <div id="phrase-list"></div>
+    <div class="results-actions">
+      <button class="more-btn" id="more-btn" onclick="generateMore()">추가 생성 →</button>
+      <button class="edit-btn" onclick="backToInput()">← 수정하기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
+  authDomain: "beyhome-admin.firebaseapp.com",
+  projectId: "beyhome-admin",
+  storageBucket: "beyhome-admin.firebasestorage.app",
+  messagingSenderId: "849320781553",
+  appId: "1:849320781553:web:9d844044e85995c0aa2b50"
+};
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+
+const CONFIG_ID = new URLSearchParams(location.search).get('id') || '';
+let config = null;
+let styleSelections = {};
+let allPhrases = [];
+let ctxProjectId = '';
+let ctxUserId = '';
+let ctxUserDisplayName = '';
+let toolCompleteFired = false;
+
+window.addEventListener('message', e => {
+  if (e.data?.type !== 'lmp-context') return;
+  ctxProjectId = e.data.projectId || '';
+  ctxUserId = e.data.userId || '';
+  const uf = e.data.userFields || {};
+  ctxUserDisplayName = uf.name || uf.displayName || uf.이름 || '';
+});
+
+function esc(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function showScreen(id) {
+  ['screen-input', 'screen-loading', 'screen-results'].forEach(s => {
+    document.getElementById(s).classList.toggle('on', s === id);
+  });
+}
+
+function showErr(msg) {
+  document.getElementById('loading').style.display = 'none';
+  const el = document.getElementById('err-screen');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function renderField(f) {
+  const fid = f.key || f.id;
+  const req = f.required ? '<span class="ff-required"> *</span>' : '';
+  const desc = f.description ? `<div class="ff-desc">${esc(f.description)}</div>` : '';
+  const ph = esc(f.placeholder || '');
+  if (f.type === 'text' || f.type === 'string') {
+    return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<input class="ff-inp" id="ff-${fid}" type="text" placeholder="${ph}"></div>`;
+  }
+  if (f.type === 'textarea') {
+    return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<textarea class="ff-textarea" id="ff-${fid}" placeholder="${ph}"></textarea></div>`;
+  }
+  if (f.type === 'select') {
+    const opts = (f.options || []).map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('');
+    return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<select class="ff-sel" id="ff-${fid}"><option value="">선택해주세요</option>${opts}</select></div>`;
+  }
+  return '';
+}
+
+function renderStyleDim(dim) {
+  const pills = dim.choices.map(c =>
+    `<button type="button" class="style-pill${styleSelections[dim.key] === c.value ? ' on' : ''}"
+      onclick="toggleStylePill(this,'${esc(dim.key)}','${esc(c.value)}')">${esc(c.label)}</button>`
+  ).join('');
+  return `<div class="style-dim">
+    <div class="style-dim-lbl">${esc(dim.label)}</div>
+    <div class="style-pills" id="style-pills-${esc(dim.key)}">${pills}</div>
+  </div>`;
+}
+
+function toggleStylePill(btn, key, value) {
+  const container = document.getElementById('style-pills-' + key);
+  if (!container) return;
+  const isOn = btn.classList.contains('on');
+  container.querySelectorAll('.style-pill').forEach(p => p.classList.remove('on'));
+  if (!isOn) { btn.classList.add('on'); styleSelections[key] = value; }
+  else { delete styleSelections[key]; }
+}
+
+async function init() {
+  if (!CONFIG_ID) { showErr('문구 생성기 ID가 없습니다.'); return; }
+  try {
+    const snap = await db.collection('cms_copy_gen_configs').doc(CONFIG_ID).get();
+    if (!snap.exists) { showErr('문구 생성기를 찾을 수 없습니다.'); return; }
+    config = snap.data();
+
+    // admin이 고정한 스타일 값을 초기 선택으로 세팅
+    (config.styleOptions || []).forEach(dim => {
+      if (dim.mode === 'fixed' && dim.fixedValue) styleSelections[dim.key] = dim.fixedValue;
+    });
+
+    // 참고 문구 (showToUser=true만)
+    const visibleRefs = (config.references || []).filter(r => r.showToUser);
+    if (visibleRefs.length) {
+      document.getElementById('cg-ref-section').style.display = '';
+      document.getElementById('cg-ref-list').innerHTML = visibleRefs.map(r => `<div class="ref-item">${esc(r.text)}</div>`).join('');
+    }
+
+    // 필드 렌더링
+    const fields = (config.fields || []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+    document.getElementById('cg-field-list').innerHTML = fields.map(renderField).join('');
+
+    // 스타일 선택 UI (user-select 항목만)
+    const userStyleDims = (config.styleOptions || []).filter(d => d.mode === 'user-select');
+    if (userStyleDims.length) {
+      document.getElementById('cg-style-section').style.display = '';
+      document.getElementById('cg-style-dims').innerHTML = userStyleDims.map(renderStyleDim).join('');
+    }
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = '';
+    showScreen('screen-input');
+    window.parent.postMessage({ type: 'lmp-ready' }, '*');
+  } catch (e) {
+    console.error('[copy-gen init]', e);
+    showErr('불러오기에 실패했어요. 다시 시도해주세요.');
+  }
+}
+
+function collectFields() {
+  const fields = (config.fields || []).slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+  const result = {};
+  const errEl = document.getElementById('cg-err');
+  errEl.textContent = '';
+  for (const f of fields) {
+    const fid = f.key || f.id;
+    const el = document.getElementById('ff-' + fid);
+    if (!el) continue;
+    const val = el.value?.trim() || '';
+    if (f.required && !val) {
+      errEl.textContent = (f.label || fid) + '을(를) 입력해주세요.';
+      return null;
+    }
+    if (val) result[f.label || fid] = val;
+  }
+  return result;
+}
+
+async function callAPI(existingPhrases) {
+  const fields = collectFields();
+  if (fields === null) return null;
+
+  const refs = (config.references || []).map(r => r.text).filter(Boolean);
+  const body = {
+    fields,
+    styleSelections,
+    references: refs,
+    outputConfig: config.outputConfig || { count: 5 },
+    existingPhrases,
+  };
+
+  const res = await fetch('/api/generate-copy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data.phrases || [];
+}
+
+async function generate() {
+  showScreen('screen-loading');
+  document.getElementById('gen-btn').disabled = true;
+  try {
+    const phrases = await callAPI([]);
+    if (phrases === null) { showScreen('screen-input'); document.getElementById('gen-btn').disabled = false; return; }
+    allPhrases = phrases;
+    renderPhrases(allPhrases);
+    showScreen('screen-results');
+  } catch (e) {
+    showScreen('screen-input');
+    document.getElementById('cg-err').textContent = '생성 실패: ' + e.message;
+  }
+  document.getElementById('gen-btn').disabled = false;
+}
+
+async function generateMore() {
+  const btn = document.getElementById('more-btn');
+  btn.disabled = true; btn.textContent = '생성 중…';
+  try {
+    const newPhrases = await callAPI(allPhrases);
+    if (newPhrases) {
+      allPhrases = [...allPhrases, ...newPhrases];
+      renderPhrases(allPhrases);
+    }
+  } catch (e) {
+    alert('추가 생성 실패: ' + e.message);
+  }
+  btn.disabled = false; btn.textContent = '추가 생성 →';
+}
+
+function backToInput() {
+  showScreen('screen-input');
+}
+
+function renderPhrases(phrases) {
+  document.getElementById('results-ttl').textContent = `생성된 문구 ${phrases.length}개`;
+  document.getElementById('phrase-list').innerHTML = phrases.map((p, i) =>
+    `<div class="phrase-card">
+      <div class="phrase-text">${esc(p)}</div>
+      <button class="copy-btn" id="copy-btn-${i}" onclick="copyPhrase(${i})">복사</button>
+    </div>`
+  ).join('');
+}
+
+async function copyPhrase(idx) {
+  const raw = allPhrases[idx];
+  if (!raw) return;
+  try {
+    await navigator.clipboard.writeText(raw);
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = raw; ta.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  const btn = document.getElementById('copy-btn-' + idx);
+  if (btn) { btn.textContent = '복사됨 ✓'; btn.classList.add('done'); }
+
+  saveResult(raw);
+
+  if (!toolCompleteFired) {
+    toolCompleteFired = true;
+    window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+  }
+}
+
+async function saveResult(copiedText) {
+  try {
+    const fields = collectFields() || {};
+    await db.collection('cms_copy_gen_results').add({
+      configId: CONFIG_ID,
+      projectId: ctxProjectId || '',
+      userId: ctxUserId || '',
+      userDisplayName: ctxUserDisplayName || '',
+      copiedText,
+      inputData: fields,
+      styleData: { ...styleSelections },
+      copiedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch (e) {
+    console.warn('[copy-gen] save failed:', e);
+  }
+}
+
+init();
+</script>
+</body>
+</html>

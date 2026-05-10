@@ -972,6 +972,7 @@ function blockHtml(b){
       guide:`/tools/guide/?id=${b.toolConfig?.guideId||''}`,
       'youtube-playlist':'/tools/youtube-playlist/',
       schedule:`/tools/schedule/?id=${b.toolConfig?.scheduleId||''}`,
+      'copy-gen':`/tools/copy-gen/?id=${b.toolConfig?.copyGenId||''}`,
     };
     const src=toolUrls[b.toolType]||'';
     const h=b.height||0;
