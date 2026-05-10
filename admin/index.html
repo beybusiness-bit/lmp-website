@@ -1597,7 +1597,7 @@ function switchInnerTab(t) {
   ['basic','design','auth','stages'].forEach(k => {
     document.getElementById('ip-'+k).classList.toggle('on', k===t);
   });
-  if (curProjId) history.replaceState(null,'','#edit/'+curProjId+'/'+t);
+  if (curProjId && !_navRestore) history.replaceState(null,'','#edit/'+curProjId+'/'+t);
 }
 
 /* ── Util ── */
@@ -2814,7 +2814,7 @@ async function openStageContent(i) {
     }
   }
   document.getElementById('stage-content-overlay').style.display = 'flex';
-  if (!_navRestore) history.pushState({v:'stage', idx:i}, '', '#edit/'+curProjId+'/stages/'+i);
+  if (!_navRestore) history.pushState({v:'stage', idx:i, projId:curProjId}, '', '#edit/'+curProjId+'/stages/'+i);
   applyPreviewSize();
   window.scrollTo(0,0);
   try {
@@ -3513,7 +3513,7 @@ function openBlockModal(idx,insertAt){
   const showVar = curAuthEnabled && curAuthFields.length > 0;
   ['text','mixed'].forEach(c=>{const b=document.getElementById('fmt-var-'+c);if(b)b.style.display=showVar?'':'none';});
   document.getElementById('block-modal').classList.add('on');
-  if (!_navRestore) history.pushState({v:'block', blkIdx:idx, insertAt:insertAt??null}, '', '#edit/'+curProjId+'/stages/'+(curEditingStageIdx??0)+'/block');
+  if (!_navRestore) history.pushState({v:'block', blkIdx:idx, insertAt:insertAt??null, projId:curProjId, stageIdx:curEditingStageIdx}, '', '#edit/'+curProjId+'/stages/'+(curEditingStageIdx??0)+'/block');
   updateBmPreview();
 }
 function closeBlockModal(){document.getElementById('block-modal').classList.remove('on');}
@@ -4355,10 +4355,18 @@ window.addEventListener('load', () => {
 
     _navRestore = true;
 
-    /* ── 목록으로 (앱 외부 또는 명시적 list 상태) ── */
+    /* ── 목록으로 ── */
     if (!st || !st.v) {
       if (bmOpen) bm.classList.remove('on');
-      if (scoOpen) { stageDirty=false; sco.style.display='none'; curEditingStageIdx=null; curBlocks=[]; }
+      if (scoOpen) {
+        if (stageDirty && !confirm('저장하지 않은 변경사항이 있어요. 저장 없이 닫으시겠어요?')) {
+          _navRestore=false; history.forward(); return;
+        }
+        stageDirty=false; sco.style.display='none'; curEditingStageIdx=null; curBlocks=[];
+      }
+      if (projDirty && !confirm('저장하지 않은 변경사항이 있어요. 저장 없이 나가시겠어요?')) {
+        _navRestore=false; history.forward(); return;
+      }
       projDirty=false; _projDirtyLock=true;
       showProjView('list');
       curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[]; curUsers=[]; curAuthCollection='';
@@ -4368,6 +4376,7 @@ window.addEventListener('load', () => {
 
     /* ── 프로젝트 편집 화면 ── */
     if (st.v === 'proj') {
+      switchTab('proj');
       if (bmOpen) bm.classList.remove('on');
       if (scoOpen) {
         if (stageDirty && !confirm('저장하지 않은 변경사항이 있어요. 저장 없이 닫으시겠어요?')) {
@@ -4376,17 +4385,27 @@ window.addEventListener('load', () => {
         stageDirty=false; sco.style.display='none'; curEditingStageIdx=null; curBlocks=[];
       }
       if (st.id && st.id !== 'new' && curProjId !== st.id) {
-        editProject(st.id); // _navRestore=true 이므로 내부 pushState 실행 안 됨
+        /* editProject 완료까지 _navRestore=true 유지 — switchInnerTab의 replaceState 억제 */
+        editProject(st.id).finally(()=>{ _navRestore=false; });
+        return;
       }
+      showProjView('edit');
       _navRestore=false;
       return;
     }
 
     /* ── 스테이지 편집 화면 ── */
     if (st.v === 'stage') {
+      switchTab('proj');
       if (bmOpen) bm.classList.remove('on');
       if (!scoOpen) {
-        // 앞으로가기로 스테이지 재진입
+        if (!curProjId && st.projId) {
+          /* 프로젝트 미로드 상태 — editProject 완료 후 스테이지 진입, 전 구간 _navRestore=true */
+          editProject(st.projId)
+            .then(()=>{ if(curStages[st.idx]!==undefined) return openStageContent(st.idx); })
+            .finally(()=>{ _navRestore=false; });
+          return;
+        }
         if (curStages[st.idx] !== undefined) openStageContent(st.idx);
       }
       _navRestore=false;
@@ -4395,9 +4414,27 @@ window.addEventListener('load', () => {
 
     /* ── 블록 편집 모달 ── */
     if (st.v === 'block') {
+      switchTab('proj');
       if (!bmOpen) {
-        // 앞으로가기로 블록 모달 재진입
-        openBlockModal(st.blkIdx ?? null, st.insertAt ?? undefined);
+        const _openBlk = () => {
+          if (st.blkIdx !== null && st.blkIdx !== undefined && curBlocks[st.blkIdx] !== undefined) {
+            openBlockModal(st.blkIdx, st.insertAt ?? undefined);
+          }
+        };
+        if (!curProjId && st.projId) {
+          /* 프로젝트·스테이지 미로드 — 순차 로드, 전 구간 _navRestore=true */
+          editProject(st.projId)
+            .then(()=> (st.stageIdx!==null && curStages[st.stageIdx]) ? openStageContent(st.stageIdx) : null)
+            .then(_openBlk)
+            .finally(()=>{ _navRestore=false; });
+          return;
+        }
+        if (!scoOpen && st.stageIdx!==null && curStages[st.stageIdx]) {
+          /* 스테이지 미열림 — 스테이지 열고 블록 진입, 전 구간 _navRestore=true */
+          openStageContent(st.stageIdx).then(_openBlk).finally(()=>{ _navRestore=false; });
+          return;
+        }
+        _openBlk();
       }
       _navRestore=false;
       return;
