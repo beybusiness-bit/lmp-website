@@ -204,7 +204,9 @@ window.addEventListener('message', e => {
   ctxUserId = e.data.userId || '';
   const uf = e.data.userFields || {};
   ctxUserDisplayName = uf.name || uf.displayName || uf.이름 || '';
-  if (e.data.keyColors?.length) {
+  if (e.data.prepBg) {
+    document.documentElement.style.setProperty('--cg-on-black', e.data.prepBg);
+  } else if (e.data.keyColors?.length) {
     document.documentElement.style.setProperty('--cg-on-black', e.data.keyColors[0]);
   }
   if (config) loadUserGenerationCount();
