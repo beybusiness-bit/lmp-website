@@ -476,10 +476,19 @@ closeHelpPanel();
   - 원본비율 / 크롭채움(`cover`) / 비율유지(`contain`) / 늘려채움(`fill`)
   - 높이(px) 입력 + 9방향 기준점 그리드 (크롭채움·비율유지 시)
   - Firestore 필드: `imageFit`, `imagePosition`, `imageHeight`
+- **✅ 오버레이형 텍스트 세로 정렬** (이번 세션): 상/중/하단 선택 → `overlayTextVAlign` 필드
+  - 오버레이 섀도우: 위치 무관 균일 `rgba(0,0,0,.4)` 오버레이로 통일
+- **✅ 일정 잡기 도구** (`tools/schedule/index.html`) 신규 구현 (이번 세션)
+  - Google Calendar 연동 (GAS 경유), 타임존 지원, 슬롯 계산, 예약 Firestore 저장
+  - GAS에 `getCalendars`, `getCalendarEvents`, `createCalendarEvent` 액션 추가
+- **✅ 슬라이드 재진입 겹침 버그 수정** (이번 세션): `track.style.transform='translateX(0)'`
+- **✅ 혼합형 오버레이 전체화면 높이** (이번 세션): `imageHeight:'full'` → `height:100svh`
+  - 슬라이드형에서도 전체화면 적용 (fullH일 때 data-valign 생략)
 
 **미확인/이슈 🔶**
 - GAS `bulkAppend` 코드: `apps-script/Code.gs`에 추가됐으나 **GAS 편집기에서 재배포 필요**
   → 방법: script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
+- 일정 잡기 도구(`tools/schedule/index.html`): GAS 재배포 후 캘린더 연동 end-to-end 테스트 필요
 
 **진행 예정 🔲**
 - GAS 재배포 후 시트 생성 + 백필 end-to-end 테스트
@@ -487,7 +496,7 @@ closeHelpPanel();
 - **유튜브 뮤직 재생목록 도구** (`tools/youtube-playlist/index.html`) 신규 구현
 
 **다음 세션 시작점**
-- 🔲 이미지 배치 설정 end-to-end 테스트 (admin 저장 → 플레이어 렌더링 확인)
+- 🔲 일정 잡기 도구 end-to-end 테스트 (GAS 재배포 후)
 - 🔲 유튜브 뮤직 재생목록 도구 구현 (YouTube Data API 키 필요 — 사용자가 발급 후 전달 예정)
 - PAT: 다음 세션 시작 시 사용자에게 요청 (또는 새로 발급)
 
