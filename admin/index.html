@@ -1170,11 +1170,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <button class="img-fit-btn" data-ctx="mixed" data-fit="contain" onpointerdown="epd(event)" onclick="setMixedImgFit('contain')">비율유지</button>
               <button class="img-fit-btn" data-ctx="mixed" data-fit="fill" onpointerdown="epd(event)" onclick="setMixedImgFit('fill')">늘려채움</button>
             </div>
-            <div id="mixed-height-row" style="display:none;">
+            <div id="mixed-height-row" style="display:none;margin-bottom:8px;">
               <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:3px;">높이 <span style="font-weight:400;">(px, 비워두면 260)</span></div>
               <div style="display:flex;align-items:center;gap:6px;">
                 <input class="fi-sm" id="mixed-height-val" type="number" min="60" max="1200" placeholder="260" style="width:80px;margin-bottom:0;" oninput="curMixedHeightFull=false;document.getElementById('mixed-height-full-btn').classList.remove('on');scheduleBmPreview()">
                 <button class="img-fit-btn" id="mixed-height-full-btn" onpointerdown="epd(event)" onclick="setMixedHeightFull()" style="white-space:nowrap;">전체화면</button>
+              </div>
+            </div>
+            <div id="overlay-valign-row" style="display:none;margin-bottom:8px;">
+              <div class="ed-lbl" style="font-size:10px;margin-bottom:6px;">텍스트 세로 정렬 <span style="font-weight:400;opacity:.55;">(오버레이형)</span></div>
+              <div style="display:flex;gap:6px;">
+                <button class="img-fit-btn on" id="ova-top"    onclick="setOverlayVAlign('top')"    onpointerdown="epd(event)">상단</button>
+                <button class="img-fit-btn"    id="ova-center" onclick="setOverlayVAlign('center')" onpointerdown="epd(event)">중앙</button>
+                <button class="img-fit-btn"    id="ova-bottom" onclick="setOverlayVAlign('bottom')" onpointerdown="epd(event)">하단</button>
+              </div>
+            </div>
+            <div id="overlay-shadow-row" style="display:none;">
+              <div class="ed-lbl" style="font-size:10px;margin-bottom:6px;">오버레이 <span style="font-weight:400;opacity:.55;">(이미지 위 색상 막)</span></div>
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                <span style="font-size:10px;font-weight:700;width:28px;flex-shrink:0;">색상</span>
+                <input type="color" id="overlay-color-picker" value="#000000" oninput="curOverlayColor=this.value;document.getElementById('overlay-color-hex').value=this.value.toUpperCase();scheduleBmPreview();" style="width:28px;height:28px;border:1.5px solid #000;padding:0;cursor:pointer;flex-shrink:0;">
+                <input class="fi-sm" id="overlay-color-hex" placeholder="#000000" value="#000000" style="width:70px;margin-bottom:0;" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)){curOverlayColor=this.value;document.getElementById('overlay-color-picker').value=this.value;scheduleBmPreview();}">
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:10px;font-weight:700;width:28px;flex-shrink:0;">농도</span>
+                <input type="range" id="overlay-shadow-slider" min="0" max="1" step="0.05" value="0.4" style="flex:1;cursor:pointer;min-width:0;" oninput="curOverlayShadow=parseFloat(this.value);document.getElementById('overlay-shadow-val').textContent=Math.round(this.value*100)+'%';scheduleBmPreview();">
+                <span id="overlay-shadow-val" style="font-size:11px;width:32px;text-align:right;font-weight:700;flex-shrink:0;">40%</span>
               </div>
             </div>
           </div>
@@ -1185,27 +1206,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div id="mixed-focal-dot" style="position:absolute;width:16px;height:16px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #000,0 2px 8px rgba(0,0,0,.6);transform:translate(-50%,-50%);pointer-events:none;left:50%;top:50%;"></div>
             </div>
           </div>
-        </div>
-      </div>
-      <div id="overlay-valign-row" style="margin-top:10px;margin-bottom:8px;display:none;">
-        <div class="ed-lbl" style="margin-bottom:6px;">텍스트 세로 정렬 <span style="font-weight:400;opacity:.55;">(오버레이형)</span></div>
-        <div style="display:flex;gap:6px;">
-          <button class="img-fit-btn on" id="ova-top"    onclick="setOverlayVAlign('top')"    onpointerdown="epd(event)">상단</button>
-          <button class="img-fit-btn"    id="ova-center" onclick="setOverlayVAlign('center')" onpointerdown="epd(event)">중앙</button>
-          <button class="img-fit-btn"    id="ova-bottom" onclick="setOverlayVAlign('bottom')" onpointerdown="epd(event)">하단</button>
-        </div>
-      </div>
-      <div id="overlay-shadow-row" style="margin-top:8px;margin-bottom:8px;display:none;">
-        <div class="ed-lbl" style="margin-bottom:6px;">오버레이 <span style="font-weight:400;opacity:.55;">(이미지 위에 씌우는 색상 막)</span></div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-          <span style="font-size:10px;font-weight:700;width:28px;flex-shrink:0;">색상</span>
-          <input type="color" id="overlay-color-picker" value="#000000" oninput="curOverlayColor=this.value;document.getElementById('overlay-color-hex').value=this.value.toUpperCase();scheduleBmPreview();" style="width:28px;height:28px;border:1.5px solid #000;padding:0;cursor:pointer;flex-shrink:0;">
-          <input class="fi-sm" id="overlay-color-hex" placeholder="#000000" value="#000000" style="width:80px;margin-bottom:0;" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)){curOverlayColor=this.value;document.getElementById('overlay-color-picker').value=this.value;scheduleBmPreview();}">
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:10px;font-weight:700;width:28px;flex-shrink:0;">농도</span>
-          <input type="range" id="overlay-shadow-slider" min="0" max="1" step="0.05" value="0.4" style="flex:1;cursor:pointer;" oninput="curOverlayShadow=parseFloat(this.value);document.getElementById('overlay-shadow-val').textContent=Math.round(this.value*100)+'%';scheduleBmPreview();">
-          <span id="overlay-shadow-val" style="font-size:11px;width:32px;text-align:right;font-weight:700;">40%</span>
         </div>
       </div>
       <div class="ed-lbl" style="margin-top:10px;margin-bottom:8px;">텍스트</div>
@@ -1990,11 +1990,20 @@ async function uploadBlockImage(event, urlFieldId, prevId) {
   const origVal = urlField ? urlField.value : '';
   if (urlField) urlField.value = '⏳ 업로드 중…';
   const stageId = (curEditingStageIdx !== null ? curStages[curEditingStageIdx]?.id : null) || 'tmp';
-  const compressed = await compressImage(file, { maxWidth: 1200, quality: 0.85 });
-  const path = `cms_projects/${curProjId||'tmp'}/stage_content/${stageId}/blocks/${Date.now()}.webp`;
+  const isGif = file.type === 'image/gif';
+  let uploadBlob, uploadPath, uploadType;
+  if (isGif) {
+    uploadBlob = file;
+    uploadPath = `cms_projects/${curProjId||'tmp'}/stage_content/${stageId}/blocks/${Date.now()}.gif`;
+    uploadType = 'image/gif';
+  } else {
+    uploadBlob = await compressImage(file, { maxWidth: 1200, quality: 0.85 });
+    uploadPath = `cms_projects/${curProjId||'tmp'}/stage_content/${stageId}/blocks/${Date.now()}.webp`;
+    uploadType = 'image/webp';
+  }
   try {
-    const ref = storage.ref(path);
-    await ref.put(compressed, { contentType: 'image/webp' });
+    const ref = storage.ref(uploadPath);
+    await ref.put(uploadBlob, { contentType: uploadType });
     const url = await ref.getDownloadURL();
     if (urlField) urlField.value = url;
     prevImg(prevId, url);
@@ -3618,9 +3627,17 @@ function saveBlock(){
   if(curBlkCheckColor) b.checkColor=curBlkCheckColor; else delete b.checkColor;
   if(curBlkCheckTextColor) b.checkTextColor=curBlkCheckTextColor; else delete b.checkTextColor;
   if(b.checkable) b.checkPosition=curCheckPos; else delete b.checkPosition;
-  if(curBlkIdx!==null)curBlocks[curBlkIdx]={...curBlocks[curBlkIdx],...b};
-  else if(curBlkInsertAt!==null)curBlocks.splice(curBlkInsertAt,0,b);
-  else curBlocks.push(b);
+  if(curBlkIdx!==null){
+    curBlocks[curBlkIdx]={...curBlocks[curBlkIdx],...b};
+  } else if(curBlkInsertAt!==null){
+    curBlocks.splice(curBlkInsertAt,0,b);
+    curBlkIdx=curBlkInsertAt; // 이후 저장은 같은 블록 업데이트
+    curBlkInsertAt=null;
+  } else {
+    curBlocks.push(b);
+    curBlkIdx=curBlocks.length-1; // 이후 저장은 같은 블록 업데이트
+  }
+  document.getElementById('bm-title').textContent='블록 편집';
   stageDirty=true;
   renderBlockList();scheduleGuidePreviewUpdate();
   _autoSaveStage();
