@@ -1187,8 +1187,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         </div>
       </div>
       <div id="overlay-shadow-row" style="margin-top:8px;margin-bottom:8px;display:none;">
-        <div class="ed-lbl" style="margin-bottom:6px;">어두운 오버레이 <span style="font-weight:400;opacity:.55;">(0%=없음 · 100%=완전 검정)</span></div>
+        <div class="ed-lbl" style="margin-bottom:6px;">오버레이 <span style="font-weight:400;opacity:.55;">(이미지 위에 씌우는 색상 막)</span></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="font-size:10px;font-weight:700;width:28px;flex-shrink:0;">색상</span>
+          <input type="color" id="overlay-color-picker" value="#000000" oninput="curOverlayColor=this.value;document.getElementById('overlay-color-hex').value=this.value.toUpperCase();scheduleBmPreview();" style="width:28px;height:28px;border:1.5px solid #000;padding:0;cursor:pointer;flex-shrink:0;">
+          <input class="fi-sm" id="overlay-color-hex" placeholder="#000000" value="#000000" style="width:80px;margin-bottom:0;" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)){curOverlayColor=this.value;document.getElementById('overlay-color-picker').value=this.value;scheduleBmPreview();}">
+        </div>
         <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:10px;font-weight:700;width:28px;flex-shrink:0;">농도</span>
           <input type="range" id="overlay-shadow-slider" min="0" max="1" step="0.05" value="0.4" style="flex:1;cursor:pointer;" oninput="curOverlayShadow=parseFloat(this.value);document.getElementById('overlay-shadow-val').textContent=Math.round(this.value*100)+'%';scheduleBmPreview();">
           <span id="overlay-shadow-val" style="font-size:11px;width:32px;text-align:right;font-weight:700;">40%</span>
         </div>
@@ -1632,6 +1638,8 @@ let _projDirtyLock = true; // editProject 로딩 중 false positive 방지
 let curLogoType = 'image';
 let curLayoutType = 'separate';
 let curBgImages = [];          // [{url, holdTime, transitionTime}]
+let curBgOverlayOpacity = 0.38;
+let curBgOverlayColor = '#000000';
 let curDdayEnabled = false;
 let curAuthEnabled = false;
 let curSelfRegEnabled = false;
@@ -3270,6 +3278,7 @@ let curBlkVerticalAlign='center';
 let curImgFit='natural',curImgPos='center';
 let curMixedImgFit='cover',curMixedImgPos='center',curMixedHeightFull=false;
 let curOverlayShadow=0.4;
+let curOverlayColor='#000000';
 function setMixedHeightFull(){curMixedHeightFull=true;document.getElementById('mixed-height-val').value='';document.getElementById('mixed-height-full-btn').classList.add('on');scheduleBmPreview();}
 function setImgFit(fit){
   curImgFit=fit;
@@ -3426,7 +3435,9 @@ function openBlockModal(idx,insertAt){
   const _mhfb=document.getElementById('mixed-height-full-btn'); if(_mhfb) _mhfb.classList.toggle('on',curMixedHeightFull);
   curOverlayVAlign=b.type==='mixed'?(b.overlayTextVAlign||'bottom'):'bottom';setOverlayVAlign(curOverlayVAlign);
   curOverlayShadow=b.type==='mixed'?(b.overlayShadow??0.4):0.4;
+  curOverlayColor=b.type==='mixed'?(b.overlayColor||'#000000'):'#000000';
   const _ssl=document.getElementById('overlay-shadow-slider');if(_ssl){_ssl.value=curOverlayShadow;document.getElementById('overlay-shadow-val').textContent=Math.round(curOverlayShadow*100)+'%';}
+  const _ocp=document.getElementById('overlay-color-picker');if(_ocp){_ocp.value=curOverlayColor;document.getElementById('overlay-color-hex').value=curOverlayColor.toUpperCase();}
   setMixedLayout(curMixedLayout);savedRange=null;
   /* spacer 블록 */
   const _sh=document.getElementById('blk-spacer-height');
@@ -3485,7 +3496,7 @@ function _buildCurrentBlock(){
     b.mixedLayout=curMixedLayout;
     b.imageFit=curMixedImgFit; b.imagePosition=curMixedImgPos;
     if(curMixedHeightFull){b.imageHeight='full';}else{const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0; if(_mh) b.imageHeight=_mh;}
-    if(curMixedLayout==='overlay'){b.overlayTextVAlign=curOverlayVAlign||'bottom';b.overlayShadow=curOverlayShadow;}
+    if(curMixedLayout==='overlay'){b.overlayTextVAlign=curOverlayVAlign||'bottom';b.overlayShadow=curOverlayShadow;b.overlayColor=curOverlayColor;}
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url')?.value||'';
     b.embedHeight=document.getElementById('embed-height-auto')?.checked?0:(parseInt(document.getElementById('embed-height')?.value)||500);
@@ -3538,7 +3549,7 @@ function saveBlock(){
     b.mixedLayout=curMixedLayout;
     b.imageFit=curMixedImgFit||'cover'; b.imagePosition=curMixedImgPos||'center';
     if(curMixedHeightFull){b.imageHeight='full';}else{const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0;if(_mh) b.imageHeight=_mh; else delete b.imageHeight;}
-    if(curMixedLayout==='overlay'){b.overlayTextVAlign=curOverlayVAlign||'bottom';b.overlayShadow=curOverlayShadow;}else{delete b.overlayTextVAlign;delete b.overlayShadow;}
+    if(curMixedLayout==='overlay'){b.overlayTextVAlign=curOverlayVAlign||'bottom';b.overlayShadow=curOverlayShadow;b.overlayColor=curOverlayColor;}else{delete b.overlayTextVAlign;delete b.overlayShadow;delete b.overlayColor;}
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url').value.trim();
     b.embedHeight=document.getElementById('embed-height-auto').checked?0:(parseInt(document.getElementById('embed-height').value)||500);
@@ -3840,6 +3851,9 @@ function syncFmtBar(ctx){
 
   const linkBtn=document.getElementById('fmt-link-'+ctx);
   if(linkBtn) linkBtn.classList.toggle('on',_isInLink());
+  const clr=_detectClr();
+  const clrDot=document.getElementById('fmt-clr-dot-'+ctx);
+  if(clrDot)clrDot.style.background=clr||'#000000';
 }
 
 /* ── 텍스트 내 구분선 삽입 ── */
@@ -3995,8 +4009,8 @@ function gBlockHtml(b,S){
       return `<div style="${mS}${bgS}${pad}"><img src="${b.imageUrl||''}" style="${spS}" alt=""><div style="${txS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div></div>`;
     }
     const ovS=mfit==='natural'?'width:100%;display:block;':`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;`;
-    const _ova=b.overlayTextVAlign||'bottom';const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};const _ai=_aiMap[_ova]||'flex-end';const _sha=b.overlayShadow??0.4;
-    return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="${ovS}" alt=""><div style="position:absolute;inset:0;display:flex;align-items:${_ai};background:rgba(0,0,0,${_sha});${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;">${b.textContent||''}</div></div></div>`;
+    const _ova=b.overlayTextVAlign||'bottom';const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};const _ai=_aiMap[_ova]||'flex-end';const _sha=b.overlayShadow??0.4;const _shclr=b.overlayColor||'#000000';const _shR=parseInt(_shclr.slice(1,3),16)||0,_shG=parseInt(_shclr.slice(3,5),16)||0,_shB=parseInt(_shclr.slice(5,7),16)||0;
+    return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="${ovS}" alt=""><div style="position:absolute;inset:0;display:flex;align-items:${_ai};background:rgba(${_shR},${_shG},${_shB},${_sha});${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;">${b.textContent||''}</div></div></div>`;
   }
   if(b.type==='embed'){
     if(!b.embedUrl) return `<div style="${mS}${bgS}${pad};text-align:center;font-size:${Math.round(11*S)}px;color:rgba(0,0,0,.4);">임베드 URL 없음</div>`;
