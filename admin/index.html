@@ -3891,12 +3891,18 @@ function openFmtDd(btn,type,ctx){
     </div>`;
   } else if(type==='link'){
     const curUrl=_detectLinkUrl();
+    const inLink=_isInLink();
+    const curLinkText=inLink?_detectLinkText():'';
+    const _esc=s=>s.replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    const textRow=inLink?`<div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:4px;">링크 텍스트</div><input id="fmt-link-text-inp" class="fi-sm" type="text" value="${_esc(curLinkText)}" placeholder="링크 표시 텍스트" style="margin-bottom:8px;">`:''
     html=`<div style="padding:10px 10px 10px;min-width:230px;">
-      <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:8px;">텍스트 링크</div>
+      <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:8px;">${inLink?'링크 수정':'텍스트 링크'}</div>
+      ${textRow}
+      <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:4px;">링크 URL</div>
       <input id="fmt-link-inp" class="fi-sm" type="url" value="${curUrl}" placeholder="https://…" style="margin-bottom:8px;"
-        onkeydown="if(event.key==='Enter'&&this.value.trim()){applyFmtLink('${ctx}',this.value.trim());closeFmtPopup();}">
+        onkeydown="if(event.key==='Enter'&&this.value.trim()){applyFmtLink('${ctx}',this.value.trim(),document.getElementById('fmt-link-text-inp')?.value);closeFmtPopup();}">
       <div style="display:flex;gap:6px;">
-        <button onpointerdown="epd(event)" onclick="applyFmtLink('${ctx}',document.getElementById('fmt-link-inp').value)" style="flex:1;padding:7px 0;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">링크 걸기</button>
+        <button onpointerdown="epd(event)" onclick="applyFmtLink('${ctx}',document.getElementById('fmt-link-inp').value,document.getElementById('fmt-link-text-inp')?.value)" style="flex:1;padding:7px 0;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">링크 걸기</button>
         <button onpointerdown="epd(event)" onclick="removeFmtLink('${ctx}')" style="padding:7px 10px;background:transparent;border:1.5px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">제거</button>
       </div>
     </div>`;
@@ -4022,15 +4028,34 @@ function _syncBgFontSize(ed){
     else bgSpan.style.removeProperty('font-size');
   });
 }
-function applyFmtLink(ctx,url){
+function applyFmtLink(ctx,url,newText){
   if(!url||!url.trim())return;
-  focusEd(ctx);restoreRange(getEd(ctx));
+  const ed=getEd(ctx);
+  ed.focus();
+  // 선택 범위를 강제 복원 (URL 입력란 클릭 시 선택이 날아가는 버그 방지)
+  if(savedRange&&savedRange.el===ed){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}
+  const sel2=window.getSelection();
+  if(sel2.rangeCount){
+    const range=sel2.getRangeAt(0);
+    if(range.collapsed){
+      // 커서만 있을 때 → 기존 링크 안이면 직접 수정
+      let n=range.startContainer;if(n.nodeType===3)n=n.parentElement;
+      const existingA=n.closest('a');
+      if(existingA){
+        existingA.href=url.trim();existingA.setAttribute('target','_blank');existingA.setAttribute('rel','noopener');
+        if(newText!=null&&newText.trim())existingA.textContent=newText.trim();
+        closeFmtPopup();scheduleBmPreview();return;
+      }
+    }
+  }
+  // 텍스트 선택 상태 → 선택된 텍스트를 링크로 감싸기
   document.execCommand('createLink',false,url.trim());
-  getEd(ctx)?.querySelectorAll('a[href]').forEach(a=>{a.setAttribute('target','_blank');a.setAttribute('rel','noopener');});
+  ed.querySelectorAll('a[href]').forEach(a=>{a.setAttribute('target','_blank');a.setAttribute('rel','noopener');});
   closeFmtPopup();scheduleBmPreview();
 }
 function removeFmtLink(ctx){
-  focusEd(ctx);restoreRange(getEd(ctx));
+  const ed=getEd(ctx);ed.focus();
+  if(savedRange&&savedRange.el===ed){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}
   document.execCommand('unlink',false,null);
   closeFmtPopup();scheduleBmPreview();
 }
@@ -4039,6 +4064,9 @@ function _detectLinkUrl(){
 }
 function _isInLink(){
   try{const sel=window.getSelection();if(!sel.rangeCount)return false;let n=sel.getRangeAt(0).startContainer;if(n.nodeType===3)n=n.parentElement;return !!n.closest('a');}catch(e){return false;}
+}
+function _detectLinkText(){
+  try{const sel=window.getSelection();if(!sel.rangeCount)return'';let n=sel.getRangeAt(0).startContainer;if(n.nodeType===3)n=n.parentElement;return n.closest('a')?.textContent||'';}catch(e){return'';}
 }
 function _detectSzRaw(ctx){
   try{
