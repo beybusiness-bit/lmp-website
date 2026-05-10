@@ -5,11 +5,12 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { fields, styleSelections, references, outputConfig, existingPhrases, referenceRole } = req.body || {};
+  const { fields, styleSelections, references, outputConfig, existingPhrases, referenceRole, aiContext, speakerDesc } = req.body || {};
 
   const count = Math.min(Math.max(outputConfig?.count || 5, 1), 10);
   const minChars = outputConfig?.minChars || 0;
   const maxChars = outputConfig?.maxChars || 0;
+  const maxTokens = Math.min(8192, Math.max(1024, count * Math.max(maxChars || 150, 150) * 3));
 
   const styleNames = {
     purpose:     { label: '용도',     choices: {
@@ -107,6 +108,8 @@ export default async function handler(req, res) {
   const systemPrompt = [
     '당신은 한국어 카피라이터입니다.',
     '사용자의 입력을 바탕으로 자연스럽고 매력적인 한국어 문구를 작성하세요.',
+    speakerDesc ? `\n화자(발신자) 정보: ${speakerDesc}` : '',
+    aiContext ? `\n배경 및 컨텍스트:\n${aiContext}` : '',
     styleLines ? `\n스타일 조건:\n${styleLines}` : '',
     charLimit ? `\n글자 수 조건: ${charLimit}` : '',
     '\n중요 규칙:',
@@ -137,7 +140,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model,
-        max_tokens: 1024,
+        max_tokens: maxTokens,
         system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
       }),

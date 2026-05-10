@@ -962,6 +962,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <div class="ed-lbl" style="margin-bottom:4px;">최대 글자 수</div>
                 <input class="fi-sm" id="cg-max-chars" type="number" min="0" placeholder="제한 없음" style="margin-bottom:0;">
               </div>
+              <div style="flex:1;min-width:80px;">
+                <div class="ed-lbl" style="margin-bottom:4px;">사용자당 최대 생성 횟수 <span style="font-weight:400;opacity:.55;">(0=무제한)</span></div>
+                <input class="fi-sm" id="cg-max-gens" type="number" min="0" value="0" placeholder="무제한" style="margin-bottom:0;">
+              </div>
+            </div>
+            <!-- AI 배경 정보 -->
+            <div class="sect-head">AI 배경 정보 <span style="font-size:11px;font-weight:400;opacity:.55;">(관리자 전용, AI에게만 전달)</span></div>
+            <div class="ed-lbl" style="margin-bottom:8px;color:rgba(0,0,0,.5);">화자(발신자) 정보와 배경 설명을 입력하면 더 맥락에 맞는 문구가 생성됩니다.</div>
+            <div style="margin-bottom:12px;">
+              <div class="ed-lbl" style="margin-bottom:4px;">화자·역할 설명</div>
+              <input class="fi-sm" id="cg-speaker-desc" type="text" placeholder="예: 친환경 카페를 운영하는 30대 여성 사장님" style="margin-bottom:0;">
+            </div>
+            <div style="margin-bottom:8px;">
+              <div class="ed-lbl" style="margin-bottom:4px;">배경 및 컨텍스트</div>
+              <textarea class="fi-sm" id="cg-ai-context" rows="4" placeholder="예: 이 문구는 인스타그램 신메뉴 런칭에 사용됩니다. 브랜드 키워드는 '느림', '건강', '지속가능성'입니다." style="margin-bottom:0;min-height:80px;resize:vertical;"></textarea>
             </div>
             <!-- 참고 문구 -->
             <div class="sect-head">참고 문구</div>
@@ -6180,7 +6195,8 @@ async function cgCreate(){
     const ref=await db.collection('cms_copy_gen_configs').add({
       title:name, description:'', fields:[],
       styleOptions: PREDEFINED_STYLE_OPTIONS.map(s=>({...s,mode:'user-select',fixedValue:''})),
-      outputConfig:{count:5,minChars:0,maxChars:0},
+      outputConfig:{count:5,minChars:0,maxChars:0,maxGenerationsPerUser:0},
+      speakerDesc:'', aiContext:'',
       references:[],
       createdAt:firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
@@ -6215,6 +6231,9 @@ async function cgEdit(docId){
     document.getElementById('cg-count').value=d.outputConfig?.count||5;
     document.getElementById('cg-min-chars').value=d.outputConfig?.minChars||'';
     document.getElementById('cg-max-chars').value=d.outputConfig?.maxChars||'';
+    document.getElementById('cg-max-gens').value=d.outputConfig?.maxGenerationsPerUser||0;
+    document.getElementById('cg-speaker-desc').value=d.speakerDesc||'';
+    document.getElementById('cg-ai-context').value=d.aiContext||'';
     cgRenderFieldList(); cgRenderStyleList(); cgRenderRefList();
   }catch(e){ alert('불러오기 실패: '+e.message); }
 }
@@ -6319,10 +6338,13 @@ async function cgSave(){
     count:Math.min(Math.max(parseInt(document.getElementById('cg-count')?.value)||5,1),10),
     minChars:parseInt(document.getElementById('cg-min-chars')?.value)||0,
     maxChars:parseInt(document.getElementById('cg-max-chars')?.value)||0,
+    maxGenerationsPerUser:Math.max(0,parseInt(document.getElementById('cg-max-gens')?.value)||0),
   };
   try{
     await db.collection('cms_copy_gen_configs').doc(cgCurDocId).update({
       title, description:document.getElementById('cg-desc')?.value.trim()||'',
+      speakerDesc:document.getElementById('cg-speaker-desc')?.value.trim()||'',
+      aiContext:document.getElementById('cg-ai-context')?.value.trim()||'',
       fields:cgFields, styleOptions, outputConfig, references:cgRefs, referenceRole:cgReferenceRole,
       updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
     });
