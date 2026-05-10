@@ -241,12 +241,7 @@ function renderStyleDim(dim) {
     ${customInp}
   </div>`;
   if (dim.key === 'speech_level') {
-    // 형식이 사용자 선택일 때만 '문장식 선택 후 표시' 의존관계 적용
-    // 형식이 고정이거나 없으면 어미를 바로 표시
-    const formatDim = mergedStyleOptions.find(d => d.key === 'format');
-    const formatIsUserSelect = formatDim && formatDim.mode === 'user-select';
-    const hideByDefault = formatIsUserSelect && styleSelections.format !== 'prose';
-    return `<div id="speech-level-dim" style="display:${hideByDefault ? 'none' : ''}">${inner}</div>`;
+    return `<div id="speech-level-dim" style="display:none;">${inner}</div>`;
   }
   return inner;
 }
@@ -298,9 +293,6 @@ function toggleStylePill(btn, key, value) {
 function updateSpeechLevelVisibility() {
   const wrap = document.getElementById('speech-level-dim');
   if (!wrap) return;
-  // 형식이 고정이거나 없으면 어미 숨김/표시 로직을 적용하지 않음
-  const formatDim = mergedStyleOptions.find(d => d.key === 'format');
-  if (!formatDim || formatDim.mode !== 'user-select') return;
   const show = styleSelections.format === 'prose';
   wrap.style.display = show ? '' : 'none';
   if (!show) {
