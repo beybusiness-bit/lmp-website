@@ -51,7 +51,6 @@ export default async function handler(req, res) {
       urgent:      '긴박한',
       cold:        '냉정한',
       rigid:       '딱딱한',
-      // custom 값은 사용자가 직접 입력한 텍스트로 대체되어 전달됨
     }},
     speech_level:{ label: '어미',   choices: {
       honorific: '경어 (합니다체)',
@@ -63,7 +62,6 @@ export default async function handler(req, res) {
     .map(([k, v]) => {
       if (!styleNames[k]) return null;
       const dim = styleNames[k];
-      // v may be a comma-joined multi-select string
       const label = v.split(',').map(p => dim.choices[p.trim()] || p.trim()).filter(Boolean).join(', ');
       return `- ${dim.label}: ${label}`;
     })
@@ -74,46 +72,50 @@ export default async function handler(req, res) {
     maxChars ? `최대 ${maxChars}자` : '',
   ].filter(Boolean).join(', ');
 
-  const fullPrompt = [
+  const systemPrompt = [
     '당신은 행사·프로젝트용 카피라이터입니다.',
     '사용자의 입력을 바탕으로 자연스럽고 매력적인 한국어 문구를 작성하세요.',
     styleLines ? `\n스타일 조건:\n${styleLines}` : '',
     charLimit ? `\n글자 수 조건: ${charLimit}` : '',
     '\n반드시 JSON 배열 형식으로만 응답하세요. 예: ["문구1", "문구2", "문구3"]',
     '설명, 머리말, JSON 외 텍스트는 절대 포함하지 마세요.',
-    '\n---',
-    `\n입력 내용:\n${Object.entries(fields || {}).map(([k, v]) => `${k}: ${v}`).join('\n')}`,
-    (references || []).length ? '\n참고 문구 예시:\n' + references.map(r => `- ${r}`).join('\n') : '',
-    (existingPhrases || []).length ? '\n이미 생성된 문구(중복 금지):\n' + existingPhrases.map(p => `- ${p}`).join('\n') : '',
-    `\n\n위 내용을 참고해 ${count}개의 문구를 JSON 배열로 작성하세요.`,
   ].filter(Boolean).join('\n');
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const userPrompt = [
+    `입력 내용:\n${Object.entries(fields || {}).map(([k, v]) => `${k}: ${v}`).join('\n')}`,
+    (references || []).length ? '참고 문구 예시:\n' + references.map(r => `- ${r}`).join('\n') : '',
+    (existingPhrases || []).length ? '이미 생성된 문구(중복 금지):\n' + existingPhrases.map(p => `- ${p}`).join('\n') : '',
+    `\n위 내용을 참고해 ${count}개의 문구를 JSON 배열로 작성하세요.`,
+  ].filter(Boolean).join('\n\n');
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'API 키가 설정되지 않았습니다.' });
-  const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+  const model = process.env.COPY_GEN_MODEL || 'claude-haiku-4-5-20251001';
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: fullPrompt }] }],
-          generationConfig: { temperature: 0.9, maxOutputTokens: 2048 },
-        }),
-      }
-    );
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+      }),
+    });
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      return res.status(500).json({ error: errData.error?.message || 'Gemini API 오류' });
+      return res.status(500).json({ error: errData.error?.message || 'Claude API 오류' });
     }
 
     const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+    const text = data.content?.[0]?.text || '[]';
 
-    // 마크다운 코드펜스 제거 후 JSON 파싱
     const cleaned = text.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
     let phrases;
     try {
