@@ -3994,9 +3994,29 @@ function applyFmtBg(ctx,clr){
     }
   } else {
     document.execCommand('backColor',false,clr);
+    const ed=getEd(ctx);
+    if(ed) _fixBgDisplay(ed);
   }
   const dot=document.getElementById('fmt-bg-dot-'+ctx);
   if(dot) dot.style.background=(clr==='rgba(0,0,0,0)'||clr==='transparent')?'rgba(0,0,0,.18)':clr;
+}
+/* 배경색 span이 줄 전체의 유일한 콘텐츠면 display:block으로 전환 → 전체 너비 배경 */
+function _fixBgDisplay(ed){
+  ed.querySelectorAll('span[style]').forEach(span=>{
+    if(!span.style.backgroundColor){
+      if(span.style.display==='block') span.style.removeProperty('display');
+      return;
+    }
+    const parent=span.parentElement;
+    if(!parent||parent===ed) return;
+    const hasOther=Array.from(parent.childNodes).some(n=>{
+      if(n===span) return false;
+      if(n.nodeType===Node.TEXT_NODE) return n.textContent.trim()!=='';
+      if(n.nodeType===Node.ELEMENT_NODE) return true;
+      return false;
+    });
+    span.style.display=hasOther?'':'block';
+  });
 }
 function applyFmtLink(ctx,url){
   if(!url||!url.trim())return;
