@@ -138,7 +138,12 @@ const PREDEFINED_STYLE_OPTIONS = [
     {value:'question',label:'질문형'},{value:'storytelling',label:'스토리텔링형'},
   ]},
   { key:'speech_level', label:'어미', proseOnly:true, choices:[
-    {value:'honorific',label:'경어 (합니다체)'},{value:'plain',label:'평어 (한다체)'},
+    {value:'formal_polite',  label:'합니다체 (격식 경어)'},
+    {value:'informal_polite',label:'해요체 (편한 경어)'},
+    {value:'mixed_polite',   label:'합니다+해요 혼합'},
+    {value:'formal_plain',   label:'한다체 (격식 평어)'},
+    {value:'casual_plain',   label:'해체 (~했어, ~할게 등)'},
+    {value:'mixed_plain',    label:'한다+해 혼합'},
   ]},
   { key:'register', label:'말투', choices:[
     {value:'spoken',label:'구어체'},{value:'written',label:'문어체'},

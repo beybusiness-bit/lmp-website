@@ -53,8 +53,12 @@ export default async function handler(req, res) {
       rigid:       '딱딱한',
     }},
     speech_level:{ label: '어미',   choices: {
-      honorific: '경어 (합니다체)',
-      plain:     '평어 (한다체)',
+      formal_polite:  '합니다체 (격식 경어)',
+      informal_polite:'해요체 (편한 경어)',
+      mixed_polite:   '합니다체와 해요체를 자연스럽게 혼합',
+      formal_plain:   '한다체 (격식 평어)',
+      casual_plain:   '해체 (~했어, ~할게 등 친구에게 말하듯)',
+      mixed_plain:    '한다체와 해체를 자연스럽게 혼합',
     }},
   };
 
