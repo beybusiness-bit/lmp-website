@@ -342,6 +342,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <button class="add-btn" onclick="addBgImage()">+ 배경 이미지 추가</button>
             <input type="file" id="bg-file-input" accept="image/*" style="display:none;" onchange="onBgFileSelected(event)">
             <input type="file" id="stage-img-file-input" accept="image/*" style="display:none;" onchange="onStageImgFileSelected(event)">
+            <div style="margin-top:14px;border-top:1px solid rgba(0,0,0,.1);padding-top:12px;">
+              <div class="ed-lbl" style="margin-bottom:8px;">배경 오버레이 <span style="font-weight:400;opacity:.55;">(이미지 위에 씌우는 색상 막)</span></div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <span style="font-size:10px;font-weight:700;width:28px;flex-shrink:0;">색상</span>
+                <input type="color" id="bg-overlay-color" value="#000000" oninput="curBgOverlayColor=this.value;document.getElementById('bg-overlay-color-hex').value=this.value.toUpperCase();schedulePreviewUpdate();" style="width:28px;height:28px;border:1.5px solid #000;padding:0;cursor:pointer;flex-shrink:0;">
+                <input class="fi-sm" id="bg-overlay-color-hex" placeholder="#000000" value="#000000" style="width:80px;margin-bottom:0;" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value)){curBgOverlayColor=this.value;document.getElementById('bg-overlay-color').value=this.value;schedulePreviewUpdate();}">
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:10px;font-weight:700;width:28px;flex-shrink:0;">농도</span>
+                <input type="range" id="bg-overlay-opacity" min="0" max="1" step="0.05" value="0.38" style="flex:1;cursor:pointer;" oninput="curBgOverlayOpacity=parseFloat(this.value);document.getElementById('bg-overlay-opacity-val').textContent=Math.round(this.value*100)+'%';schedulePreviewUpdate();">
+                <span id="bg-overlay-opacity-val" style="font-size:11px;width:32px;text-align:right;font-weight:700;">38%</span>
+              </div>
+            </div>
           </div>
           <div class="sect-head">로고</div>
           <div class="ed-sect">
@@ -1002,7 +1015,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     </div>
     <div id="bpanel-image" style="display:none;">
       <div class="ed-lbl" style="margin-bottom:8px;">이미지</div>
-      <input class="img-inp" id="img-url" type="url" placeholder="https://…" oninput="prevImg('img-prev',this.value)">
+      <input class="img-inp" id="img-url" type="url" placeholder="https://…" oninput="prevImg('img-prev',this.value);const _ft=document.getElementById('img-focal-thumb');if(_ft)_ft.src=this.value||'';">
       <button class="bg-up-btn" onclick="document.getElementById('blk-img-file').click()" style="margin-bottom:8px;">📁 직접 업로드</button>
       <input type="file" id="blk-img-file" accept="image/*" style="display:none;" onchange="uploadBlockImage(event,'img-url','img-prev')">
       <img id="img-prev" class="img-prev">
@@ -1023,17 +1036,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <input class="fi-sm" id="img-height-val" type="number" min="60" max="1200" placeholder="260" style="width:80px;margin-bottom:0;" oninput="scheduleBmPreview()">
         </div>
         <div id="img-pos-row" style="display:none;">
-          <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">기준점</div>
-          <div style="display:grid;grid-template-columns:repeat(3,26px);gap:3px;">
-            <button class="img-pos-btn" data-ctx="img" data-pos="left top" onpointerdown="epd(event)" onclick="setImgPos('left top')">↖</button>
-            <button class="img-pos-btn" data-ctx="img" data-pos="center top" onpointerdown="epd(event)" onclick="setImgPos('center top')">↑</button>
-            <button class="img-pos-btn" data-ctx="img" data-pos="right top" onpointerdown="epd(event)" onclick="setImgPos('right top')">↗</button>
-            <button class="img-pos-btn" data-ctx="img" data-pos="left center" onpointerdown="epd(event)" onclick="setImgPos('left center')">←</button>
-            <button class="img-pos-btn on" data-ctx="img" data-pos="center" onpointerdown="epd(event)" onclick="setImgPos('center')">●</button>
-            <button class="img-pos-btn" data-ctx="img" data-pos="right center" onpointerdown="epd(event)" onclick="setImgPos('right center')">→</button>
-            <button class="img-pos-btn" data-ctx="img" data-pos="left bottom" onpointerdown="epd(event)" onclick="setImgPos('left bottom')">↙</button>
-            <button class="img-pos-btn" data-ctx="img" data-pos="center bottom" onpointerdown="epd(event)" onclick="setImgPos('center bottom')">↓</button>
-            <button class="img-pos-btn" data-ctx="img" data-pos="right bottom" onpointerdown="epd(event)" onclick="setImgPos('right bottom')">↘</button>
+          <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">초점 위치 <span style="font-weight:400;">(이미지를 클릭·드래그해서 설정)</span></div>
+          <div id="img-focal-wrap" style="position:relative;overflow:hidden;cursor:crosshair;touch-action:none;border:1.5px solid rgba(0,0,0,.2);border-radius:2px;user-select:none;" onpointerdown="focalDown(event,'img')" onpointermove="focalMove(event,'img')" onpointerup="focalUp(event)">
+            <img id="img-focal-thumb" src="" alt="" style="width:100%;height:120px;object-fit:cover;object-position:50% 50%;display:block;pointer-events:none;">
+            <div id="img-focal-dot" style="position:absolute;width:16px;height:16px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #000,0 2px 6px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none;left:50%;top:50%;"></div>
           </div>
         </div>
       </div>
@@ -1140,7 +1146,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="mixed-btn"    id="ml-split"   onclick="setMixedLayout('split')">분리형<br><small style="font-weight:400;">이미지 위 · 텍스트 아래</small></button>
       </div>
       <div class="ed-lbl" style="margin-bottom:8px;">이미지</div>
-      <input class="img-inp" id="mixed-img-url" type="url" placeholder="https://…" oninput="prevImg('mixed-img-prev',this.value)">
+      <input class="img-inp" id="mixed-img-url" type="url" placeholder="https://…" oninput="prevImg('mixed-img-prev',this.value);const _mft=document.getElementById('mixed-focal-thumb');if(_mft)_mft.src=this.value||'';">
       <button class="bg-up-btn" onclick="document.getElementById('blk-mixed-file').click()" style="margin-bottom:8px;">📁 직접 업로드</button>
       <input type="file" id="blk-mixed-file" accept="image/*" style="display:none;" onchange="uploadBlockImage(event,'mixed-img-url','mixed-img-prev')">
       <img id="mixed-img-prev" class="img-prev">
@@ -1164,17 +1170,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           </div>
         </div>
         <div id="mixed-pos-row" style="display:none;">
-          <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">기준점</div>
-          <div style="display:grid;grid-template-columns:repeat(3,26px);gap:3px;">
-            <button class="img-pos-btn" data-ctx="mixed" data-pos="left top" onpointerdown="epd(event)" onclick="setMixedImgPos('left top')">↖</button>
-            <button class="img-pos-btn" data-ctx="mixed" data-pos="center top" onpointerdown="epd(event)" onclick="setMixedImgPos('center top')">↑</button>
-            <button class="img-pos-btn" data-ctx="mixed" data-pos="right top" onpointerdown="epd(event)" onclick="setMixedImgPos('right top')">↗</button>
-            <button class="img-pos-btn" data-ctx="mixed" data-pos="left center" onpointerdown="epd(event)" onclick="setMixedImgPos('left center')">←</button>
-            <button class="img-pos-btn on" data-ctx="mixed" data-pos="center" onpointerdown="epd(event)" onclick="setMixedImgPos('center')">●</button>
-            <button class="img-pos-btn" data-ctx="mixed" data-pos="right center" onpointerdown="epd(event)" onclick="setMixedImgPos('right center')">→</button>
-            <button class="img-pos-btn" data-ctx="mixed" data-pos="left bottom" onpointerdown="epd(event)" onclick="setMixedImgPos('left bottom')">↙</button>
-            <button class="img-pos-btn" data-ctx="mixed" data-pos="center bottom" onpointerdown="epd(event)" onclick="setMixedImgPos('center bottom')">↓</button>
-            <button class="img-pos-btn" data-ctx="mixed" data-pos="right bottom" onpointerdown="epd(event)" onclick="setMixedImgPos('right bottom')">↘</button>
+          <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">초점 위치 <span style="font-weight:400;">(이미지를 클릭·드래그해서 설정)</span></div>
+          <div id="mixed-focal-wrap" style="position:relative;overflow:hidden;cursor:crosshair;touch-action:none;border:1.5px solid rgba(0,0,0,.2);border-radius:2px;user-select:none;" onpointerdown="focalDown(event,'mixed')" onpointermove="focalMove(event,'mixed')" onpointerup="focalUp(event)">
+            <img id="mixed-focal-thumb" src="" alt="" style="width:100%;height:120px;object-fit:cover;object-position:50% 50%;display:block;pointer-events:none;">
+            <div id="mixed-focal-dot" style="position:absolute;width:16px;height:16px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #000,0 2px 6px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none;left:50%;top:50%;"></div>
           </div>
         </div>
       </div>
@@ -2400,6 +2399,10 @@ async function editProject(id) {
     curProjId = id;
     curStages = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
     curBgImages = (d.bgImages||[]).map(b => typeof b==='string' ? {url:b,holdTime:10,transitionTime:2} : b);
+    curBgOverlayOpacity = d.bgOverlayOpacity ?? 0.38;
+    curBgOverlayColor = d.bgOverlayColor || '#000000';
+    const _bgOp=document.getElementById('bg-overlay-opacity');if(_bgOp){_bgOp.value=curBgOverlayOpacity;document.getElementById('bg-overlay-opacity-val').textContent=Math.round(curBgOverlayOpacity*100)+'%';}
+    const _bgOc=document.getElementById('bg-overlay-color');if(_bgOc){_bgOc.value=curBgOverlayColor;document.getElementById('bg-overlay-color-hex').value=curBgOverlayColor.toUpperCase();}
     curAuthFields = d.authFields && d.authFields.length ? d.authFields : [{key:'name',label:'이름',type:'string',required:true}];
     curAuthKeyField = d.authKeyField || curAuthFields[0]?.key || 'name';
     curStats = d.stats || [];
@@ -2478,6 +2481,8 @@ async function saveProject(deploy=true) {
     selfRegSuccessMsg: document.getElementById('p-self-reg-success').value.trim(),
     greetingText: document.getElementById('p-greeting-text').value.trim(),
     bgImages:     curBgImages,
+    bgOverlayOpacity: curBgOverlayOpacity,
+    bgOverlayColor:   curBgOverlayColor,
     stages:       curStages.map((s,i)=>({...s,order:i})),
     stats:        curStats,
     elementOrder: curElementOrder,
@@ -3287,11 +3292,13 @@ function setImgFit(fit){
   const showH=fit!=='natural';
   const pr=document.getElementById('img-pos-row'); if(pr) pr.style.display=showPos?'':'none';
   const hr=document.getElementById('img-height-row'); if(hr) hr.style.display=showH?'':'none';
+  if(showPos) updateFocalDot('img',curImgPos);
   scheduleBmPreview();
 }
 function setImgPos(pos){
   curImgPos=pos;
   document.querySelectorAll('.img-pos-btn[data-ctx="img"]').forEach(b=>b.classList.toggle('on',b.dataset.pos===pos));
+  updateFocalDot('img',pos);
   scheduleBmPreview();
 }
 function setMixedImgFit(fit){
@@ -3301,11 +3308,13 @@ function setMixedImgFit(fit){
   const showH=fit!=='natural';
   const pr=document.getElementById('mixed-pos-row'); if(pr) pr.style.display=showPos?'':'none';
   const hr=document.getElementById('mixed-height-row'); if(hr) hr.style.display=showH?'':'none';
+  if(showPos) updateFocalDot('mixed',curMixedImgPos);
   scheduleBmPreview();
 }
 function setMixedImgPos(pos){
   curMixedImgPos=pos;
   document.querySelectorAll('.img-pos-btn[data-ctx="mixed"]').forEach(b=>b.classList.toggle('on',b.dataset.pos===pos));
+  updateFocalDot('mixed',pos);
   scheduleBmPreview();
 }
 function setBlkVerticalAlign(v){
@@ -3425,6 +3434,8 @@ function openBlockModal(idx,insertAt){
   renderFormFields();
   prevImg('img-prev',document.getElementById('img-url').value);
   prevImg('mixed-img-prev',document.getElementById('mixed-img-url').value);
+  const _ifThumb=document.getElementById('img-focal-thumb');if(_ifThumb)_ifThumb.src=document.getElementById('img-url').value||'';
+  const _mfThumb=document.getElementById('mixed-focal-thumb');if(_mfThumb)_mfThumb.src=document.getElementById('mixed-img-url').value||'';
   setImgFit(b.type==='image'?(b.imageFit||'natural'):'natural');
   setImgPos(b.type==='image'?(b.imagePosition||'center'):'center');
   const _ihv=document.getElementById('img-height-val'); if(_ihv) _ihv.value=b.type==='image'?(b.imageHeight||''):'';
@@ -3656,6 +3667,42 @@ function openToolManageLink(e){
   e.preventDefault();
   document.getElementById('block-modal').classList.remove('on');
   openTool('form-mgr');
+}
+/* ── 이미지 초점 드래그 ── */
+let _focalDragging=false;
+function posToPercent(pos){
+  const xM={left:'0%',center:'50%',right:'100%'};
+  const yM={top:'0%',center:'50%',bottom:'100%'};
+  if(!pos||pos==='center')return '50% 50%';
+  const p=pos.split(' ');
+  if(p.length===1)return (xM[p[0]]||p[0])+' 50%';
+  return (xM[p[0]]||p[0])+' '+(yM[p[1]]||p[1]);
+}
+function updateFocalDot(ctx,pos){
+  const dot=document.getElementById(ctx+'-focal-dot');
+  const thumb=document.getElementById(ctx+'-focal-thumb');
+  if(!dot||!thumb)return;
+  const pct=posToPercent(pos);
+  const parts=pct.split(' ');
+  dot.style.left=parts[0];dot.style.top=parts[1];
+  thumb.style.objectPosition=pct;
+}
+function focalDown(e,ctx){
+  _focalDragging=true;
+  e.currentTarget.setPointerCapture(e.pointerId);
+  focalSetPos(e,ctx);
+}
+function focalMove(e,ctx){if(!_focalDragging)return;focalSetPos(e,ctx);}
+function focalUp(e){_focalDragging=false;}
+function focalSetPos(e,ctx){
+  const wrap=e.currentTarget;
+  const rect=wrap.getBoundingClientRect();
+  const x=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
+  const y=Math.max(0,Math.min(1,(e.clientY-rect.top)/rect.height));
+  const pos=Math.round(x*100)+'% '+Math.round(y*100)+'%';
+  if(ctx==='img'){curImgPos=pos;} else {curMixedImgPos=pos;}
+  updateFocalDot(ctx,pos);
+  scheduleBmPreview();
 }
 function setMixedLayout(l){curMixedLayout=l;document.getElementById('ml-overlay').classList.toggle('on',l==='overlay');document.getElementById('ml-split').classList.toggle('on',l==='split');const ovRow=document.getElementById('overlay-valign-row');if(ovRow)ovRow.style.display=l==='overlay'?'':'none';const shRow=document.getElementById('overlay-shadow-row');if(shRow)shRow.style.display=l==='overlay'?'':'none';scheduleBmPreview();}
 function setOverlayVAlign(v){curOverlayVAlign=v;['top','center','bottom'].forEach(k=>document.getElementById('ova-'+k)?.classList.toggle('on',k===v));scheduleBmPreview();}
@@ -4103,6 +4150,7 @@ function renderPreview() {
   const bgColor2 = curKeyColors.find(k=>k.color!==bgColor1)?.color || curKeyColors[1]?.color || '#FFF100';
   bg.style.backgroundColor = hasBg ? '' : bgColor1;
   overlay.style.display    = hasBg ? '' : 'none';
+  if(hasBg){const _r=parseInt((curBgOverlayColor||'#000000').slice(1,3),16)||0,_g=parseInt((curBgOverlayColor||'#000000').slice(3,5),16)||0,_b=parseInt((curBgOverlayColor||'#000000').slice(5,7),16)||0;overlay.style.background=`rgba(${_r},${_g},${_b},${curBgOverlayOpacity??0.38})`;}
   const tc = hasBg ? bgColor1 : bgColor2;
 
   /* prev-dday는 더 이상 사용 안 함 — D-day를 content 흐름 안에 렌더링 */
