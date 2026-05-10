@@ -28,7 +28,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .ff-wrap{margin-bottom:20px;}
 .ff-label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;line-height:1.4;}
 .ff-desc{font-size:12px;color:rgba(0,0,0,.5);margin-bottom:6px;font-weight:500;line-height:1.6;}
-.ff-inp,.ff-textarea,.ff-sel{width:100%;border:2px solid #000;border-radius:0;padding:11px 13px;font-size:15px;font-family:inherit;background:#fff;outline:none;-webkit-appearance:none;appearance:none;}
+.ff-inp,.ff-textarea,.ff-sel{width:100%;border:2px solid #000;border-radius:0;padding:11px 13px;font-size:15px;font-family:inherit;background:transparent;outline:none;-webkit-appearance:none;appearance:none;}
 .ff-textarea{min-height:100px;resize:vertical;}
 .ff-inp:focus,.ff-textarea:focus,.ff-sel:focus{box-shadow:0 0 0 3px rgba(0,0,0,.08);}
 .ff-err{color:#c00;font-size:13px;font-weight:700;margin-bottom:12px;min-height:16px;}
@@ -40,8 +40,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .style-dim{margin-bottom:14px;}
 .style-dim-lbl{font-size:12px;font-weight:700;margin-bottom:8px;color:rgba(0,0,0,.7);}
 .style-pills{display:flex;flex-wrap:wrap;gap:8px;}
-.style-pill{padding:8px 14px;border:2px solid rgba(0,0,0,.3);background:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.7);}
+.style-pill{padding:8px 14px;border:2px solid rgba(0,0,0,.3);background:transparent;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.7);}
 .style-pill.on{background:#000;color:#fff;border-color:#000;}
+
+/* title / description */
+.cg-header{margin-bottom:22px;}
+.cg-title{font-size:18px;font-weight:800;line-height:1.4;margin-bottom:6px;}
+.cg-desc{font-size:13px;color:rgba(0,0,0,.6);line-height:1.7;}
 
 /* generate button */
 .gen-btn{display:block;width:100%;padding:14px;background:#000;color:#fff;border:2px solid #000;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;}
@@ -57,10 +62,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .results-ttl{font-size:11px;font-weight:800;letter-spacing:.5px;color:rgba(0,0,0,.4);margin-bottom:14px;}
 .phrase-card{border:2px solid #000;padding:16px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start;}
 .phrase-text{flex:1;font-size:15px;font-weight:600;line-height:1.7;word-break:keep-all;white-space:pre-wrap;}
-.copy-btn{flex-shrink:0;padding:8px 12px;border:1.5px solid #000;background:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;align-self:flex-start;transition:background .12s,color .12s;}
+.copy-btn{flex-shrink:0;padding:8px 12px;border:1.5px solid #000;background:transparent;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;align-self:flex-start;transition:background .12s,color .12s;}
 .copy-btn.done{background:#000;color:#fff;border-color:#000;}
 .results-actions{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
-.more-btn{padding:12px;background:#fff;border:2px solid #000;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.more-btn{padding:12px;background:transparent;border:2px solid #000;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
 .more-btn:disabled{opacity:.35;cursor:default;}
 .edit-btn{padding:12px;background:transparent;border:2px solid rgba(0,0,0,.25);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.55);}
 </style>
@@ -72,6 +77,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 <div id="app">
   <!-- 입력 화면 -->
   <div class="cg-screen" id="screen-input">
+    <div id="cg-header" class="cg-header" style="display:none;">
+      <div class="cg-title" id="cg-title"></div>
+      <div class="cg-desc" id="cg-desc"></div>
+    </div>
     <div id="cg-ref-section" style="display:none;" class="ref-section">
       <div class="ref-ttl">참고 문구</div>
       <div id="cg-ref-list"></div>
@@ -226,6 +235,14 @@ async function init() {
     const snap = await db.collection('cms_copy_gen_configs').doc(CONFIG_ID).get();
     if (!snap.exists) { showErr('문구 생성기를 찾을 수 없습니다.'); return; }
     config = snap.data();
+
+    // 제목 / 설명
+    if (config.title || config.description) {
+      document.getElementById('cg-title').textContent = config.title || '';
+      document.getElementById('cg-desc').textContent = config.description || '';
+      document.getElementById('cg-desc').style.display = config.description ? '' : 'none';
+      document.getElementById('cg-header').style.display = '';
+    }
 
     // admin이 고정한 스타일 값을 초기 선택으로 세팅
     (config.styleOptions || []).forEach(dim => {
