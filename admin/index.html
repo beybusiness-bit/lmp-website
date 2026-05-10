@@ -134,6 +134,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .ced{min-height:150px;max-height:260px;overflow-y:auto;border:2px solid #000;padding:10px;font-size:14px;line-height:1.7;outline:none;font-family:inherit;}
 .ced:empty::before{content:attr(data-ph);color:rgba(0,0,0,.3);pointer-events:none;}
 .ced a{color:inherit;text-decoration:underline;}
+.ff-desc-editor-wrap{margin-bottom:10px;}
+.ff-desc-toolbar{display:flex;gap:4px;margin-bottom:4px;}
+.ff-desc-toolbar button{width:28px;height:28px;background:transparent;border:1.5px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;padding:0;color:#000;-webkit-tap-highlight-color:transparent;}
+.ff-desc-toolbar button.on{background:#000;color:#fff;}
+.ff-desc-ced{min-height:54px;max-height:120px;overflow-y:auto;border:1.5px solid rgba(0,0,0,.25);padding:7px 10px;font-size:12px;line-height:1.6;font-family:inherit;outline:none;}
+.ff-desc-ced:empty::before{content:attr(data-ph);color:rgba(0,0,0,.3);pointer-events:none;}
+.ff-desc-ced a{color:inherit;text-decoration:underline;}
+.ff-desc-link-popup{display:none;gap:4px;margin-top:4px;align-items:center;}
+.ff-desc-link-popup input{flex:1;border:1.5px solid #000;padding:5px 8px;font-size:12px;font-family:inherit;outline:none;}
+.ff-desc-link-popup button{padding:5px 8px;border:1.5px solid #000;background:#000;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
 .img-inp{width:100%;background:transparent;border:none;border-bottom:2px solid #000;color:#000;font-size:13px;padding:7px 0;outline:none;font-family:inherit;margin-bottom:10px;}
 .img-prev{width:100%;max-height:160px;object-fit:cover;display:none;border:2px solid #000;margin-bottom:10px;}
 .mixed-row{display:flex;gap:8px;margin-bottom:14px;}
@@ -1553,8 +1563,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           </div>
         </div>
       </div>
-      <div class="ed-lbl" style="margin-bottom:4px;">필드 설명 <span style="font-weight:400;opacity:.55;">(선택, 줄바꿈 가능)</span></div>
-      <textarea id="ff-desc" style="width:100%;height:56px;border:1.5px solid rgba(0,0,0,.25);padding:7px 10px;font-size:12px;font-family:inherit;resize:vertical;outline:none;margin-bottom:10px;" placeholder="항목에 대한 설명을 입력하세요"></textarea>
+      <div class="ed-lbl" style="margin-bottom:4px;">필드 설명 <span style="font-weight:400;opacity:.55;">(선택, 굵기·링크 지원)</span></div>
+      <div class="ff-desc-editor-wrap">
+        <div class="ff-desc-toolbar">
+          <button type="button" id="ffd-bold-btn" title="굵게" onmousedown="event.preventDefault()" onclick="ffdFmt('bold')"><b>B</b></button>
+          <button type="button" id="ffd-link-btn" title="링크" onmousedown="event.preventDefault()" onclick="ffdToggleLink()">🔗</button>
+        </div>
+        <div id="ff-desc" contenteditable="true" class="ff-desc-ced" data-ph="항목에 대한 설명을 입력하세요"></div>
+        <div class="ff-desc-link-popup" id="ff-desc-link-popup">
+          <input type="url" id="ff-desc-link-url" placeholder="https://" onkeydown="if(event.key==='Enter'){event.preventDefault();ffdApplyLink();}">
+          <button type="button" onclick="ffdApplyLink()">적용</button>
+          <button type="button" onclick="ffdRemoveLink()" style="background:transparent;color:#000;">제거</button>
+        </div>
+      </div>
       <div id="ff-placeholder-wrap" style="margin-bottom:12px;">
         <div class="ed-lbl" style="margin-bottom:4px;">플레이스홀더 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
         <input class="fi-sm" id="ff-placeholder" placeholder="예: 여기에 입력해주세요" style="margin-bottom:0;">
@@ -3131,7 +3152,7 @@ function openFormFieldModal(idx) {
   keyEl.dataset.userEdited = '';
   document.getElementById('ff-type').value    = f.type||'string';
   document.getElementById('ff-options').value = (f.options||[]).join('\n');
-  document.getElementById('ff-desc').value    = f.description||'';
+  document.getElementById('ff-desc').innerHTML = f.description||'';
   document.getElementById('ff-placeholder').value = f.placeholder||'';
   ffReqOn = f.required||false;
   ffOtherOn = f.allowOther||false;
@@ -3170,7 +3191,8 @@ function saveFormField() {
   const type  = document.getElementById('ff-type').value;
   const optRaw = document.getElementById('ff-options').value;
   const options = type==='select' ? optRaw.split(/[\n,]/).map(s=>s.trim()).filter(Boolean) : [];
-  const description = document.getElementById('ff-desc').value.trim();
+  const _descEl = document.getElementById('ff-desc');
+  const description = (_descEl.innerHTML.replace(/<br\s*\/?>/gi,'').trim()==='' ? '' : _descEl.innerHTML.trim());
   const placeholder = document.getElementById('ff-placeholder').value.trim();
   const minSel = document.getElementById('ff-min-sel').value !== '' ? parseInt(document.getElementById('ff-min-sel').value) : null;
   const maxSel = document.getElementById('ff-max-sel').value !== '' ? parseInt(document.getElementById('ff-max-sel').value) : null;
@@ -6050,6 +6072,71 @@ async function cgViewResultsById(configId){
       }).join('')}</tbody>
     </table></div>`;
   }catch(e){ el.innerHTML='<div class="empty-msg">불러오기 실패: '+e.message+'</div>'; }
+}
+
+/* ── 필드 설명 미니 에디터 ── */
+let _ffdSavedRange=null;
+function _ffdSaveRange(){
+  const sel=window.getSelection();
+  if(sel&&sel.rangeCount) _ffdSavedRange=sel.getRangeAt(0).cloneRange();
+}
+document.addEventListener('selectionchange',()=>{
+  const ced=document.getElementById('ff-desc');
+  if(!ced||!document.activeElement) return;
+  if(document.activeElement===ced||ced.contains(document.activeElement)){
+    _ffdSaveRange();
+    const sel=window.getSelection();
+    const inLink=sel&&sel.anchorNode&&sel.anchorNode.parentElement&&sel.anchorNode.parentElement.closest('a');
+    document.getElementById('ffd-link-btn')?.classList.toggle('on',!!inLink);
+  }
+});
+function ffdFmt(cmd){
+  document.getElementById('ff-desc').focus();
+  document.execCommand(cmd,false,null);
+}
+function ffdToggleLink(){
+  const popup=document.getElementById('ff-desc-link-popup');
+  if(popup.style.display==='flex'){
+    popup.style.display='none';
+    return;
+  }
+  _ffdSaveRange();
+  const sel=window.getSelection();
+  const inLink=sel&&sel.anchorNode&&sel.anchorNode.parentElement&&sel.anchorNode.parentElement.closest('a');
+  document.getElementById('ff-desc-link-url').value=inLink?inLink.href:'';
+  popup.style.display='flex';
+  document.getElementById('ff-desc-link-url').focus();
+}
+function ffdApplyLink(){
+  const url=document.getElementById('ff-desc-link-url').value.trim();
+  if(!url) return;
+  const ced=document.getElementById('ff-desc');
+  ced.focus();
+  if(_ffdSavedRange){
+    const sel=window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(_ffdSavedRange);
+  }
+  const sel=window.getSelection();
+  const inLink=sel&&sel.anchorNode&&sel.anchorNode.parentElement&&sel.anchorNode.parentElement.closest('a');
+  if(inLink&&sel.isCollapsed){
+    inLink.href=url;
+  } else {
+    document.execCommand('createLink',false,url);
+    ced.querySelectorAll('a').forEach(a=>{ a.target='_blank'; a.rel='noopener'; });
+  }
+  document.getElementById('ff-desc-link-popup').style.display='none';
+}
+function ffdRemoveLink(){
+  const ced=document.getElementById('ff-desc');
+  ced.focus();
+  if(_ffdSavedRange){
+    const sel=window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(_ffdSavedRange);
+  }
+  document.execCommand('unlink',false,null);
+  document.getElementById('ff-desc-link-popup').style.display='none';
 }
 </script>
 <div id="fmt-popup" style="display:none;position:fixed;background:#fff;border:2px solid #000;z-index:600;box-shadow:3px 3px 0 rgba(0,0,0,.1);min-width:110px;"><div id="fmt-popup-inner"></div></div>

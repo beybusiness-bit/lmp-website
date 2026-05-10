@@ -166,6 +166,16 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .guide-slide-item[data-valign] .blk-check-outer{flex:0 1 auto!important;max-height:100%;min-height:0;display:flex;flex-direction:column;}
 /* 텍스트 콘텐츠 내 인라인 링크 */
 .g-block-text-inner a,.g-split-text a,.g-overlay-text-inner a{color:inherit;text-decoration:underline;cursor:pointer;}
+/* 필드 설명 내 서식 오버라이드 */
+.ff-desc *{font-size:inherit!important;color:inherit!important;}
+.ff-desc a{color:inherit;text-decoration:underline;cursor:pointer;}
+/* 도구 링크 모달 */
+#tool-link-modal{display:none;position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:430px;transform:translateX(-50%);z-index:400;flex-direction:column;background:var(--prep-bg,#fff);}
+#tool-link-modal.on{display:flex;}
+#tool-link-modal-bar{flex-shrink:0;display:flex;align-items:center;padding:14px 20px;border-bottom:2px solid #000;background:var(--prep-bg,#fff);}
+#tool-link-modal-bar button{background:transparent;border:none;font-size:22px;font-weight:900;cursor:pointer;padding:0 12px 0 0;font-family:inherit;line-height:1;color:#000;-webkit-tap-highlight-color:transparent;}
+#tool-link-modal-title{flex:1;font-size:15px;font-weight:800;color:#000;letter-spacing:-.3px;}
+#tool-link-iframe{flex:1;border:none;width:100%;}
 /* form block */
 .g-block-form{padding:24px 20px;}
 .ff-wrap{margin-bottom:22px;}
@@ -321,6 +331,15 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
       <button class="modal-btn" id="reg-ok" onclick="submitRegistration()">등록</button>
     </div>
   </div>
+</div>
+
+<!-- 도구 링크 모달 -->
+<div id="tool-link-modal">
+  <div id="tool-link-modal-bar">
+    <button onclick="closeToolLinkModal()">←</button>
+    <div id="tool-link-modal-title">도구</div>
+  </div>
+  <iframe id="tool-link-iframe" src="" allowfullscreen></iframe>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -1018,6 +1037,26 @@ window.addEventListener('message',e=>{
     return;
   }
 });
+document.addEventListener('click',e=>{
+  const a=e.target.closest('a[href]');
+  if(!a) return;
+  const href=a.getAttribute('href');
+  if(href&&href.startsWith('/tools/')){e.preventDefault();openToolLinkModal(href);}
+});
+function openToolLinkModal(url){
+  const modal=document.getElementById('tool-link-modal');
+  const iframe=document.getElementById('tool-link-iframe');
+  if(!modal||!iframe) return;
+  iframe.src=url;
+  modal.classList.add('on');
+}
+function closeToolLinkModal(){
+  const modal=document.getElementById('tool-link-modal');
+  const iframe=document.getElementById('tool-link-iframe');
+  if(!modal||!iframe) return;
+  modal.classList.remove('on');
+  setTimeout(()=>{ iframe.src='about:blank'; },400);
+}
 function renderGuideScroll(blocks){
   document.getElementById('guide-scroll-blocks').innerHTML=blocks.map(b=>{
     const bgS=b.bgColor?`background-color:${b.bgColor};`:'';

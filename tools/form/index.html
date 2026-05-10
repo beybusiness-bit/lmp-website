@@ -17,6 +17,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .ff-wrap{margin-bottom:20px;}
 .ff-label{display:block;font-size:13px;font-weight:700;margin-bottom:8px;line-height:1.4;}
 .ff-desc{font-size:12px;color:rgba(0,0,0,.5);margin-bottom:8px;font-weight:500;line-height:1.6;}
+.ff-desc *{font-size:inherit!important;color:inherit!important;}
+.ff-desc a{color:inherit;text-decoration:underline;}
 .ff-inp,.ff-textarea,.ff-sel{width:100%;border:2px solid #000;border-radius:0;padding:12px 14px;font-size:15px;font-family:inherit;background:#fff;outline:none;-webkit-appearance:none;appearance:none;}
 .ff-textarea{min-height:100px;resize:vertical;}
 .ff-inp:focus,.ff-textarea:focus,.ff-sel:focus{box-shadow:0 0 0 3px rgba(0,0,0,.08);}
@@ -89,7 +91,7 @@ function esc(s) {
 function renderField(f) {
   const fid = f.key || f.id;
   const req = f.required ? '<span class="ff-required">*</span>' : '';
-  const desc = f.description ? `<div class="ff-desc">${esc(f.description)}</div>` : '';
+  const desc = f.description ? `<div class="ff-desc">${f.description}</div>` : '';
   const ph = esc(f.placeholder || '');
   const type = f.type;
   if (type === 'text' || type === 'string') {
