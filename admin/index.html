@@ -5881,12 +5881,13 @@ async function deleteBoothBg(idx) {
    문구 생성기 관리 (Copy Generator Manager)
 ════════════════════════════════════════════ */
 const PREDEFINED_STYLE_OPTIONS = [
-  { key:'format',     label:'형식',   choices:[{value:'bullet',label:'개조식'},{value:'prose',label:'문장식'}] },
-  { key:'register',   label:'말투',   choices:[{value:'spoken',label:'구어체'},{value:'written',label:'문어체'}] },
-  { key:'formality',  label:'격식',   choices:[{value:'formal',label:'격식체'},{value:'casual',label:'편안한 톤'}] },
-  { key:'mood',       label:'분위기', choices:[{value:'friendly',label:'친근한'},{value:'solemn',label:'장엄한'}] },
-  { key:'length_feel',label:'길이감', choices:[{value:'concise',label:'간결한'},{value:'rich',label:'풍성한'}] },
-  { key:'emotion',    label:'감성',   choices:[{value:'warm',label:'따뜻한'},{value:'professional',label:'전문적인'}] },
+  { key:'format',      label:'형식',   choices:[{value:'bullet',label:'개조식'},{value:'prose',label:'문장식'}] },
+  { key:'speech_level',label:'어미',   choices:[{value:'honorific',label:'경어 (합니다체)'},{value:'plain',label:'평어 (한다체)'}], proseOnly:true },
+  { key:'register',    label:'말투',   choices:[{value:'spoken',label:'구어체'},{value:'written',label:'문어체'}] },
+  { key:'formality',   label:'격식',   choices:[{value:'formal',label:'격식체'},{value:'casual',label:'편안한 톤'}] },
+  { key:'mood',        label:'분위기', choices:[{value:'friendly',label:'친근한'},{value:'solemn',label:'장엄한'}] },
+  { key:'length_feel', label:'길이감', choices:[{value:'concise',label:'간결한'},{value:'rich',label:'풍성한'}] },
+  { key:'emotion',     label:'감성',   choices:[{value:'warm',label:'따뜻한'},{value:'professional',label:'전문적인'}] },
 ];
 let cgCurDocId = null;
 let cgFields = [];
@@ -5990,7 +5991,8 @@ function cgRenderStyleList(){
     const fixedOpts=s.choices.map(c=>`<option value="${c.value}"${fixedVal===c.value?' selected':''}>${c.label}</option>`).join('');
     return `<div style="padding:12px 0;border-bottom:1px solid rgba(0,0,0,.08);">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:${mode==='fixed'?'8px':'0'};">
-        <span style="font-size:13px;font-weight:700;flex:1;">${s.label} <span style="font-weight:400;font-size:11px;color:rgba(0,0,0,.4);">(${s.choices.map(c=>c.label).join(' / ')})</span></span>
+        <span style="font-size:13px;font-weight:700;flex:1;">${s.label} <span style="font-weight:400;font-size:11px;color:rgba(0,0,0,.4);">(${s.choices.map(c=>c.label).join(' / ')})</span>${s.proseOnly?` <span style="font-size:10px;font-weight:600;color:rgba(0,0,0,.4);">문장식 전용</span>`:''}
+</span>
         <div style="display:flex;gap:4px;flex-shrink:0;">
           <button class="tgl-btn${mode==='user-select'?' on':''}" onclick="cgSetStyleMode('${s.key}','user-select')">사용자 선택</button>
           <button class="tgl-btn${mode==='fixed'?' on':''}" onclick="cgSetStyleMode('${s.key}','fixed')">고정</button>

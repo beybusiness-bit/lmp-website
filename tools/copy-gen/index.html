@@ -173,10 +173,14 @@ function renderStyleDim(dim) {
     `<button type="button" class="style-pill${styleSelections[dim.key] === c.value ? ' on' : ''}"
       onclick="toggleStylePill(this,'${esc(dim.key)}','${esc(c.value)}')">${esc(c.label)}</button>`
   ).join('');
-  return `<div class="style-dim">
+  const inner = `<div class="style-dim">
     <div class="style-dim-lbl">${esc(dim.label)}</div>
     <div class="style-pills" id="style-pills-${esc(dim.key)}">${pills}</div>
   </div>`;
+  if (dim.key === 'speech_level') {
+    return `<div id="speech-level-dim" style="display:none;">${inner}</div>`;
+  }
+  return inner;
 }
 
 function toggleStylePill(btn, key, value) {
@@ -186,6 +190,19 @@ function toggleStylePill(btn, key, value) {
   container.querySelectorAll('.style-pill').forEach(p => p.classList.remove('on'));
   if (!isOn) { btn.classList.add('on'); styleSelections[key] = value; }
   else { delete styleSelections[key]; }
+  if (key === 'format') updateSpeechLevelVisibility();
+}
+
+function updateSpeechLevelVisibility() {
+  const wrap = document.getElementById('speech-level-dim');
+  if (!wrap) return;
+  const show = styleSelections.format === 'prose';
+  wrap.style.display = show ? '' : 'none';
+  if (!show) {
+    delete styleSelections.speech_level;
+    const c = document.getElementById('style-pills-speech_level');
+    if (c) c.querySelectorAll('.style-pill').forEach(p => p.classList.remove('on'));
+  }
 }
 
 async function init() {
@@ -217,6 +234,7 @@ async function init() {
       document.getElementById('cg-style-section').style.display = '';
       document.getElementById('cg-style-dims').innerHTML = userStyleDims.map(renderStyleDim).join('');
     }
+    updateSpeechLevelVisibility();
 
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = '';
