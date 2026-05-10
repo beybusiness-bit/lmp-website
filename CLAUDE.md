@@ -490,12 +490,22 @@ closeHelpPanel();
   → 방법: script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
 - 일정 잡기 도구(`tools/schedule/index.html`): GAS 재배포 후 캘린더 연동 end-to-end 테스트 필요
 
+**완료 ✅ (이번 세션 추가)**
+- **브라우저 뒤로가기/앞으로가기 SPA 히스토리 네비게이션** (admin + p/ + block-test-demo + gmbf-poc)
+  - `history.pushState` 적용: 프로젝트 열기 / 스테이지 편집기 / 블록 편집 모달 / 스테이지 화면(플레이어)
+  - `popstate` 핸들러: `e.state.v` 기반 양방향(뒤로/앞으로) 화면 복원
+  - `_navRestore` 플래그 + `.finally()` 체인으로 비동기 복원 중 `pushState` 중복 방지
+  - **핵심 버그 수정**: `switchInnerTab`의 `replaceState(null,...)` 호출이 history state를 덮어쓰는 문제 → `!_navRestore` 조건 추가로 해결
+  - 저장 안 된 변경 있을 때 back 시 확인 프롬프트 유지
+  - 이미지 설정 모바일 1열 반응형, 블랙 텍스트 컬러 버그, 블록 중복 생성 버그, 배경색 세로 높이 버그, GIF 애니메이션 지원, 오버레이 2열 레이아웃 등 이전 세션 수정사항 포함
+
 **진행 예정 🔲**
 - GAS 재배포 후 시트 생성 + 백필 end-to-end 테스트
 - 도구 블록 end-to-end 테스트 (폼 생성 → 블록 연결 → 플레이어 제출 → 진행률 반영)
 - **유튜브 뮤직 재생목록 도구** (`tools/youtube-playlist/index.html`) 신규 구현
 
 **다음 세션 시작점**
+- 🔲 히스토리 네비게이션 최종 검증 (앞으로가기 엣지케이스 있을 수 있음)
 - 🔲 일정 잡기 도구 end-to-end 테스트 (GAS 재배포 후)
 - 🔲 유튜브 뮤직 재생목록 도구 구현 (YouTube Data API 키 필요 — 사용자가 발급 후 전달 예정)
 - PAT: 다음 세션 시작 시 사용자에게 요청 (또는 새로 발급)
