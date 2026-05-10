@@ -125,6 +125,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .hr-style-btn.on{background:#000!important;color:#fff!important;border-color:#000!important;}
 .img-fit-btn{padding:4px 8px;border:1.5px solid rgba(0,0,0,.25);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#000;}
 .img-fit-btn.on{border-color:#000;background:#000;color:#fff;}
+.img-2col{display:grid;grid-template-columns:1fr 110px;gap:10px;align-items:start;}
+@media(max-width:600px){.img-2col{grid-template-columns:1fr;}}
 .img-pos-btn{width:26px;height:26px;border:1.5px solid rgba(0,0,0,.2);background:transparent;font-size:12px;cursor:pointer;font-family:inherit;color:#000;padding:0;}
 .img-pos-btn.on{border-color:#000;background:#000;color:#fff;}
 .fmt-pop-opt:last-child{border-bottom:none;}
@@ -1024,7 +1026,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <input class="img-inp" id="img-link-url" type="url" placeholder="https://…" style="margin-bottom:0;">
       </div>
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,.1);">
-        <div style="display:grid;grid-template-columns:1fr 110px;gap:10px;align-items:start;">
+        <div class="img-2col">
           <div>
             <div class="ed-lbl" style="font-size:10px;margin-bottom:6px;">이미지 배치</div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">
@@ -1159,7 +1161,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <input class="img-inp" id="mixed-img-link-url" type="url" placeholder="https://…" style="margin-bottom:0;">
       </div>
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,.1);">
-        <div style="display:grid;grid-template-columns:1fr 110px;gap:10px;align-items:start;">
+        <div class="img-2col">
           <div>
             <div class="ed-lbl" style="font-size:10px;margin-bottom:6px;">이미지 배치 <span style="font-weight:400;opacity:.55;">(오버레이형에만 적용)</span></div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;">
@@ -3772,15 +3774,24 @@ function fmtClr(ctx,clr){
   const sel=window.getSelection();
   if(sel&&sel.isCollapsed){const span=_getPendingSpan(ctx);if(span){span.style.color=clr;return;}}
   /* #000000은 브라우저가 "기본색"으로 인식해 color 속성을 붙이지 않는 버그 우회:
-     #000001(거의 검정)로 먼저 적용 후 즉시 #000000으로 교체 */
-  const applyClr=clr==='#000000'?'#000001':clr;
-  document.execCommand('foreColor',false,applyClr);
+     #010101(= rgb(1,1,1), 눈에 보이지 않는 차이)로 먼저 적용 후 즉시 #000000으로 교체.
+     styleWithCSS:true → <font> 대신 <span style="color:..."> 생성 → 더 안정적으로 감지 */
   if(clr==='#000000'){
+    document.execCommand('styleWithCSS',false,true);
+    document.execCommand('foreColor',false,'#010101');
+    document.execCommand('styleWithCSS',false,false);
     const ed=getEd(ctx);if(!ed)return;
     ed.querySelectorAll('font[color]').forEach(f=>{
-      if(f.getAttribute('color')==='#000001'||f.style.color==='rgb(1, 1, 1)'){f.style.color='#000000';f.removeAttribute('color');}
+      const c=f.getAttribute('color');
+      if(c==='#010101'||c==='#000001'||f.style.color==='rgb(1, 1, 1)'||f.style.color==='rgb(0, 0, 1)'){
+        f.style.color='#000000';f.removeAttribute('color');
+      }
     });
-    ed.querySelectorAll('[style*="rgb(1, 1, 1)"]').forEach(el=>{el.style.color='#000000';});
+    ed.querySelectorAll('[style]').forEach(el=>{
+      if(el.style.color==='rgb(1, 1, 1)'||el.style.color==='rgb(0, 0, 1)'){el.style.color='#000000';}
+    });
+  } else {
+    document.execCommand('foreColor',false,clr);
   }
 }
 function prevImg(id,url){const el=document.getElementById(id);if(url&&url.startsWith('http')){el.src=url;el.style.display='block';}else el.style.display='none';}
