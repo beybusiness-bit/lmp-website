@@ -3833,7 +3833,7 @@ function openFmtDd(btn,type,ctx){
     const curUrl=_detectLinkUrl();
     html=`<div style="padding:10px 10px 10px;min-width:230px;">
       <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:8px;">텍스트 링크</div>
-      <input id="fmt-link-inp" class="fi-sm" type="url" value="${curUrl}" placeholder="https://…" style="margin-bottom:8px;" onpointerdown="epd(event)"
+      <input id="fmt-link-inp" class="fi-sm" type="url" value="${curUrl}" placeholder="https://…" style="margin-bottom:8px;"
         onkeydown="if(event.key==='Enter'&&this.value.trim()){applyFmtLink('${ctx}',this.value.trim());closeFmtPopup();}">
       <div style="display:flex;gap:6px;">
         <button onpointerdown="epd(event)" onclick="applyFmtLink('${ctx}',document.getElementById('fmt-link-inp').value)" style="flex:1;padding:7px 0;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">링크 걸기</button>
