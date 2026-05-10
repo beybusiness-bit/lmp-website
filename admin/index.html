@@ -1601,6 +1601,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div class="ed-lbl" style="margin-bottom:4px;">플레이스홀더 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
         <input class="fi-sm" id="ff-placeholder" placeholder="예: 여기에 입력해주세요" style="margin-bottom:0;">
       </div>
+      <div id="ff-charcount-wrap" style="display:none;margin-bottom:12px;">
+        <div class="ed-lbl" style="margin-bottom:4px;">글자 수 제한 <span style="font-weight:400;opacity:.55;">(비워두면 자유입력)</span></div>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;">
+            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:3px;">최소 글자 수</div>
+            <input class="fi-sm" id="ff-min-chars" type="number" min="0" placeholder="제한 없음" style="margin-bottom:0;">
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:3px;">최대 글자 수</div>
+            <input class="fi-sm" id="ff-max-chars" type="number" min="1" placeholder="제한 없음" style="margin-bottom:0;">
+          </div>
+        </div>
+      </div>
       <div class="switch-row">
         <div class="switch" id="ff-req-sw" onclick="toggleFfReq()"></div>
         <span class="switch-lbl">필수 입력 항목</span>
@@ -3181,7 +3194,7 @@ function rmFormField(i){if(!confirm('이 필드를 삭제할까요?'))return;cur
 function openFormFieldModal(idx) {
   curEditingFormFieldIdx = idx;
   document.getElementById('form-field-modal-ttl').textContent = idx===null ? '필드 추가' : '필드 편집';
-  const f = idx!==null ? curFormFields[idx] : {label:'',key:'',type:'string',required:false,options:[],description:'',placeholder:'',selectMode:'dropdown',allowOther:false,minSelect:null,maxSelect:null};
+  const f = idx!==null ? curFormFields[idx] : {label:'',key:'',type:'string',required:false,options:[],description:'',placeholder:'',selectMode:'dropdown',allowOther:false,minSelect:null,maxSelect:null,minChars:null,maxChars:null};
   const labelEl = document.getElementById('ff-label');
   const keyEl   = document.getElementById('ff-key');
   labelEl.value = f.label||'';
@@ -3200,6 +3213,8 @@ function openFormFieldModal(idx) {
   document.getElementById('ff-sel-buttons').classList.toggle('on', ffSelectMode==='buttons');
   document.getElementById('ff-min-sel').value = f.minSelect!=null ? f.minSelect : '';
   document.getElementById('ff-max-sel').value = f.maxSelect!=null ? f.maxSelect : '';
+  document.getElementById('ff-min-chars').value = f.minChars!=null ? f.minChars : '';
+  document.getElementById('ff-max-chars').value = f.maxChars!=null ? f.maxChars : '';
   onFfTypeChange();
   document.getElementById('form-field-modal').classList.add('on');
 }
@@ -3211,9 +3226,11 @@ function autoFfKey(label) {
 function onFfTypeChange() {
   const t = document.getElementById('ff-type').value;
   const isSel = t==='select';
+  const isText = t==='string' || t==='textarea';
   document.getElementById('ff-options-wrap').style.display   = isSel ? '' : 'none';
   document.getElementById('ff-select-extra').style.display   = isSel ? '' : 'none';
   document.getElementById('ff-placeholder-wrap').style.display = (t==='file'||t==='select') ? 'none' : '';
+  document.getElementById('ff-charcount-wrap').style.display  = isText ? '' : 'none';
 }
 function setFfSelectMode(mode) {
   ffSelectMode = mode;
@@ -3233,8 +3250,11 @@ function saveFormField() {
   const placeholder = document.getElementById('ff-placeholder').value.trim();
   const minSel = document.getElementById('ff-min-sel').value !== '' ? parseInt(document.getElementById('ff-min-sel').value) : null;
   const maxSel = document.getElementById('ff-max-sel').value !== '' ? parseInt(document.getElementById('ff-max-sel').value) : null;
+  const isTextType = type === 'string' || type === 'textarea';
+  const minChars = isTextType && document.getElementById('ff-min-chars').value !== '' ? parseInt(document.getElementById('ff-min-chars').value) : null;
+  const maxChars = isTextType && document.getElementById('ff-max-chars').value !== '' ? parseInt(document.getElementById('ff-max-chars').value) : null;
   if (!label||!key) { alert('이름과 키를 입력해주세요.'); return; }
-  const extra = {description, placeholder, selectMode: type==='select'?ffSelectMode:'dropdown', allowOther: type==='select'&&ffOtherOn, minSelect: minSel, maxSelect: maxSel};
+  const extra = {description, placeholder, selectMode: type==='select'?ffSelectMode:'dropdown', allowOther: type==='select'&&ffOtherOn, minSelect: minSel, maxSelect: maxSel, minChars, maxChars};
   if (curEditingFormFieldIdx===null) {
     if (curFormFields.find(f=>f.key===key)) { alert('이미 같은 키가 있어요.'); return; }
     curFormFields.push({id:uid(), key, label, type, required:ffReqOn, options, ...extra});

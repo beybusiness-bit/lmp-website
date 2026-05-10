@@ -27,6 +27,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .ff-sel-btn.on{background:#000;color:#fff;}
 .ff-err{color:#c00;font-size:13px;font-weight:700;margin-bottom:12px;min-height:16px;}
 .ff-required{color:#c00;}
+.ff-char-count{font-size:11px;font-weight:600;color:rgba(0,0,0,.4);text-align:right;margin-top:4px;}
+.ff-char-count.warn{color:#c00;}
 
 #app{padding:24px 20px;}
 .form-title{font-size:17px;font-weight:800;margin-bottom:24px;letter-spacing:-.3px;line-height:1.4;}
@@ -95,10 +97,20 @@ function renderField(f) {
   const ph = esc(f.placeholder || '');
   const type = f.type;
   if (type === 'text' || type === 'string') {
-    return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<input class="ff-inp" id="ff-${fid}" type="text" placeholder="${ph}"></div>`;
+    const hasLimit = f.minChars > 0 || f.maxChars > 0;
+    const maxAttr  = f.maxChars > 0 ? ` maxlength="${f.maxChars}"` : '';
+    const cntId    = `ff-cnt-${fid}`;
+    const oninput  = hasLimit ? ` oninput="updateCharCount(this,'${cntId}',${f.minChars||0},${f.maxChars||0})"` : '';
+    const counter  = hasLimit ? `<div class="ff-char-count" id="${cntId}">0${f.maxChars > 0 ? ` / ${f.maxChars}자` : '자'}</div>` : '';
+    return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<input class="ff-inp" id="ff-${fid}" type="text" placeholder="${ph}"${maxAttr}${oninput}>${counter}</div>`;
   }
   if (type === 'textarea') {
-    return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<textarea class="ff-textarea" id="ff-${fid}" placeholder="${ph}"></textarea></div>`;
+    const hasLimit = f.minChars > 0 || f.maxChars > 0;
+    const maxAttr  = f.maxChars > 0 ? ` maxlength="${f.maxChars}"` : '';
+    const cntId    = `ff-cnt-${fid}`;
+    const oninput  = hasLimit ? ` oninput="updateCharCount(this,'${cntId}',${f.minChars||0},${f.maxChars||0})"` : '';
+    const counter  = hasLimit ? `<div class="ff-char-count" id="${cntId}">0${f.maxChars > 0 ? ` / ${f.maxChars}자` : '자'}</div>` : '';
+    return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<textarea class="ff-textarea" id="ff-${fid}" placeholder="${ph}"${maxAttr}${oninput}></textarea>${counter}</div>`;
   }
   if (type === 'number') {
     return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<input class="ff-inp" id="ff-${fid}" type="number" placeholder="${ph}"></div>`;
@@ -119,6 +131,20 @@ function renderField(f) {
     return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<select class="ff-sel" id="ff-${fid}" onchange="onSelChange('${fid}',${!!f.allowOther})"><option value="">선택해주세요</option>${optHtml}${otherOpt}</select>${otherInp}</div>`;
   }
   return '';
+}
+
+function updateCharCount(inp, cntId, minChars, maxChars) {
+  const len = inp.value.length;
+  const el = document.getElementById(cntId);
+  if (!el) return;
+  if (maxChars > 0) {
+    el.textContent = `${len} / ${maxChars}자`;
+    el.classList.toggle('warn', len >= maxChars);
+  } else {
+    const ok = minChars > 0 && len >= minChars;
+    el.textContent = ok ? `${len}자` : `${len}자 (최소 ${minChars}자)`;
+    el.classList.toggle('warn', false);
+  }
 }
 
 function toggleSelBtn(btn, key, maxSelect) {
@@ -239,6 +265,14 @@ async function submitForm() {
       }
       if (f.required && (val === '' || val === null || val === undefined)) {
         errEl.textContent = f.label + '을(를) 입력해주세요.'; return;
+      }
+      if ((f.type === 'string' || f.type === 'text' || f.type === 'textarea') && typeof val === 'string') {
+        if (f.minChars > 0 && val.length < f.minChars) {
+          errEl.textContent = `'${f.label}': 최소 ${f.minChars}자 이상 입력해주세요. (현재 ${val.length}자)`; inp?.focus(); return;
+        }
+        if (f.maxChars > 0 && val.length > f.maxChars) {
+          errEl.textContent = `'${f.label}': 최대 ${f.maxChars}자까지 입력 가능해요. (현재 ${val.length}자)`; inp?.focus(); return;
+        }
       }
     }
     result[fid] = val;
