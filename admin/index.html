@@ -3783,7 +3783,10 @@ function fmtSz(ctx,px){
   const sel=window.getSelection();
   if(!sel||!sel.rangeCount)return;
   if(sel.isCollapsed){const span=_getPendingSpan(ctx);if(span)span.style.fontSize=px+'px';return;}
-  document.execCommand('fontSize',false,'7');getEd(ctx).querySelectorAll('font[size="7"]').forEach(el=>{el.removeAttribute('size');el.style.fontSize=px+'px';});
+  const ed=getEd(ctx);
+  document.execCommand('fontSize',false,'7');
+  ed.querySelectorAll('font[size="7"]').forEach(el=>{el.removeAttribute('size');el.style.fontSize=px+'px';});
+  _syncBgFontSize(ed); // 배경색 span 안에 글씨 크기가 바뀐 경우 배경도 맞춤
 }
 function fmtAlign(ctx,dir){focusEd(ctx);document.execCommand('justify'+dir.charAt(0).toUpperCase()+dir.slice(1),false,null);}
 function fmtClr(ctx,clr){
@@ -3995,27 +3998,23 @@ function applyFmtBg(ctx,clr){
   } else {
     document.execCommand('backColor',false,clr);
     const ed=getEd(ctx);
-    if(ed) _fixBgDisplay(ed);
+    if(ed) _syncBgFontSize(ed);
   }
   const dot=document.getElementById('fmt-bg-dot-'+ctx);
   if(dot) dot.style.background=(clr==='rgba(0,0,0,0)'||clr==='transparent')?'rgba(0,0,0,.18)':clr;
 }
-/* 배경색 span이 줄 전체의 유일한 콘텐츠면 display:block으로 전환 → 전체 너비 배경 */
-function _fixBgDisplay(ed){
-  ed.querySelectorAll('span[style]').forEach(span=>{
-    if(!span.style.backgroundColor){
-      if(span.style.display==='block') span.style.removeProperty('display');
-      return;
-    }
-    const parent=span.parentElement;
-    if(!parent||parent===ed) return;
-    const hasOther=Array.from(parent.childNodes).some(n=>{
-      if(n===span) return false;
-      if(n.nodeType===Node.TEXT_NODE) return n.textContent.trim()!=='';
-      if(n.nodeType===Node.ELEMENT_NODE) return true;
-      return false;
+/* 배경색 span 안에 명시적 font-size 자식이 있으면 그 크기를 span 자신에도 적용.
+   배경색 span의 font-size가 내용보다 작으면 텍스트가 배경 위아래로 삐져나오는 버그 방지. */
+function _syncBgFontSize(ed){
+  ed.querySelectorAll('span[style]').forEach(bgSpan=>{
+    if(!bgSpan.style.backgroundColor) return;
+    let maxFs=0;
+    bgSpan.querySelectorAll('[style*="font-size"]').forEach(el=>{
+      const fs=parseFloat(el.style.fontSize);
+      if(!isNaN(fs)&&fs>maxFs) maxFs=fs;
     });
-    span.style.display=hasOther?'':'block';
+    if(maxFs>0) bgSpan.style.fontSize=maxFs+'px';
+    else bgSpan.style.removeProperty('font-size');
   });
 }
 function applyFmtLink(ctx,url){
