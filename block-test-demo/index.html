@@ -169,10 +169,14 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 /* 필드 설명 내 서식 오버라이드 */
 .ff-desc *{font-size:inherit!important;color:inherit!important;}
 .ff-desc a{color:inherit;text-decoration:underline;cursor:pointer;}
-/* 도구 링크 모달 */
-#tool-link-modal{display:none;position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:430px;transform:translateX(-50%);z-index:400;flex-direction:column;background:var(--prep-bg,#fff);}
+/* 도구 링크 모달 — bottom sheet 스타일 */
+#tool-link-overlay{display:none;position:fixed;inset:0;z-index:399;background:rgba(0,0,0,.5);}
+#tool-link-overlay.on{display:block;}
+#tool-link-modal{display:none;position:fixed;top:56px;bottom:0;left:50%;width:100%;max-width:430px;transform:translateX(-50%);z-index:400;flex-direction:column;background:var(--prep-bg,#fff);border-radius:16px 16px 0 0;box-shadow:0 -6px 32px rgba(0,0,0,.22);overflow:hidden;}
 #tool-link-modal.on{display:flex;}
-#tool-link-modal-bar{flex-shrink:0;display:flex;align-items:center;padding:14px 20px;border-bottom:2px solid #000;background:var(--prep-bg,#fff);}
+#tool-link-handle{display:flex;justify-content:center;padding:10px 0 6px;flex-shrink:0;}
+#tool-link-handle-pill{width:36px;height:4px;background:rgba(0,0,0,.18);border-radius:2px;}
+#tool-link-modal-bar{flex-shrink:0;display:flex;align-items:center;padding:10px 20px 12px;border-bottom:2px solid #000;background:var(--prep-bg,#fff);}
 #tool-link-modal-bar button{background:transparent;border:none;font-size:22px;font-weight:900;cursor:pointer;padding:0 12px 0 0;font-family:inherit;line-height:1;color:#000;-webkit-tap-highlight-color:transparent;}
 #tool-link-modal-title{flex:1;font-size:15px;font-weight:800;color:#000;letter-spacing:-.3px;}
 #tool-link-iframe{flex:1;border:none;width:100%;}
@@ -333,8 +337,10 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
   </div>
 </div>
 
-<!-- 도구 링크 모달 -->
+<!-- 도구 링크 모달 (bottom sheet) -->
+<div id="tool-link-overlay" onclick="closeToolLinkModal()"></div>
 <div id="tool-link-modal">
+  <div id="tool-link-handle"><div id="tool-link-handle-pill"></div></div>
   <div id="tool-link-modal-bar">
     <button onclick="closeToolLinkModal()">←</button>
     <div id="tool-link-modal-title">도구</div>
@@ -1046,15 +1052,19 @@ document.addEventListener('click',e=>{
 function openToolLinkModal(url){
   const modal=document.getElementById('tool-link-modal');
   const iframe=document.getElementById('tool-link-iframe');
+  const ov=document.getElementById('tool-link-overlay');
   if(!modal||!iframe) return;
   iframe.src=url;
   modal.classList.add('on');
+  if(ov) ov.classList.add('on');
 }
 function closeToolLinkModal(){
   const modal=document.getElementById('tool-link-modal');
   const iframe=document.getElementById('tool-link-iframe');
+  const ov=document.getElementById('tool-link-overlay');
   if(!modal||!iframe) return;
   modal.classList.remove('on');
+  if(ov) ov.classList.remove('on');
   setTimeout(()=>{ iframe.src='about:blank'; },400);
 }
 function renderGuideScroll(blocks){

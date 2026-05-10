@@ -4018,6 +4018,15 @@ function openFmtDd(btn,type,ctx){
         <button onpointerdown="epd(event)" onclick="applyFmtLink('${ctx}',document.getElementById('fmt-link-inp').value,document.getElementById('fmt-link-text-inp')?.value)" style="flex:1;padding:7px 0;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">링크 걸기</button>
         <button onpointerdown="epd(event)" onclick="removeFmtLink('${ctx}')" style="padding:7px 10px;background:transparent;border:1.5px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">제거</button>
       </div>
+      <div style="margin-top:8px;border-top:1px solid rgba(0,0,0,.1);padding-top:8px;">
+        <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:6px;">도구 직접 연결</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;" id="tool-picker-tabs">
+          <button onpointerdown="epd(event)" onclick="loadToolPicker('form',this)" style="padding:4px 8px;border:1.5px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">폼</button>
+          <button onpointerdown="epd(event)" onclick="loadToolPicker('schedule',this)" style="padding:4px 8px;border:1.5px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">일정</button>
+          <button onpointerdown="epd(event)" onclick="loadToolPicker('copy-gen',this)" style="padding:4px 8px;border:1.5px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">문구 생성기</button>
+        </div>
+        <div id="tool-picker-list" style="max-height:120px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;"></div>
+      </div>
     </div>`;
   } else if(type==='hr'){
     html=`<div style="padding:12px 12px 10px;min-width:200px;">
@@ -4174,6 +4183,27 @@ function removeFmtLink(ctx){
 }
 function _detectLinkUrl(){
   try{const sel=window.getSelection();if(!sel.rangeCount)return '';let n=sel.getRangeAt(0).startContainer;if(n.nodeType===3)n=n.parentElement;return n.closest('a')?.getAttribute('href')||'';}catch(e){return '';}
+}
+async function loadToolPicker(toolType, btn){
+  const el=document.getElementById('tool-picker-list');
+  if(!el) return;
+  document.getElementById('tool-picker-tabs')?.querySelectorAll('button').forEach(b=>b.style.background='transparent');
+  if(btn) btn.style.background='#000',btn.style.color='#fff';
+  el.innerHTML='<div style="font-size:11px;color:rgba(0,0,0,.4);padding:4px 0;">불러오는 중…</div>';
+  const colMap={'form':'cms_form_configs','schedule':'cms_schedule_configs','copy-gen':'cms_copy_gen_configs'};
+  const urlPfx={'form':'/tools/form/?id=','schedule':'/tools/schedule/?id=','copy-gen':'/tools/copy-gen/?id='};
+  try{
+    const snap=await db.collection(colMap[toolType]).orderBy('createdAt','desc').get();
+    if(!snap.docs.length){el.innerHTML='<div style="font-size:11px;color:rgba(0,0,0,.4);padding:4px 0;">인스턴스가 없어요.</div>';return;}
+    el.innerHTML=snap.docs.map(d=>`
+      <button onpointerdown="epd(event)" onclick="selectToolUrl('${urlPfx[toolType]+d.id}')" style="text-align:left;padding:5px 8px;border:1.5px solid rgba(0,0,0,.2);background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+        title="${(d.data().title||'').replace(/"/g,'&quot;')}">${d.data().title||'(제목 없음)'} <span style="font-weight:400;color:rgba(0,0,0,.4);font-size:10px;">${d.id.slice(0,8)}…</span></button>
+    `).join('');
+  }catch(e){el.innerHTML='<div style="font-size:11px;color:#c00;padding:4px 0;">불러오기 실패</div>';}
+}
+function selectToolUrl(url){
+  const inp=document.getElementById('fmt-link-inp');
+  if(inp){inp.value=url;inp.focus();}
 }
 function _isInLink(){
   try{const sel=window.getSelection();if(!sel.rangeCount)return false;let n=sel.getRangeAt(0).startContainer;if(n.nodeType===3)n=n.parentElement;return !!n.closest('a');}catch(e){return false;}
@@ -4581,6 +4611,27 @@ window.addEventListener('load', () => {
       return;
     }
 
+    /* ── 도구 목록 ── */
+    if(st.v==='tool'){
+      switchTab('tools');
+      _navRestore=true;
+      openTool(st.toolId);
+      _navRestore=false;
+      return;
+    }
+
+    /* ── 도구 편집 ── */
+    if(st.v==='tool-edit'){
+      switchTab('tools');
+      _navRestore=true;
+      openTool(st.toolId);
+      if(st.toolId==='copy-gen') cgEdit(st.docId);
+      else if(st.toolId==='schedule') scEdit(st.docId);
+      else if(st.toolId==='form-mgr') toolFormEdit(st.docId);
+      _navRestore=false;
+      return;
+    }
+
     _navRestore=false;
   });
 });
@@ -4592,6 +4643,7 @@ function openTool(toolId) {
   curTool = toolId;
   document.getElementById('tools-list-view').style.display = 'none';
   document.getElementById('tool-'+toolId+'-view').style.display = 'flex';
+  if(!_navRestore) history.pushState({v:'tool',toolId},'','#tools/'+toolId);
   if(toolId === 'deco') { decoShowList(); }
   if(toolId === 'guide') { gbShowList(); }
   if(toolId === 'form-mgr') { toolFormMgrList(); }
@@ -4688,6 +4740,7 @@ async function loadScList() {
         <div class="pi-meta">${durLabel} · 필드 ${(data.fields||[]).length}개</div>
         <div class="blk-acts" style="margin-top:6px;">
           <button class="b-btn" onclick="event.stopPropagation();scViewBookings('${d.id}')">📋 예약 현황</button>
+          <button class="b-btn" onclick="event.stopPropagation();copyToolUrl('schedule','${d.id}',this)" title="URL 복사">🔗</button>
           <button class="b-btn" onclick="event.stopPropagation();scDuplicate('${d.id}',this)" title="복제">⧉</button>
           <button class="b-btn" onclick="event.stopPropagation();if(confirm('이 일정을 삭제할까요?'))scDelete('${d.id}')">✕</button>
         </div>
@@ -4725,6 +4778,7 @@ async function scCreate() {
 }
 
 async function scEdit(docId) {
+  if(!_navRestore) history.pushState({v:'tool-edit',toolId:'schedule',docId},'','#tools/schedule/'+docId);
   scCurId = docId;
   document.getElementById('sc-list-screen').style.display = 'none';
   document.getElementById('sc-edit-screen').style.display = 'flex';
@@ -5082,6 +5136,7 @@ async function loadTfList(){
         <div class="pi-meta">필드 ${(data.fields||[]).length}개 · ID: ${d.id}</div>
         <div class="blk-acts" style="margin-top:6px;">
           <button class="b-btn" onclick="event.stopPropagation();toolFormEditResponses('${d.id}')">📋 응답</button>
+          <button class="b-btn" onclick="event.stopPropagation();copyToolUrl('form','${d.id}',this)" title="URL 복사">🔗</button>
           <button class="b-btn" onclick="event.stopPropagation();toolFormDuplicate('${d.id}',this)" title="복제">⧉</button>
           <button class="b-btn" onclick="event.stopPropagation();if(confirm('이 폼을 삭제할까요?'))toolFormDelete('${d.id}')">✕</button>
         </div>
@@ -5108,6 +5163,7 @@ async function toolFormCreate(){
   }catch(e){alert('생성 실패: '+e.message);}
 }
 async function toolFormEdit(docId){
+  if(!_navRestore) history.pushState({v:'tool-edit',toolId:'form-mgr',docId},'','#tools/form/'+docId);
   tfCurDocId=docId;
   document.getElementById('tf-list-screen').style.display='none';
   document.getElementById('tf-edit-screen').style.display='flex';
@@ -5984,12 +6040,21 @@ async function cgLoadList(){
         <div class="pi-meta">필드 ${(data.fields||[]).length}개 · ID: ${d.id}</div>
         <div class="blk-acts" style="margin-top:6px;">
           <button class="b-btn" onclick="event.stopPropagation();cgViewResultsById('${d.id}')">결과</button>
+          <button class="b-btn" onclick="event.stopPropagation();copyToolUrl('copy-gen','${d.id}',this)" title="URL 복사">🔗</button>
           <button class="b-btn" onclick="event.stopPropagation();cgDuplicate('${d.id}',this)" title="복제">⧉</button>
           <button class="b-btn" onclick="event.stopPropagation();if(confirm('삭제할까요?'))cgDeleteById('${d.id}')">✕</button>
         </div>
       </div>`;
     }).join('');
   }catch(e){ el.innerHTML='<div class="empty-msg">불러오기 실패</div>'; }
+}
+function copyToolUrl(toolType, docId, btn){
+  const urlMap={'copy-gen':'/tools/copy-gen/?id=','form':'/tools/form/?id=','schedule':'/tools/schedule/?id='};
+  const url=(urlMap[toolType]||'')+docId;
+  navigator.clipboard.writeText(url).then(()=>{
+    const orig=btn.textContent; btn.textContent='✓ 복사됨';
+    setTimeout(()=>{ btn.textContent=orig; },1400);
+  }).catch(()=>{ alert('복사 실패. 수동으로 복사해주세요:\n'+url); });
 }
 async function cgDuplicate(docId, btn){
   if(btn){ btn.disabled=true; btn.textContent='…'; }
@@ -6017,6 +6082,7 @@ async function cgCreate(){
   }catch(e){ alert('생성 실패: '+e.message); }
 }
 async function cgEdit(docId){
+  if(!_navRestore) history.pushState({v:'tool-edit',toolId:'copy-gen',docId},'','#tools/copy-gen/'+docId);
   cgCurDocId=docId;
   document.getElementById('cg-list-screen').style.display='none';
   document.getElementById('cg-edit-screen').style.display='flex';
