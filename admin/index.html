@@ -500,6 +500,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             </div>
           </div>
           <div id="auth-fields-wrap" style="display:none;">
+            <div class="sect-head">인증 모드</div>
+            <div class="ed-sect">
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:10px 12px;border:1.5px solid rgba(0,0,0,.2);background:#fff;" id="authmode-immediate-row">
+                  <input type="radio" name="authmode" id="authmode-immediate" value="immediate" checked onchange="onAuthModeChange()" style="margin-top:3px;cursor:pointer;">
+                  <div style="flex:1;">
+                    <div style="font-size:13px;font-weight:700;margin-bottom:3px;">일반 (시작 시 인증)</div>
+                    <div style="font-size:11px;color:rgba(0,0,0,.55);line-height:1.5;">접속하자마자 인증 모달이 떠요. 인증해야만 내용을 볼 수 있어요.</div>
+                  </div>
+                </label>
+                <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;padding:10px 12px;border:1.5px solid rgba(0,0,0,.2);background:#fff;" id="authmode-ondemand-row">
+                  <input type="radio" name="authmode" id="authmode-ondemand" value="on-demand" onchange="onAuthModeChange()" style="margin-top:3px;cursor:pointer;">
+                  <div style="flex:1;">
+                    <div style="font-size:13px;font-weight:700;margin-bottom:3px;">필요 시 로그인</div>
+                    <div style="font-size:11px;color:rgba(0,0,0,.55);line-height:1.5;">비로그인 상태로 둘러볼 수 있어요. 진행률 체크나 도구 사용을 시도할 때 로그인 모달이 떠요.</div>
+                  </div>
+                </label>
+              </div>
+            </div>
             <div class="sect-head">컬렉션 · 필드</div>
             <div class="ed-sect">
               <div class="ed-lbl" style="font-size:12px;opacity:.6;">사용자 데이터 저장 위치: <span id="p-auth-col-display" style="font-family:monospace;">cms_users_{슬러그}</span></div>
@@ -2188,6 +2207,23 @@ function setAuth(v) {
   document.getElementById('auth-sw').classList.toggle('on', v);
   document.getElementById('auth-fields-wrap').style.display = v ? '' : 'none';
 }
+let curAuthMode = 'immediate';
+function setAuthMode(mode) {
+  curAuthMode = (mode === 'on-demand') ? 'on-demand' : 'immediate';
+  const r1 = document.getElementById('authmode-immediate');
+  const r2 = document.getElementById('authmode-ondemand');
+  if (r1) r1.checked = (curAuthMode === 'immediate');
+  if (r2) r2.checked = (curAuthMode === 'on-demand');
+  const row1 = document.getElementById('authmode-immediate-row');
+  const row2 = document.getElementById('authmode-ondemand-row');
+  if (row1) row1.style.borderColor = (curAuthMode === 'immediate') ? '#000' : 'rgba(0,0,0,.2)';
+  if (row2) row2.style.borderColor = (curAuthMode === 'on-demand') ? '#000' : 'rgba(0,0,0,.2)';
+}
+function onAuthModeChange() {
+  const r = document.querySelector('input[name="authmode"]:checked');
+  setAuthMode(r ? r.value : 'immediate');
+  projDirty = true;
+}
 function toggleSelfReg() { setSelfReg(!curSelfRegEnabled); projDirty=true; }
 function setSelfReg(v) {
   curSelfRegEnabled = v;
@@ -3103,6 +3139,7 @@ async function editProject(id) {
     setLayoutType(d.layoutType||'separate');
     setDday(d.ddayEnabled||false);
     setAuth(d.authEnabled||false);
+    setAuthMode(d.authMode||'immediate');
     renderKeyColorList(); renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList();
     if (d.authEnabled) await loadUsers();
     switchInnerTab('basic'); showProjView('edit');
@@ -3158,6 +3195,7 @@ async function saveProject(deploy=true) {
     ddayEnabled:  curDdayEnabled,
     ddayDate:     document.getElementById('p-dday-date').value.trim(),
     authEnabled:  curAuthEnabled,
+    authMode:     curAuthMode || 'immediate',
     authCollection: authCol,
     authFields:   curAuthFields,
     authKeyField: curAuthKeyField,
@@ -3244,6 +3282,7 @@ async function seedTestData() {
     ddayEnabled: true,
     ddayDate: '2025-12-31',
     authEnabled: false,
+    authMode: 'immediate',
     authCollection: 'cms_users_block-test-demo',
     authFields: [],
     authKeyField: '',
