@@ -88,11 +88,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .fbadge{font-size:9px;border:1px solid rgba(0,0,0,.25);padding:2px 5px;color:rgba(0,0,0,.55);cursor:pointer;white-space:nowrap;}
 .fbadge.on{background:#000;color:#fff;border-color:#000;}
 /* user table */
-.user-table-wrap{overflow-x:auto;border:1.5px solid #000;margin-bottom:10px;}
-.user-table{width:100%;border-collapse:collapse;font-size:12px;min-width:280px;}
+.user-table-wrap{overflow:auto;border:1.5px solid #000;margin-bottom:10px;max-height:65vh;}
+.user-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;min-width:280px;}
 .user-table th{background:#000;color:#fff;padding:6px 8px;text-align:left;font-size:11px;font-weight:700;white-space:nowrap;}
-.user-table td{padding:6px 8px;border-bottom:1px solid rgba(0,0,0,.08);vertical-align:middle;word-break:keep-all;overflow-wrap:break-word;}
+.user-table td{padding:6px 8px;border-bottom:1px solid rgba(0,0,0,.08);vertical-align:middle;word-break:keep-all;overflow-wrap:break-word;background:#fff;}
 .user-table tr:last-child td{border-bottom:none;}
+.user-table thead th{position:sticky;top:0;z-index:2;}
+.user-table tbody td.s-c1,.user-table tbody td.s-c2{position:sticky;z-index:1;}
+.user-table thead th.s-c1,.user-table thead th.s-c2{z-index:3;}
+.user-table .s-c1{left:0;}
+.user-table .s-c2{box-shadow:1px 0 0 rgba(0,0,0,.12);}
+.user-table .u-row-selected td.s-c1,.user-table .u-row-selected td.s-c2{background:#f5f5f5;}
 .u-btn{padding:3px 7px;background:transparent;border:1px solid #000;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;}
 .u-btn:active{background:#000;color:#fff;}
 .u-row-selected td{background:#f5f5f5;}
@@ -889,7 +895,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <button class="mbtn-cancel" onclick="exportTfRespCsv()" style="font-size:11px;padding:5px 10px;">CSV 내보내기</button>
               </div>
             </div>
-            <div id="tf-resp-scroll" style="margin-top:8px;max-height:320px;overflow-y:auto;border:1.5px solid rgba(0,0,0,.1);padding:8px;font-size:12px;">
+            <div id="tf-resp-scroll" style="margin-top:8px;max-height:60vh;overflow:auto;border:1.5px solid rgba(0,0,0,.1);padding:0;font-size:12px;">
               <div class="empty-msg">저장 후 자동으로 불러와요.</div>
             </div>
           </div>
@@ -1731,7 +1737,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 <div class="modal-ov" id="form-resp-modal">
   <div class="modal-box" style="max-width:700px;width:95vw;">
     <div class="modal-ttl">응답 보기</div>
-    <div class="modal-scroll" id="form-resp-scroll">
+    <div class="modal-scroll" id="form-resp-scroll" style="overflow:auto;">
       <div class="empty-msg">불러오는 중…</div>
     </div>
     <div style="padding:10px 0 0;border-top:1.5px solid rgba(0,0,0,.1);margin-top:4px;">
@@ -2444,15 +2450,24 @@ function renderUserTable() {
     }).join('');
     summary = `<div class="prog-summary"><div style="font-weight:700;margin-bottom:8px;font-size:12px;">📊 스테이지 진행률 현황</div>${rows}</div>`;
   }
-  const chkTh = `<th style="width:32px;"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleSelectAll(this.checked)" style="cursor:pointer;"></th>`;
+  const CK_W = 44; // 체크박스 컬럼 고정 너비(px) - s-c2 left 위치와 동기화
+  const chkTh = `<th class="s-c1" style="width:${CK_W}px;min-width:${CK_W}px;max-width:${CK_W}px;box-sizing:border-box;"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleSelectAll(this.checked)" style="cursor:pointer;"></th>`;
   const progTh = progStages.map(s => {
     const ttl = (s.title||'').replace(/</g,'&lt;');
     return `<th style="min-width:130px;max-width:220px;white-space:normal;word-break:keep-all;" title="${ttl} (체크 ${s.checkableCount}개)">${ttl}</th>`;
   }).join('');
-  const headers = chkTh + curAuthFields.map(f=>`<th style="${_colWidthCss(f.type)}">${f.label}</th>`).join('') + progTh + '<th style="white-space:nowrap;min-width:120px;">최근 로그인</th><th style="white-space:nowrap;min-width:60px;">횟수</th><th></th>';
+  const headers = chkTh + curAuthFields.map((f,idx)=>{
+    const cls = idx===0 ? ' class="s-c2"' : '';
+    const leftStyle = idx===0 ? `left:${CK_W}px;` : '';
+    return `<th${cls} style="${_colWidthCss(f.type)}${leftStyle}">${f.label}</th>`;
+  }).join('') + progTh + '<th style="white-space:nowrap;min-width:120px;">최근 로그인</th><th style="white-space:nowrap;min-width:60px;">횟수</th><th></th>';
   const rows = curUsers.map(u => {
     const checked = selectedUserIds.has(u._id);
-    const cells = curAuthFields.map(f=>`<td style="${_colWidthCss(f.type)}">${u[f.key]??''}</td>`).join('');
+    const cells = curAuthFields.map((f,idx)=>{
+      const cls = idx===0 ? ' class="s-c2"' : '';
+      const leftStyle = idx===0 ? `left:${CK_W}px;` : '';
+      return `<td${cls} style="${_colWidthCss(f.type)}${leftStyle}">${u[f.key]??''}</td>`;
+    }).join('');
     const progCells = progStages.map(s => {
       const total = s.checkableCount;
       const arr = u.stageProgress?.[s.id] || [];
@@ -2468,7 +2483,7 @@ function renderUserTable() {
     const lastLogin = u.lastLoginAt?.seconds ? new Date(u.lastLoginAt.seconds*1000).toLocaleString('ko',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '-';
     const loginCnt = u.loginCount ?? '-';
     return `<tr class="${checked?'u-row-selected':''}">
-      <td><input type="checkbox" ${checked?'checked':''} onchange="toggleSelectUser('${u._id}',this.checked)" style="cursor:pointer;"></td>
+      <td class="s-c1" style="width:${CK_W}px;min-width:${CK_W}px;max-width:${CK_W}px;box-sizing:border-box;"><input type="checkbox" ${checked?'checked':''} onchange="toggleSelectUser('${u._id}',this.checked)" style="cursor:pointer;"></td>
       ${cells}
       ${progCells}
       <td style="font-size:11px;white-space:nowrap;color:rgba(0,0,0,.6);">${lastLogin}</td>
@@ -3685,17 +3700,25 @@ function renderRespTable() {
   const el = document.getElementById('form-resp-scroll');
   if (!curRespData.length) { el.innerHTML = '<div class="empty-msg">응답이 없어요.</div>'; return; }
   const cols=_getRespCols();
-  const ths = cols.map(c=>{
-    const w = c.type==='timestamp' ? 'min-width:140px;max-width:180px;' : _colWidthCss(c.type);
-    return `<th style="white-space:nowrap;padding:6px 10px;border-bottom:2px solid #000;font-size:11px;text-align:left;${w}">${c.label}</th>`;
-  }).join('');
-  const rows = curRespData.map(r=>
-    `<tr>${cols.map(c=>{
-      const w = c.type==='timestamp' ? 'min-width:140px;max-width:180px;white-space:nowrap;' : _colWidthCss(c.type);
-      return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.1);font-size:12px;word-break:keep-all;overflow-wrap:break-word;${w}">${c.val(r)}</td>`;
-    }).join('')}</tr>`
-  ).join('');
-  el.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table></div><div style="margin-top:10px;font-size:11px;color:rgba(0,0,0,.4);">${curRespData.length}개 응답 (최근 100개)</div>`;
+  // 고정 컬럼: 제출일시(항상), 첫 번째 인증필드(있을 때) — 사용자 식별용
+  const stickyCount = curAuthEnabled && curAuthFields.length ? 2 : 1;
+  const TS_W = 170;
+  el.innerHTML = `<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
+    <thead><tr>${cols.map((c,idx)=>{
+      const w = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;` : _colWidthCss(c.type);
+      const sticky = idx<stickyCount ? `position:sticky;left:${idx===0?0:TS_W}px;z-index:3;` : 'position:sticky;top:0;z-index:2;';
+      const stickyTop = idx<stickyCount ? 'top:0;' : '';
+      return `<th style="white-space:nowrap;padding:6px 10px;background:#000;color:#fff;font-size:11px;text-align:left;font-weight:700;${sticky}${stickyTop}${w}">${c.label}</th>`;
+    }).join('')}</tr></thead>
+    <tbody>${curRespData.map(r=>
+      `<tr>${cols.map((c,idx)=>{
+        const w = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;white-space:nowrap;` : _colWidthCss(c.type);
+        const sticky = idx<stickyCount ? `position:sticky;left:${idx===0?0:TS_W}px;z-index:1;background:#fff;${idx===1?'box-shadow:1px 0 0 rgba(0,0,0,.12);':''}` : '';
+        return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.08);font-size:12px;word-break:keep-all;overflow-wrap:break-word;background:#fff;${w}${sticky}">${c.val(r)}</td>`;
+      }).join('')}</tr>`
+    ).join('')}</tbody>
+  </table>
+  <div style="position:sticky;left:0;padding:10px;font-size:11px;color:rgba(0,0,0,.4);">${curRespData.length}개 응답 (최근 100개)</div>`;
 }
 function exportRespCsv() {
   if (!curRespData.length) { alert('응답이 없어요.'); return; }
@@ -5662,24 +5685,40 @@ function updateTfRespSheetStatus(){
 
 function renderTfRespTable(){
   const el=document.getElementById('tf-resp-scroll');
-  if(!tfRespData.length){el.innerHTML='<div class="empty-msg">응답이 없어요.</div>';return;}
+  if(!tfRespData.length){el.innerHTML='<div class="empty-msg" style="padding:12px;">응답이 없어요.</div>';return;}
   const cols=_getTfRespCols();
-  const ths=cols.map(c=>{
-    const w = c.type==='timestamp' ? 'min-width:140px;max-width:180px;' : _colWidthCss(c.type);
-    return `<th style="white-space:nowrap;padding:6px 10px;border-bottom:2px solid #000;font-size:11px;text-align:left;${w}">${c.label}</th>`;
-  }).join('');
-  const rows=tfRespData.map(r=>`<tr>${cols.map(c=>{
-    const w = c.type==='timestamp' ? 'min-width:140px;max-width:180px;white-space:nowrap;' : _colWidthCss(c.type);
-    return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.1);font-size:12px;word-break:keep-all;overflow-wrap:break-word;${w}">${c.val(r)}</td>`;
-  }).join('')}</tr>`).join('');
-  el.innerHTML=`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table></div><div style="margin-top:10px;font-size:11px;color:rgba(0,0,0,.4);">${tfRespData.length}개 응답 (최근 100개)</div>`;
+  const hasUserCol = cols.some(c=>c.type==='_user');
+  // 고정 컬럼: 제출일시(항상), 사용자(있을 때) — 사용자 식별용
+  const stickyCount = hasUserCol ? 2 : 1;
+  const TS_W = 170;
+  el.innerHTML=`<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
+    <thead><tr>${cols.map((c,idx)=>{
+      const w = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;` : _colWidthCss(c.type==='_user'?'string':c.type);
+      const sticky = idx<stickyCount ? `position:sticky;left:${idx===0?0:TS_W}px;z-index:3;top:0;` : 'position:sticky;top:0;z-index:2;';
+      return `<th style="white-space:nowrap;padding:6px 10px;background:#000;color:#fff;font-size:11px;text-align:left;font-weight:700;${sticky}${w}">${c.label}</th>`;
+    }).join('')}</tr></thead>
+    <tbody>${tfRespData.map(r=>
+      `<tr>${cols.map((c,idx)=>{
+        const w = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;white-space:nowrap;` : _colWidthCss(c.type==='_user'?'string':c.type);
+        const sticky = idx<stickyCount ? `position:sticky;left:${idx===0?0:TS_W}px;z-index:1;background:#fff;${idx===1?'box-shadow:1px 0 0 rgba(0,0,0,.12);':''}` : '';
+        return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.08);font-size:12px;word-break:keep-all;overflow-wrap:break-word;background:#fff;${w}${sticky}">${c.val(r)}</td>`;
+      }).join('')}</tr>`
+    ).join('')}</tbody>
+  </table>
+  <div style="position:sticky;left:0;padding:10px;font-size:11px;color:rgba(0,0,0,.4);">${tfRespData.length}개 응답 (최근 100개)</div>`;
 }
 
 function _getTfRespCols(){
   const fields=tfRespFields||[];
   const tsCol={label:'제출일시',type:'timestamp',val:r=>r.submittedAt?.seconds?new Date(r.submittedAt.seconds*1000).toLocaleString('ko'):''};
+  // 인증 프로젝트에서 제출된 응답에는 _userFields가 있음 → 사용자 컬럼 자동 추가
+  const hasUserInfo = tfRespData.some(r => r._userFields && Object.keys(r._userFields||{}).length);
+  const userCol = hasUserInfo ? [{label:'사용자',type:'_user',val:r=>{
+    const uf=r._userFields||{};
+    return Object.values(uf).filter(v=>v!=null&&v!=='').slice(0,2).join(' · ');
+  }}] : [];
   const formCols=fields.map(f=>({label:f.label,type:f.type,val:r=>{const v=r[f.key];return Array.isArray(v)?v.join(', '):String(v??'');}}));
-  return [tsCol,...formCols];
+  return [tsCol,...userCol,...formCols];
 }
 
 function exportTfRespCsv(){
