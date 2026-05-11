@@ -122,10 +122,11 @@ const FORM_ID = params.get('id');
 
 /* lmp-context: blockBg 수신 → CSS 변수 설정 */
 window.addEventListener('message', e => {
+  if (e.origin !== location.origin) return;
   if (e.data?.type !== 'lmp-context') return;
   if (e.data.blockBg) document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg);
 });
-window.parent.postMessage({ type: 'lmp-ready' }, '*');
+window.parent.postMessage({ type: 'lmp-ready' }, location.origin);
 
 /* ────────────────────────────────────────────
    초기화
@@ -325,7 +326,7 @@ function vPrev() {
 
 /* ── 결과 화면 ── */
 function showResults() {
-  window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+  window.parent.postMessage({ type: 'lmp-tool-complete' }, location.origin);
   /* 태그·변수 집계 */
   const tags = new Set();
   const numVars = {};

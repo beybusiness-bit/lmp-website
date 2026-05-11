@@ -200,6 +200,7 @@ let toolCompleteFired = false;
 let userGenCount = 0;
 
 window.addEventListener('message', e => {
+  if (e.origin !== location.origin) return;
   if (e.data?.type !== 'lmp-context') return;
   ctxProjectId = e.data.projectId || '';
   ctxUserId = e.data.userId || '';
@@ -452,7 +453,7 @@ async function init() {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     showScreen('screen-input');
-    window.parent.postMessage({ type: 'lmp-ready' }, '*');
+    window.parent.postMessage({ type: 'lmp-ready' }, location.origin);
     if (ctxUserId) loadUserGenerationCount();
   } catch (e) {
     console.error('[copy-gen init]', e);
@@ -591,7 +592,7 @@ async function copyPhrase(idx) {
 
   if (!toolCompleteFired) {
     toolCompleteFired = true;
-    window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+    window.parent.postMessage({ type: 'lmp-tool-complete' }, location.origin);
   }
 }
 

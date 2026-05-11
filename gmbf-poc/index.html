@@ -1229,17 +1229,18 @@ function _lmpContext(iframeEl){
 function _sendContextToEmbeds(){
   setTimeout(()=>{
     document.querySelectorAll('iframe').forEach(f=>{
-      try{ f.contentWindow.postMessage(_lmpContext(f),'*'); }catch(e){}
+      try{ f.contentWindow.postMessage(_lmpContext(f),location.origin); }catch(e){}
     });
   },300);
 }
 // lmp-ready 수신 시 즉시 전송
 // lmp-tool-complete 수신 시 autoCheckBlock 처리
 window.addEventListener('message',e=>{
+  if(e.origin!==location.origin) return;
   if(e.data?.type==='lmp-ready'&&e.source){
     let sourceIframe=null;
     document.querySelectorAll('iframe').forEach(f=>{ if(f.contentWindow===e.source) sourceIframe=f; });
-    try{ e.source.postMessage(_lmpContext(sourceIframe),'*'); }catch(er){}
+    try{ e.source.postMessage(_lmpContext(sourceIframe),location.origin); }catch(er){}
     return;
   }
   if(e.data?.type==='lmp-tool-complete'){

@@ -320,7 +320,7 @@ const canvasWrap = document.getElementById('canvas-wrap');
 async function init() {
   resizeCanvases();
   // 부모 플레이어에 ready 신호 전송
-  window.parent.postMessage({type:'lmp-ready'}, '*');
+  window.parent.postMessage({type:'lmp-ready'}, location.origin);
   // 1.5초 안에 컨텍스트가 안 오면 배경 버튼 표시
   setTimeout(() => {
     if(!contextReceived) showBgBtn();
@@ -836,7 +836,7 @@ function renderKeyColorSwatches() {
 
 // ── 내보내기 ──
 async function openExport() {
-  window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+  window.parent.postMessage({ type: 'lmp-tool-complete' }, location.origin);
   const expCanvas = document.getElementById('export-canvas');
   expCanvas.width = EXPORT_W;
   expCanvas.height = EXPORT_H;
@@ -949,6 +949,7 @@ function closeExport() { document.getElementById('export-modal').classList.remov
 
 // ── postMessage: 부모 플레이어에서 사용자 데이터 수신 ──
 window.addEventListener('message', e => {
+  if(e.origin !== location.origin) return;
   if(e.data?.type !== 'lmp-context') return;
   const d = e.data;
   contextReceived = true;

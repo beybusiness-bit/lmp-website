@@ -31,9 +31,15 @@ function doGet(e) {
   const action = e.parameter.action || '';
 
   if (action === 'createSheet') {
-    const title = e.parameter.title || '폼 응답';
+    const rawTitle = e.parameter.title || '폼 응답';
+    const title = String(rawTitle).replace(/[^\w\s가-힣ㄱ-ㅎㅏ-ㅣ()\-_]/g, '').slice(0, 100) || '폼 응답';
     let headers = [];
-    try { headers = JSON.parse(e.parameter.headers || '[]'); } catch (_) {}
+    try {
+      const parsed = JSON.parse(e.parameter.headers || '[]');
+      if (Array.isArray(parsed) && parsed.length <= 50) {
+        headers = parsed.map(h => String(h).slice(0, 100));
+      }
+    } catch (_) {}
     try {
       const newSS = SpreadsheetApp.create(title);
       const sheet = newSS.getActiveSheet();

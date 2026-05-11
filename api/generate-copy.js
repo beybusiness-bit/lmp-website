@@ -1,9 +1,32 @@
+// In-memory rate limiting (per serverless instance; limits abuse within a single instance)
+const _rl = new Map();
+function checkRateLimit(id) {
+  const now = Date.now();
+  const rec = _rl.get(id) || { n: 0, reset: now + 60000 };
+  if (now > rec.reset) { rec.n = 0; rec.reset = now + 60000; }
+  rec.n++;
+  _rl.set(id, rec);
+  return rec.n <= 15;
+}
+
+const ALLOWED_ORIGINS = ['https://lazymaxpotential.kr'];
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin || '';
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) || /^https:\/\/lmp-website[a-z0-9-]*\.vercel\.app$/.test(origin)
+    ? origin
+    : ALLOWED_ORIGINS[0];
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 'unknown';
+  if (!checkRateLimit(clientIp)) {
+    return res.status(429).json({ error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' });
+  }
 
   const { fields, styleSelections, references, outputConfig, existingPhrases, referenceRole, aiContext, speakerDesc } = req.body || {};
 

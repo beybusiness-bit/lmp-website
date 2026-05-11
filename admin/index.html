@@ -1920,6 +1920,11 @@ function switchInnerTab(t) {
 function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
 function epd(e) { e.preventDefault(); }
 function closeModal(id) { document.getElementById(id).classList.remove('on'); }
+function secureToken(prefix, byteLen) {
+  const arr = new Uint8Array(byteLen || 16);
+  crypto.getRandomValues(arr);
+  return (prefix||'') + Array.from(arr, b => b.toString(16).padStart(2,'0')).join('');
+}
 
 /* ── PAT ── */
 function getPAT() { return localStorage.getItem('ghPAT') || ''; }
@@ -1961,7 +1966,7 @@ async function loadAdminPreviewToken() {
     const doc = await ref.get();
     let token = (doc.exists && doc.data().adminPreviewToken) || '';
     if (!token) {
-      token = 'adm_' + Math.random().toString(36).slice(2, 12);
+      token = secureToken('adm_', 16);
       await ref.set({ adminPreviewToken: token }, { merge: true });
     }
     _adminPreviewToken = token;
@@ -3224,7 +3229,7 @@ async function saveProject(deploy=true) {
   // previewToken 없으면 생성
   const existingDoc = await db.collection('cms_projects').doc(id).get();
   if(!existingDoc.data()?.previewToken){
-    data.previewToken = Math.random().toString(36).slice(2,10);
+    data.previewToken = secureToken('', 8);
   }
 
   try {

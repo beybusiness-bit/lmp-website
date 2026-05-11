@@ -166,6 +166,7 @@ let confirmedBooking=null;
 let ctxProjectId='',ctxUserId='',ctxUserFields={};
 let resolveCtx; const ctxPromise=new Promise(r=>{resolveCtx=r;});
 window.addEventListener('message',e=>{
+  if(e.origin!==location.origin) return;
   if(e.data?.type!=='lmp-context')return;
   ctxProjectId=e.data.projectId||'';
   ctxUserId=e.data.userId||e.data.userFields?.[e.data.authKeyField||'']||'';
@@ -556,7 +557,7 @@ async function submitBooking(){
     await db.collection('cms_schedule_bookings').doc(SCHEDULE_ID).collection('bookings').add(booking);
     confirmedBooking={...booking,start:slot.start,end:slot.end,evTitle,evDesc};
     showConfirm();
-    window.parent.postMessage({type:'lmp-tool-complete'},'*');
+    window.parent.postMessage({type:'lmp-tool-complete'},location.origin);
   }catch(e){
     document.getElementById('sc-form-err').textContent='오류: '+e.message;
     btn.disabled=false;btn.textContent='예약 확정';

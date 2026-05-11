@@ -219,6 +219,7 @@ let resolveCtx;
 const ctxPromise = new Promise(res => { resolveCtx = res; });
 
 window.addEventListener('message', e => {
+  if (e.origin !== location.origin) return;
   if (e.data?.type !== 'lmp-context') return;
   ctxProjectId = e.data.projectId || '';
   ctxUserId = e.data.userId || e.data.userFields?._id || '';
@@ -491,7 +492,7 @@ async function submitSelected() {
     }
     await batch.commit();
 
-    window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+    window.parent.postMessage({ type: 'lmp-tool-complete' }, location.origin);
 
     const count = selectedVideos.length;
     selectedVideos.forEach(v => submittedVideoIds.add(v.videoId));
@@ -609,7 +610,7 @@ async function init() {
   updateBadge();
 }
 
-window.parent.postMessage({ type: 'lmp-ready' }, '*');
+window.parent.postMessage({ type: 'lmp-ready' }, location.origin);
 init();
 </script>
 </body>

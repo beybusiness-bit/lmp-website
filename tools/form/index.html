@@ -80,6 +80,7 @@ let resolveCtx;
 const ctxPromise = new Promise(res => { resolveCtx = res; });
 
 window.addEventListener('message', e => {
+  if (e.origin !== location.origin) return;
   if (e.data?.type !== 'lmp-context') return;
   ctxProjectId = e.data.projectId || '';
   ctxUserId = e.data.userId || '';
@@ -215,7 +216,7 @@ async function init() {
       const alreadyDone = await checkAlreadySubmitted();
       if (alreadyDone) {
         showDone(formConfig.submitMsg || '이미 제출하셨습니다.');
-        window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+        window.parent.postMessage({ type: 'lmp-tool-complete' }, location.origin);
         return;
       }
     }
@@ -313,7 +314,7 @@ async function submitForm() {
       } catch(e) {}
     }
 
-    window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+    window.parent.postMessage({ type: 'lmp-tool-complete' }, location.origin);
     showDone(formConfig.submitMsg || '제출이 완료됐어요!');
   } catch(e) {
     console.error('[submitForm]', e);
@@ -323,7 +324,7 @@ async function submitForm() {
   }
 }
 
-window.parent.postMessage({ type: 'lmp-ready' }, '*');
+window.parent.postMessage({ type: 'lmp-ready' }, location.origin);
 init();
 </script>
 </body>
