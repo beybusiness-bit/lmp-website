@@ -1066,7 +1066,7 @@ function blockHtml(b){
       form:`/tools/form/?id=${b.toolConfig?.formId||''}`,
       booth:`/tools/booth/?id=${b.toolConfig?.boothId||''}`,
       guide:`/tools/guide/?id=${b.toolConfig?.guideId||''}`,
-      'youtube-playlist':'/tools/youtube-playlist/',
+      'youtube-playlist':`/tools/youtube-playlist/?id=${b.toolConfig?.youtubePlaylistId||''}`,
       schedule:`/tools/schedule/?id=${b.toolConfig?.scheduleId||''}`,
       'copy-gen':`/tools/copy-gen/?id=${b.toolConfig?.copyGenId||''}`,
     };
@@ -1119,7 +1119,7 @@ function attachCheck(h,b){
 // ── 임베드 iframe에 사용자 컨텍스트 전달 ──
 function _effectivePageBg(){
   const cs=getComputedStyle(document.documentElement);
-  return (cs.getPropertyValue('--body-bg')||cs.getPropertyValue('--c')||'').trim();
+  return (cs.getPropertyValue('--prep-bg')||cs.getPropertyValue('--body-bg')||cs.getPropertyValue('--c')||'').trim();
 }
 function _lmpContext(iframeEl){
   let bb = iframeEl ? (iframeEl.getAttribute('data-block-bg')||'') : '';
