@@ -1513,7 +1513,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <div class="ed-lbl" style="font-size:10px;">완료 텍스트 색상 <span style="font-weight:400;opacity:.5;">(체크 완료 시 글씨)</span></div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <input type="color" id="blk-check-text-color" value="#ffffff" oninput="onBlkCheckTextPick(this.value)" style="width:32px;height:32px;border:2px solid #000;padding:0;cursor:pointer;flex-shrink:0;">
-            <input class="fi-sm" id="blk-check-text-hex" placeholder="#FFFFFF" style="width:84px;margin-bottom:0;" oninput="onBlkCheckTextHex(this.value)">
+            <input class="fi-sm" id="blk-check-text-hex" placeholder="" style="width:84px;margin-bottom:0;" oninput="onBlkCheckTextHex(this.value)">
             <button onclick="clearBlkCheckTextColor()" style="padding:4px 9px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">기본값</button>
             <div id="blk-kc-check-text" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"></div>
           </div>
@@ -1525,7 +1525,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <div class="ed-lbl">배경색</div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
         <input type="color" id="blk-bg-color" value="#ffffff" oninput="onBlkBgPick(this.value)" style="width:32px;height:32px;border:2px solid #000;padding:0;cursor:pointer;flex-shrink:0;">
-        <input class="fi-sm" id="blk-bg-hex" placeholder="#FFFFFF" style="width:84px;margin-bottom:0;" oninput="onBlkBgHex(this.value)">
+        <input class="fi-sm" id="blk-bg-hex" placeholder="" style="width:84px;margin-bottom:0;" oninput="onBlkBgHex(this.value)">
         <button onclick="clearBlkBg()" style="padding:4px 9px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">없음</button>
         <div id="blk-kc-bg" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"></div>
       </div>
@@ -1915,6 +1915,8 @@ let curUsers = [];
 let curAuthCollection = '';
 let selectedUserIds = new Set();
 let customColWidths = {}; // 프로젝트별 사용자 테이블 컬럼 너비 (px) — 필드키/스테이지키/_lastLogin/_loginCount 기준
+let curRespColWidths = {}; // {formId: {colKey: widthPx}} — 레거시 폼 응답 테이블 너비 (cms_projects/{id}.formRespColWidths)
+let tfRespColWidths = {}; // {colKey: widthPx} — 폼 도구 응답 테이블 너비 (cms_form_configs/{id}.columnWidths)
 let curEditingFieldIdx = null;
 let curEditingUserId = null;
 let pendingBgUploadIdx = null;
@@ -2417,18 +2419,18 @@ function _userColStyle(colKey, fallbackCss){
   if(w) return `width:${w}px;min-width:${w}px;max-width:${w}px;`;
   return fallbackCss;
 }
-function _resizeHandle(colKey){
-  return `<span class="col-resize" onmousedown="_startColResize(event,'${colKey}')" ondblclick="_resetColWidth(event,'${colKey}')" title="드래그: 너비 조정 · 더블클릭: 기본값 복원"></span>`;
+function _resizeHandle(colKey, ctx='user'){
+  return `<span class="col-resize" onmousedown="_startColResize(event,'${colKey}','${ctx}')" ondblclick="_resetColWidth(event,'${colKey}','${ctx}')" title="드래그: 너비 조정 · 더블클릭: 기본값 복원"></span>`;
 }
 let _colResizeState = null;
-function _startColResize(e, colKey){
+function _startColResize(e, colKey, tableCtx='user'){
   e.preventDefault(); e.stopPropagation();
   const th = e.target.closest('th'); if(!th) return;
   e.target.classList.add('active');
   _colResizeState = {
     colKey, startX:e.clientX, startW:th.offsetWidth,
     th, colIdx:Array.from(th.parentNode.children).indexOf(th),
-    table:th.closest('table'), handle:e.target,
+    table:th.closest('table'), handle:e.target, tableCtx,
   };
   document.addEventListener('mousemove', _doColResize);
   document.addEventListener('mouseup', _endColResize, { once:true });
@@ -2452,39 +2454,88 @@ async function _endColResize(){
   document.removeEventListener('mousemove', _doColResize);
   document.body.style.cursor = ''; document.body.style.userSelect = '';
   const st = _colResizeState; _colResizeState = null;
-  if(!st) return;
+  if(!st || !st.newW) return;
   if(st.handle) st.handle.classList.remove('active');
-  if(st.newW && curProjId){
-    customColWidths[st.colKey] = st.newW;
-    try {
+  try {
+    if(st.tableCtx === 'resp' && curProjId && curRespFormId){
+      if(!curRespColWidths[curRespFormId]) curRespColWidths[curRespFormId] = {};
+      curRespColWidths[curRespFormId][st.colKey] = st.newW;
+      await db.collection('cms_projects').doc(curProjId).update({
+        ['formRespColWidths.' + curRespFormId + '.' + st.colKey]: st.newW
+      });
+    } else if(st.tableCtx === 'tf' && tfCurDocId){
+      tfRespColWidths[st.colKey] = st.newW;
+      await db.collection('cms_form_configs').doc(tfCurDocId).update({
+        ['columnWidths.' + st.colKey]: st.newW
+      });
+    } else if(curProjId){
+      customColWidths[st.colKey] = st.newW;
       await db.collection('cms_projects').doc(curProjId).update({
         ['userColumnWidths.' + st.colKey]: st.newW
       });
-    } catch(err){ console.error('컬럼 너비 저장 실패:', err); }
-  }
+    }
+  } catch(err){ console.error('컬럼 너비 저장 실패:', err); }
 }
-async function _resetColWidth(e, colKey){
+async function _resetColWidth(e, colKey, tableCtx='user'){
   e.preventDefault(); e.stopPropagation();
-  delete customColWidths[colKey];
-  if(curProjId){
-    try {
+  try {
+    if(tableCtx === 'resp' && curProjId && curRespFormId){
+      if(curRespColWidths[curRespFormId]) delete curRespColWidths[curRespFormId][colKey];
       await db.collection('cms_projects').doc(curProjId).update({
+        ['formRespColWidths.' + curRespFormId + '.' + colKey]: firebase.firestore.FieldValue.delete()
+      });
+      renderRespTable();
+    } else if(tableCtx === 'tf' && tfCurDocId){
+      delete tfRespColWidths[colKey];
+      await db.collection('cms_form_configs').doc(tfCurDocId).update({
+        ['columnWidths.' + colKey]: firebase.firestore.FieldValue.delete()
+      });
+      renderTfRespTable();
+    } else {
+      delete customColWidths[colKey];
+      if(curProjId) await db.collection('cms_projects').doc(curProjId).update({
         ['userColumnWidths.' + colKey]: firebase.firestore.FieldValue.delete()
       });
-    } catch(err){ console.error(err); }
-  }
-  renderUserTable();
+      renderUserTable();
+    }
+  } catch(err){ console.error(err); }
 }
 async function resetAllColWidths(){
   if(!Object.keys(customColWidths).length) return;
   if(!confirm('모든 컬럼 너비를 기본값으로 되돌릴까요?')) return;
   customColWidths = {};
   if(curProjId){
-    try {
-      await db.collection('cms_projects').doc(curProjId).update({ userColumnWidths: {} });
-    } catch(err){ console.error(err); }
+    try { await db.collection('cms_projects').doc(curProjId).update({ userColumnWidths: {} }); } catch(err){ console.error(err); }
   }
   renderUserTable();
+}
+async function resetAllRespColWidths(){
+  const fWidths = (curRespColWidths[curRespFormId]||{});
+  if(!Object.keys(fWidths).length) return;
+  curRespColWidths[curRespFormId] = {};
+  if(curProjId && curRespFormId){
+    try { await db.collection('cms_projects').doc(curProjId).update({ ['formRespColWidths.' + curRespFormId]: {} }); } catch(err){ console.error(err); }
+  }
+  renderRespTable();
+}
+async function resetAllTfRespColWidths(){
+  if(!Object.keys(tfRespColWidths).length) return;
+  tfRespColWidths = {};
+  if(tfCurDocId){
+    try { await db.collection('cms_form_configs').doc(tfCurDocId).update({ columnWidths: {} }); } catch(err){ console.error(err); }
+  }
+  renderTfRespTable();
+}
+// 응답 테이블 컬럼 스타일 (커스텀 너비 우선, 없으면 fallbackCss)
+function _respColStyle(colKey, fallbackCss){
+  const w = (curRespColWidths[curRespFormId]||{})[colKey];
+  if(w) return `width:${w}px;min-width:${w}px;max-width:${w}px;`;
+  return fallbackCss;
+}
+function _tfColStyle(colKey, fallbackCss){
+  const w = tfRespColWidths[colKey];
+  if(w) return `width:${w}px;min-width:${w}px;max-width:${w}px;`;
+  return fallbackCss;
 }
 async function loadUsers() {
   if (!curProjId) { document.getElementById('user-table-wrap').innerHTML = '<div class="empty-msg">프로젝트를 먼저 저장하면 사용자를 관리할 수 있어요.</div>'; return; }
@@ -2738,7 +2789,12 @@ function renderStageList() {
         <button class="tgl-btn${s.trackProgress?' on':''}" onclick="curStages[${i}].trackProgress=!curStages[${i}].trackProgress;renderStageList();" style="font-size:11px;padding:5px 12px;">${s.trackProgress?'표시 ON':'표시 OFF'}</button>
         ${s.checkableCount?`<span style="font-size:10px;color:rgba(0,0,0,.4);">체크 항목 ${s.checkableCount}개</span>`:''}
         <div style="flex:1;"></div>
-        <button onclick="curStages[${i}].published=curStages[${i}].published===false?true:false;renderStageList();projDirty=true;" style="padding:4px 10px;border:1.5px solid ${s.published===false?'rgba(0,0,0,.25)':'#000'};background:${s.published===false?'transparent':'#000'};color:${s.published===false?'rgba(0,0,0,.4)':'#fff'};font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">${s.published===false?'🔒 비공개':'✓ 게시됨'}</button>
+        ${['published','disabled','hidden'].map(v=>{
+          const status=getStagePublishStatus(s);
+          const labels={'published':'✓ 게시','disabled':'⊘ 비활성화','hidden':'🔒 비공개'};
+          const on=status===v;
+          return `<button onclick="setStagePublish(${i},'${v}')" style="padding:3px 8px;border:1.5px solid #000;border-right:${v==='hidden'?'1.5px solid #000':'none'};background:${on?'#000':'transparent'};color:${on?'#fff':'#000'};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;${v==='published'?'border-radius:3px 0 0 3px;':v==='hidden'?'border-radius:0 3px 3px 0;':''}">${labels[v]}</button>`;
+        }).join('')}
       </div>
     </div>`);
   el.innerHTML = _stageInsertRow(0) + items.map((h,i)=>h+_stageInsertRow(i+1)).join('');
@@ -2746,6 +2802,8 @@ function renderStageList() {
 function addStage()   { curStages.push({id:uid(),title:'',displayType:'text',stageImageUrl:'',order:curStages.length}); renderStageList(); schedulePreviewUpdate(); projDirty=true; }
 function mvStage(i,d) { const j=i+d; if(j<0||j>=curStages.length) return; [curStages[i],curStages[j]]=[curStages[j],curStages[i]]; renderStageList(); schedulePreviewUpdate(); projDirty=true; }
 function rmStage(i)   { if(!confirm('이 스테이지를 삭제할까요?')) return; curStages.splice(i,1); renderStageList(); schedulePreviewUpdate(); projDirty=true; }
+function getStagePublishStatus(s){ return s.publishStatus || (s.published===false?'hidden':'published'); }
+function setStagePublish(i, status){ curStages[i].publishStatus=status; curStages[i].published=(status!=='hidden'); renderStageList(); schedulePreviewUpdate(); projDirty=true; }
 function openStageImageUpload(i, btn) {
   pendingStageUploadIdx = i;
   pendingUploadBtn = btn || null;
@@ -2824,12 +2882,12 @@ function showProjView(v) {
 function backToProjects() {
   if(projDirty && !confirm('저장하지 않은 변경사항이 있어요. 저장 없이 나가시겠어요?')) return;
   projDirty=false; _projDirtyLock=true;
-  history.replaceState(null,'','#list'); showProjView('list'); curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[]; curUsers=[]; curAuthCollection=''; customColWidths={};
+  history.replaceState(null,'','#list'); showProjView('list'); curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[]; curUsers=[]; curAuthCollection=''; customColWidths={}; curRespColWidths={};
 }
 function startNewProject() {
   if(projDirty && !confirm('저장하지 않은 변경사항이 있어요. 저장 없이 새 프로젝트를 만드시겠어요?')) return;
   projDirty=false; _projDirtyLock=true;
-  curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}]; customColWidths={};
+  curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}]; customColWidths={}; curRespColWidths={};
   curAuthKeyField='name'; curUsers=[]; curAuthCollection=''; curLogoTextSize='24'; curLogoTextAlign='center'; curLogoImgW=76;
   setSelfReg(false); document.getElementById('p-self-reg-cta').value='등록하기'; document.getElementById('p-self-reg-success').value='';
   curStats=[]; curElementOrder=['edition','logo','dday','stats'];
@@ -2860,6 +2918,7 @@ async function editProject(id) {
     curProjId = id;
     curStages = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
     customColWidths = d.userColumnWidths || {};
+    curRespColWidths = d.formRespColWidths || {};
     curBgImages = (d.bgImages||[]).map(b => typeof b==='string' ? {url:b,holdTime:10,transitionTime:2} : b);
     curBgOverlayOpacity = d.bgOverlayOpacity ?? 0.38;
     curBgOverlayColor = d.bgOverlayColor || '#000000';
@@ -3785,9 +3844,9 @@ async function disconnectRespSheet() {
 function _getRespCols(){
   const block=curRespFormBlock;
   const formFields=block?.formFields||[];
-  const authCols=curAuthEnabled?curAuthFields.map(f=>({label:f.label,type:f.type,val:r=>{ const v=r['_auth_'+f.key]; return String(v!==undefined?v:(f.key===curAuthKeyField?r._user||'':'')); }})):[];
-  const formCols=formFields.map(f=>({label:f.label,type:f.type,val:r=>{ const v=r[f.key]; return Array.isArray(v)?v.join(', '):String(v??''); }}));
-  const tsCol={label:'제출일시',type:'timestamp',val:r=>r.submittedAt?.seconds?new Date(r.submittedAt.seconds*1000).toLocaleString('ko'):''};
+  const authCols=curAuthEnabled?curAuthFields.map(f=>({key:'_auth_'+f.key,label:f.label,type:f.type,val:r=>{ const v=r['_auth_'+f.key]; return String(v!==undefined?v:(f.key===curAuthKeyField?r._user||'':'')); }})):[];
+  const formCols=formFields.map(f=>({key:f.key,label:f.label,type:f.type,val:r=>{ const v=r[f.key]; return Array.isArray(v)?v.join(', '):String(v??''); }}));
+  const tsCol={key:'_ts',label:'제출일시',type:'timestamp',val:r=>r.submittedAt?.seconds?new Date(r.submittedAt.seconds*1000).toLocaleString('ko'):''};
   return [tsCol,...authCols,...formCols];
 }
 function renderRespTable() {
@@ -3797,22 +3856,25 @@ function renderRespTable() {
   // 고정 컬럼: 제출일시(항상), 첫 번째 인증필드(있을 때) — 사용자 식별용
   const stickyCount = curAuthEnabled && curAuthFields.length ? 2 : 1;
   const TS_W = 170;
+  const hasCustom = Object.keys(curRespColWidths[curRespFormId]||{}).length > 0;
+  const resetLink = hasCustom ? `<span class="col-resize-reset" onclick="resetAllRespColWidths()">↺ 컬럼 너비 모두 기본값으로</span>` : '';
   el.innerHTML = `<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
     <thead><tr>${cols.map((c,idx)=>{
-      const w = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;` : _colWidthCss(c.type);
-      const sticky = idx<stickyCount ? `position:sticky;left:${idx===0?0:TS_W}px;z-index:3;` : 'position:sticky;top:0;z-index:2;';
-      const stickyTop = idx<stickyCount ? 'top:0;' : '';
-      return `<th style="white-space:nowrap;padding:6px 10px;background:#000;color:#fff;font-size:11px;text-align:left;font-weight:700;${sticky}${stickyTop}${w}">${c.label}</th>`;
+      const defaultW = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;` : _colWidthCss(c.type);
+      const w = _respColStyle(c.key, defaultW);
+      const sticky = idx<stickyCount ? `position:sticky;left:${idx===0?0:TS_W}px;z-index:3;top:0;` : 'position:sticky;top:0;z-index:2;';
+      return `<th style="white-space:nowrap;padding:6px 10px;background:#000;color:#fff;font-size:11px;text-align:left;font-weight:700;${sticky}${w}">${c.label}${_resizeHandle(c.key,'resp')}</th>`;
     }).join('')}</tr></thead>
     <tbody>${curRespData.map(r=>
       `<tr>${cols.map((c,idx)=>{
-        const w = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;white-space:nowrap;` : _colWidthCss(c.type);
+        const defaultW = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;white-space:nowrap;` : _colWidthCss(c.type);
+        const w = _respColStyle(c.key, defaultW);
         const sticky = idx<stickyCount ? `position:sticky;left:${idx===0?0:TS_W}px;z-index:1;background:#fff;${idx===1?'box-shadow:1px 0 0 rgba(0,0,0,.12);':''}` : '';
         return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.08);font-size:12px;word-break:keep-all;overflow-wrap:break-word;background:#fff;${w}${sticky}">${c.val(r)}</td>`;
       }).join('')}</tr>`
     ).join('')}</tbody>
   </table>
-  <div style="position:sticky;left:0;padding:10px;font-size:11px;color:rgba(0,0,0,.4);">${curRespData.length}개 응답 (최근 100개)</div>`;
+  <div style="position:sticky;left:0;padding:10px;font-size:11px;color:rgba(0,0,0,.4);display:flex;align-items:center;gap:12px;">${curRespData.length}개 응답 (최근 100개)${resetLink}</div>`;
 }
 function exportRespCsv() {
   if (!curRespData.length) { alert('응답이 없어요.'); return; }
@@ -5740,6 +5802,7 @@ async function loadTfInlineResponses(){
     const snap=await db.collection('cms_form_configs').doc(tfCurDocId).get();
     const d=snap.data()||{};
     tfRespFormConfig={sheetId:d.sheetId||'',sheetTab:d.sheetTab||'응답',sheetUrl:d.sheetUrl||''};
+    tfRespColWidths=d.columnWidths||{};
   }catch(e){}
   updateTfRespSheetStatus();
   const el=document.getElementById('tf-resp-scroll');
@@ -5785,33 +5848,39 @@ function renderTfRespTable(){
   // 고정 컬럼: 제출일시(항상), 사용자(있을 때) — 사용자 식별용
   const stickyCount = hasUserCol ? 2 : 1;
   const TS_W = 170;
+  const hasCustom = Object.keys(tfRespColWidths).length > 0;
+  const resetLink = hasCustom ? `<span class="col-resize-reset" onclick="resetAllTfRespColWidths()">↺ 컬럼 너비 모두 기본값으로</span>` : '';
   el.innerHTML=`<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
     <thead><tr>${cols.map((c,idx)=>{
-      const w = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;` : _colWidthCss(c.type==='_user'?'string':c.type);
+      const baseType=c.type==='_user'?'string':c.type;
+      const defaultW = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;` : _colWidthCss(baseType);
+      const w = _tfColStyle(c.key, defaultW);
       const sticky = idx<stickyCount ? `position:sticky;left:${idx===0?0:TS_W}px;z-index:3;top:0;` : 'position:sticky;top:0;z-index:2;';
-      return `<th style="white-space:nowrap;padding:6px 10px;background:#000;color:#fff;font-size:11px;text-align:left;font-weight:700;${sticky}${w}">${c.label}</th>`;
+      return `<th style="white-space:nowrap;padding:6px 10px;background:#000;color:#fff;font-size:11px;text-align:left;font-weight:700;${sticky}${w}">${c.label}${_resizeHandle(c.key,'tf')}</th>`;
     }).join('')}</tr></thead>
     <tbody>${tfRespData.map(r=>
       `<tr>${cols.map((c,idx)=>{
-        const w = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;white-space:nowrap;` : _colWidthCss(c.type==='_user'?'string':c.type);
+        const baseType=c.type==='_user'?'string':c.type;
+        const defaultW = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;white-space:nowrap;` : _colWidthCss(baseType);
+        const w = _tfColStyle(c.key, defaultW);
         const sticky = idx<stickyCount ? `position:sticky;left:${idx===0?0:TS_W}px;z-index:1;background:#fff;${idx===1?'box-shadow:1px 0 0 rgba(0,0,0,.12);':''}` : '';
         return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.08);font-size:12px;word-break:keep-all;overflow-wrap:break-word;background:#fff;${w}${sticky}">${c.val(r)}</td>`;
       }).join('')}</tr>`
     ).join('')}</tbody>
   </table>
-  <div style="position:sticky;left:0;padding:10px;font-size:11px;color:rgba(0,0,0,.4);">${tfRespData.length}개 응답 (최근 100개)</div>`;
+  <div style="position:sticky;left:0;padding:10px;font-size:11px;color:rgba(0,0,0,.4);display:flex;align-items:center;gap:12px;">${tfRespData.length}개 응답 (최근 100개)${resetLink}</div>`;
 }
 
 function _getTfRespCols(){
   const fields=tfRespFields||[];
-  const tsCol={label:'제출일시',type:'timestamp',val:r=>r.submittedAt?.seconds?new Date(r.submittedAt.seconds*1000).toLocaleString('ko'):''};
+  const tsCol={key:'_ts',label:'제출일시',type:'timestamp',val:r=>r.submittedAt?.seconds?new Date(r.submittedAt.seconds*1000).toLocaleString('ko'):''};
   // 인증 프로젝트에서 제출된 응답에는 _userFields가 있음 → 사용자 컬럼 자동 추가
   const hasUserInfo = tfRespData.some(r => r._userFields && Object.keys(r._userFields||{}).length);
-  const userCol = hasUserInfo ? [{label:'사용자',type:'_user',val:r=>{
+  const userCol = hasUserInfo ? [{key:'_user',label:'사용자',type:'_user',val:r=>{
     const uf=r._userFields||{};
     return Object.values(uf).filter(v=>v!=null&&v!=='').slice(0,2).join(' · ');
   }}] : [];
-  const formCols=fields.map(f=>({label:f.label,type:f.type,val:r=>{const v=r[f.key];return Array.isArray(v)?v.join(', '):String(v??'');}}));
+  const formCols=fields.map(f=>({key:f.key,label:f.label,type:f.type,val:r=>{const v=r[f.key];return Array.isArray(v)?v.join(', '):String(v??'');}}));
   return [tsCol,...userCol,...formCols];
 }
 

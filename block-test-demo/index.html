@@ -480,11 +480,14 @@ function applySettings(d){
   SELF_REG_SUCCESS_MSG = d.selfRegSuccessMsg || '';
   GREETING_TEXT   = d.greetingText   || '';
   console.log('[Greeting] GREETING_TEXT loaded:', GREETING_TEXT);
-  STAGES = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0)).filter(s=>isPreview||s.published!==false).map(s=>({
-    id:s.id||'',title:s.title||'',
-    trackProgress:!!s.trackProgress,checkableCount:s.checkableCount||0,
-    displayType:s.displayType||'text',stageImageUrl:s.stageImageUrl||''
-  }));
+  STAGES = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0))
+    .filter(s=>{ const st=s.publishStatus||(s.published===false?'hidden':'published'); return isPreview||st!=='hidden'; })
+    .map(s=>({
+      id:s.id||'',title:s.title||'',
+      trackProgress:!!s.trackProgress,checkableCount:s.checkableCount||0,
+      displayType:s.displayType||'text',stageImageUrl:s.stageImageUrl||'',
+      publishStatus:s.publishStatus||(s.published===false?'hidden':'published'),
+    }));
   STATS = (d.stats||[]).filter(s=>s.enabled);
   ELEMENT_ORDER = d.elementOrder || ['edition','logo','dday','stats'];
   if(d.keyColors && d.keyColors.length>=2){
@@ -695,20 +698,23 @@ function renderSeparateStages(){
   const el=document.getElementById('stage-list');
   if(!STAGES.length){ el.innerHTML='<div style="padding:40px 20px;text-align:center;color:rgba(0,0,0,.4);font-size:14px;">준비된 단계가 없어요.</div>'; return; }
   el.innerHTML=STAGES.map((s,i)=>{
+    const isDisabled=s.publishStatus==='disabled';
+    const disabledStyle=isDisabled?'opacity:0.4;filter:grayscale(1);pointer-events:none;':'';
+    const clickAttr=isDisabled?'':` onclick="goToStage(${i})"`;
     const pct=calcPct(s);
     const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
     const dotHtml=s.trackProgress?`<div class="status-dot">${statusTxt}</div>`:'';
     if(s.displayType==='image' && s.stageImageUrl){
       const imgDotHtml=s.trackProgress?`<div class="status-dot" style="background:var(--prep-bg);color:#000;flex-shrink:0;">${statusTxt}</div>`:'';
       const imgPbarHtml=s.trackProgress?buildPbarHtml(pct,{image:true}):'';
-      return `<div class="stage-card" onclick="goToStage(${i})" style="overflow:hidden;position:relative;">
+      return `<div class="stage-card"${clickAttr} style="overflow:hidden;position:relative;${disabledStyle}">
         <img src="${s.stageImageUrl}" style="width:100%;height:auto;display:block;">
         <div style="position:absolute;top:0;left:0;right:0;background:#000;display:flex;align-items:center;gap:14px;padding:18px 16px 14px;z-index:1;">${imgDotHtml}<div class="stage-title" style="color:var(--prep-bg);">${s.title}</div></div>
         ${imgPbarHtml}
       </div>`;
     }
     const pbarHtml=s.trackProgress?buildPbarHtml(pct):'';
-    return `<div class="stage-card" onclick="goToStage(${i})">
+    return `<div class="stage-card"${clickAttr} style="${disabledStyle}">
       <div class="stage-card-body">${dotHtml}<div class="stage-title">${s.title}</div></div>
       ${pbarHtml}
     </div>`;
@@ -720,12 +726,15 @@ function renderMergedStages(){
   const el=document.getElementById('merged-stage-list');
   if(!STAGES.length){ el.innerHTML='<div style="padding:40px 20px;text-align:center;color:rgba(255,255,255,.6);font-size:14px;">준비된 단계가 없어요.</div>'; return; }
   el.innerHTML=STAGES.map((s,i)=>{
+    const isDisabled=s.publishStatus==='disabled';
+    const disabledStyle=isDisabled?'opacity:0.4;filter:grayscale(1);pointer-events:none;':'';
+    const clickAttr=isDisabled?'':` onclick="goToStage(${i})"`;
     const pct=calcPct(s);
     const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
     if(s.displayType==='image' && s.stageImageUrl){
       const imgDotHtml=s.trackProgress?`<div class="status-dot merged" style="background:var(--prep-bg);color:#000;flex-shrink:0;">${statusTxt}</div>`:'';
       const imgPbarHtml=s.trackProgress?buildPbarHtml(pct,{merged:true,image:true}):'';
-      return `<div class="stage-card merged" onclick="goToStage(${i})" style="overflow:hidden;position:relative;border-color:rgba(255,255,255,.7);">
+      return `<div class="stage-card merged"${clickAttr} style="overflow:hidden;position:relative;border-color:rgba(255,255,255,.7);${disabledStyle}">
         <img src="${s.stageImageUrl}" style="width:100%;height:auto;display:block;">
         <div style="position:absolute;top:0;left:0;right:0;background:#000;display:flex;align-items:center;gap:14px;padding:18px 16px 14px;z-index:1;">${imgDotHtml}<div class="stage-title merged" style="color:var(--prep-bg);">${s.title}</div></div>
         ${imgPbarHtml}
@@ -733,7 +742,7 @@ function renderMergedStages(){
     }
     const dotHtml=s.trackProgress?`<div class="status-dot merged">${statusTxt}</div>`:'';
     const pbarHtml=s.trackProgress?buildPbarHtml(pct,{merged:true}):'';
-    return `<div class="stage-card merged" onclick="goToStage(${i})">
+    return `<div class="stage-card merged"${clickAttr} style="${disabledStyle}">
       <div class="stage-card-body">${dotHtml}<div class="stage-title merged">${s.title}</div></div>
       ${pbarHtml}
     </div>`;
