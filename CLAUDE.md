@@ -77,6 +77,28 @@ body {
 
 ---
 
+### 🖼️ 이미지 입력 필드 구현 규칙 (글로벌, 예외 없음)
+
+**admin 패널(`admin/index.html`)의 모든 이미지·아이콘 입력 필드는 반드시 아래 두 가지를 함께 구현한다. 별도 언급이 없어도 항상 적용한다.**
+
+```html
+<!-- 올바른 구현 예시 -->
+<div class="ed-lbl">필드 이름 <span style="font-weight:400;opacity:.55;">(투명 PNG 권장)</span></div>
+<input class="fi" id="필드-id" placeholder="https://... 이미지 URL">
+<button class="bg-up-btn" onclick="document.getElementById('필드-file-inp').click()" style="margin-top:4px;">📁 업로드</button>
+<div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:4px;">⚠️ 배경이 투명한 PNG만 — 키컬러가 자동 적용됩니다</div>
+<input type="file" id="필드-file-inp" accept="image/png" style="display:none;" onchange="uploadSingleImage(event,'필드-id','Firebase Storage 경로',true)">
+```
+
+- URL 텍스트 입력 (`<input class="fi">`)
+- 직접 업로드 버튼 (`📁 업로드`) + hidden `<input type="file">` → `uploadSingleImage()` 호출
+- `uploadSingleImage(event, fieldId, storagePath, checkTransparency)` 함수는 admin에 전역으로 구현되어 있음
+- 투명 PNG 아이콘이면 `checkTransparency: true` (키컬러 자동 적용 안내 문구 포함)
+- 일반 이미지(배경 이미지, 프로필 등)면 `checkTransparency: false` (안내 문구 생략 가능)
+- **이 규칙을 어기면 안 된다. 매 구현 시 자기 점검할 것.**
+
+---
+
 ### 🔁 세션 과부하 감지 및 전환 권유
 
 아래 상황 중 하나라도 해당되면 사용자에게 **세션 변경을 먼저 권유**한다:
@@ -573,6 +595,23 @@ closeHelpPanel();
     - `authEnabled` 프로젝트도 인증 모달 건너뛰고 바로 진입
   - 화면 상단에 "🛠 관리자 미리보기 모드 · 비활성·숨김 스테이지 진입 가능" 빨간 배너 고정 표시
   - p/index.html + block-test-demo + gmbf-poc 동기화 완료
+
+**완료 ✅ (이번 세션 추가)**
+- **✅ 사이드바 로그아웃**: 인증 프로젝트 사이드바 하단에 "로그아웃" 버튼 추가
+  - 클릭 시 `sessionStorage.userSession` 삭제 → 페이지 새로고침 → 인증 모달 재표시
+  - 관리자 프리뷰 모드(`IS_ADMIN_PREVIEW`)이거나 `AUTH_ENABLED=false`이면 버튼 숨김
+  - `#menu-footer` div + `logout()` 함수, p/index.html + block-test-demo + gmbf-poc 동기화
+- **✅ 등록 CTA 별도 표시**: admin 인증 탭 "사용자 직접 등록" 하위에 "홈화면에 등록 CTA 별도 표시" 토글 추가
+  - ON이면 홈화면 로그인 CTA 옆에 등록하기 CTA 버튼 별도 표시 (동일 규격: 아이콘+텍스트)
+  - 등록 CTA 전용 아이콘 URL 입력 + 직접 업로드 + 텍스트 설정 가능
+  - 클릭 시 등록 모달 직접 오픈 (인증 모달 건너뜀)
+  - Firestore 필드: `selfRegCtaSeparate`, `selfRegCtaIconUrl`, `selfRegCtaSepText`
+  - p/index.html + block-test-demo + gmbf-poc 동기화
+- **✅ 테이블 열 고정 범위 선택**: 사용자 테이블·폼 응답 테이블·도구 응답 테이블에 열 고정 칩 바 추가
+  - 테이블 상단에 칩 버튼 (없음 / 첫 번째 열 이름 / 두 번째 열 이름 / ...) 표시
+  - 선택 시 해당 열까지 `position:sticky` 고정, 마지막 고정 열 오른쪽에 box-shadow
+  - 설정 localStorage 저장: `fc_user_{projId}`, `fc_resp_{projId}_{formId}`, `fc_tf_{configId}`
+  - `_frozenChipBar()`, `_colWidthDefaultPx()`, `setUserFrozen()`, `setRespFrozen()`, `setTfFrozen()` 구현
 
 **진행 예정 🔲**
 - GAS 재배포 후 시트 생성 + 백필 end-to-end 테스트

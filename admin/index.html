@@ -545,8 +545,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   </div>
                   <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:10px;">ON이면 홈화면에 로그인 CTA 옆에 등록하기 CTA가 별도로 생겨요.</div>
                   <div id="self-reg-cta-sep-opts" style="display:none;">
-                    <div class="ed-lbl">등록 CTA 아이콘 URL <span style="font-weight:400;opacity:.55;">(선택 — 비워두면 아이콘 없이 텍스트만)</span></div>
+                    <div class="ed-lbl">등록 CTA 아이콘 <span style="font-weight:400;opacity:.55;">(선택 — 투명 PNG, 비워두면 텍스트만)</span></div>
                     <input class="fi" id="p-self-reg-cta-icon-url" placeholder="https://... 이미지 URL">
+                    <button class="bg-up-btn" onclick="document.getElementById('self-reg-cta-icon-file-inp').click()" style="margin-top:4px;">📁 업로드</button>
+                    <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:4px;">⚠️ 배경이 투명한 PNG만 — 키컬러가 자동 적용됩니다</div>
+                    <input type="file" id="self-reg-cta-icon-file-inp" accept="image/png" style="display:none;" onchange="uploadSingleImage(event,'p-self-reg-cta-icon-url','cms_projects/cta',true)">
                     <div class="ed-lbl" style="margin-top:10px;">등록 CTA 텍스트</div>
                     <input class="fi" id="p-self-reg-cta-sep-text" placeholder="예: 등록하기" value="등록하기">
                   </div>
