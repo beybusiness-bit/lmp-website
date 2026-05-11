@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>준비 포털</title>
+<title>GMBF.03 포크 안내 페이지</title>
+<meta property="og:title" content="GMBF.03 포크 안내 페이지">
+<meta property="og:description" content="3번째 GMBF를 함께하는 포크들을 위한 안내 페이지입니다.">
+<meta property="og:image" content="">
+<meta property="og:url" content="https://lazymaxpotential.kr/gmbf-poc/">
+<meta property="og:type" content="website">
+<meta name="description" content="3번째 GMBF를 함께하는 포크들을 위한 안내 페이지입니다.">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 html{height:100%;}
@@ -270,14 +276,14 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
   <div id="return-btn" onclick="reopenPrep()">↑</div>
   <div id="return-greeting"></div>
 
+  <div id="error-screen">
+    <div class="error-msg" id="error-msg">프로젝트를 찾을 수 없어요.</div>
+    <div class="error-sub" id="error-sub">URL을 확인해주세요.</div>
+  </div>
   <div id="coming-soon-screen" style="display:none;position:absolute;inset:0;z-index:200;background:#fff;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:40px;gap:16px;">
     <div style="font-size:40px;">🔒</div>
     <div style="font-size:20px;font-weight:800;letter-spacing:-.3px;">준비 중이에요</div>
     <div style="font-size:14px;color:rgba(0,0,0,.45);line-height:1.7;">곧 공개될 예정이에요.<br>조금만 기다려주세요.</div>
-  </div>
-  <div id="error-screen">
-    <div class="error-msg" id="error-msg">프로젝트를 찾을 수 없어요.</div>
-    <div class="error-sub" id="error-sub">URL을 확인해주세요.</div>
   </div>
 
   <!-- Prep screen (separate layout only) -->
@@ -465,9 +471,15 @@ async function loadProjectSettings(){
   }catch(e){ showError('연결에 실패했어요.','잠시 후 다시 시도해주세요.'); }
 }
 function applySettings(d){
-  const previewParam=new URLSearchParams(location.search).get('preview');
-  const isPreview=d.previewToken&&previewParam===d.previewToken;
-  if(d.published===false&&!isPreview){const el=document.getElementById('coming-soon-screen');if(el){el.style.display='flex';}return;}
+  // 게시 상태 확인 (published===false → 준비중, 미설정=true)
+  const previewParam = new URLSearchParams(location.search).get('preview');
+  const isPreview = d.previewToken && previewParam === d.previewToken;
+  if(d.published === false && !isPreview){
+    const el = document.getElementById('coming-soon-screen');
+    if(el){ el.style.display='flex'; }
+    return;
+  }
+
   LAYOUT_TYPE     = d.layoutType     || 'separate';
   DDAY_ENABLED    = d.ddayEnabled    || false;
   DDAY_DATE       = d.ddayDate       || '';
@@ -829,7 +841,11 @@ async function confirmAuth(){
       const u=snap.docs[0].data();
       USER_DOC_ID=snap.docs[0].id;
       sessionStorage.setItem('userSession',JSON.stringify({...u,project:PROJECT_ID,_docId:USER_DOC_ID}));
-      db.collection(AUTH_COLLECTION).doc(USER_DOC_ID).update({lastLoginAt:firebase.firestore.FieldValue.serverTimestamp(),loginCount:firebase.firestore.FieldValue.increment(1)}).catch(()=>{});
+      // 로그인 기록
+      db.collection(AUTH_COLLECTION).doc(USER_DOC_ID).update({
+        lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(),
+        loginCount: firebase.firestore.FieldValue.increment(1)
+      }).catch(()=>{});
       loadUserProgress(u);
       applyGreeting(u);
       closeModal('auth-modal');
@@ -866,7 +882,7 @@ function showReturnBtn(){
 }
 function hideReturnBtn(){
   document.getElementById('return-btn').style.display='none';
-  const g=document.getElementById('return-greeting'); if(g) g.style.display='none';
+  document.getElementById('return-greeting').style.display='none';
 }
 function applyGreeting(userRecord){
   console.log('[Greeting] applyGreeting called. GREETING_TEXT=', GREETING_TEXT, 'userRecord=', userRecord);
@@ -879,7 +895,6 @@ function applyGreeting(userRecord){
     else { console.log('[Greeting] element #'+id+' not found'); }
   });
 }
-
 
 /* ── Side menu (both layouts) ── */
 function renderMenu(){
@@ -923,6 +938,7 @@ async function openStageContent(stage){
     if(!doc.exists){ showGuideEmpty('안내 내용이 아직 준비되지 않았어요.'); return; }
     const g=doc.data();
     const blocks=(g.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
+    /* checkableCount 보정: Firestore 스테이지 데이터가 stale할 수 있으므로 실제 블록 기준으로 갱신 */
     const actualCnt=blocks.filter(b=>b.checkable||b.type==='form'||b.type==='tool').length;
     if(STAGES[curStageIdx]) STAGES[curStageIdx].checkableCount=actualCnt;
     if(g.displayType==='slide') renderGuideSlide(blocks);
@@ -935,11 +951,13 @@ function closeGuide(){
 window.addEventListener('popstate', function(e) {
   const guide = document.getElementById('guide-screen');
   if (e.state && e.state.stageId) {
+    /* 앞으로가기: 스테이지 화면 재진입 */
     if (guide && !guide.classList.contains('open')) {
       const stage = STAGES.find(s => s.id === e.state.stageId);
       if (stage) { _navRestore=true; openStageContent(stage).finally(()=>{ _navRestore=false; }); }
     }
   } else {
+    /* 뒤로가기: 스테이지 화면 닫기 */
     if (guide && guide.classList.contains('open')) guide.classList.remove('open');
   }
 });
@@ -998,7 +1016,14 @@ function blockHtml(b){
     return `<div class="g-block-embed" style="${mS}${bgS}${b.embedHeight===0?'min-height:60vh;':''}"><iframe src="${b.embedUrl}" width="100%" height="${_eh}" frameborder="0" allowfullscreen style="display:block;border:none;${_eStyle}"></iframe></div>`;
   }
   if(b.type==='tool'){
-    const toolUrls={form:`/tools/form/?id=${b.toolConfig?.formId||''}`,booth:`/tools/booth/?id=${b.toolConfig?.boothId||''}`,guide:`/tools/guide/?id=${b.toolConfig?.guideId||''}`,'youtube-playlist':'/tools/youtube-playlist/',schedule:`/tools/schedule/?id=${b.toolConfig?.scheduleId||''}`,'copy-gen':`/tools/copy-gen/?id=${b.toolConfig?.copyGenId||''}`};
+    const toolUrls={
+      form:`/tools/form/?id=${b.toolConfig?.formId||''}`,
+      booth:`/tools/booth/?id=${b.toolConfig?.boothId||''}`,
+      guide:`/tools/guide/?id=${b.toolConfig?.guideId||''}`,
+      'youtube-playlist':'/tools/youtube-playlist/',
+      schedule:`/tools/schedule/?id=${b.toolConfig?.scheduleId||''}`,
+      'copy-gen':`/tools/copy-gen/?id=${b.toolConfig?.copyGenId||''}`,
+    };
     const src=toolUrls[b.toolType]||'';
     const h=b.height;
     const isFull=h==='full';
@@ -1023,6 +1048,7 @@ function blockHtml(b){
   if(b.type==='form' && b.formId){
     formBlockData[b.formId]={formFields:b.formFields||[],formConfig:b.formConfig||{},blockId:b.id};
     const config=b.formConfig||{};
+    /* 중복제출 불허 + 인증사용자 + 이미 제출한 경우 → 완료 화면으로 고정 */
     const noResubmit=!config.allowDuplicates&&AUTH_ENABLED&&USER_DOC_ID&&(userProgress[curStageId]||new Set()).has(b.id);
     const doneHtml=`${config.postSubmitImage?`<img src="${config.postSubmitImage}" style="width:100%;display:block;margin-bottom:16px;" loading="lazy">`:''}<div>${config.postSubmitHtml||'제출되었어요!'}</div>`;
     const titleHtml=config.formTitle?`<div class="ff-form-title">${config.formTitle}</div>`:'';
@@ -1044,22 +1070,51 @@ function attachCheck(h,b){
   if(vPos==='top') return checkEl+h;
   return h+checkEl;
 }
-function _lmpContext(){return{type:'lmp-context',projectId:typeof PROJECT_ID!=='undefined'?PROJECT_ID:'',userId:typeof USER_DOC_ID!=='undefined'?USER_DOC_ID:'',boothType:(typeof user!=='undefined'&&user)?(user.boothType||user.type||''):'',keyColors:typeof KEY_COLORS!=='undefined'?KEY_COLORS:[],prepBg:typeof prepBg!=='undefined'?prepBg:'',userFields:(typeof user!=='undefined'&&user)?user:{}};}
-function _sendContextToEmbeds(){
-  setTimeout(()=>{document.querySelectorAll('iframe').forEach(f=>{try{f.contentWindow.postMessage(_lmpContext(),'*');}catch(e){}});},300);
+// ── 임베드 iframe에 사용자 컨텍스트 전달 ──
+function _lmpContext(){
+  return {
+    type:'lmp-context',
+    projectId: typeof PROJECT_ID!=='undefined' ? PROJECT_ID : '',
+    userId: typeof USER_DOC_ID!=='undefined' ? USER_DOC_ID : '',
+    boothType: (typeof user!=='undefined'&&user) ? (user.boothType||user.type||'') : '',
+    keyColors: typeof KEY_COLORS!=='undefined' ? KEY_COLORS : [],
+    prepBg: typeof prepBg!=='undefined' ? prepBg : '',
+    userFields: (typeof user!=='undefined'&&user) ? user : {}
+  };
 }
+function _sendContextToEmbeds(){
+  setTimeout(()=>{
+    document.querySelectorAll('iframe').forEach(f=>{
+      try{ f.contentWindow.postMessage(_lmpContext(),'*'); }catch(e){}
+    });
+  },300);
+}
+// lmp-ready 수신 시 즉시 전송
+// lmp-tool-complete 수신 시 autoCheckBlock 처리
 window.addEventListener('message',e=>{
-  if(e.data?.type==='lmp-ready'&&e.source){try{e.source.postMessage(_lmpContext(),'*');}catch(er){}return;}
+  if(e.data?.type==='lmp-ready'&&e.source){
+    try{ e.source.postMessage(_lmpContext(),'*'); }catch(er){}
+    return;
+  }
   if(e.data?.type==='lmp-tool-complete'){
-    document.querySelectorAll('iframe[data-tool-block]').forEach(f=>{try{if(f.contentWindow===e.source&&f.getAttribute('data-complete-trigger')!=='manual')autoCheckBlock(f.getAttribute('data-tool-block'));}catch(_){}});
+    document.querySelectorAll('iframe[data-tool-block]').forEach(f=>{
+      try{
+        if(f.contentWindow===e.source&&f.getAttribute('data-complete-trigger')!=='manual')
+          autoCheckBlock(f.getAttribute('data-tool-block'));
+      }catch(_){}
+    });
     return;
   }
 });
+// 텍스트 링크에서 /tools/ URL 클릭 시 모달로 열기
 document.addEventListener('click',e=>{
   const a=e.target.closest('a[href]');
   if(!a) return;
   const href=a.getAttribute('href');
-  if(href&&href.startsWith('/tools/')){e.preventDefault();openToolLinkModal(href);}
+  if(href&&href.startsWith('/tools/')){
+    e.preventDefault();
+    openToolLinkModal(href);
+  }
 });
 function openToolLinkModal(url){
   const modal=document.getElementById('tool-link-modal');
@@ -1088,6 +1143,7 @@ function renderGuideScroll(blocks){
     return (bgS||mS)?`<div style="${bgS}${mS}">${inner}</div>`:inner;
   }).join('');
   document.getElementById('guide-scroll-body').style.display='block';
+  _sendContextToEmbeds();
 }
 function renderGuideSlide(blocks){
   gSlideIdx=0; gSlideTotal=blocks.length;
@@ -1107,6 +1163,7 @@ function renderGuideSlide(blocks){
     return `<div class="guide-slide-item"${va?` data-valign="${va}"`:''}  style="width:${100/N}%;justify-content:${jc};${bgS}${mS}${scrollS}">${inner}</div>`;
   }).join('');
   track.style.width=(N*100)+'%';
+  track.style.transform='translateX(0)';
   updateDots(); document.getElementById('guide-slide-body').style.display='flex';
   _sendContextToEmbeds();
   const sb=document.getElementById('guide-slide-body');
@@ -1182,6 +1239,7 @@ function refreshStageProgress(){
   if(!card) return;
   const dot=card.querySelector('.status-dot');
   if(dot) dot.textContent=statusTxt;
+  /* pbar 요소 통째로 교체 (0%↔비0% 전환, 텍스트 안/밖 전환 모두 처리) */
   const existingPbar=card.querySelector('.stage-pbar');
   if(existingPbar) existingPbar.remove();
   const isMerged=LAYOUT_TYPE==='merged';
@@ -1312,6 +1370,7 @@ async function submitForm(formId){
     await db.collection('cms_form_responses').doc(formId).collection('responses').add(docData);
     document.getElementById('form-body-'+formId).style.display='none';
     document.getElementById('form-done-'+formId).style.display='';
+    /* 폼 제출 = 블록 체크로 자동 처리 */
     const _bid=formBlockData[formId]?.blockId;
     if(_bid&&!(userProgress[curStageId]||new Set()).has(_bid)) await toggleBlockCheck(_bid);
     if(formConfig.sheetId){
