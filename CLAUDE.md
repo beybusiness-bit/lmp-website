@@ -498,6 +498,30 @@ closeHelpPanel();
   - **핵심 버그 수정**: `switchInnerTab`의 `replaceState(null,...)` 호출이 history state를 덮어쓰는 문제 → `!_navRestore` 조건 추가로 해결
   - 저장 안 된 변경 있을 때 back 시 확인 프롬프트 유지
   - 이미지 설정 모바일 1열 반응형, 블랙 텍스트 컬러 버그, 블록 중복 생성 버그, 배경색 세로 높이 버그, GIF 애니메이션 지원, 오버레이 2열 레이아웃 등 이전 세션 수정사항 포함
+- **✅ 문구 생성기 도구** (`api/generate-copy.js` + `tools/copy-gen/index.html`) 기능 대폭 확장:
+  - AI 모델: Gemini → Anthropic Claude (claude-haiku-4-5-20251001), `ANTHROPIC_API_KEY` 환경변수
+  - 스타일 옵션 확장: 용도(purpose), 타겟독자(target), 어미(speech_level 6종) 추가
+  - 어미 자동 숨김: 슬로건 형식 선택 시 말투·격식·어미 자동 비활성화
+  - 참고문구 역할 토글: 스타일참고(분위기·톤만) / 유사하게작성(구조·표현 방식 참고)
+  - 다양성 지시: 프롬프트에 "구조·시작 방식·표현 접근법이 서로 달라야 함" 규칙 추가
+  - 중복선택 지원: 관리자가 항목별 "여러 개 선택 가능" + 최대 선택 수 설정
+  - 검정 버튼 텍스트 색상: lmp-context `prepBg`(홈배경색)으로 자동 적용 (`--cg-on-black` CSS 변수)
+  - 사용자당 최대 생성 횟수 제한: admin 설정 → Firestore `cms_copy_gen_usages/{configId}__{userId}` 추적 → 잔여 횟수 UI 표시
+  - 장문 생성 JSON 잘림 수정: max_tokens 동적 계산 (`count × max(maxChars,150) × 3`, 최대 8192)
+  - AI 배경정보 필드 (관리자 전용): 화자·역할 설명(`speakerDesc`) + 배경/컨텍스트(`aiContext`) → Claude 시스템 프롬프트에 포함
+- **✅ 폼 도구 텍스트 필드 글자 수 제한** (`admin/index.html` + `tools/form/index.html`):
+  - admin 폼 필드 편집 모달: string/textarea 타입에 최소/최대 글자 수 입력 추가
+  - 도구 폼: maxChars → maxlength 속성으로 초과 입력 원천 차단
+  - 도구 폼: 실시간 글자 수 카운터 표시 ("현재 / 최대자" 또는 "현재자 (최소 N자)")
+  - 도구 폼: 제출 시 minChars 미달이면 오류 메시지 + 제출 거부
+- **✅ lmp-context에 prepBg 추가** (p/ + block-test-demo + gmbf-poc 동기화):
+  - `--prep-bg`는 keyColors 중 랜덤 선택값이므로 keyColors[0]과 다를 수 있음
+  - `_lmpContext()`에 `prepBg` 필드 추가 → 도구에서 정확한 홈배경색 수신
+
+**미확인/이슈 🔶**
+- GAS `bulkAppend` 코드: `apps-script/Code.gs`에 추가됐으나 **GAS 편집기에서 재배포 필요**
+  → 방법: script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
+- 일정 잡기 도구(`tools/schedule/index.html`): GAS 재배포 후 캘린더 연동 end-to-end 테스트 필요
 
 **진행 예정 🔲**
 - GAS 재배포 후 시트 생성 + 백필 end-to-end 테스트
@@ -505,10 +529,9 @@ closeHelpPanel();
 - **유튜브 뮤직 재생목록 도구** (`tools/youtube-playlist/index.html`) 신규 구현
 
 **다음 세션 시작점**
-- 🔲 히스토리 네비게이션 최종 검증 (앞으로가기 엣지케이스 있을 수 있음)
-- 🔲 일정 잡기 도구 end-to-end 테스트 (GAS 재배포 후)
 - 🔲 유튜브 뮤직 재생목록 도구 구현 (YouTube Data API 키 필요 — 사용자가 발급 후 전달 예정)
-- PAT: 다음 세션 시작 시 사용자에게 요청 (또는 새로 발급)
+- 🔲 일정 잡기 도구 end-to-end 테스트 (GAS 재배포 후)
+- PAT: 만료 시 재발급 필요 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 
 #### 📐 유튜브 뮤직 재생목록 도구 설계
 
