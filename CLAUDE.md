@@ -563,18 +563,25 @@ closeHelpPanel();
   - player (p/block-test-demo/gmbf-poc) 모두 동기화
 - **✅ 로그인 트래킹**: 로그인 성공 시 `lastLoginAt` + `loginCount` Firestore 업데이트
   - admin 사용자 목록에 "최근 로그인" · "횟수" 컬럼 추가
+- **✅ 관리자 프리뷰 모드** (`?admin=TOKEN` URL 파라미터):
+  - Firestore `cms_admin_settings/github.adminPreviewToken` 저장 (admin 로그인 시 자동 생성, `adm_` prefix + 랜덤 10자)
+  - 관리자 패널 프로젝트 편집 화면 "게시 상태" 섹션에 빨간 테두리의 "🛠 관리자 미리보기 URL" 박스 추가 (복사 버튼)
+  - 플레이어에 토큰 파라미터로 접근하면:
+    - `published===false` 프로젝트도 "준비 중" 화면 건너뛰고 정상 표시
+    - `publishStatus==='hidden'` 스테이지 목록에 노출 (점선 빨간 테두리 + "숨김" 뱃지)
+    - `publishStatus==='disabled'` 스테이지 클릭 가능 (회색 처리 유지 + "비활성" 뱃지)
+    - `authEnabled` 프로젝트도 인증 모달 건너뛰고 바로 진입
+  - 화면 상단에 "🛠 관리자 미리보기 모드 · 비활성·숨김 스테이지 진입 가능" 빨간 배너 고정 표시
+  - p/index.html + block-test-demo + gmbf-poc 동기화 완료
 
 **진행 예정 🔲**
 - GAS 재배포 후 시트 생성 + 백필 end-to-end 테스트
 - 도구 블록 end-to-end 테스트 (폼 생성 → 블록 연결 → 플레이어 제출 → 진행률 반영)
+- 일정 잡기 도구 end-to-end 테스트 (GAS 재배포 후)
+- 관리자 프리뷰 모드 end-to-end 테스트 (admin에서 URL 복사 → 시크릿창 접속 → 비공개·비활성·숨김 스테이지 진입 확인)
 
 **다음 세션 시작점**
-- 🔲 **관리자 프리뷰 모드**: 플레이어에서 관리자 계정으로 접근 시 비활성화/비공개 스테이지도 진입 가능
-  - 구현 방안: URL 파라미터 `?admin=TOKEN` (Firestore `cms_admin_settings/github.adminPreviewToken` 저장)
-    또는 Google Auth 세션을 플레이어에서도 확인하는 방식
-  - 관리자 진입 시 비활성화 스테이지 → 정상 진입 가능 (비활성 표시는 유지하되 클릭 허용)
-  - 비공개 스테이지 → 목록에 노출 + 진입 가능 ("관리자 미리보기" 뱃지 표시)
-  - p/index.html + block-test-demo + gmbf-poc 동기화 필수
+- 🔲 관리자 프리뷰 모드 실제 테스트 + 기존 배포 프로젝트 재배포 (admin 패널에서 "저장 + 배포")
 - 🔲 일정 잡기 도구 end-to-end 테스트 (GAS 재배포 후)
 - PAT: 만료 시 재발급 필요 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 

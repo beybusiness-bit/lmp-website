@@ -349,6 +349,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <button class="b-btn" onclick="copyPreviewUrl()">복사</button>
               </div>
             </div>
+            <div id="admin-preview-url-wrap" style="background:rgba(249,85,72,.08);padding:10px;font-size:12px;margin-top:10px;border-left:3px solid #f95548;">
+              <div style="font-weight:700;margin-bottom:6px;color:#c43a2e;">🛠 관리자 미리보기 URL <span style="font-weight:400;opacity:.7;">(비공개 프로젝트·비활성·숨김 스테이지 모두 진입 가능)</span></div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input id="admin-preview-url-display" readonly style="flex:1;border:none;background:transparent;font-size:11px;color:rgba(0,0,0,.6);outline:none;font-family:monospace;" onclick="this.select()">
+                <button class="b-btn" onclick="copyAdminPreviewUrl()">복사</button>
+              </div>
+              <div style="font-size:10px;color:rgba(0,0,0,.5);margin-top:6px;line-height:1.5;">이 링크로 접속하면 비활성·비공개 스테이지에도 진입 가능해요. 외부 공유 시 주의하세요.</div>
+            </div>
           </div>
           <div class="sect-head">공유 미리보기 (SNS · 카카오)</div>
           <div class="ed-sect">
@@ -1821,7 +1829,7 @@ auth.onAuthStateChanged(user => {
     document.getElementById('login-view').style.display = 'none';
     document.getElementById('admin-user-email').textContent = user.email;
     document.getElementById('admin-view').classList.add('on');
-    loadProjects().then(() => restoreFromHash()); loadPATFromFirestore();
+    loadProjects().then(() => restoreFromHash()); loadPATFromFirestore(); loadAdminPreviewToken();
   } else {
     if (user) auth.signOut();
     document.getElementById('login-view').style.display = '';
@@ -1887,6 +1895,34 @@ async function loadPATFromFirestore() {
       updatePATBtn();
     }
   } catch(e) {}
+}
+
+/* ── Admin Preview Token ── */
+let _adminPreviewToken = '';
+async function loadAdminPreviewToken() {
+  try {
+    const ref = db.collection('cms_admin_settings').doc('github');
+    const doc = await ref.get();
+    let token = (doc.exists && doc.data().adminPreviewToken) || '';
+    if (!token) {
+      token = 'adm_' + Math.random().toString(36).slice(2, 12);
+      await ref.set({ adminPreviewToken: token }, { merge: true });
+    }
+    _adminPreviewToken = token;
+    updateAdminPreviewUrl();
+  } catch(e) { console.error('[AdminPreviewToken]', e); }
+}
+function updateAdminPreviewUrl() {
+  const id = document.getElementById('p-id')?.value.trim();
+  const urlEl = document.getElementById('admin-preview-url-display');
+  if (!urlEl) return;
+  if (!id || !_adminPreviewToken) { urlEl.value = ''; return; }
+  urlEl.value = `https://lazymaxpotential.kr/${id}/?admin=${_adminPreviewToken}`;
+}
+function copyAdminPreviewUrl() {
+  const urlEl = document.getElementById('admin-preview-url-display');
+  if (!urlEl?.value) { alert('프로젝트를 먼저 저장해 주세요.'); return; }
+  navigator.clipboard.writeText(urlEl.value).then(()=>alert('관리자 미리보기 URL이 복사됐어요!'));
 }
 
 /* ══════════════════════════════════════
@@ -2965,6 +3001,7 @@ async function editProject(id) {
     const isPublished = d.published !== false;
     if(pubSw){ isPublished ? pubSw.classList.add('on') : pubSw.classList.remove('on'); }
     updatePublishedUI(isPublished, d.previewToken||'', id);
+    updateAdminPreviewUrl();
 
     document.getElementById('proj-del').style.display = 'block';
     updateUrlPreview();
