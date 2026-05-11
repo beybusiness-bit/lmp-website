@@ -91,12 +91,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .user-table-wrap{overflow-x:auto;border:1.5px solid #000;margin-bottom:10px;}
 .user-table{width:100%;border-collapse:collapse;font-size:12px;min-width:280px;}
 .user-table th{background:#000;color:#fff;padding:6px 8px;text-align:left;font-size:11px;font-weight:700;white-space:nowrap;}
-.user-table td{padding:6px 8px;border-bottom:1px solid rgba(0,0,0,.08);vertical-align:middle;}
+.user-table td{padding:6px 8px;border-bottom:1px solid rgba(0,0,0,.08);vertical-align:middle;word-break:keep-all;overflow-wrap:break-word;}
 .user-table tr:last-child td{border-bottom:none;}
 .u-btn{padding:3px 7px;background:transparent;border:1px solid #000;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;}
 .u-btn:active{background:#000;color:#fff;}
 .u-row-selected td{background:#f5f5f5;}
-.prog-cell{min-width:80px;}
+.prog-cell{min-width:110px;}
 .prog-bar{height:5px;background:rgba(0,0,0,.08);position:relative;margin-top:3px;}
 .prog-bar-fill{height:100%;background:#000;transition:width .3s;}
 .prog-bar-fill.done{background:#0BC6FF;}
@@ -2386,6 +2386,18 @@ function updateAuthColDisplay() {
   const el = document.getElementById('p-auth-col-display');
   if (el) el.textContent = 'cms_users_' + id;
 }
+// 필드 타입별 컬럼 너비 (min-width: 짧은 값일 때 줄바꿈 안 되게, max-width: 긴 값일 때 줄바꿈 시키게)
+function _colWidthCss(type){
+  const m={
+    string:'min-width:140px;max-width:240px;',
+    text:'min-width:140px;max-width:240px;',
+    textarea:'min-width:200px;max-width:340px;',
+    number:'min-width:90px;max-width:140px;',
+    select:'min-width:120px;max-width:220px;',
+    file:'min-width:110px;max-width:220px;',
+  };
+  return m[type]||'min-width:130px;max-width:240px;';
+}
 async function loadUsers() {
   if (!curProjId) { document.getElementById('user-table-wrap').innerHTML = '<div class="empty-msg">프로젝트를 먼저 저장하면 사용자를 관리할 수 있어요.</div>'; return; }
   const col = getAuthCol();
@@ -2435,12 +2447,12 @@ function renderUserTable() {
   const chkTh = `<th style="width:32px;"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleSelectAll(this.checked)" style="cursor:pointer;"></th>`;
   const progTh = progStages.map(s => {
     const ttl = (s.title||'').replace(/</g,'&lt;');
-    return `<th style="white-space:nowrap;" title="${ttl} (체크 ${s.checkableCount}개)">${ttl}</th>`;
+    return `<th style="min-width:130px;max-width:220px;white-space:normal;word-break:keep-all;" title="${ttl} (체크 ${s.checkableCount}개)">${ttl}</th>`;
   }).join('');
-  const headers = chkTh + curAuthFields.map(f=>`<th>${f.label}</th>`).join('') + progTh + '<th style="white-space:nowrap;">최근 로그인</th><th style="white-space:nowrap;">횟수</th><th></th>';
+  const headers = chkTh + curAuthFields.map(f=>`<th style="${_colWidthCss(f.type)}">${f.label}</th>`).join('') + progTh + '<th style="white-space:nowrap;min-width:120px;">최근 로그인</th><th style="white-space:nowrap;min-width:60px;">횟수</th><th></th>';
   const rows = curUsers.map(u => {
     const checked = selectedUserIds.has(u._id);
-    const cells = curAuthFields.map(f=>`<td>${u[f.key]??''}</td>`).join('');
+    const cells = curAuthFields.map(f=>`<td style="${_colWidthCss(f.type)}">${u[f.key]??''}</td>`).join('');
     const progCells = progStages.map(s => {
       const total = s.checkableCount;
       const arr = u.stageProgress?.[s.id] || [];
@@ -3664,18 +3676,24 @@ async function disconnectRespSheet() {
 function _getRespCols(){
   const block=curRespFormBlock;
   const formFields=block?.formFields||[];
-  const authCols=curAuthEnabled?curAuthFields.map(f=>({label:f.label,val:r=>{ const v=r['_auth_'+f.key]; return String(v!==undefined?v:(f.key===curAuthKeyField?r._user||'':'')); }})):[];
-  const formCols=formFields.map(f=>({label:f.label,val:r=>{ const v=r[f.key]; return Array.isArray(v)?v.join(', '):String(v??''); }}));
-  const tsCol={label:'제출일시',val:r=>r.submittedAt?.seconds?new Date(r.submittedAt.seconds*1000).toLocaleString('ko'):''};
+  const authCols=curAuthEnabled?curAuthFields.map(f=>({label:f.label,type:f.type,val:r=>{ const v=r['_auth_'+f.key]; return String(v!==undefined?v:(f.key===curAuthKeyField?r._user||'':'')); }})):[];
+  const formCols=formFields.map(f=>({label:f.label,type:f.type,val:r=>{ const v=r[f.key]; return Array.isArray(v)?v.join(', '):String(v??''); }}));
+  const tsCol={label:'제출일시',type:'timestamp',val:r=>r.submittedAt?.seconds?new Date(r.submittedAt.seconds*1000).toLocaleString('ko'):''};
   return [tsCol,...authCols,...formCols];
 }
 function renderRespTable() {
   const el = document.getElementById('form-resp-scroll');
   if (!curRespData.length) { el.innerHTML = '<div class="empty-msg">응답이 없어요.</div>'; return; }
   const cols=_getRespCols();
-  const ths = cols.map(c=>`<th style="white-space:nowrap;padding:6px 10px;border-bottom:2px solid #000;font-size:11px;text-align:left;">${c.label}</th>`).join('');
+  const ths = cols.map(c=>{
+    const w = c.type==='timestamp' ? 'min-width:140px;max-width:180px;' : _colWidthCss(c.type);
+    return `<th style="white-space:nowrap;padding:6px 10px;border-bottom:2px solid #000;font-size:11px;text-align:left;${w}">${c.label}</th>`;
+  }).join('');
   const rows = curRespData.map(r=>
-    `<tr>${cols.map(c=>`<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.1);font-size:12px;white-space:nowrap;">${c.val(r)}</td>`).join('')}</tr>`
+    `<tr>${cols.map(c=>{
+      const w = c.type==='timestamp' ? 'min-width:140px;max-width:180px;white-space:nowrap;' : _colWidthCss(c.type);
+      return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.1);font-size:12px;word-break:keep-all;overflow-wrap:break-word;${w}">${c.val(r)}</td>`;
+    }).join('')}</tr>`
   ).join('');
   el.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table></div><div style="margin-top:10px;font-size:11px;color:rgba(0,0,0,.4);">${curRespData.length}개 응답 (최근 100개)</div>`;
 }
@@ -5646,15 +5664,21 @@ function renderTfRespTable(){
   const el=document.getElementById('tf-resp-scroll');
   if(!tfRespData.length){el.innerHTML='<div class="empty-msg">응답이 없어요.</div>';return;}
   const cols=_getTfRespCols();
-  const ths=cols.map(c=>`<th style="white-space:nowrap;padding:6px 10px;border-bottom:2px solid #000;font-size:11px;text-align:left;">${c.label}</th>`).join('');
-  const rows=tfRespData.map(r=>`<tr>${cols.map(c=>`<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.1);font-size:12px;white-space:nowrap;">${c.val(r)}</td>`).join('')}</tr>`).join('');
+  const ths=cols.map(c=>{
+    const w = c.type==='timestamp' ? 'min-width:140px;max-width:180px;' : _colWidthCss(c.type);
+    return `<th style="white-space:nowrap;padding:6px 10px;border-bottom:2px solid #000;font-size:11px;text-align:left;${w}">${c.label}</th>`;
+  }).join('');
+  const rows=tfRespData.map(r=>`<tr>${cols.map(c=>{
+    const w = c.type==='timestamp' ? 'min-width:140px;max-width:180px;white-space:nowrap;' : _colWidthCss(c.type);
+    return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.1);font-size:12px;word-break:keep-all;overflow-wrap:break-word;${w}">${c.val(r)}</td>`;
+  }).join('')}</tr>`).join('');
   el.innerHTML=`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table></div><div style="margin-top:10px;font-size:11px;color:rgba(0,0,0,.4);">${tfRespData.length}개 응답 (최근 100개)</div>`;
 }
 
 function _getTfRespCols(){
   const fields=tfRespFields||[];
-  const tsCol={label:'제출일시',val:r=>r.submittedAt?.seconds?new Date(r.submittedAt.seconds*1000).toLocaleString('ko'):''};
-  const formCols=fields.map(f=>({label:f.label,val:r=>{const v=r[f.key];return Array.isArray(v)?v.join(', '):String(v??'');}}));
+  const tsCol={label:'제출일시',type:'timestamp',val:r=>r.submittedAt?.seconds?new Date(r.submittedAt.seconds*1000).toLocaleString('ko'):''};
+  const formCols=fields.map(f=>({label:f.label,type:f.type,val:r=>{const v=r[f.key];return Array.isArray(v)?v.join(', '):String(v??'');}}));
   return [tsCol,...formCols];
 }
 
