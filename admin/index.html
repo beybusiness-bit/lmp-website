@@ -333,8 +333,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <input class="fi" id="p-og-title" placeholder="예: GMBF 3회 셀러 포털" style="margin-bottom:10px;">
             <div class="ed-lbl">설명</div>
             <textarea class="fi" id="p-og-desc" placeholder="예: 플리마켓 준비에 필요한 모든 정보를 한 곳에서 확인하세요." style="resize:vertical;min-height:60px;margin-bottom:10px;"></textarea>
-            <div class="ed-lbl">대표 이미지 URL</div>
-            <input class="fi" id="p-og-image" placeholder="https://...이미지 주소...">
+            <div class="ed-lbl">대표 이미지</div>
+            <input class="fi" id="p-og-image" placeholder="https://...이미지 주소..." style="margin-bottom:6px;">
+            <button class="bg-up-btn" onclick="document.getElementById('og-image-file-inp').click()">📁 업로드</button>
+            <input type="file" id="og-image-file-inp" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'p-og-image','cms_projects/og',false)">
+            <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:6px;line-height:1.5;">권장: 가로형 1200×630px · JPG/PNG. 카카오톡·SNS 미리보기 카드에 표시돼요.</div>
           </div>
           <div class="sect-head">D-Day</div>
           <div class="ed-sect">
