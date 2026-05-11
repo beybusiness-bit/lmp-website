@@ -939,7 +939,7 @@ function showGuideEmpty(msg){ document.getElementById('guide-scroll-blocks').inn
 function applyVars(html){
   try{
     const u=JSON.parse(sessionStorage.getItem('userSession')||'{}');
-    let h=html.replace(/\{\{(\w+)\}\}/g,(_,k)=>u[k]??`{{${k}}}`);
+    let h=html.replace(/\{\{(\w+)\}\}/g,(_,k)=>u[k]??'');
     h=h.replace(/<a([^>]*?)>/gi,(m,attrs)=>/target=/i.test(attrs)?m:`<a${attrs} target="_blank" rel="noopener">`);
     return h;
   }catch(e){return html;}
