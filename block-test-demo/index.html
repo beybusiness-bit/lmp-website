@@ -86,10 +86,13 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 #side-menu.open{transform:translateX(-50%);}
 .menu-header{flex-shrink:0;display:flex;justify-content:flex-end;padding:16px 20px;border-bottom:1px solid rgba(0,0,0,.12);}
 .menu-close{font-size:24px;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:4px 4px 4px 16px;line-height:1;}
-#menu-list{flex:1;overflow-y:auto;padding:8px 28px 40px;}
+#menu-list{flex:1;overflow-y:auto;padding:8px 28px 24px;}
 .menu-item{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid rgba(0,0,0,.18);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s;}
 .menu-item:last-child{border-bottom:none;}
 .menu-item:active{opacity:.6;}
+#menu-footer{flex-shrink:0;display:none;padding:14px 28px 28px;border-top:1px solid rgba(0,0,0,.18);}
+#menu-logout{display:inline-block;font-size:13px;font-weight:600;color:rgba(0,0,0,.55);cursor:pointer;-webkit-tap-highlight-color:transparent;padding:6px 0;letter-spacing:-.2px;}
+#menu-logout:active{opacity:.55;}
 .menu-dot{width:36px;height:36px;border-radius:50%;background:#000;color:var(--menu-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;text-align:center;line-height:1.3;}
 /* user greeting */
 #menu-greeting{display:none;padding:14px 20px 12px;border-bottom:1px solid rgba(0,0,0,.12);font-size:13px;font-weight:700;line-height:1.65;letter-spacing:-.2px;color:var(--menu-bg);background:#000;word-break:keep-all;}
@@ -231,6 +234,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
     <div class="menu-header"><div class="menu-close" onclick="closeMenu()">✕</div></div>
     <div id="menu-greeting"></div>
     <div id="menu-list"></div>
+    <div id="menu-footer"><span id="menu-logout" onclick="logout()">로그아웃</span></div>
   </div>
 
   <!-- SEPARATE layout main -->
@@ -942,6 +946,13 @@ function renderMenu(){
     const click=canClick?` onclick="goToStage(${i});closeMenu();"`:'';
     return `<div class="menu-item"${click} style="${dimStyle}">${dotHtml}<div class="menu-title">${s.title}${adminTag}</div></div>`;
   }).join('');
+  const footer=document.getElementById('menu-footer');
+  if(footer) footer.style.display=(AUTH_ENABLED&&!IS_ADMIN_PREVIEW)?'block':'none';
+}
+function logout(){
+  if(!confirm('로그아웃 하시겠어요?')) return;
+  try{ sessionStorage.removeItem('userSession'); }catch(_){}
+  location.reload();
 }
 function toggleMenu(){
   const m=document.getElementById('side-menu');
