@@ -122,7 +122,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .fmt-btn.on{background:#000;color:#fff;border-color:#000;}
 #fmt-popup{display:none;position:fixed;background:#fff;border:2px solid #000;z-index:600;box-shadow:3px 3px 0 rgba(0,0,0,.1);min-width:110px;}
 .fmt-pop-opt{display:block;width:100%;padding:8px 12px;background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,.08);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;white-space:nowrap;}
-.hr-style-btn.on{background:#000!important;color:#fff!important;border-color:#000!important;}
+.hr-style-btn.on{background:#f0f0f0!important;border-color:#000!important;border-width:2px!important;}
 .img-fit-btn{padding:4px 8px;border:1.5px solid rgba(0,0,0,.25);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#000;}
 .img-fit-btn.on{border-color:#000;background:#000;color:#fff;}
 .img-2col{display:grid;grid-template-columns:1fr 110px;gap:10px;align-items:start;}
@@ -1727,6 +1727,7 @@ function doSignOut() { auth.signOut(); }
 function switchTab(t) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('on', b.id === 'tabbtn-'+t));
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === 'panel-'+t));
+  if (t === 'tools') closeTool();
 }
 function switchInnerTab(t) {
   document.querySelectorAll('.inner-tab').forEach((el,i) => {
@@ -4089,9 +4090,9 @@ function openFmtDd(btn,type,ctx){
       <div style="margin-bottom:8px;">
         <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">종류</div>
         <div style="display:flex;gap:4px;">
-          <button class="fmt-pop-opt" onpointerdown="epd(event)" onclick="_hrStyle='solid';document.querySelectorAll('.hr-style-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');" style="flex:1;text-align:center;padding:5px 4px;border:1.5px solid rgba(0,0,0,.25);background:transparent;font-size:12px;cursor:pointer;font-family:inherit;border-bottom:2px solid #000;" class="hr-style-btn on">——</button>
-          <button class="fmt-pop-opt" onpointerdown="epd(event)" onclick="_hrStyle='dashed';document.querySelectorAll('.hr-style-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');" style="flex:1;text-align:center;padding:5px 4px;border:1.5px solid rgba(0,0,0,.25);background:transparent;font-size:12px;cursor:pointer;font-family:inherit;border-bottom:2px dashed #000;" class="hr-style-btn">- - -</button>
-          <button class="fmt-pop-opt" onpointerdown="epd(event)" onclick="_hrStyle='dotted';document.querySelectorAll('.hr-style-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');" style="flex:1;text-align:center;padding:5px 4px;border:1.5px solid rgba(0,0,0,.25);background:transparent;font-size:12px;cursor:pointer;font-family:inherit;border-bottom:2px dotted #000;" class="hr-style-btn">· · ·</button>
+          <button class="fmt-pop-opt hr-style-btn${_hrStyle==='solid'?' on':''}" onpointerdown="epd(event)" onclick="_hrStyle='solid';document.querySelectorAll('.hr-style-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');" style="flex:1;text-align:center;padding:5px 4px;border:1.5px solid rgba(0,0,0,.25);font-size:12px;cursor:pointer;font-family:inherit;border-bottom:2px solid #000;">——</button>
+          <button class="fmt-pop-opt hr-style-btn${_hrStyle==='dashed'?' on':''}" onpointerdown="epd(event)" onclick="_hrStyle='dashed';document.querySelectorAll('.hr-style-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');" style="flex:1;text-align:center;padding:5px 4px;border:1.5px solid rgba(0,0,0,.25);font-size:12px;cursor:pointer;font-family:inherit;border-bottom:2px dashed #000;">- - -</button>
+          <button class="fmt-pop-opt hr-style-btn${_hrStyle==='dotted'?' on':''}" onpointerdown="epd(event)" onclick="_hrStyle='dotted';document.querySelectorAll('.hr-style-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');" style="flex:1;text-align:center;padding:5px 4px;border:1.5px solid rgba(0,0,0,.25);font-size:12px;cursor:pointer;font-family:inherit;border-bottom:2px dotted #000;">· · ·</button>
         </div>
       </div>
       <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:10px;">
@@ -4104,7 +4105,7 @@ function openFmtDd(btn,type,ctx){
         </div>
         <div>
           <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">굵기</div>
-          <input id="hr-thickness" class="fi-sm" type="number" min="1" max="10" value="1" onpointerdown="epd(event)" style="margin-bottom:0;width:50px;text-align:center;">
+          <input id="hr-thickness" class="fi-sm" type="number" min="1" max="20" value="${_hrThickness||1}" style="margin-bottom:0;width:50px;text-align:center;" oninput="_hrThickness=parseInt(this.value)||1">
         </div>
       </div>
       <button onpointerdown="epd(event)" onclick="insertHr('${ctx}')" style="width:100%;padding:7px 0;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">삽입</button>
@@ -4147,9 +4148,9 @@ function syncFmtBar(ctx){
 }
 
 /* ── 텍스트 내 구분선 삽입 ── */
-let _hrStyle='solid',_hrColor='#000000';
+let _hrStyle='solid',_hrColor='#000000',_hrThickness=1;
 function insertHr(ctx){
-  const thickness=parseInt(document.getElementById('hr-thickness')?.value)||1;
+  const thickness=_hrThickness||parseInt(document.getElementById('hr-thickness')?.value)||1;
   const color=_hrColor||'#000000';
   const style=_hrStyle||'solid';
   focusEd(ctx);
