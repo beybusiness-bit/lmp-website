@@ -254,9 +254,15 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
       <div class="dday-num" id="dday-num"></div>
       <div class="visitor-line" id="visitor-line"></div>
     </div>
-    <div class="bottom-group basket-btn" onclick="onCtaClick()">
-      <div class="basket-mask" id="cta-icon"></div>
-      <div class="basket-text" id="cta-text">준비하기</div>
+    <div id="cta-area" style="display:flex;align-items:flex-end;justify-content:center;gap:40px;">
+      <div class="bottom-group basket-btn" onclick="onCtaClick()">
+        <div class="basket-mask" id="cta-icon"></div>
+        <div class="basket-text" id="cta-text">준비하기</div>
+      </div>
+      <div class="bottom-group basket-btn" id="reg-cta-btn" onclick="openRegModal()" style="display:none;">
+        <div class="basket-mask" id="reg-cta-icon"></div>
+        <div class="basket-text" id="reg-cta-text">등록하기</div>
+      </div>
     </div>
   </div>
 
@@ -400,6 +406,9 @@ let AUTH_KEY_FIELD = '';
 let SELF_REG_ENABLED = false;
 let SELF_REG_CTA   = '등록하기';
 let SELF_REG_SUCCESS_MSG = '';
+let SELF_REG_CTA_SEPARATE = false;
+let SELF_REG_CTA_ICON_URL = '';
+let SELF_REG_CTA_SEP_TEXT = '등록하기';
 let GREETING_TEXT  = '';
 let STAGES         = [];
 let _navRestore    = false;
@@ -516,6 +525,9 @@ function applySettings(d){
   SELF_REG_ENABLED = d.selfRegEnabled || false;
   SELF_REG_CTA    = d.selfRegCta     || '등록하기';
   SELF_REG_SUCCESS_MSG = d.selfRegSuccessMsg || '';
+  SELF_REG_CTA_SEPARATE = d.selfRegCtaSeparate || false;
+  SELF_REG_CTA_ICON_URL = d.selfRegCtaIconUrl || '';
+  SELF_REG_CTA_SEP_TEXT = d.selfRegCtaSepText || '등록하기';
   GREETING_TEXT   = d.greetingText   || '';
   console.log('[Greeting] GREETING_TEXT loaded:', GREETING_TEXT);
   STAGES = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0))
@@ -562,6 +574,20 @@ function applySettings(d){
   }
   if(d.ctaIconSize) setCss('--cta-icon-size',(d.ctaIconSize)+'px');
   if(d.ctaText) document.getElementById('cta-text').textContent=d.ctaText;
+
+  /* 등록 CTA 별도 표시 */
+  const regCtaBtn=document.getElementById('reg-cta-btn');
+  if(regCtaBtn){
+    const showReg=AUTH_ENABLED&&SELF_REG_ENABLED&&SELF_REG_CTA_SEPARATE;
+    regCtaBtn.style.display=showReg?'flex':'none';
+    if(showReg){
+      const regIcon=document.getElementById('reg-cta-icon');
+      if(SELF_REG_CTA_ICON_URL&&regIcon){ setMaskUrl('#reg-cta-icon',SELF_REG_CTA_ICON_URL); regIcon.style.display=''; }
+      else if(regIcon){ regIcon.style.display='none'; }
+      const regTxt=document.getElementById('reg-cta-text');
+      if(regTxt) regTxt.textContent=SELF_REG_CTA_SEP_TEXT;
+    }
+  }
 
   /* auth modal text */
   if(d.authTitle) document.getElementById('auth-title').textContent=d.authTitle;

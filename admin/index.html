@@ -538,6 +538,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <input class="fi" id="p-self-reg-success" placeholder="예: {{이름}}님, 등록이 완료되었어요!">
                 <div id="p-self-reg-success-vars" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;"></div>
                 <div style="font-size:11px;color:rgba(0,0,0,.38);margin-top:5px;">버튼 클릭 시 커서 위치에 변수 삽입</div>
+                <div style="border-top:1px solid rgba(0,0,0,.12);margin-top:14px;padding-top:14px;">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                    <div class="ed-lbl" style="margin-bottom:0;">홈화면에 등록 CTA 별도 표시</div>
+                    <button class="tgl-btn" id="self-reg-cta-sep-sw" style="flex:unset;padding:6px 16px;" onclick="toggleSelfRegCtaSep()">OFF</button>
+                  </div>
+                  <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:10px;">ON이면 홈화면에 로그인 CTA 옆에 등록하기 CTA가 별도로 생겨요.</div>
+                  <div id="self-reg-cta-sep-opts" style="display:none;">
+                    <div class="ed-lbl">등록 CTA 아이콘 URL <span style="font-weight:400;opacity:.55;">(선택 — 비워두면 아이콘 없이 텍스트만)</span></div>
+                    <input class="fi" id="p-self-reg-cta-icon-url" placeholder="https://... 이미지 URL">
+                    <div class="ed-lbl" style="margin-top:10px;">등록 CTA 텍스트</div>
+                    <input class="fi" id="p-self-reg-cta-sep-text" placeholder="예: 등록하기" value="등록하기">
+                  </div>
+                </div>
               </div>
             </div>
             <div class="sect-head">로그인 후 인사 문구</div>
@@ -2178,6 +2191,15 @@ function setSelfReg(v) {
   document.getElementById('self-reg-sw').classList.toggle('on', v);
   document.getElementById('self-reg-sw').textContent = v ? 'ON' : 'OFF';
   document.getElementById('self-reg-opts').style.display = v ? '' : 'none';
+  if(!v) setSelfRegCtaSep(false);
+}
+let curSelfRegCtaSepEnabled = false;
+function toggleSelfRegCtaSep() { setSelfRegCtaSep(!curSelfRegCtaSepEnabled); projDirty=true; }
+function setSelfRegCtaSep(v) {
+  curSelfRegCtaSepEnabled = v;
+  document.getElementById('self-reg-cta-sep-sw').classList.toggle('on', v);
+  document.getElementById('self-reg-cta-sep-sw').textContent = v ? 'ON' : 'OFF';
+  document.getElementById('self-reg-cta-sep-opts').style.display = v ? '' : 'none';
 }
 
 /* ══════════════════════════════════════
@@ -2947,6 +2969,7 @@ function startNewProject() {
   curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}]; customColWidths={}; curRespColWidths={};
   curAuthKeyField='name'; curUsers=[]; curAuthCollection=''; curLogoTextSize='24'; curLogoTextAlign='center'; curLogoImgW=76;
   setSelfReg(false); document.getElementById('p-self-reg-cta').value='등록하기'; document.getElementById('p-self-reg-success').value='';
+  setSelfRegCtaSep(false); document.getElementById('p-self-reg-cta-icon-url').value=''; document.getElementById('p-self-reg-cta-sep-text').value='등록하기';
   curStats=[]; curElementOrder=['edition','logo','dday','stats'];
   curKeyColors=[{color:'#00CE6B',holdTime:8,transitionTime:2},{color:'#FFF100',holdTime:8,transitionTime:2},{color:'#F95548',holdTime:8,transitionTime:2},{color:'#0BC6FF',holdTime:8,transitionTime:2}];
   ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-title','p-auth-desc']
@@ -3011,6 +3034,9 @@ async function editProject(id) {
     document.getElementById('p-self-reg-cta').value = d.selfRegCta||'등록하기';
     document.getElementById('p-self-reg-success').value = d.selfRegSuccessMsg||'';
     setSelfReg(d.selfRegEnabled||false);
+    document.getElementById('p-self-reg-cta-icon-url').value = d.selfRegCtaIconUrl||'';
+    document.getElementById('p-self-reg-cta-sep-text').value = d.selfRegCtaSepText||'등록하기';
+    setSelfRegCtaSep(d.selfRegCtaSeparate||false);
     document.getElementById('p-greeting-text').value = d.greetingText||'';
 
     // OG 필드
@@ -3093,6 +3119,9 @@ async function saveProject(deploy=true) {
     selfRegEnabled: curSelfRegEnabled,
     selfRegCta:   document.getElementById('p-self-reg-cta').value.trim()||'등록하기',
     selfRegSuccessMsg: document.getElementById('p-self-reg-success').value.trim(),
+    selfRegCtaSeparate: curSelfRegCtaSepEnabled,
+    selfRegCtaIconUrl: document.getElementById('p-self-reg-cta-icon-url').value.trim(),
+    selfRegCtaSepText: document.getElementById('p-self-reg-cta-sep-text').value.trim()||'등록하기',
     greetingText: document.getElementById('p-greeting-text').value.trim(),
     bgImages:     curBgImages,
     bgOverlayOpacity: curBgOverlayOpacity,
