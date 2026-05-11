@@ -1487,8 +1487,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <button class="chk-pos-btn" data-pos="middle-center" onclick="setCheckPos('middle-center')" title="중앙">○</button>
             <button class="chk-pos-btn" data-pos="middle-right"  onclick="setCheckPos('middle-right')"  title="중앙 우">→</button>
             <button class="chk-pos-btn" data-pos="bottom-left"   onclick="setCheckPos('bottom-left')"   title="하단 좌">↙</button>
-            <button class="chk-pos-btn" data-pos="bottom-center" onclick="setCheckPos('bottom-center')" title="하단 중앙">↓</button>
-            <button class="chk-pos-btn on" data-pos="bottom-right"  onclick="setCheckPos('bottom-right')"  title="하단 우">↘</button>
+            <button class="chk-pos-btn on" data-pos="bottom-center" onclick="setCheckPos('bottom-center')" title="하단 중앙">↓</button>
+            <button class="chk-pos-btn" data-pos="bottom-right"  onclick="setCheckPos('bottom-right')"  title="하단 우">↘</button>
           </div>
         </div>
         <div style="margin-top:10px;display:flex;gap:8px;">
@@ -3943,7 +3943,7 @@ function setBlkVerticalAlign(v){
   });
   scheduleBmPreview();
 }
-let curCheckPos='bottom-right';
+let curCheckPos='bottom-center';
 function setCheckPos(pos){
   curCheckPos=pos;
   document.querySelectorAll('.chk-pos-btn').forEach(b=>{b.classList.toggle('on',b.dataset.pos===pos);});
@@ -4093,7 +4093,7 @@ function openBlockModal(idx,insertAt){
   curBlkCheckTextColor=b.checkTextColor||'';
   const chkTP=document.getElementById('blk-check-text-color'); if(chkTP) chkTP.value=curBlkCheckTextColor||'#ffffff';
   const chkTH=document.getElementById('blk-check-text-hex');   if(chkTH) chkTH.value=(curBlkCheckTextColor||'').toUpperCase();
-  setCheckPos(b.checkPosition||'bottom-right');
+  setCheckPos(b.checkPosition||'bottom-center');
   const bgH=document.getElementById('blk-bg-hex');  if(bgH) bgH.value=(curBlkBgColor||'').toUpperCase();
   const mv=document.getElementById('blk-margin-v'); if(mv) mv.value=b.marginV??'';
   const mh=document.getElementById('blk-margin-h'); if(mh) mh.value=b.marginH??'';
@@ -4154,7 +4154,7 @@ function _buildCurrentBlock(){
   const _checkSw=document.getElementById('blk-checkable-sw');
   if(_checkSw?.classList.contains('on')){
     b.checkable=true;
-    b.checkPosition=curCheckPos||'bottom-right';
+    b.checkPosition=curCheckPos||'bottom-center';
     const _cb=document.getElementById('blk-check-before')?.value||'';
     const _ca=document.getElementById('blk-check-after')?.value||'';
     if(_cb) b.checkBeforeText=_cb;
@@ -4889,7 +4889,7 @@ function _adminCheckEl(b,S){
   const before=b.checkBeforeText||'';
   const after=b.checkAfterText||'';
   const useBox=!before&&!after;
-  const pos=b.checkPosition||'bottom-right';
+  const pos=b.checkPosition||'bottom-center';
   const parts=pos.split('-');
   const hPos=parts.slice(1).join('-');
   const justify=hPos==='left'?'flex-start':hPos==='center'?'center':'flex-end';
@@ -4908,7 +4908,7 @@ function gBlockHtml(b,S){
   const h=_gBlockCore(b,S);
   if(!b.checkable||!h) return h;
   const checkHtml=_adminCheckEl(b,S);
-  const vPos=(b.checkPosition||'bottom-right').split('-')[0];
+  const vPos=(b.checkPosition||'bottom-center').split('-')[0];
   if(vPos==='middle') return `<div style="position:relative;">${h}${checkHtml}</div>`;
   if(vPos==='top') return checkHtml+h;
   return h+checkHtml;

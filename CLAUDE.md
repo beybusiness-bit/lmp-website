@@ -532,6 +532,19 @@ closeHelpPanel();
 - 일정 잡기 도구(`tools/schedule/index.html`): GAS 재배포 후 캘린더 연동 end-to-end 테스트 필요
 
 **완료 ✅ (이번 세션 추가)**
+- **✅ 폼 응답 테이블·사용자 테이블 컬럼 드래그 조정**: 너비 드래그 리사이즈, 프로젝트/폼별 Firestore 저장, 더블클릭 초기화
+  - 사용자 테이블: `cms_projects/{id}.userColumnWidths`
+  - 폼 응답 테이블(레거시): `cms_projects/{id}.formRespColWidths.{formId}`
+  - 폼 도구 응답 테이블: `cms_form_configs/{id}.columnWidths`
+  - 모든 정보성 테이블: 헤더 sticky + 왼쪽 식별 컬럼 sticky
+- **✅ 스테이지 3단계 게시 상태**: `publishStatus` — 'published'(게시) / 'disabled'(비활성화·회색+클릭불가) / 'hidden'(완전숨김)
+  - admin 스테이지 목록에 3버튼 그룹, player 3파일 동기화
+  - 저장 버그 수정: `_autoSaveStage`·`saveStageContent` → `updatedStages`에 `publishStatus` 포함
+- **✅ 블록 편집 미리보기 체크 기능 표시**: `_gBlockCore` + `_adminCheckEl` + `gBlockHtml` 래퍼 구조로 재설계
+- **✅ 체크 위치 기본값 → 하단 중앙**: `bottom-right` → `bottom-center` (admin/index.html 전체)
+- **✅ Firestore 보안 규칙 수정 (Firebase Console)**: `cms_form_configs` 쓰기 권한 추가
+  - 원인: 두 번째 관리자 계정(`itsbeybusiness@gmail.com`)은 catch-all 규칙(`baekeun0@gmail.com` 전용) 미적용
+  - 추가된 규칙: `cms_form_configs/{document=**}` write, `cms_youtube_submissions/{document=**}` write, `cms_copy_gen_usages/{document=**}` write
 - **✅ 폼 응답 관리 인라인 통합**: 폼 편집 화면 하단에 응답 목록·시트 관리 통합 (별도 모달 제거)
   - 목록의 "📋 응답" 버튼 → 편집 화면으로 이동 (응답 포함 자동 로드)
   - 구글 시트 연결/해제/새 시트 생성 편집 화면에서 직접 처리
@@ -556,8 +569,13 @@ closeHelpPanel();
 - 도구 블록 end-to-end 테스트 (폼 생성 → 블록 연결 → 플레이어 제출 → 진행률 반영)
 
 **다음 세션 시작점**
+- 🔲 **관리자 프리뷰 모드**: 플레이어에서 관리자 계정으로 접근 시 비활성화/비공개 스테이지도 진입 가능
+  - 구현 방안: URL 파라미터 `?admin=TOKEN` (Firestore `cms_admin_settings/github.adminPreviewToken` 저장)
+    또는 Google Auth 세션을 플레이어에서도 확인하는 방식
+  - 관리자 진입 시 비활성화 스테이지 → 정상 진입 가능 (비활성 표시는 유지하되 클릭 허용)
+  - 비공개 스테이지 → 목록에 노출 + 진입 가능 ("관리자 미리보기" 뱃지 표시)
+  - p/index.html + block-test-demo + gmbf-poc 동기화 필수
 - 🔲 일정 잡기 도구 end-to-end 테스트 (GAS 재배포 후)
-- 🔲 기타 사용자 요청 기능
 - PAT: 만료 시 재발급 필요 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 
 #### 📐 ✅ 완료된 구현: 유튜브 뮤직 재생목록 도구
