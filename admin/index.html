@@ -1473,7 +1473,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <!-- 공통: 체크 기능 -->
     <div id="blk-check-section" style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
       <div class="switch-row">
-        <div class="switch" id="blk-checkable-sw" onclick="this.classList.toggle('on');document.getElementById('blk-check-opts').style.display=this.classList.contains('on')?'block':'none'"></div>
+        <div class="switch" id="blk-checkable-sw" onclick="this.classList.toggle('on');document.getElementById('blk-check-opts').style.display=this.classList.contains('on')?'block':'none';scheduleBmPreview()"></div>
         <span class="switch-lbl">체크 기능 활성화 <span style="font-weight:400;opacity:.6;">(사용자가 이 블록을 수행 완료로 체크 가능)</span></span>
       </div>
       <div id="blk-check-opts" style="display:none;">
@@ -1494,11 +1494,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div style="margin-top:10px;display:flex;gap:8px;">
           <div style="flex:1;">
             <div class="ed-lbl" style="font-size:10px;">확인 전 텍스트 <span style="font-weight:400;opacity:.5;">(비우면 체크박스)</span></div>
-            <input class="fi-sm" id="blk-check-before" placeholder="확인하기" style="margin-bottom:0;">
+            <input class="fi-sm" id="blk-check-before" placeholder="확인하기" style="margin-bottom:0;" oninput="scheduleBmPreview()">
           </div>
           <div style="flex:1;">
             <div class="ed-lbl" style="font-size:10px;">확인 후 텍스트 <span style="font-weight:400;opacity:.5;">(비우면 체크박스)</span></div>
-            <input class="fi-sm" id="blk-check-after" placeholder="✓ 확인 완료" style="margin-bottom:0;">
+            <input class="fi-sm" id="blk-check-after" placeholder="✓ 확인 완료" style="margin-bottom:0;" oninput="scheduleBmPreview()">
           </div>
         </div>
         <div style="margin-top:10px;">
@@ -3413,6 +3413,7 @@ async function _autoSaveStage() {
       id:s.id, title:s.title||'', displayType:s.displayType||'text',
       stageImageUrl:s.stageImageUrl||'', order:i,
       trackProgress:!!s.trackProgress, checkableCount:s.checkableCount||0,
+      published:s.published!==false, publishStatus:s.publishStatus||'published',
     }));
     await db.collection('cms_projects').doc(curProjId).update({stages: updatedStages});
     stageDirty = false;
@@ -3435,6 +3436,7 @@ async function saveStageContent() {
       id:s.id, title:s.title||'', displayType:s.displayType||'text',
       stageImageUrl:s.stageImageUrl||'', order:i,
       trackProgress:!!s.trackProgress, checkableCount:s.checkableCount||0,
+      published:s.published!==false, publishStatus:s.publishStatus||'published',
     }));
     await db.collection('cms_projects').doc(curProjId).update({stages: updatedStages});
     stageDirty = false;
@@ -3945,6 +3947,7 @@ let curCheckPos='bottom-right';
 function setCheckPos(pos){
   curCheckPos=pos;
   document.querySelectorAll('.chk-pos-btn').forEach(b=>{b.classList.toggle('on',b.dataset.pos===pos);});
+  scheduleBmPreview();
 }
 function saveRange(el){if(_fmtPopType)return;const sel=window.getSelection();if(sel.rangeCount)savedRange={el,range:sel.getRangeAt(0).cloneRange()};}
 function restoreRange(el){if(!savedRange||savedRange.el!==el)return;const sel=window.getSelection();if(sel.rangeCount&&el.contains(sel.anchorNode))return;sel.removeAllRanges();sel.addRange(savedRange.range);}
@@ -3976,12 +3979,14 @@ function onBlkCheckPick(v){
   curBlkCheckColor=v;
   const h=document.getElementById('blk-check-hex'); if(h) h.value=v.toUpperCase();
   const p=document.getElementById('blk-check-color'); if(p) p.value=v;
+  scheduleBmPreview();
 }
 function onBlkCheckHex(v){ if(/^#[0-9a-fA-F]{6}$/.test(v)) onBlkCheckPick(v); }
 function onBlkCheckTextPick(v){
   curBlkCheckTextColor=v;
   const h=document.getElementById('blk-check-text-hex'); if(h) h.value=v.toUpperCase();
   const p=document.getElementById('blk-check-text-color'); if(p) p.value=v;
+  scheduleBmPreview();
 }
 function onBlkCheckTextHex(v){ if(/^#[0-9a-fA-F]{6}$/.test(v)) onBlkCheckTextPick(v); }
 function clearBlkCheckTextColor(){ curBlkCheckTextColor=''; const h=document.getElementById('blk-check-text-hex'); if(h) h.value=''; const p=document.getElementById('blk-check-text-color'); if(p) p.value='#ffffff'; }
@@ -4145,6 +4150,18 @@ function _buildCurrentBlock(){
   const _mv=parseInt(document.getElementById('blk-margin-v')?.value)||0;
   const _mh=parseInt(document.getElementById('blk-margin-h')?.value)||0;
   if(_mv) b.marginV=_mv; if(_mh) b.marginH=_mh;
+  // 체크 기능
+  const _checkSw=document.getElementById('blk-checkable-sw');
+  if(_checkSw?.classList.contains('on')){
+    b.checkable=true;
+    b.checkPosition=curCheckPos||'bottom-right';
+    const _cb=document.getElementById('blk-check-before')?.value||'';
+    const _ca=document.getElementById('blk-check-after')?.value||'';
+    if(_cb) b.checkBeforeText=_cb;
+    if(_ca) b.checkAfterText=_ca;
+    if(curBlkCheckColor) b.checkColor=curBlkCheckColor;
+    if(curBlkCheckTextColor) b.checkTextColor=curBlkCheckTextColor;
+  }
   return b;
 }
 function updateBmPreview(){
@@ -4819,7 +4836,7 @@ function renderGuidePreview(){
     content.innerHTML=curBlocks.map(b=>gBlockHtml(b,S)).join('');
   }
 }
-function gBlockHtml(b,S){
+function _gBlockCore(b,S){
   const pad=`padding:${Math.round(10*S)}px`;
   const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
   const txS=b.txtColor?`color:${b.txtColor};`:'';
@@ -4846,7 +4863,6 @@ function gBlockHtml(b,S){
   }
   if(b.type==='embed'){
     if(!b.embedUrl) return `<div style="${mS}${bgS}${pad};text-align:center;font-size:${Math.round(11*S)}px;color:rgba(0,0,0,.4);">임베드 URL 없음</div>`;
-    /* 실제 플레이어와 동일한 iframe 렌더링 (스케일에 맞춰 높이 축소, 최대 300px) */
     const rawH = b.embedHeight===0 ? Math.round(360*S) : Math.round((b.embedHeight||500)*S);
     const eh = Math.min(rawH, 300);
     return `<div style="${mS}${bgS}position:relative;"><iframe src="${b.embedUrl}" width="100%" height="${eh}" frameborder="0" allowfullscreen loading="lazy" style="display:block;border:none;pointer-events:none;"></iframe></div>`;
@@ -4868,6 +4884,34 @@ function gBlockHtml(b,S){
     return `<div style="${divS}${bgS}"><hr style="border:none;border-top:${thickness}px ${style} ${color};margin:0;"></div>`;
   }
   return '';
+}
+function _adminCheckEl(b,S){
+  const before=b.checkBeforeText||'';
+  const after=b.checkAfterText||'';
+  const useBox=!before&&!after;
+  const pos=b.checkPosition||'bottom-right';
+  const parts=pos.split('-');
+  const hPos=parts.slice(1).join('-');
+  const justify=hPos==='left'?'flex-start':hPos==='center'?'center':'flex-end';
+  const color=b.checkColor||'#000000';
+  const wrapStyle=`padding:${Math.round(10*S)}px ${Math.round(20*S)}px ${Math.round(4*S)}px;display:flex;justify-content:${justify};`;
+  let elHtml;
+  if(useBox){
+    elHtml=`<div style="width:${Math.round(26*S)}px;height:${Math.round(26*S)}px;border:${Math.max(1,Math.round(2.5*S))}px solid ${color};display:flex;align-items:center;justify-content:center;font-size:${Math.round(18*S)}px;flex-shrink:0;"></div>`;
+  }else{
+    const txt=before||'확인하기';
+    elHtml=`<button style="padding:${Math.round(8*S)}px ${Math.round(18*S)}px;background:transparent;border:${Math.max(1,Math.round(2*S))}px solid ${color};font-size:${Math.round(13*S)}px;font-weight:700;cursor:default;color:${color};pointer-events:none;">${txt}</button>`;
+  }
+  return `<div style="${wrapStyle}">${elHtml}</div>`;
+}
+function gBlockHtml(b,S){
+  const h=_gBlockCore(b,S);
+  if(!b.checkable||!h) return h;
+  const checkHtml=_adminCheckEl(b,S);
+  const vPos=(b.checkPosition||'bottom-right').split('-')[0];
+  if(vPos==='middle') return `<div style="position:relative;">${h}${checkHtml}</div>`;
+  if(vPos==='top') return checkHtml+h;
+  return h+checkHtml;
 }
 
 /* ══════════════════════════════════════
