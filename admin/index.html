@@ -96,6 +96,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .u-btn{padding:3px 7px;background:transparent;border:1px solid #000;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;}
 .u-btn:active{background:#000;color:#fff;}
 .u-row-selected td{background:#f5f5f5;}
+.prog-cell{min-width:80px;}
+.prog-bar{height:5px;background:rgba(0,0,0,.08);position:relative;margin-top:3px;}
+.prog-bar-fill{height:100%;background:#000;transition:width .3s;}
+.prog-bar-fill.done{background:#0BC6FF;}
+.prog-txt{font-size:11px;font-weight:700;white-space:nowrap;}
+.prog-txt.zero{color:rgba(0,0,0,.3);}
+.prog-txt.done{color:#0BC6FF;}
+.prog-summary{background:#fafafa;border:1.5px solid #000;padding:10px 12px;margin-bottom:10px;font-size:11px;line-height:1.7;}
+.prog-summary-row{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.prog-summary-row + .prog-summary-row{margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,.08);}
+.prog-summary-name{font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.prog-summary-stat{color:rgba(0,0,0,.6);white-space:nowrap;font-variant-numeric:tabular-nums;}
 /* modals */
 .modal-ov{display:none;position:fixed;inset:0;z-index:400;justify-content:center;align-items:flex-end;background:rgba(0,0,0,.45);}
 .modal-ov.on{display:flex;}
@@ -2397,16 +2409,56 @@ function renderUserTable() {
       <button class="u-btn" onclick="openBulkEditFieldModal()">선택 일괄 수정</button>
     ` : ''}
   </div>`;
+  // 진행률 추적 대상 스테이지만 필터 (trackProgress + checkableCount>0)
+  const progStages = (curStages||[]).filter(s => s.trackProgress && (s.checkableCount||0) > 0);
+  // 요약 박스
+  let summary = '';
+  if (progStages.length) {
+    const rows = progStages.map(s => {
+      const total = s.checkableCount;
+      let sumPct = 0, doneCnt = 0;
+      curUsers.forEach(u => {
+        const arr = u.stageProgress?.[s.id] || [];
+        const done = Math.min(arr.length, total);
+        if (done >= total) doneCnt++;
+        sumPct += done/total;
+      });
+      const avg = Math.round((sumPct/curUsers.length)*100);
+      const ttl = (s.title||'').replace(/</g,'&lt;');
+      return `<div class="prog-summary-row">
+        <span class="prog-summary-name">${ttl}</span>
+        <span class="prog-summary-stat">평균 ${avg}% · 완료 ${doneCnt}/${curUsers.length}명</span>
+      </div>`;
+    }).join('');
+    summary = `<div class="prog-summary"><div style="font-weight:700;margin-bottom:8px;font-size:12px;">📊 스테이지 진행률 현황</div>${rows}</div>`;
+  }
   const chkTh = `<th style="width:32px;"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleSelectAll(this.checked)" style="cursor:pointer;"></th>`;
-  const headers = chkTh + curAuthFields.map(f=>`<th>${f.label}</th>`).join('') + '<th style="white-space:nowrap;">최근 로그인</th><th style="white-space:nowrap;">횟수</th><th></th>';
+  const progTh = progStages.map(s => {
+    const ttl = (s.title||'').replace(/</g,'&lt;');
+    return `<th style="white-space:nowrap;" title="${ttl} (체크 ${s.checkableCount}개)">${ttl}</th>`;
+  }).join('');
+  const headers = chkTh + curAuthFields.map(f=>`<th>${f.label}</th>`).join('') + progTh + '<th style="white-space:nowrap;">최근 로그인</th><th style="white-space:nowrap;">횟수</th><th></th>';
   const rows = curUsers.map(u => {
     const checked = selectedUserIds.has(u._id);
     const cells = curAuthFields.map(f=>`<td>${u[f.key]??''}</td>`).join('');
+    const progCells = progStages.map(s => {
+      const total = s.checkableCount;
+      const arr = u.stageProgress?.[s.id] || [];
+      const done = Math.min(arr.length, total);
+      const pct = Math.round((done/total)*100);
+      const cls = done === 0 ? 'zero' : (done >= total ? 'done' : '');
+      const fillCls = done >= total ? 'done' : '';
+      return `<td class="prog-cell">
+        <div class="prog-txt ${cls}">${done}/${total} (${pct}%)</div>
+        <div class="prog-bar"><div class="prog-bar-fill ${fillCls}" style="width:${pct}%"></div></div>
+      </td>`;
+    }).join('');
     const lastLogin = u.lastLoginAt?.seconds ? new Date(u.lastLoginAt.seconds*1000).toLocaleString('ko',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '-';
     const loginCnt = u.loginCount ?? '-';
     return `<tr class="${checked?'u-row-selected':''}">
       <td><input type="checkbox" ${checked?'checked':''} onchange="toggleSelectUser('${u._id}',this.checked)" style="cursor:pointer;"></td>
       ${cells}
+      ${progCells}
       <td style="font-size:11px;white-space:nowrap;color:rgba(0,0,0,.6);">${lastLogin}</td>
       <td style="font-size:12px;font-weight:700;text-align:center;">${loginCnt}</td>
       <td><div style="display:flex;gap:4px;">
@@ -2415,7 +2467,7 @@ function renderUserTable() {
       </div></td>
     </tr>`;
   }).join('');
-  wrap.innerHTML = bulkBar + `<div class="user-table-wrap"><table class="user-table"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  wrap.innerHTML = bulkBar + summary + `<div class="user-table-wrap"><table class="user-table"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function toggleSelectUser(id, checked) {
   if (checked) selectedUserIds.add(id); else selectedUserIds.delete(id);
