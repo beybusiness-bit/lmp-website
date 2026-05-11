@@ -351,6 +351,29 @@ game_configs/guide/forms/{formId}   ← 계산기·가이드 폼 설정
 
 cms_admin_settings/github
   pat: string
+
+cms_admin_settings/payment
+  tossClientKey: string                       ← 토스 클라이언트 키 (공개 키 · admin에서 입력)
+  ← 토스 secret 키는 절대 Firestore에 두지 않음. Vercel 환경변수 TOSS_SECRET_KEY로만 관리.
+
+cms_payment_configs/{configId}                ← 결제 인스턴스 (상품)
+  title: string                               ← 관리용·사용자에게도 표시
+  productName: string                         ← 영수증·결제창에 표시
+  amount: number                              ← 금액(원, 최소 100)
+  description: string                         ← 결제창 안내문
+  tier: string                                ← 권한 라벨(영문/숫자/_/-) · 결제 성공 시 부여
+  successMessage: string                      ← 결제 완료 메시지
+  createdAt, updatedAt: timestamp
+
+cms_payment_records/{paymentKey}              ← 서버 검증 통과한 결제 기록
+  paymentKey, orderId, orderName, amount, method, status, approvedAt
+  configId, configTitle, tier
+  projectId, userId, userFields: object
+  createdAt: timestamp
+
+cms_users_{projectId}/{userId}                ← (기존) + paid 필드 추가
+  paidConfigs: { [configId]: { paidAt, amount, tier, paymentKey, orderId } }
+  paidTiers: string[]                         ← arrayUnion으로 누적 (예: ['pro', 'premium'])
 ```
 
 #### Firestore 보안 규칙 (현재 적용된 것 기준)
@@ -597,6 +620,25 @@ closeHelpPanel();
   - p/index.html + block-test-demo + gmbf-poc 동기화 완료
 
 **완료 ✅ (이번 세션 추가)**
+- **✅ 결제 도구 (토스페이먼츠)** 신규 추가:
+  - `tools/payment/index.html` 신규: 토스페이먼츠 v2 결제위젯 + `api/confirm-payment.js` 호출 (서버 검증)
+  - 인스턴스 컬렉션: `cms_payment_configs/{configId}` (title, productName, amount, description, tier, successMessage)
+  - 결제 기록: `cms_payment_records/{paymentKey}` (서버 검증 통과한 결제만 기록)
+  - 사용자 doc(`cms_users_{projectId}/{userId}`)에 `paidConfigs.{configId}` + `paidTiers[]` 누적 기록 (추후 권한 분기용)
+  - admin 도구 탭에 결제 인스턴스 관리 화면(목록·편집·결제 내역 인라인 표시)
+  - 블록 에디터 "도구" 탭에 결제 버튼 추가 (선택형 도구)
+  - 환경변수: `TOSS_SECRET_KEY` (Vercel)
+  - admin 설정: `cms_admin_settings/payment.tossClientKey`에 클라이언트 키 저장
+  - lmp-tool-complete 발송 → 진행률 자동 체크 연동
+  - 이미 결제한 사용자가 다시 열면 "이미 결제 완료" 화면 + 자동 완료 신호
+  - p/index.html + block-test-demo + gmbf-poc 동기화 완료
+  - **🔶 권한 분기(잠금 게이트) 로직은 다음 단계** — 사용 예시 받은 후 블록·스테이지·프로젝트 단위 중 선택해 구현 예정
+- **✅ '필요 시 로그인' 모드**: 인증 프로젝트에서 비로그인 둘러보기 + 동작 시점 로그인 요청
+  - admin 인증 탭에 모드 선택(일반/필요 시 로그인) 추가, Firestore 필드 `authMode`
+  - player: `AUTH_MODE` 변수 + `requireAuthOr()` + `_pendingAuthAction` 시스템
+  - 진행률 체크 시도 / 도구 블록 진입 시 비로그인이면 로그인 모달 표시 → 성공 후 원래 동작 재개
+  - 도구 블록은 비로그인 시 🔒 잠금 카드로 표시
+  - 인증 모달 상단에 보류된 동작의 이유 안내문 표시
 - **✅ 사이드바 로그아웃**: 인증 프로젝트 사이드바 하단에 "로그아웃" 버튼 추가
   - 클릭 시 `sessionStorage.userSession` 삭제 → 페이지 새로고침 → 인증 모달 재표시
   - 관리자 프리뷰 모드(`IS_ADMIN_PREVIEW`)이거나 `AUTH_ENABLED=false`이면 버튼 숨김

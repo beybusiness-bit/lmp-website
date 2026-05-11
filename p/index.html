@@ -1152,6 +1152,7 @@ function blockHtml(b){
       'youtube-playlist':`/tools/youtube-playlist/?id=${b.toolConfig?.youtubePlaylistId||''}`,
       schedule:`/tools/schedule/?id=${b.toolConfig?.scheduleId||''}`,
       'copy-gen':`/tools/copy-gen/?id=${b.toolConfig?.copyGenId||''}`,
+      payment:`/tools/payment/?id=${b.toolConfig?.paymentId||''}`,
     };
     const src=toolUrls[b.toolType]||'';
     const h=b.height;

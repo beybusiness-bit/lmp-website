@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>결제</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://js.tosspayments.com/v2/standard"></script>
+<style>
+:root{--lmp-block-bg:#fff;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:transparent;color:#000;}
+
+.lmp-btn{display:block;width:100%;padding:14px 18px;background:#000;color:var(--lmp-block-bg);border:2px solid #000;border-radius:0;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.2px;transition:background .15s,color .15s;}
+.lmp-btn:hover,.lmp-btn:active{background:var(--lmp-block-bg);color:#000;}
+.lmp-btn:disabled{opacity:.35;cursor:default;}
+
+#app{padding:24px 20px;}
+#loading,#err-screen{padding:40px 20px;text-align:center;font-size:14px;font-weight:600;}
+#loading{color:rgba(0,0,0,.5);}
+#err-screen{display:none;color:#c00;}
+#err-screen.on{display:block;}
+
+.pay-head{margin-bottom:20px;}
+.pay-title{font-size:17px;font-weight:800;letter-spacing:-.3px;line-height:1.4;margin-bottom:6px;}
+.pay-product{font-size:14px;font-weight:600;color:rgba(0,0,0,.7);line-height:1.5;margin-bottom:12px;}
+.pay-amount{font-size:28px;font-weight:900;letter-spacing:-.5px;margin-bottom:6px;}
+.pay-amount .won{font-size:18px;font-weight:700;margin-left:2px;}
+.pay-desc{font-size:13px;line-height:1.7;color:rgba(0,0,0,.6);margin-top:14px;padding:12px 14px;border:1.5px solid rgba(0,0,0,.12);background:rgba(0,0,0,.02);white-space:pre-wrap;}
+
+#payment-method{margin-top:18px;}
+#agreement{margin-top:8px;margin-bottom:18px;}
+
+#pay-result{display:none;text-align:center;padding:30px 16px;}
+#pay-result.on{display:block;}
+.pay-result-icon{font-size:48px;margin-bottom:12px;}
+.pay-result-title{font-size:17px;font-weight:800;margin-bottom:10px;letter-spacing:-.3px;}
+.pay-result-msg{font-size:13px;line-height:1.6;color:rgba(0,0,0,.7);margin-bottom:18px;white-space:pre-wrap;}
+.pay-receipt{margin-top:18px;padding:14px;border:1.5px solid rgba(0,0,0,.15);text-align:left;font-size:12px;line-height:1.7;color:rgba(0,0,0,.65);}
+.pay-receipt b{font-weight:700;color:#000;}
+
+#status-msg{display:none;padding:40px 20px;text-align:center;font-size:14px;color:rgba(0,0,0,.55);font-weight:600;}
+#status-msg.on{display:block;}
+</style>
+</head>
+<body>
+<div id="loading">불러오는 중…</div>
+<div id="err-screen"></div>
+<div id="status-msg"></div>
+<div id="app" style="display:none;">
+  <div id="pay-screen">
+    <div class="pay-head">
+      <div class="pay-title" id="p-title"></div>
+      <div class="pay-product" id="p-product"></div>
+      <div class="pay-amount"><span id="p-amount">0</span><span class="won">원</span></div>
+      <div class="pay-desc" id="p-desc" style="display:none;"></div>
+    </div>
+    <div id="payment-method"></div>
+    <div id="agreement"></div>
+    <button class="lmp-btn" id="pay-btn">결제하기</button>
+  </div>
+  <div id="pay-result">
+    <div class="pay-result-icon" id="r-icon">✅</div>
+    <div class="pay-result-title" id="r-title"></div>
+    <div class="pay-result-msg" id="r-msg"></div>
+    <div class="pay-receipt" id="r-receipt" style="display:none;"></div>
+  </div>
+</div>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
+  authDomain: "beyhome-admin.firebaseapp.com",
+  projectId: "beyhome-admin",
+  storageBucket: "beyhome-admin.firebasestorage.app",
+  messagingSenderId: "849320781553",
+  appId: "1:849320781553:web:9d844044e85995c0aa2b50"
+};
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+
+const urlParams = new URLSearchParams(location.search);
+const CONFIG_ID = urlParams.get('id') || '';
+const RESULT = urlParams.get('result') || '';
+const PAYMENT_KEY = urlParams.get('paymentKey') || '';
+const ORDER_ID_FROM_URL = urlParams.get('orderId') || '';
+const AMOUNT_FROM_URL = urlParams.get('amount') || '';
+const FAIL_MSG = urlParams.get('message') || '';
+
+let CONFIG = null;
+let CLIENT_KEY = '';
+let ctxProjectId = '';
+let ctxUserId = '';
+let ctxUserFields = {};
+let widgets = null;
+
+let ctxReceived = false;
+let resolveCtx;
+const ctxPromise = new Promise(res => { resolveCtx = res; });
+
+window.addEventListener('message', e => {
+  if (e.data?.type !== 'lmp-context') return;
+  ctxProjectId = e.data.projectId || '';
+  ctxUserId = e.data.userId || '';
+  ctxUserFields = e.data.userFields || {};
+  if (e.data.blockBg) document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg);
+  if (!ctxReceived) { ctxReceived = true; resolveCtx(); }
+});
+
+function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function setStatus(msg) {
+  const el = document.getElementById('status-msg');
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app').style.display = 'none';
+  el.textContent = msg;
+  el.classList.add('on');
+}
+function showError(msg) {
+  document.getElementById('loading').style.display = 'none';
+  const el = document.getElementById('err-screen');
+  el.textContent = msg;
+  el.classList.add('on');
+}
+
+async function loadConfig() {
+  if (!CONFIG_ID) { showError('결제 설정 ID가 없어요. 관리자에게 문의해주세요.'); return false; }
+  try {
+    const doc = await db.collection('cms_payment_configs').doc(CONFIG_ID).get();
+    if (!doc.exists) { showError('결제 설정을 찾을 수 없어요.'); return false; }
+    CONFIG = doc.data();
+    const settings = await db.collection('cms_admin_settings').doc('payment').get();
+    CLIENT_KEY = settings.exists ? (settings.data().tossClientKey || '') : '';
+    return true;
+  } catch (e) {
+    showError('설정을 불러오지 못했어요: ' + (e.message || ''));
+    return false;
+  }
+}
+
+async function init() {
+  Promise.race([ctxPromise, new Promise(r => setTimeout(r, 1500))]).then(() => {});
+  await ctxPromise.catch(()=>{}); // 컨텍스트 도착 대기 (최대 1.5초)
+
+  const ok = await loadConfig();
+  if (!ok) return;
+
+  if (RESULT === 'fail') {
+    showResult('fail', '결제가 취소되었어요', FAIL_MSG || '결제를 다시 시도해주세요.', null);
+    return;
+  }
+  if (RESULT === 'success' && PAYMENT_KEY && ORDER_ID_FROM_URL && AMOUNT_FROM_URL) {
+    await confirmFlow();
+    return;
+  }
+
+  // 이미 결제했는지 확인 (로그인된 사용자만)
+  if (ctxUserId && ctxProjectId) {
+    try {
+      const u = await db.collection('cms_users_' + ctxProjectId).doc(ctxUserId).get();
+      const paidConfigs = u.exists ? (u.data().paidConfigs || {}) : {};
+      if (paidConfigs[CONFIG_ID]) {
+        showResult('already', '이미 결제 완료된 상품이에요',
+          CONFIG.successMessage || '결제하신 권한이 이미 부여되어 있어요.',
+          { amount: paidConfigs[CONFIG_ID].amount, orderName: CONFIG.productName });
+        // 부모에 도구 완료 신호 (진행률 자동 체크)
+        window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+        return;
+      }
+    } catch (e) { console.warn('paid check failed:', e); }
+  }
+
+  await renderWidget();
+}
+
+async function renderWidget() {
+  if (!CLIENT_KEY) { showError('관리자가 토스 클라이언트 키를 설정해야 해요.'); return; }
+  if (!CONFIG.amount || CONFIG.amount < 100) { showError('결제 금액이 올바르지 않아요. (최소 100원)'); return; }
+
+  document.getElementById('p-title').textContent = CONFIG.title || '결제';
+  document.getElementById('p-product').textContent = CONFIG.productName || '';
+  document.getElementById('p-amount').textContent = Number(CONFIG.amount).toLocaleString();
+  if (CONFIG.description) {
+    const d = document.getElementById('p-desc');
+    d.textContent = CONFIG.description;
+    d.style.display = 'block';
+  }
+
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  try {
+    const customerKey = ctxUserId || ('guest_' + Date.now() + '_' + Math.random().toString(36).slice(2,8));
+    const tossPayments = TossPayments(CLIENT_KEY);
+    widgets = tossPayments.widgets({ customerKey });
+    await widgets.setAmount({ currency: 'KRW', value: Number(CONFIG.amount) });
+    await widgets.renderPaymentMethods({ selector: '#payment-method', variantKey: 'DEFAULT' });
+    await widgets.renderAgreement({ selector: '#agreement', variantKey: 'AGREEMENT' });
+  } catch (e) {
+    showError('결제 위젯을 불러오지 못했어요: ' + (e.message || ''));
+    return;
+  }
+
+  document.getElementById('pay-btn').onclick = onPayClick;
+}
+
+async function onPayClick() {
+  if (!widgets) return;
+  const btn = document.getElementById('pay-btn');
+  btn.disabled = true;
+  btn.textContent = '결제창 여는 중…';
+
+  const orderId = 'ord_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8);
+  const successUrl = new URL(location.href);
+  successUrl.search = '';
+  successUrl.searchParams.set('id', CONFIG_ID);
+  successUrl.searchParams.set('result', 'success');
+  const failUrl = new URL(location.href);
+  failUrl.search = '';
+  failUrl.searchParams.set('id', CONFIG_ID);
+  failUrl.searchParams.set('result', 'fail');
+
+  const payload = {
+    orderId,
+    orderName: CONFIG.productName || CONFIG.title || '결제',
+    successUrl: successUrl.toString(),
+    failUrl: failUrl.toString(),
+  };
+  if (ctxUserFields?.email) payload.customerEmail = ctxUserFields.email;
+  if (ctxUserFields?.name)  payload.customerName  = ctxUserFields.name;
+
+  try {
+    await widgets.requestPayment(payload);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = '결제하기';
+    if (e?.code === 'USER_CANCEL') return; // 사용자가 닫음
+    alert('결제 요청 실패: ' + (e?.message || e));
+  }
+}
+
+async function confirmFlow() {
+  setStatus('결제 확인 중…');
+  try {
+    const res = await fetch('/api/confirm-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paymentKey: PAYMENT_KEY, orderId: ORDER_ID_FROM_URL, amount: AMOUNT_FROM_URL }),
+    });
+    const data = await res.json();
+    if (!data.success) {
+      showResult('fail', '결제 확인 실패', data.error || '결제 확인 중 오류가 발생했어요.', null);
+      return;
+    }
+    await recordPayment(data.data);
+    window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+    showResult('success', '결제가 완료되었어요',
+      CONFIG.successMessage || '결제하신 권한이 부여되었어요.',
+      { amount: data.data.totalAmount, orderName: data.data.orderName, method: data.data.method, approvedAt: data.data.approvedAt });
+  } catch (e) {
+    showResult('fail', '서버 오류', e.message || '잠시 후 다시 시도해주세요.', null);
+  }
+}
+
+async function recordPayment(tossData) {
+  try {
+    await db.collection('cms_payment_records').doc(tossData.paymentKey).set({
+      paymentKey: tossData.paymentKey,
+      orderId: tossData.orderId,
+      orderName: tossData.orderName,
+      amount: tossData.totalAmount,
+      method: tossData.method || '',
+      status: tossData.status || '',
+      approvedAt: tossData.approvedAt || '',
+      configId: CONFIG_ID,
+      configTitle: CONFIG.title || '',
+      tier: CONFIG.tier || '',
+      projectId: ctxProjectId,
+      userId: ctxUserId,
+      userFields: ctxUserFields || {},
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+  } catch (e) { console.error('record write failed:', e); }
+
+  if (ctxUserId && ctxProjectId) {
+    try {
+      const update = {
+        [`paidConfigs.${CONFIG_ID}`]: {
+          paidAt: firebase.firestore.FieldValue.serverTimestamp(),
+          amount: tossData.totalAmount,
+          tier: CONFIG.tier || '',
+          paymentKey: tossData.paymentKey,
+          orderId: tossData.orderId,
+        },
+      };
+      if (CONFIG.tier) update.paidTiers = firebase.firestore.FieldValue.arrayUnion(CONFIG.tier);
+      await db.collection('cms_users_' + ctxProjectId).doc(ctxUserId).update(update);
+    } catch (e) { console.error('user update failed:', e); }
+  }
+}
+
+function showResult(kind, title, msg, receipt) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('status-msg').classList.remove('on');
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('pay-screen').style.display = 'none';
+  document.getElementById('pay-result').classList.add('on');
+  document.getElementById('r-icon').textContent = kind === 'success' ? '✅' : kind === 'already' ? '✓' : '⚠️';
+  document.getElementById('r-title').textContent = title;
+  document.getElementById('r-msg').textContent = msg;
+  if (receipt) {
+    const r = document.getElementById('r-receipt');
+    const lines = [];
+    if (receipt.orderName) lines.push(`<div><b>${esc(receipt.orderName)}</b></div>`);
+    if (receipt.amount != null) lines.push(`<div>금액: ${Number(receipt.amount).toLocaleString()}원</div>`);
+    if (receipt.method) lines.push(`<div>결제수단: ${esc(receipt.method)}</div>`);
+    if (receipt.approvedAt) lines.push(`<div>승인: ${esc(String(receipt.approvedAt).replace('T',' ').slice(0,16))}</div>`);
+    r.innerHTML = lines.join('');
+    r.style.display = 'block';
+  }
+}
+
+// 부모에 준비 신호 (lmp-context 수신 대기)
+window.parent.postMessage({ type: 'lmp-ready' }, '*');
+// 컨텍스트가 안 오거나 단독 진입(예: 결제 후 successUrl 리다이렉트로 iframe 새로 로드)에도 동작하도록 init 시작
+init();
+</script>
+</body>
+</html>

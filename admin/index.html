@@ -659,6 +659,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div class="pi-name">문구 생성기</div>
             <div class="pi-meta">AI 카피 자동 생성 · 스타일 조합 · 결과 기록 관리</div>
           </div>
+          <div class="proj-item" onclick="openTool('payment')" style="cursor:pointer;">
+            <div class="pi-name">결제 (토스페이먼츠)</div>
+            <div class="pi-meta">상품·금액 설정 · 결제 권한 부여 · 결제 내역 조회</div>
+          </div>
         </div>
       </div>
 
@@ -1148,6 +1152,73 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           </div>
         </div>
       </div>
+
+      <!-- 결제(토스페이먼츠) 관리 화면 -->
+      <div id="tool-payment-view" style="display:none;flex-direction:column;overflow:hidden;">
+        <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
+          <span class="back-btn" onclick="pyBack()">←</span>
+          <span id="py-header-title" style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">결제 (토스페이먼츠)</span>
+          <div style="flex:1;"></div>
+        </div>
+        <!-- 목록 화면 -->
+        <div id="py-list-screen" style="padding:16px;overflow-y:auto;flex:1;">
+          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">상품·금액을 등록한 뒤 블록 에디터의 "도구" 탭에서 결제 블록으로 연결할 수 있어요.</div>
+          <div class="ed-sect" style="border:1.5px solid rgba(0,0,0,.15);padding:14px;margin-bottom:18px;">
+            <div class="ed-lbl" style="margin-bottom:6px;">토스 클라이언트 키 <span style="font-weight:400;opacity:.55;">(공개 키 · test_ck_ 또는 live_ck_)</span></div>
+            <input class="fi" id="py-client-key" placeholder="test_ck_... 또는 live_ck_..." style="margin-bottom:8px;font-family:monospace;font-size:11px;">
+            <button class="save-btn" onclick="pySaveSettings()" style="width:100%;font-size:12px;padding:8px 0;">키 저장</button>
+            <div style="font-size:10px;color:rgba(0,0,0,.45);line-height:1.55;margin-top:8px;">
+              📌 <b>시크릿 키</b>는 Vercel 환경변수 <code>TOSS_SECRET_KEY</code>에 설정해주세요. (Vercel → Settings → Environment Variables)<br>
+              📌 토스페이먼츠 → 내 상점 → API 키 메뉴에서 발급받을 수 있어요.
+            </div>
+          </div>
+          <button class="save-btn" onclick="pyCreate()" style="width:100%;margin-bottom:16px;">+ 새 결제 상품 만들기</button>
+          <div id="py-config-list"><div class="empty-msg">불러오는 중…</div></div>
+        </div>
+        <!-- 편집 화면 -->
+        <div id="py-edit-screen" style="display:none;flex-direction:column;overflow:hidden;">
+          <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;align-items:center;gap:8px;">
+            <button class="mbtn-cancel" style="flex:0 0 auto;" onclick="pyShowList()">← 목록</button>
+            <button class="save-btn" style="flex:1;" onclick="pySave()">저장</button>
+            <button class="prev-btn" onclick="openToolPreview('/tools/payment/?id='+pyCurDocId)" style="font-size:11px;padding:6px 10px;">미리보기</button>
+            <button class="prev-btn" onclick="pyViewRecords()" style="font-size:11px;padding:6px 10px;">결제 내역</button>
+            <button class="prev-btn" onclick="pyDelete()" style="font-size:11px;padding:6px 10px;color:#c00;border-color:#c00;">삭제</button>
+          </div>
+          <div style="padding:16px;overflow-y:auto;flex:1;">
+            <div class="ed-sect">
+              <div class="ed-lbl">제목 <span style="font-weight:400;opacity:.55;">(관리용 · 사용자에게도 표시)</span></div>
+              <input class="fi" id="py-title" placeholder="예: 프로 멤버십" style="margin-bottom:0;">
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">상품명 <span style="font-weight:400;opacity:.55;">(영수증·결제창에 표시)</span></div>
+              <input class="fi" id="py-product" placeholder="예: 베이비즈니스 프로 1개월" style="margin-bottom:0;">
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">금액 (원) <span style="font-weight:400;opacity:.55;">(최소 100원)</span></div>
+              <input class="fi" id="py-amount" type="number" min="100" step="100" placeholder="9900" style="margin-bottom:0;">
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">상세 설명 <span style="font-weight:400;opacity:.55;">(선택 · 결제창에 표시)</span></div>
+              <textarea class="fi" id="py-desc" rows="3" placeholder="결제 전 사용자에게 보여줄 설명" style="margin-bottom:0;resize:vertical;min-height:64px;"></textarea>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">권한 라벨 (tier) <span style="font-weight:400;opacity:.55;">(선택 · 영문/숫자 · 추후 권한 분기에 사용)</span></div>
+              <input class="fi" id="py-tier" placeholder="예: pro, member, premium" style="margin-bottom:0;">
+              <div style="font-size:10px;color:rgba(0,0,0,.45);line-height:1.6;margin-top:6px;">결제 성공 시 사용자에게 이 라벨이 부여돼요. 비워두면 결제 기록만 남아요.</div>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">결제 완료 메시지 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
+              <textarea class="fi" id="py-success" rows="2" placeholder="예: 결제가 완료되었어요. 이제 프로 콘텐츠를 볼 수 있어요." style="margin-bottom:0;resize:vertical;min-height:50px;"></textarea>
+            </div>
+            <!-- 결제 내역 인라인 (결제 내역 버튼 클릭 시 표시) -->
+            <div id="py-records-section" style="display:none;margin-top:24px;">
+              <div class="sect-head">결제 내역</div>
+              <div id="py-records-summary" style="font-size:12px;color:rgba(0,0,0,.55);margin-bottom:10px;"></div>
+              <div id="py-records-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -1347,6 +1418,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="blk-tab"    id="ttab-youtube-playlist"  onclick="switchToolType('youtube-playlist')"  style="font-size:12px;padding:6px 12px;">유튜브 뮤직</button>
         <button class="blk-tab"    id="ttab-schedule"          onclick="switchToolType('schedule')"          style="font-size:12px;padding:6px 12px;">일정 잡기</button>
         <button class="blk-tab"    id="ttab-copy-gen"          onclick="switchToolType('copy-gen')"          style="font-size:12px;padding:6px 12px;">문구 생성기</button>
+        <button class="blk-tab"    id="ttab-payment"           onclick="switchToolType('payment')"           style="font-size:12px;padding:6px 12px;">결제</button>
       </div>
       <div id="tool-inst-section">
         <div class="ed-lbl" style="margin-bottom:6px;">인스턴스 선택</div>
@@ -3707,9 +3779,9 @@ function renderBlockList() {
   if(!curBlocks.length){el.innerHTML=_blkInsertRow(0)+'<div class="empty-msg" style="padding:10px 0;">블록이 없어요.</div>';return;}
   const items=curBlocks.map((b,i)=>{
     const tl=b.type==='text'?'텍스트':b.type==='image'?'이미지':b.type==='mixed'?'혼합':b.type==='embed'?'임베드':b.type==='tool'?'도구':b.type==='spacer'?'스페이서':b.type==='divider'?'구분선':'폼(구)';
-    const _ttMap={'form':'폼','booth':'꾸미기','guide':'계산기','youtube-playlist':'유튜브 뮤직','schedule':'일정잡기','copy-gen':'문구 생성기'};
+    const _ttMap={'form':'폼','booth':'꾸미기','guide':'계산기','youtube-playlist':'유튜브 뮤직','schedule':'일정잡기','copy-gen':'문구 생성기','payment':'결제'};
     const _ttLabel=_ttMap[b.toolType]||b.toolType||'?';
-    const _tcId=b.toolConfig?.formId||b.toolConfig?.boothId||b.toolConfig?.guideId||b.toolConfig?.copyGenId||b.toolConfig?.scheduleId||b.toolConfig?.youtubePlaylistId||'';
+    const _tcId=b.toolConfig?.formId||b.toolConfig?.boothId||b.toolConfig?.guideId||b.toolConfig?.copyGenId||b.toolConfig?.scheduleId||b.toolConfig?.youtubePlaylistId||b.toolConfig?.paymentId||'';
     const toolSubLbl=b.type==='tool'?(_ttLabel+(_tcId?' · '+_tcId:'')):'';
 
     const pv=b.type==='text'?(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,32):
@@ -4203,7 +4275,7 @@ function openBlockModal(idx,insertAt){
     curBlkToolType=b.toolType||'form';
     curBlkToolConfig={...b.toolConfig||{}};
     curBlkCompleteTrigger=b.completeTrigger||'tool-signal';
-    ['form','booth','guide','youtube-playlist','schedule'].forEach(k=>{
+    ['form','booth','guide','youtube-playlist','schedule','copy-gen','payment'].forEach(k=>{
       const el=document.getElementById('ttab-'+k);
       if(el) el.classList.toggle('on',k===curBlkToolType);
     });
@@ -4385,6 +4457,7 @@ function saveBlock(){
     else if(curBlkToolType==='schedule') tc.scheduleId=selV;
     else if(curBlkToolType==='copy-gen') tc.copyGenId=selV;
     else if(curBlkToolType==='youtube-playlist') tc.youtubePlaylistId=selV;
+    else if(curBlkToolType==='payment') tc.paymentId=selV;
     b.toolType=curBlkToolType;
     b.toolConfig=tc;
     b.height=curToolHeightMode==='full'?'full':(curToolHeightMode==='px'?parseInt(document.getElementById('tool-height')?.value)||0:0);
@@ -4453,7 +4526,7 @@ function switchBlkTab(t){
 const SINGLE_TOOL_TYPES = []; // 모든 도구 인스턴스 선택형
 function switchToolType(tt){
   curBlkToolType=tt;
-  ['form','booth','guide','youtube-playlist','schedule','copy-gen'].forEach(k=>{
+  ['form','booth','guide','youtube-playlist','schedule','copy-gen','payment'].forEach(k=>{
     const el=document.getElementById('ttab-'+k);
     if(el) el.classList.toggle('on',k===tt);
   });
@@ -4486,9 +4559,12 @@ async function loadToolInstList(tt){
     } else if(tt==='youtube-playlist'){
       const snap=await db.collection('cms_youtube_playlists').orderBy('createdAt','desc').get();
       toolInstList=snap.docs.map(d=>({id:d.id,...d.data()}));
+    } else if(tt==='payment'){
+      const snap=await db.collection('cms_payment_configs').orderBy('createdAt','desc').get();
+      toolInstList=snap.docs.map(d=>({id:d.id,...d.data()}));
     }
   }catch(e){ console.error('[loadToolInstList]',e); }
-  const cur=tt==='form'?curBlkToolConfig?.formId:tt==='booth'?curBlkToolConfig?.boothId:tt==='guide'?curBlkToolConfig?.guideId:tt==='schedule'?curBlkToolConfig?.scheduleId:tt==='copy-gen'?curBlkToolConfig?.copyGenId:tt==='youtube-playlist'?curBlkToolConfig?.youtubePlaylistId:'';
+  const cur=tt==='form'?curBlkToolConfig?.formId:tt==='booth'?curBlkToolConfig?.boothId:tt==='guide'?curBlkToolConfig?.guideId:tt==='schedule'?curBlkToolConfig?.scheduleId:tt==='copy-gen'?curBlkToolConfig?.copyGenId:tt==='youtube-playlist'?curBlkToolConfig?.youtubePlaylistId:tt==='payment'?curBlkToolConfig?.paymentId:'';
   sel.innerHTML='<option value="">— 선택하세요 —</option>'+toolInstList.map(x=>`<option value="${x.id}"${x.id===cur?' selected':''}>${x.name||x.title||x.id}</option>`).join('');
 }
 function openToolManageLink(e){
@@ -4902,6 +4978,14 @@ const TOOL_LINK_REGISTRY = [
     urlPrefix: '/tools/copy-gen/?id=',
     getInstances: async () => {
       const s = await db.collection('cms_copy_gen_configs').orderBy('createdAt','desc').get();
+      return s.docs.map(d => ({ id: d.id, name: d.data().title }));
+    },
+  },
+  {
+    id: 'payment', label: '결제',
+    urlPrefix: '/tools/payment/?id=',
+    getInstances: async () => {
+      const s = await db.collection('cms_payment_configs').orderBy('createdAt','desc').get();
       return s.docs.map(d => ({ id: d.id, name: d.data().title }));
     },
   },
@@ -5416,6 +5500,7 @@ function openTool(toolId) {
   if(toolId === 'youtube-playlist') { ytMgrInit(); }
   if(toolId === 'schedule') { scInit(); }
   if(toolId === 'copy-gen') { cgShowList(); }
+  if(toolId === 'payment') { pyInit(); }
 }
 
 function closeTool() {
@@ -7388,6 +7473,163 @@ function ffdRemoveLink(){
   }
   document.execCommand('unlink',false,null);
   document.getElementById('ff-desc-link-popup').style.display='none';
+}
+
+/* ────────────────────────────────────────────────────────────
+   결제 도구 (토스페이먼츠) 관리
+──────────────────────────────────────────────────────────── */
+let pyCurDocId = null;
+
+async function pyInit(){
+  pyShowList();
+  await pyLoadSettings();
+  await pyLoadList();
+}
+function pyBack(){ closeTool(); }
+
+async function pyLoadSettings(){
+  try{
+    const doc = await db.collection('cms_admin_settings').doc('payment').get();
+    const ck = doc.exists ? (doc.data().tossClientKey || '') : '';
+    const inp = document.getElementById('py-client-key');
+    if(inp) inp.value = ck;
+  }catch(e){ console.error('[pyLoadSettings]',e); }
+}
+async function pySaveSettings(){
+  const v = (document.getElementById('py-client-key').value || '').trim();
+  try{
+    await db.collection('cms_admin_settings').doc('payment').set({ tossClientKey: v, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+    alert('토스 클라이언트 키를 저장했어요.');
+  }catch(e){ alert('저장 실패: '+e.message); }
+}
+
+async function pyLoadList(){
+  const el = document.getElementById('py-config-list');
+  el.innerHTML = '<div class="empty-msg">불러오는 중…</div>';
+  try{
+    const snap = await db.collection('cms_payment_configs').orderBy('createdAt','desc').get();
+    if(snap.empty){ el.innerHTML = '<div class="empty-msg">아직 등록된 결제 상품이 없어요.</div>'; return; }
+    el.innerHTML = snap.docs.map(d=>{
+      const r = d.data();
+      const tier = r.tier ? `<span style="margin-left:6px;font-size:10px;font-weight:700;background:#000;color:#fff;padding:2px 6px;">${escHtml(r.tier)}</span>` : '';
+      return `<div class="proj-item" onclick="pyEdit('${d.id}')" style="cursor:pointer;">
+        <div class="pi-name">${escHtml(r.title || '(제목 없음)')}${tier}</div>
+        <div class="pi-meta">${escHtml(r.productName || '')} · ${Number(r.amount||0).toLocaleString()}원</div>
+      </div>`;
+    }).join('');
+  }catch(e){ el.innerHTML = '<div class="empty-msg">불러오기 실패: '+escHtml(e.message)+'</div>'; }
+}
+
+async function pyCreate(){
+  const title = prompt('새 결제 상품의 제목을 입력해주세요.', '프로 멤버십');
+  if(!title) return;
+  try{
+    const ref = await db.collection('cms_payment_configs').add({
+      title: title.trim(),
+      productName: title.trim(),
+      amount: 0,
+      description: '',
+      tier: '',
+      successMessage: '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+    await pyEdit(ref.id);
+    await pyLoadList();
+  }catch(e){ alert('생성 실패: '+e.message); }
+}
+
+async function pyEdit(id){
+  pyCurDocId = id;
+  document.getElementById('py-list-screen').style.display = 'none';
+  const ed = document.getElementById('py-edit-screen');
+  ed.style.display = 'flex';
+  document.getElementById('py-records-section').style.display = 'none';
+  try{
+    const doc = await db.collection('cms_payment_configs').doc(id).get();
+    if(!doc.exists){ alert('상품을 찾을 수 없어요.'); pyShowList(); return; }
+    const r = doc.data();
+    document.getElementById('py-title').value     = r.title || '';
+    document.getElementById('py-product').value   = r.productName || '';
+    document.getElementById('py-amount').value    = r.amount || '';
+    document.getElementById('py-desc').value      = r.description || '';
+    document.getElementById('py-tier').value      = r.tier || '';
+    document.getElementById('py-success').value   = r.successMessage || '';
+  }catch(e){ alert('불러오기 실패: '+e.message); }
+}
+
+function pyShowList(){
+  document.getElementById('py-edit-screen').style.display = 'none';
+  document.getElementById('py-list-screen').style.display = '';
+  pyCurDocId = null;
+  pyLoadList();
+}
+
+async function pySave(){
+  if(!pyCurDocId) return;
+  const amount = parseInt(document.getElementById('py-amount').value) || 0;
+  if(amount < 100){ alert('금액은 100원 이상이어야 해요.'); return; }
+  const tier = (document.getElementById('py-tier').value || '').trim();
+  if(tier && !/^[a-zA-Z0-9_\-]+$/.test(tier)){ alert('권한 라벨은 영문/숫자/_/- 만 사용해주세요.'); return; }
+  try{
+    await db.collection('cms_payment_configs').doc(pyCurDocId).set({
+      title:          document.getElementById('py-title').value.trim() || '(제목 없음)',
+      productName:    document.getElementById('py-product').value.trim() || '',
+      amount:         amount,
+      description:    document.getElementById('py-desc').value.trim() || '',
+      tier:           tier,
+      successMessage: document.getElementById('py-success').value.trim() || '',
+      updatedAt:      firebase.firestore.FieldValue.serverTimestamp(),
+    }, { merge:true });
+    alert('저장했어요.');
+  }catch(e){ alert('저장 실패: '+e.message); }
+}
+
+async function pyDelete(){
+  if(!pyCurDocId) return;
+  if(!confirm('이 결제 상품을 삭제할까요? 이미 결제된 기록은 그대로 남습니다.')) return;
+  try{
+    await db.collection('cms_payment_configs').doc(pyCurDocId).delete();
+    pyShowList();
+  }catch(e){ alert('삭제 실패: '+e.message); }
+}
+
+async function pyViewRecords(){
+  if(!pyCurDocId) return;
+  const sect = document.getElementById('py-records-section');
+  const list = document.getElementById('py-records-list');
+  const summary = document.getElementById('py-records-summary');
+  sect.style.display = 'block';
+  list.innerHTML = '<div class="empty-msg">불러오는 중…</div>';
+  summary.textContent = '';
+  try{
+    const snap = await db.collection('cms_payment_records').where('configId','==',pyCurDocId).get();
+    if(snap.empty){ list.innerHTML = '<div class="empty-msg">아직 결제 내역이 없어요.</div>'; return; }
+    const docs = snap.docs.slice().sort((a,b)=>{
+      const ta = a.data().createdAt?.toMillis?.()||0;
+      const tb = b.data().createdAt?.toMillis?.()||0;
+      return tb - ta;
+    });
+    const total = docs.reduce((s,d)=> s + (Number(d.data().amount)||0), 0);
+    summary.textContent = `총 ${docs.length}건 · ${total.toLocaleString()}원`;
+    list.innerHTML = `<div class="user-table-wrap"><table class="user-table">
+      <thead><tr><th>주문번호</th><th>사용자</th><th>금액</th><th>결제수단</th><th>승인</th></tr></thead>
+      <tbody>${docs.map(d=>{
+        const r = d.data();
+        const userName = r.userFields?.name || r.userFields?.이름 || r.userId || '(비로그인)';
+        const phone    = r.userFields?.phone || r.userFields?.연락처 || '';
+        const userCell = phone ? `${escHtml(userName)}<br><span style="font-size:10px;opacity:.55;">${escHtml(phone)}</span>` : escHtml(userName);
+        const approvedAt = (r.approvedAt || '').replace('T',' ').slice(0,16);
+        return `<tr>
+          <td style="font-family:monospace;font-size:10px;word-break:break-all;">${escHtml(r.orderId||'')}</td>
+          <td>${userCell}</td>
+          <td style="white-space:nowrap;text-align:right;">${Number(r.amount||0).toLocaleString()}원</td>
+          <td>${escHtml(r.method||'')}</td>
+          <td style="white-space:nowrap;font-size:11px;">${escHtml(approvedAt)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  }catch(e){ list.innerHTML = '<div class="empty-msg">불러오기 실패: '+escHtml(e.message)+'</div>'; }
 }
 </script>
 <div id="fmt-popup" style="display:none;position:fixed;background:#fff;border:2px solid #000;z-index:600;box-shadow:3px 3px 0 rgba(0,0,0,.1);min-width:110px;"><div id="fmt-popup-inner"></div></div>
