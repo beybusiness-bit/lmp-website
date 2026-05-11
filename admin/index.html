@@ -185,6 +185,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 /* 패널 내 모바일 닫기 버튼 (데스크탑에서 숨김) */
 .pv-close-btn{display:none;width:100%;padding:10px 0;margin-top:12px;background:transparent;border:1.5px solid #000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 .pv-close-btn:hover{background:#000;color:#fff;}
+#tool-preview-panel{position:fixed;top:0;right:0;bottom:0;width:264px;z-index:150;background:#f4f4f4;border-left:2px solid #000;display:none;flex-direction:column;align-items:center;padding:16px 12px;overflow-y:auto;}
+#tool-preview-panel.pv-open{display:flex;}
+#tool-pv-wrap{border:3px solid #000;border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 6px 24px rgba(0,0,0,.2);width:240px;height:425px;position:relative;flex-shrink:0;}
+#tool-pv-frame{width:430px;height:763px;border:none;transform-origin:top left;transform:scale(0.558);display:block;}
+@media(max-width:767px){#tool-preview-panel.pv-open{width:100%;z-index:460;}}
 /* 공유 백드롭 */
 #pv-backdrop{display:none;position:fixed;inset:0;z-index:449;background:rgba(0,0,0,.45);cursor:pointer;}
 #pv-backdrop.on{display:block;}
@@ -596,6 +601,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;align-items:center;gap:10px;">
             <button class="mbtn-cancel" style="flex:0 0 auto;" onclick="scShowList()">← 목록</button>
             <button class="save-btn" style="flex:1;" onclick="scSave()">저장</button>
+            <button class="prev-btn" onclick="openToolPreview('/tools/schedule/?id='+scCurId)" style="font-size:12px;flex-shrink:0;">미리보기</button>
           </div>
           <div style="padding:16px;overflow-y:auto;flex:1;">
 
@@ -727,6 +733,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <span class="back-btn" onclick="closeTool()">←</span>
           <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">유튜브 뮤직 재생목록</span>
           <div style="margin-left:auto;display:flex;gap:8px;">
+            <button class="prev-btn" onclick="openToolPreview('/tools/youtube-playlist/')" style="font-size:12px;">미리보기</button>
             <button class="prev-btn" onclick="ytExportCSV()" title="CSV 다운로드">CSV</button>
             <button class="prev-btn" onclick="ytCopyUrls()" title="URL 목록 복사">URL 복사</button>
           </div>
@@ -781,6 +788,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;align-items:center;gap:10px;">
             <button class="mbtn-cancel" style="flex:0 0 auto;" onclick="toolFormMgrList()">← 목록</button>
             <button class="save-btn" style="flex:1;" onclick="toolFormSave()">저장</button>
+            <button class="prev-btn" onclick="openToolPreview('/tools/form/?id='+tfCurDocId)" style="font-size:12px;flex-shrink:0;">미리보기</button>
           </div>
           <div style="padding:16px;overflow-y:auto;flex:1;">
             <div class="ed-sect">
@@ -824,6 +832,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
           <span class="back-btn" id="deco-back-btn" onclick="decoBack()">←</span>
           <span id="deco-header-title" style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">꾸미기 생성기</span>
+          <div style="flex:1;"></div>
+          <div id="deco-header-actions" style="display:flex;gap:6px;"></div>
         </div>
 
         <!-- 꾸미기 목록 화면 -->
@@ -926,6 +936,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;align-items:center;gap:8px;">
             <button class="mbtn-cancel" style="flex:0 0 auto;" onclick="cgShowList()">← 목록</button>
             <button class="save-btn" style="flex:1;" onclick="cgSave()">저장</button>
+            <button class="prev-btn" onclick="openToolPreview('/tools/copy-gen/?id='+cgCurDocId)" style="font-size:11px;padding:6px 10px;">미리보기</button>
             <button class="prev-btn" onclick="cgViewResults()" style="font-size:11px;padding:6px 10px;">결과 보기</button>
             <button class="prev-btn" onclick="cgDelete()" style="font-size:11px;padding:6px 10px;color:#c00;border-color:#c00;">삭제</button>
           </div>
@@ -995,6 +1006,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     </div>
 
   </div>
+</div>
+
+<!-- 도구 미리보기 패널 (fixed 우측) -->
+<div id="tool-preview-panel">
+  <div class="preview-side-panel-header" style="width:100%;margin-bottom:10px;">
+    <span style="font-size:11px;font-weight:900;color:#000;">도구 미리보기</span>
+    <button class="prev-btn" onclick="closeToolPreview()" style="font-size:11px;padding:4px 8px;">닫기 ×</button>
+  </div>
+  <div id="tool-pv-wrap">
+    <iframe id="tool-pv-frame" src="about:blank" allow="clipboard-write" style="width:430px;height:763px;border:none;transform-origin:top left;transform:scale(0.558);display:block;"></iframe>
+  </div>
+  <div style="font-size:9px;color:rgba(0,0,0,.35);text-align:center;margin-top:8px;">실제와 다를 수<br>있어요</div>
+  <button class="prev-btn" style="margin-top:8px;font-size:11px;" onclick="refreshToolPreview()">↻ 새로고침</button>
 </div>
 
 <!-- ── 미리보기/도움말 공유 백드롭 (모바일 모달용) ── -->
@@ -4779,6 +4803,23 @@ function closeTool() {
     curTool = null;
   }
   document.getElementById('tools-list-view').style.display = '';
+  closeToolPreview();
+}
+
+let _toolPvUrl = '';
+function openToolPreview(url) {
+  _toolPvUrl = url;
+  const iframe = document.getElementById('tool-pv-frame');
+  iframe.src = url;
+  document.getElementById('tool-preview-panel').classList.add('pv-open');
+}
+function closeToolPreview() {
+  document.getElementById('tool-preview-panel').classList.remove('pv-open');
+  document.getElementById('tool-pv-frame').src = 'about:blank';
+  _toolPvUrl = '';
+}
+function refreshToolPreview() {
+  if (_toolPvUrl) document.getElementById('tool-pv-frame').src = _toolPvUrl;
 }
 
 /* ════════════════════════════════════════════
@@ -5370,6 +5411,8 @@ function decoShowList() {
   document.getElementById('deco-config-screen').style.display = 'none';
   document.getElementById('deco-header-title').textContent = '꾸미기 생성기';
   document.getElementById('deco-back-btn').onclick = () => closeTool();
+  document.getElementById('deco-header-actions').innerHTML = '';
+  closeToolPreview();
   loadDecoCustomList();
 }
 
@@ -5418,6 +5461,8 @@ async function decoOpenConfig(configId) {
   }
   loadBoothBgs(configId);
   loadBoothConnections(configId);
+  const pvUrl = configId === 'booth' ? '/tools/booth/' : `/tools/booth/?config=${configId}`;
+  document.getElementById('deco-header-actions').innerHTML = `<button class="prev-btn" onclick="openToolPreview('${pvUrl}')" style="font-size:12px;padding:4px 8px;">미리보기</button>`;
 }
 
 /* ════════════════════════════════════════════
@@ -5492,6 +5537,7 @@ function gbShowEdit() {
   document.getElementById('gb-edit-screen').style.display = '';
   document.getElementById('gb-header-title').textContent = '계산기 편집';
   document.getElementById('gb-header-actions').innerHTML = `
+    <button class="prev-btn" onclick="openToolPreview('/tools/guide/?id='+gbState.curCalcId)" style="font-size:12px;padding:4px 8px;">미리보기</button>
     <button class="prev-btn" onclick="openHelpPanel('계산기 생성기 사용법', GB_HELP_HTML)" style="font-size:12px;padding:4px 10px;">?</button>
     <button class="save-btn" onclick="gbSave()" style="font-size:11px;padding:6px 12px;">저장</button>
     <button class="prev-btn" onclick="gbDelete()" style="font-size:11px;color:#c00;border-color:#c00;">삭제</button>`;
