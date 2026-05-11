@@ -270,6 +270,11 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
   <div id="return-btn" onclick="reopenPrep()">↑</div>
   <div id="return-greeting"></div>
 
+  <div id="coming-soon-screen" style="display:none;position:absolute;inset:0;z-index:200;background:#fff;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:40px;gap:16px;">
+    <div style="font-size:40px;">🔒</div>
+    <div style="font-size:20px;font-weight:800;letter-spacing:-.3px;">준비 중이에요</div>
+    <div style="font-size:14px;color:rgba(0,0,0,.45);line-height:1.7;">곧 공개될 예정이에요.<br>조금만 기다려주세요.</div>
+  </div>
   <div id="error-screen">
     <div class="error-msg" id="error-msg">프로젝트를 찾을 수 없어요.</div>
     <div class="error-sub" id="error-sub">URL을 확인해주세요.</div>
@@ -460,6 +465,9 @@ async function loadProjectSettings(){
   }catch(e){ showError('연결에 실패했어요.','잠시 후 다시 시도해주세요.'); }
 }
 function applySettings(d){
+  const previewParam=new URLSearchParams(location.search).get('preview');
+  const isPreview=d.previewToken&&previewParam===d.previewToken;
+  if(d.published===false&&!isPreview){const el=document.getElementById('coming-soon-screen');if(el){el.style.display='flex';}return;}
   LAYOUT_TYPE     = d.layoutType     || 'separate';
   DDAY_ENABLED    = d.ddayEnabled    || false;
   DDAY_DATE       = d.ddayDate       || '';
@@ -472,7 +480,7 @@ function applySettings(d){
   SELF_REG_SUCCESS_MSG = d.selfRegSuccessMsg || '';
   GREETING_TEXT   = d.greetingText   || '';
   console.log('[Greeting] GREETING_TEXT loaded:', GREETING_TEXT);
-  STAGES = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0)).map(s=>({
+  STAGES = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0)).filter(s=>isPreview||s.published!==false).map(s=>({
     id:s.id||'',title:s.title||'',
     trackProgress:!!s.trackProgress,checkableCount:s.checkableCount||0,
     displayType:s.displayType||'text',stageImageUrl:s.stageImageUrl||''
@@ -821,6 +829,7 @@ async function confirmAuth(){
       const u=snap.docs[0].data();
       USER_DOC_ID=snap.docs[0].id;
       sessionStorage.setItem('userSession',JSON.stringify({...u,project:PROJECT_ID,_docId:USER_DOC_ID}));
+      db.collection(AUTH_COLLECTION).doc(USER_DOC_ID).update({lastLoginAt:firebase.firestore.FieldValue.serverTimestamp(),loginCount:firebase.firestore.FieldValue.increment(1)}).catch(()=>{});
       loadUserProgress(u);
       applyGreeting(u);
       closeModal('auth-modal');

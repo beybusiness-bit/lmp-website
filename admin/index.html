@@ -312,6 +312,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div class="ed-lbl">문구</div>
             <input class="fi" id="p-edition" placeholder="예: 제3회">
           </div>
+          <div class="sect-head">게시 상태</div>
+          <div class="ed-sect">
+            <div class="switch-row" style="margin-bottom:10px;">
+              <div class="switch on" id="published-sw" onclick="togglePublished()"></div>
+              <span class="switch-lbl" id="published-sw-lbl">게시됨 — 사용자에게 공개</span>
+            </div>
+            <div id="preview-url-wrap" style="display:none;background:rgba(0,0,0,.04);padding:10px;font-size:12px;">
+              <div style="font-weight:700;margin-bottom:6px;">미리보기 URL <span style="font-weight:400;opacity:.6;">(비공개 상태에서 관리자 전용 확인용)</span></div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input id="preview-url-display" readonly style="flex:1;border:none;background:transparent;font-size:11px;color:rgba(0,0,0,.6);outline:none;font-family:monospace;" onclick="this.select()">
+                <button class="b-btn" onclick="copyPreviewUrl()">복사</button>
+              </div>
+            </div>
+          </div>
+          <div class="sect-head">공유 미리보기 (SNS · 카카오)</div>
+          <div class="ed-sect">
+            <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:10px;line-height:1.6;">링크를 공유할 때 보여지는 제목·설명·이미지를 설정해요. 변경 후에는 반드시 <b>배포</b> 버튼을 눌러야 반영돼요.</div>
+            <div class="ed-lbl">제목 <span style="font-weight:400;opacity:.55;">(공란 시 프로젝트 이름 사용)</span></div>
+            <input class="fi" id="p-og-title" placeholder="예: GMBF 3회 셀러 포털" style="margin-bottom:10px;">
+            <div class="ed-lbl">설명</div>
+            <textarea class="fi" id="p-og-desc" placeholder="예: 플리마켓 준비에 필요한 모든 정보를 한 곳에서 확인하세요." style="resize:vertical;min-height:60px;margin-bottom:10px;"></textarea>
+            <div class="ed-lbl">대표 이미지 URL</div>
+            <input class="fi" id="p-og-image" placeholder="https://...이미지 주소...">
+          </div>
           <div class="sect-head">D-Day</div>
           <div class="ed-sect">
             <div class="switch-row" style="margin-bottom:12px;">
@@ -2371,13 +2395,17 @@ function renderUserTable() {
     ` : ''}
   </div>`;
   const chkTh = `<th style="width:32px;"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleSelectAll(this.checked)" style="cursor:pointer;"></th>`;
-  const headers = chkTh + curAuthFields.map(f=>`<th>${f.label}</th>`).join('') + '<th></th>';
+  const headers = chkTh + curAuthFields.map(f=>`<th>${f.label}</th>`).join('') + '<th style="white-space:nowrap;">최근 로그인</th><th style="white-space:nowrap;">횟수</th><th></th>';
   const rows = curUsers.map(u => {
     const checked = selectedUserIds.has(u._id);
     const cells = curAuthFields.map(f=>`<td>${u[f.key]??''}</td>`).join('');
+    const lastLogin = u.lastLoginAt?.seconds ? new Date(u.lastLoginAt.seconds*1000).toLocaleString('ko',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '-';
+    const loginCnt = u.loginCount ?? '-';
     return `<tr class="${checked?'u-row-selected':''}">
       <td><input type="checkbox" ${checked?'checked':''} onchange="toggleSelectUser('${u._id}',this.checked)" style="cursor:pointer;"></td>
       ${cells}
+      <td style="font-size:11px;white-space:nowrap;color:rgba(0,0,0,.6);">${lastLogin}</td>
+      <td style="font-size:12px;font-weight:700;text-align:center;">${loginCnt}</td>
       <td><div style="display:flex;gap:4px;">
         <button class="u-btn" onclick="openUserModal('${u._id}')">편집</button>
         <button class="u-btn" onclick="deleteUser('${u._id}')">삭제</button>
@@ -2530,10 +2558,12 @@ function renderStageList() {
       </div>
       ${s.displayType==='image'?`<div style="display:flex;gap:4px;margin-top:5px;align-items:center;"><input class="fi-sm" style="flex:1;margin-bottom:0;" placeholder="카드 배경 이미지 URL" value="${(s.stageImageUrl||'').replace(/"/g,'&quot;')}" oninput="curStages[${i}].stageImageUrl=this.value"><button class="bg-up-btn" onclick="openStageImageUpload(${i},this)" style="flex-shrink:0;">📁 업로드</button></div>`:''
       }
-      <div style="display:flex;gap:6px;align-items:center;margin-top:6px;">
+      <div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;">
         <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);white-space:nowrap;">진행률 표시</div>
         <button class="tgl-btn${s.trackProgress?' on':''}" onclick="curStages[${i}].trackProgress=!curStages[${i}].trackProgress;renderStageList();" style="font-size:11px;padding:5px 12px;">${s.trackProgress?'표시 ON':'표시 OFF'}</button>
         ${s.checkableCount?`<span style="font-size:10px;color:rgba(0,0,0,.4);">체크 항목 ${s.checkableCount}개</span>`:''}
+        <div style="flex:1;"></div>
+        <button onclick="curStages[${i}].published=curStages[${i}].published===false?true:false;renderStageList();projDirty=true;" style="padding:4px 10px;border:1.5px solid ${s.published===false?'rgba(0,0,0,.25)':'#000'};background:${s.published===false?'transparent':'#000'};color:${s.published===false?'rgba(0,0,0,.4)':'#fff'};font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">${s.published===false?'🔒 비공개':'✓ 게시됨'}</button>
       </div>
     </div>`);
   el.innerHTML = _stageInsertRow(0) + items.map((h,i)=>h+_stageInsertRow(i+1)).join('');
@@ -2691,6 +2721,16 @@ async function editProject(id) {
     setSelfReg(d.selfRegEnabled||false);
     document.getElementById('p-greeting-text').value = d.greetingText||'';
 
+    // OG 필드
+    document.getElementById('p-og-title').value = d.ogTitle||'';
+    document.getElementById('p-og-desc').value  = d.ogDesc||'';
+    document.getElementById('p-og-image').value = d.ogImageUrl||'';
+    // 게시 상태
+    const pubSw = document.getElementById('published-sw');
+    const isPublished = d.published !== false;
+    if(pubSw){ isPublished ? pubSw.classList.add('on') : pubSw.classList.remove('on'); }
+    updatePublishedUI(isPublished, d.previewToken||'', id);
+
     document.getElementById('proj-del').style.display = 'block';
     updateUrlPreview();
     setLogoType(d.logoType||'image');
@@ -2702,6 +2742,31 @@ async function editProject(id) {
     switchInnerTab('basic'); showProjView('edit');
     setTimeout(()=>{ _projDirtyLock=false; projDirty=false; }, 300);
   } catch(e) { alert('불러오기 실패: '+e.message); }
+}
+function togglePublished(){
+  const sw=document.getElementById('published-sw');
+  sw.classList.toggle('on');
+  const isOn=sw.classList.contains('on');
+  const id=document.getElementById('p-id').value.trim();
+  const token=document.getElementById('preview-url-display')?.dataset.token||'';
+  updatePublishedUI(isOn,token,id);
+  projDirty=true;
+}
+function updatePublishedUI(isPublished,token,id){
+  const lbl=document.getElementById('published-sw-lbl');
+  const wrap=document.getElementById('preview-url-wrap');
+  const urlEl=document.getElementById('preview-url-display');
+  if(lbl) lbl.textContent=isPublished?'게시됨 — 사용자에게 공개':'비공개 — 사용자에게 숨김';
+  if(wrap) wrap.style.display=isPublished?'none':'';
+  if(urlEl&&token&&id){
+    const url=`https://lazymaxpotential.kr/${id}/?preview=${token}`;
+    urlEl.value=url; urlEl.dataset.token=token;
+  }
+}
+function copyPreviewUrl(){
+  const urlEl=document.getElementById('preview-url-display');
+  if(!urlEl?.value) return;
+  navigator.clipboard.writeText(urlEl.value).then(()=>alert('미리보기 URL이 복사됐어요!'));
 }
 async function saveProject(deploy=true) {
   const id   = document.getElementById('p-id').value.trim();
@@ -2743,8 +2808,17 @@ async function saveProject(deploy=true) {
     stats:        curStats,
     elementOrder: curElementOrder,
     keyColors:    curKeyColors,
+    published:    document.getElementById('published-sw')?.classList.contains('on') ?? true,
+    ogTitle:      document.getElementById('p-og-title')?.value.trim()||'',
+    ogDesc:       document.getElementById('p-og-desc')?.value.trim()||'',
+    ogImageUrl:   document.getElementById('p-og-image')?.value.trim()||'',
     updatedAt:    firebase.firestore.FieldValue.serverTimestamp(),
   };
+  // previewToken 없으면 생성
+  const existingDoc = await db.collection('cms_projects').doc(id).get();
+  if(!existingDoc.data()?.previewToken){
+    data.previewToken = Math.random().toString(36).slice(2,10);
+  }
 
   try {
     await db.collection('cms_projects').doc(id).set(data, {merge:true});
@@ -2997,10 +3071,26 @@ async function deployProjectPage(slug) {
     const d = await r.json();
     tpl = decodeURIComponent(escape(atob(d.content.replace(/\n/g,''))));
   } catch(e) { return false; }
-  const content = tpl.replace(
-    "const PROJECT_ID = new URLSearchParams(location.search).get('id') || '';",
-    `const PROJECT_ID = '${slug}';`
-  );
+  // OG 메타태그 읽기
+  const ogTitle = (document.getElementById('p-og-title')?.value.trim() || document.getElementById('p-name')?.value.trim() || '').replace(/"/g,'&quot;');
+  const ogDesc  = (document.getElementById('p-og-desc')?.value.trim()||'').replace(/"/g,'&quot;');
+  const ogImage = document.getElementById('p-og-image')?.value.trim()||'';
+  const ogUrl   = `https://lazymaxpotential.kr/${slug}/`;
+  const ogMeta  = [
+    `<meta property="og:title" content="${ogTitle}">`,
+    `<meta property="og:description" content="${ogDesc}">`,
+    `<meta property="og:image" content="${ogImage}">`,
+    `<meta property="og:url" content="${ogUrl}">`,
+    `<meta property="og:type" content="website">`,
+    `<meta name="description" content="${ogDesc}">`,
+  ].join('\n');
+  let content = tpl
+    .replace(
+      "const PROJECT_ID = new URLSearchParams(location.search).get('id') || '';",
+      `const PROJECT_ID = '${slug}';`
+    )
+    .replace('<!-- OG_META -->', ogMeta)
+    .replace(/<title>[^<]*<\/title>/, `<title>${ogTitle||slug}</title>`);
   let sha = null;
   try {
     const chk = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${slug}/index.html`,{headers});
