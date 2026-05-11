@@ -2223,7 +2223,7 @@ function setAuthKey(key) {
 }
 function removeField(i) {
   if (curAuthFields[i].key === curAuthKeyField) { alert('인증 키로 사용 중인 필드는 삭제할 수 없어요.'); return; }
-  curAuthFields.splice(i,1); renderAuthFields();
+  curAuthFields.splice(i,1); renderAuthFields(); if (curUsers.length) renderUserTable();
 }
 
 /* Field modal */
@@ -2258,6 +2258,7 @@ function saveField() {
   }
   closeModal('field-modal');
   renderAuthFields();
+  if (curUsers.length) renderUserTable();
 }
 
 /* ══════════════════════════════════════
