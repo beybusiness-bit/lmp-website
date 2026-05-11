@@ -1046,7 +1046,7 @@ function blockHtml(b){
   if(b.type==='embed' && b.embedUrl){
     const _eh=b.embedHeight===0?'100%':(b.embedHeight||500);
     const _eStyle=b.embedHeight===0?'min-height:60vh;height:100%;':'';
-    return `<div class="g-block-embed" style="${mS}${bgS}${b.embedHeight===0?'min-height:60vh;':''}"><iframe src="${b.embedUrl}" width="100%" height="${_eh}" frameborder="0" allowfullscreen style="display:block;border:none;${_eStyle}"></iframe></div>`;
+    return `<div class="g-block-embed" style="${mS}${bgS}${b.embedHeight===0?'min-height:60vh;':''}"><iframe src="${b.embedUrl}" width="100%" height="${_eh}" frameborder="0" allowfullscreen style="display:block;border:none;${_eStyle}" data-block-bg="${b.bgColor||''}"></iframe></div>`;
   }
   if(b.type==='tool'){
     const toolUrls={form:`/tools/form/?id=${b.toolConfig?.formId||''}`,booth:`/tools/booth/?id=${b.toolConfig?.boothId||''}`,guide:`/tools/guide/?id=${b.toolConfig?.guideId||''}`,'youtube-playlist':'/tools/youtube-playlist/',schedule:`/tools/schedule/?id=${b.toolConfig?.scheduleId||''}`,'copy-gen':`/tools/copy-gen/?id=${b.toolConfig?.copyGenId||''}`};
@@ -1058,7 +1058,7 @@ function blockHtml(b){
     const wrapH=isFull?'height:100svh;':(isPx?'':`min-height:60vh;`);
     const trigger=b.completeTrigger||'tool-signal';
     const onloadAttr=trigger==='open'?` onload="if(this.src&&this.src!=='about:blank')autoCheckBlock('${b.id}')"`:'';
-    return `<div class="g-block-embed" style="${mS}${bgS}${wrapH}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}" data-complete-trigger="${trigger}"${onloadAttr}></iframe></div>`;
+    return `<div class="g-block-embed" style="${mS}${bgS}${wrapH}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}" data-block-bg="${b.bgColor||''}" data-complete-trigger="${trigger}"${onloadAttr}></iframe></div>`;
   }
   if(b.type==='spacer'){
     const h=b.spacerHeight||40;
@@ -1095,12 +1095,13 @@ function attachCheck(h,b){
   if(vPos==='top') return checkEl+h;
   return h+checkEl;
 }
-function _lmpContext(){return{type:'lmp-context',projectId:typeof PROJECT_ID!=='undefined'?PROJECT_ID:'',userId:typeof USER_DOC_ID!=='undefined'?USER_DOC_ID:'',boothType:(typeof user!=='undefined'&&user)?(user.boothType||user.type||''):'',keyColors:typeof KEY_COLORS!=='undefined'?KEY_COLORS:[],prepBg:typeof prepBg!=='undefined'?prepBg:'',userFields:(typeof user!=='undefined'&&user)?user:{}};}
+function _effectivePageBg(){const cs=getComputedStyle(document.documentElement);return (cs.getPropertyValue('--body-bg')||cs.getPropertyValue('--c')||'').trim();}
+function _lmpContext(iframeEl){let bb=iframeEl?(iframeEl.getAttribute('data-block-bg')||''):'';if(!bb)bb=_effectivePageBg();return{type:'lmp-context',projectId:typeof PROJECT_ID!=='undefined'?PROJECT_ID:'',userId:typeof USER_DOC_ID!=='undefined'?USER_DOC_ID:'',boothType:(typeof user!=='undefined'&&user)?(user.boothType||user.type||''):'',keyColors:typeof KEY_COLORS!=='undefined'?KEY_COLORS:[],prepBg:typeof prepBg!=='undefined'?prepBg:'',userFields:(typeof user!=='undefined'&&user)?user:{},blockBg:bb};}
 function _sendContextToEmbeds(){
-  setTimeout(()=>{document.querySelectorAll('iframe').forEach(f=>{try{f.contentWindow.postMessage(_lmpContext(),'*');}catch(e){}});},300);
+  setTimeout(()=>{document.querySelectorAll('iframe').forEach(f=>{try{f.contentWindow.postMessage(_lmpContext(f),'*');}catch(e){}});},300);
 }
 window.addEventListener('message',e=>{
-  if(e.data?.type==='lmp-ready'&&e.source){try{e.source.postMessage(_lmpContext(),'*');}catch(er){}return;}
+  if(e.data?.type==='lmp-ready'&&e.source){let sourceIframe=null;document.querySelectorAll('iframe').forEach(f=>{if(f.contentWindow===e.source)sourceIframe=f;});try{e.source.postMessage(_lmpContext(sourceIframe),'*');}catch(er){}return;}
   if(e.data?.type==='lmp-tool-complete'){
     document.querySelectorAll('iframe[data-tool-block]').forEach(f=>{try{if(f.contentWindow===e.source&&f.getAttribute('data-complete-trigger')!=='manual')autoCheckBlock(f.getAttribute('data-tool-block'));}catch(_){}});
     return;

@@ -8,12 +8,13 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 <style>
+:root{--lmp-block-bg:#fff;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:transparent;display:flex;flex-direction:column;align-items:center;min-height:100vh;min-height:100svh;overflow:hidden;}
 
 /* ── 공통 버튼 (lmp 스타일) ── */
 .lmp-btn{flex-shrink:0;padding:7px 14px;background:transparent;color:#000;border:2px solid #000;border-radius:0;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;letter-spacing:-.2px;transition:background .15s,color .15s;-webkit-tap-highlight-color:transparent;}
-.lmp-btn:hover,.lmp-btn:active,.lmp-btn.active{background:#000;color:#fff;}
+.lmp-btn:hover,.lmp-btn:active,.lmp-btn.active{background:#000;color:var(--lmp-block-bg);}
 
 /* ── 상단 툴바 ── */
 #toolbar{width:100%;max-width:480px;background:transparent;border-bottom:2px solid #000;display:flex;align-items:center;gap:0;padding:8px 10px;z-index:100;flex-shrink:0;overflow-x:auto;}
@@ -64,7 +65,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
 /* 프레임 버튼 */
 .frame-btn{width:34px;height:34px;border:2px solid #000;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:#000;transition:background .15s,color .15s;}
-.frame-btn.active,.frame-btn:hover{background:#000;color:#fff;}
+.frame-btn.active,.frame-btn:hover{background:#000;color:var(--lmp-block-bg);}
 
 /* 슬라이더 — 검정 트랙 + 검정 원형 thumb */
 input[type=range]{-webkit-appearance:none;appearance:none;height:2px;background:#000;border:none;outline:none;cursor:pointer;flex:1;min-width:80px;}
@@ -138,7 +139,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   <button class="lmp-btn" id="btn-img" onclick="triggerImageUpload()">이미지 추가</button>
   <button class="lmp-btn" id="btn-draw" onclick="toggleDrawMode()">그리기</button>
   <div class="tool-sep"></div>
-  <button class="lmp-btn" id="btn-export" onclick="openExport()" style="background:#000;color:#fff;">완성</button>
+  <button class="lmp-btn" id="btn-export" onclick="openExport()" style="background:#000;color:var(--lmp-block-bg);">완성</button>
   <input type="file" id="img-file-input" accept="image/*" style="display:none;" onchange="onImageFileSelected(event)">
 </div>
 
@@ -178,7 +179,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     </div>
     <div class="panel-row" style="justify-content:flex-end;">
       <button class="lmp-btn" onclick="deleteSelectedItem()">삭제</button>
-      <button class="lmp-btn" onclick="deselectAll()" style="background:#000;color:#fff;">완료</button>
+      <button class="lmp-btn" onclick="deselectAll()" style="background:#000;color:var(--lmp-block-bg);">완료</button>
     </div>
   </div>
   <!-- 그리기 모드 -->
@@ -197,7 +198,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     </div>
     <div class="panel-row" style="justify-content:flex-end;">
       <button class="lmp-btn" onclick="undoLastStroke()">↩ 되돌리기</button>
-      <button class="lmp-btn" onclick="finishDrawing()" style="background:#000;color:#fff;">이미지로 추가</button>
+      <button class="lmp-btn" onclick="finishDrawing()" style="background:#000;color:var(--lmp-block-bg);">이미지로 추가</button>
       <button class="lmp-btn" onclick="cancelDrawMode()">취소</button>
     </div>
   </div>
@@ -951,6 +952,7 @@ window.addEventListener('message', e => {
   if(e.data?.type !== 'lmp-context') return;
   const d = e.data;
   contextReceived = true;
+  if(d.blockBg) document.documentElement.style.setProperty('--lmp-block-bg', d.blockBg);
   if(d.keyColors?.length) { keyColors = d.keyColors; renderKeyColorSwatches(); }
   // boothType: 부모가 명시적으로 보내거나 userFields.type 에서 추출
   const bt = d.boothType || d.userFields?.boothType || d.userFields?.type || '';
