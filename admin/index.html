@@ -813,15 +813,45 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <span class="switch-lbl">중복 제출 방지</span>
               </div>
             </div>
-            <div class="sect-head" style="margin-top:20px;margin-bottom:8px;">Google Sheet 연동</div>
-            <div class="ed-sect">
-              <div class="ed-lbl">Sheet ID</div>
-              <input class="fi-sm" id="tf-sheet-id" placeholder="스프레드시트 ID" style="margin-bottom:4px;">
-              <div class="ed-lbl" style="margin-bottom:4px;">시트 탭명</div>
-              <input class="fi-sm" id="tf-sheet-tab" placeholder="응답" style="margin-bottom:0;">
+            <div class="sect-head" style="margin-top:24px;margin-bottom:8px;">응답 관리</div>
+            <!-- 구글 시트 연동 (인라인) -->
+            <div class="ed-sect" style="margin-bottom:0;">
+              <!-- 연동됨 -->
+              <div id="tf-resp-connected-view" style="display:none;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span id="tf-resp-sheet-status" style="font-size:12px;flex:1;min-width:120px;color:rgba(0,0,0,.7);">구글 시트 연동됨</span>
+                  <button onclick="disconnectTfRespSheet()" style="padding:6px 12px;background:transparent;border:1.5px solid #c00;color:#c00;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">연결 해제</button>
+                </div>
+              </div>
+              <!-- 미연동 -->
+              <div id="tf-resp-disconnected-view">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span style="font-size:12px;color:rgba(0,0,0,.45);flex:1;">구글 시트: 미연동</span>
+                  <button id="tf-resp-sheet-btn" onclick="createTfRespSheet()" style="padding:6px 12px;background:transparent;border:1.5px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📊 새 시트 생성</button>
+                </div>
+                <label id="tf-resp-backfill-wrap" style="display:none;align-items:center;gap:6px;margin-top:8px;font-size:12px;cursor:pointer;">
+                  <input type="checkbox" id="tf-resp-backfill"> Firestore에 저장된 기존 응답 <span id="tf-resp-backfill-count">0</span>개도 시트에 함께 기록
+                </label>
+                <div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(0,0,0,.15);">
+                  <div style="font-size:11px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:6px;">기존 스프레드시트에 연결</div>
+                  <input id="tf-resp-existing-sheet-id" placeholder="스프레드시트 ID" style="width:100%;box-sizing:border-box;padding:6px 8px;border:1.5px solid rgba(0,0,0,.2);font-size:12px;font-family:inherit;margin-bottom:4px;border-radius:0;">
+                  <div style="display:flex;gap:6px;">
+                    <input id="tf-resp-existing-sheet-tab" placeholder="시트 탭 이름 (기본: 응답)" style="flex:1;padding:6px 8px;border:1.5px solid rgba(0,0,0,.2);font-size:12px;font-family:inherit;border-radius:0;">
+                    <button onclick="connectTfExistingSheet()" style="padding:6px 14px;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">연결</button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="ed-sect" style="display:flex;gap:8px;flex-wrap:wrap;">
-              <button class="mbtn-cancel" onclick="toolFormViewResponses()">📋 응답 보기</button>
+            <!-- 응답 목록 -->
+            <div style="margin-top:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+              <div style="font-size:12px;font-weight:700;">응답 목록</div>
+              <div style="display:flex;gap:6px;">
+                <button class="mbtn-cancel" onclick="loadTfInlineResponses()" style="font-size:11px;padding:5px 10px;">↻ 새로고침</button>
+                <button class="mbtn-cancel" onclick="exportTfRespCsv()" style="font-size:11px;padding:5px 10px;">CSV 내보내기</button>
+              </div>
+            </div>
+            <div id="tf-resp-scroll" style="margin-top:8px;max-height:320px;overflow-y:auto;border:1.5px solid rgba(0,0,0,.1);padding:8px;font-size:12px;">
+              <div class="empty-msg">저장 후 자동으로 불러와요.</div>
             </div>
           </div>
         </div>
@@ -5338,9 +5368,9 @@ async function toolFormEdit(docId){
     document.getElementById('tf-submit-text').value=d.submitBtnText||'제출하기';
     document.getElementById('tf-submit-msg').value=d.submitMsg||'';
     document.getElementById('tf-no-resubmit-sw').classList.toggle('on',!!d.noResubmit);
-    document.getElementById('tf-sheet-id').value=d.sheetId||'';
-    document.getElementById('tf-sheet-tab').value=d.sheetTab||'응답';
+    tfRespFormConfig={sheetId:d.sheetId||'',sheetTab:d.sheetTab||'응답',sheetUrl:d.sheetUrl||''};
     renderTfFieldList();
+    loadTfInlineResponses();
   }catch(e){alert('로드 실패: '+e.message);}
 }
 function renderTfFieldList(){
@@ -5377,23 +5407,166 @@ async function toolFormSave(){
   const submitBtnText=document.getElementById('tf-submit-text')?.value.trim()||'제출하기';
   const submitMsg=document.getElementById('tf-submit-msg')?.value.trim()||'';
   const noResubmit=document.getElementById('tf-no-resubmit-sw')?.classList.contains('on')||false;
-  const sheetId=document.getElementById('tf-sheet-id')?.value.trim()||'';
-  const sheetTab=document.getElementById('tf-sheet-tab')?.value.trim()||'응답';
   if(!title){alert('폼 이름을 입력해주세요.');return;}
   try{
-    await db.collection('cms_form_configs').doc(tfCurDocId).update({title,fields:tfFields,submitBtnText,submitMsg,noResubmit,sheetId,sheetTab,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    await db.collection('cms_form_configs').doc(tfCurDocId).update({
+      title,fields:tfFields,submitBtnText,submitMsg,noResubmit,
+      sheetId:tfRespFormConfig.sheetId||'',
+      sheetTab:tfRespFormConfig.sheetTab||'응답',
+      sheetUrl:tfRespFormConfig.sheetUrl||'',
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    tfRespFields=tfFields;
     alert('저장됐어요!');
   }catch(e){alert('저장 실패: '+e.message);}
 }
 function toolFormViewResponses(){
   if(!tfCurDocId) return;
-  viewFormResponses(tfCurDocId);
-  curRespFormBlock={formFields:tfFields,formConfig:{submitBtnText:'제출하기',sheetId:document.getElementById('tf-sheet-id')?.value||'',sheetTab:document.getElementById('tf-sheet-tab')?.value||'응답'}};
-  updateRespSheetStatus();
+  loadTfInlineResponses();
 }
 function toolFormEditResponses(docId){
-  viewFormResponses(docId);
+  toolFormEdit(docId);
 }
+
+/* ── 폼 편집 화면 인라인 응답 관리 ── */
+let tfRespData=[], tfRespFormConfig={}, tfRespFields=[];
+
+async function loadTfInlineResponses(){
+  if(!tfCurDocId) return;
+  tfRespFields=tfFields;
+  // Firestore에서 최신 시트 설정 읽기
+  try{
+    const snap=await db.collection('cms_form_configs').doc(tfCurDocId).get();
+    const d=snap.data()||{};
+    tfRespFormConfig={sheetId:d.sheetId||'',sheetTab:d.sheetTab||'응답',sheetUrl:d.sheetUrl||''};
+  }catch(e){}
+  updateTfRespSheetStatus();
+  const el=document.getElementById('tf-resp-scroll');
+  el.innerHTML='<div class="empty-msg">불러오는 중…</div>';
+  try{
+    const snap=await db.collection('cms_form_responses').doc(tfCurDocId).collection('responses')
+      .orderBy('submittedAt','desc').limit(100).get();
+    tfRespData=snap.docs.map(d=>({_id:d.id,...d.data()}));
+    renderTfRespTable();
+    updateTfRespSheetStatus();
+  }catch(e){
+    el.innerHTML='<div class="empty-msg">불러오기 실패: '+e.message+'</div>';
+  }
+}
+
+function updateTfRespSheetStatus(){
+  const cfg=tfRespFormConfig;
+  const connV=document.getElementById('tf-resp-connected-view');
+  const discV=document.getElementById('tf-resp-disconnected-view');
+  const statusEl=document.getElementById('tf-resp-sheet-status');
+  const bfWrap=document.getElementById('tf-resp-backfill-wrap');
+  const bfCount=document.getElementById('tf-resp-backfill-count');
+  if(!connV||!discV) return;
+  if(cfg.sheetId){
+    connV.style.display=''; discV.style.display='none';
+    if(statusEl){
+      const link=cfg.sheetUrl?`<a href="${cfg.sheetUrl}" target="_blank" style="color:#000;font-weight:700;">시트 열기 ↗</a>`:cfg.sheetId;
+      const tabInfo=cfg.sheetTab?` · 탭: <b>${cfg.sheetTab}</b>`:'';
+      statusEl.innerHTML=`구글 시트 연동됨${tabInfo} · ${link}`;
+    }
+  } else {
+    connV.style.display='none'; discV.style.display='';
+    if(bfWrap) bfWrap.style.display='flex';
+    if(bfCount) bfCount.textContent=tfRespData.length;
+  }
+}
+
+function renderTfRespTable(){
+  const el=document.getElementById('tf-resp-scroll');
+  if(!tfRespData.length){el.innerHTML='<div class="empty-msg">응답이 없어요.</div>';return;}
+  const cols=_getTfRespCols();
+  const ths=cols.map(c=>`<th style="white-space:nowrap;padding:6px 10px;border-bottom:2px solid #000;font-size:11px;text-align:left;">${c.label}</th>`).join('');
+  const rows=tfRespData.map(r=>`<tr>${cols.map(c=>`<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.1);font-size:12px;white-space:nowrap;">${c.val(r)}</td>`).join('')}</tr>`).join('');
+  el.innerHTML=`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table></div><div style="margin-top:10px;font-size:11px;color:rgba(0,0,0,.4);">${tfRespData.length}개 응답 (최근 100개)</div>`;
+}
+
+function _getTfRespCols(){
+  const fields=tfRespFields||[];
+  const tsCol={label:'제출일시',val:r=>r.submittedAt?.seconds?new Date(r.submittedAt.seconds*1000).toLocaleString('ko'):''};
+  const formCols=fields.map(f=>({label:f.label,val:r=>{const v=r[f.key];return Array.isArray(v)?v.join(', '):String(v??'');}}));
+  return [tsCol,...formCols];
+}
+
+function exportTfRespCsv(){
+  if(!tfRespData.length){alert('응답이 없어요.');return;}
+  const cols=_getTfRespCols();
+  const lines=[cols.map(c=>'"'+c.label.replace(/"/g,'""')+'"').join(','),
+    ...tfRespData.map(r=>cols.map(c=>'"'+c.val(r).replace(/"/g,'""')+'"').join(','))];
+  const blob=new Blob(['﻿'+lines.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='responses_'+tfCurDocId+'.csv';a.click();
+}
+
+async function _saveTfRespConfig(){
+  if(!tfCurDocId) return;
+  await db.collection('cms_form_configs').doc(tfCurDocId).update({
+    sheetId:tfRespFormConfig.sheetId||'',
+    sheetTab:tfRespFormConfig.sheetTab||'응답',
+    sheetUrl:tfRespFormConfig.sheetUrl||'',
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+async function _backfillTfRespSheet(sheetId,sheetTab){
+  if(!tfRespData.length) return;
+  const fields=tfRespFields||[];
+  const rows=tfRespData.slice().reverse().map(resp=>{
+    const ts=resp.submittedAt?.seconds?new Date(resp.submittedAt.seconds*1000).toLocaleString('ko'):'';
+    const vals=fields.map(f=>{const v=resp[f.key];return Array.isArray(v)?v.join(', '):(v??'');});
+    return [ts,...vals];
+  });
+  await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'bulkAppend',sheetId,sheetTab:sheetTab||'응답',rows})});
+}
+
+async function createTfRespSheet(){
+  if(!tfCurDocId) return;
+  if(!(tfRespFields||[]).length){alert('필드를 먼저 추가해주세요.');return;}
+  const title=(document.getElementById('tf-title')?.value.trim()||'폼')+'의 응답';
+  const headers=['제출일시',...(tfRespFields||[]).map(f=>f.label)];
+  const btn=document.getElementById('tf-resp-sheet-btn');
+  if(btn){btn.disabled=true;btn.textContent='생성 중…';}
+  try{
+    const r=await fetch(GAS_URL+'?action=createSheet&title='+encodeURIComponent(title)+'&headers='+encodeURIComponent(JSON.stringify(headers)));
+    const data=await r.json();
+    if(!data.success) throw new Error(data.error||'생성 실패');
+    tfRespFormConfig={sheetId:data.sheetId,sheetUrl:data.url,sheetTab:'응답'};
+    await _saveTfRespConfig();
+    const doBackfill=document.getElementById('tf-resp-backfill')?.checked;
+    if(doBackfill&&tfRespData.length) await _backfillTfRespSheet(data.sheetId,'응답');
+    updateTfRespSheetStatus();
+  }catch(e){
+    alert('생성 실패: '+e.message);
+    if(btn){btn.disabled=false;btn.textContent='📊 새 시트 생성';}
+  }
+}
+
+async function connectTfExistingSheet(){
+  const sheetId=document.getElementById('tf-resp-existing-sheet-id')?.value.trim();
+  const sheetTab=document.getElementById('tf-resp-existing-sheet-tab')?.value.trim()||'응답';
+  if(!sheetId){alert('스프레드시트 ID를 입력해주세요.');return;}
+  const sheetUrl=`https://docs.google.com/spreadsheets/d/${sheetId}`;
+  tfRespFormConfig={sheetId,sheetTab,sheetUrl};
+  try{
+    await _saveTfRespConfig();
+    const doBackfill=document.getElementById('tf-resp-backfill')?.checked;
+    if(doBackfill&&tfRespData.length) await _backfillTfRespSheet(sheetId,sheetTab);
+    updateTfRespSheetStatus();
+  }catch(e){alert('연결 실패: '+e.message);}
+}
+
+async function disconnectTfRespSheet(){
+  if(!confirm('시트 연결을 해제할까요?\n(시트 자체는 삭제되지 않아요. 이후 새 응답은 시트에 기록되지 않아요.)')) return;
+  tfRespFormConfig={sheetId:'',sheetTab:'응답',sheetUrl:''};
+  try{
+    await _saveTfRespConfig();
+    updateTfRespSheetStatus();
+  }catch(e){alert('해제 실패: '+e.message);}
+}
+
 async function toolFormDelete(docId){
   try{
     await db.collection('cms_form_configs').doc(docId).delete();
