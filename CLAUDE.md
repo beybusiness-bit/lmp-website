@@ -517,6 +517,14 @@ closeHelpPanel();
 - **✅ lmp-context에 prepBg 추가** (p/ + block-test-demo + gmbf-poc 동기화):
   - `--prep-bg`는 keyColors 중 랜덤 선택값이므로 keyColors[0]과 다를 수 있음
   - `_lmpContext()`에 `prepBg` 필드 추가 → 도구에서 정확한 홈배경색 수신
+- **✅ 유튜브 뮤직 재생목록 도구** (`tools/youtube-playlist/index.html`) 구현 완료:
+  - YouTube Data API v3 기반 인앱 검색 (음악 카테고리)
+  - 검색 결과 목록 (썸네일·제목·채널명), 선택 영상 미리 듣기 (iframe)
+  - 선택 목록 구성 후 일괄 제출, 누적 제출 가능
+  - Firestore 저장: `cms_youtube_submissions/{projectId}/songs/{docId}`
+  - admin 도구 탭 연동: 제출 목록 조회 + CSV 내보내기 + URL 복사
+  - 단일 도구(single) 분류: toolType `'youtube-playlist'`, toolConfig 불필요
+  - p/index.html + admin 블록 에디터 도구 탭에 연결 완료
 
 **미확인/이슈 🔶**
 - GAS `bulkAppend` 코드: `apps-script/Code.gs`에 추가됐으나 **GAS 편집기에서 재배포 필요**
@@ -526,29 +534,19 @@ closeHelpPanel();
 **진행 예정 🔲**
 - GAS 재배포 후 시트 생성 + 백필 end-to-end 테스트
 - 도구 블록 end-to-end 테스트 (폼 생성 → 블록 연결 → 플레이어 제출 → 진행률 반영)
-- **유튜브 뮤직 재생목록 도구** (`tools/youtube-playlist/index.html`) 신규 구현
 
 **다음 세션 시작점**
-- 🔲 유튜브 뮤직 재생목록 도구 구현 (YouTube Data API 키 필요 — 사용자가 발급 후 전달 예정)
 - 🔲 일정 잡기 도구 end-to-end 테스트 (GAS 재배포 후)
+- 🔲 기타 사용자 요청 기능
 - PAT: 만료 시 재발급 필요 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 
-#### 📐 유튜브 뮤직 재생목록 도구 설계
+#### 📐 ✅ 완료된 구현: 유튜브 뮤직 재생목록 도구
+
+> 구현 완료. 참고용으로 보존.
 
 - **파일**: `tools/youtube-playlist/index.html` (단일 도구, 인스턴스 선택 없음)
-- **YouTube Data API 키**: 사용자가 Google Cloud Console에서 발급 → 코드에 삽입
-- **기능**:
-  - 인앱 유튜브 검색 (YouTube Data API v3, type=video, videoCategoryId=10 음악)
-  - 검색 결과 목록 (썸네일·제목·채널명)
-  - 선택한 영상 유튜브 플레이어로 미리 듣기 (iframe)
-  - 선택 목록 구성 후 일괄 제출
-  - 누적 제출 가능 (이후 추가 제출 허용, 곡 단위 저장)
-- **Firestore 저장**: `cms_youtube_submissions/{projectId}/songs/{docId}`
-  - `videoId, title, channelTitle, thumbnailUrl, submittedAt, userId (인증 시), userFields`
-- **admin 관리**: 도구 탭에서 제출 목록 조회 + CSV 내보내기 + URL 목록 복사
-- **lmp-tool-complete**: 제출 완료 시 발송
-- **도구 분류**: 단일 도구 (toolType:'youtube-playlist', toolConfig 불필요)
-- **admin 블록 에디터**: 도구 탭에 'youtube-playlist' 옵션 추가 (인스턴스 선택 없음)
+- **도구 분류**: 단일 도구 (toolType:`'youtube-playlist'`, toolConfig 불필요)
+- **admin 블록 에디터**: 도구 탭 `'유튜브 뮤직'` 버튼으로 연결, `SINGLE_TOOL_TYPES` 배열에 포함
 
 ---
 
