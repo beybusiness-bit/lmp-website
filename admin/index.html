@@ -1246,8 +1246,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <a id="tool-manage-link" href="#" onclick="openToolManageLink(event)" style="color:rgba(0,0,0,.5);text-decoration:underline;">도구 탭에서 관리하기 →</a>
       </div>
       <div style="margin-top:4px;">
-        <div class="ed-lbl" style="margin-bottom:6px;">높이 <span style="font-weight:400;opacity:.55;">(px, 0=자동)</span></div>
-        <input class="fi-sm" id="tool-height" type="number" min="0" placeholder="0 (자동)" style="margin-bottom:0;width:120px;">
+        <div class="ed-lbl" style="margin-bottom:6px;">높이</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button id="tool-h-auto" onclick="setToolHeightMode('auto')" style="padding:7px 14px;border:1.5px solid #000;background:#000;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">자동</button>
+          <button id="tool-h-full" onclick="setToolHeightMode('full')" style="padding:7px 14px;border:1.5px solid #000;background:transparent;color:#000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">전체화면</button>
+          <button id="tool-h-px" onclick="setToolHeightMode('px')" style="padding:7px 14px;border:1.5px solid #000;background:transparent;color:#000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">직접 입력</button>
+        </div>
+        <div id="tool-h-px-wrap" style="display:none;margin-top:8px;display:none;align-items:center;gap:6px;">
+          <input class="fi-sm" id="tool-height" type="number" min="1" placeholder="500" style="margin-bottom:0;width:100px;">
+          <span style="font-size:11px;opacity:.5;">px</span>
+        </div>
       </div>
       <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
         <div class="ed-lbl" style="margin-bottom:8px;">완료 조건 <span style="font-weight:400;opacity:.55;">(진행률 반영 시점)</span></div>
@@ -1879,6 +1887,18 @@ let curRespFormBlock = null;
 let curBlkToolType = 'form';
 let curBlkToolConfig = {};
 let curBlkCompleteTrigger = 'tool-signal';
+let curToolHeightMode = 'auto'; // 'auto'|'full'|'px'
+function setToolHeightMode(mode){
+  curToolHeightMode=mode;
+  ['auto','full','px'].forEach(m=>{
+    const btn=document.getElementById('tool-h-'+m);
+    if(!btn) return;
+    btn.style.background=m===mode?'#000':'transparent';
+    btn.style.color=m===mode?'#fff':'#000';
+  });
+  const px=document.getElementById('tool-h-px-wrap');
+  if(px) px.style.display=mode==='px'?'flex':'none';
+}
 let toolInstList = [];
 /* 도구 탭 폼 관리 상태 */
 let tfCurDocId = null;
@@ -3665,8 +3685,9 @@ function openBlockModal(idx,insertAt){
     const _singleN=document.getElementById('tool-single-notice');
     if(_instSec) _instSec.style.display=_isSingle?'none':'';
     if(_singleN) _singleN.style.display=_isSingle?'':'none';
-    const hi=document.getElementById('tool-height');
-    if(hi) hi.value=b.height||0;
+    const _hMode=b.height==='full'?'full':(b.height&&b.height>0?'px':'auto');
+    setToolHeightMode(_hMode);
+    if(_hMode==='px'){ const hi=document.getElementById('tool-height'); if(hi) hi.value=b.height; }
     document.querySelectorAll('input[name="complete-trigger"]').forEach(r=>{
       r.checked=r.value===curBlkCompleteTrigger;
     });
@@ -3766,7 +3787,7 @@ function _buildCurrentBlock(){
   } else if(curBlkType==='tool'){
     b.toolType=curBlkToolType;
     b.toolConfig=curBlkToolConfig;
-    b.height=parseInt(document.getElementById('tool-height')?.value)||0;
+    b.height=curToolHeightMode==='full'?'full':(curToolHeightMode==='px'?parseInt(document.getElementById('tool-height')?.value)||0:0);
     b.completeTrigger=curBlkCompleteTrigger||'tool-signal';
   } else if(curBlkType==='form'){
     b.formFields=curFormFields||[];
@@ -3826,7 +3847,7 @@ function saveBlock(){
     else if(curBlkToolType==='copy-gen') tc.copyGenId=selV;
     b.toolType=curBlkToolType;
     b.toolConfig=tc;
-    b.height=parseInt(document.getElementById('tool-height')?.value)||0;
+    b.height=curToolHeightMode==='full'?'full':(curToolHeightMode==='px'?parseInt(document.getElementById('tool-height')?.value)||0:0);
   } else if(curBlkType==='form'){
     curFormConfig.formTitle       = document.getElementById('form-title-inp').value.trim();
     curFormConfig.submitBtnText   = document.getElementById('form-submit-text').value.trim()||'제출하기';
