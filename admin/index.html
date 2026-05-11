@@ -2492,6 +2492,10 @@ function _colWidthCss(type){
   };
   return m[type]||'min-width:130px;max-width:240px;';
 }
+function _colWidthDefaultPx(type){
+  const m={string:140,text:140,textarea:200,number:90,select:120,file:110,timestamp:170,_user:120};
+  return m[type]||130;
+}
 // 사용자 테이블: 관리자가 드래그로 조정한 너비가 있으면 그것 우선, 없으면 fallback
 function _userColStyle(colKey, fallbackCss){
   const w = customColWidths[colKey];
@@ -2588,6 +2592,31 @@ async function resetAllColWidths(){
   }
   renderUserTable();
 }
+
+/* ── 고정 열 선택 ── */
+function _frozenChipBar(items, currentN, setFn){
+  // items: [{label}] — 인덱스 i는 "i+1번째 열까지 고정"
+  const chips = [{n:0,label:'없음'},...items.map((it,i)=>({n:i+1,label:it.label}))];
+  return `<div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;flex-wrap:wrap;">
+    <span style="font-size:11px;color:rgba(0,0,0,.4);white-space:nowrap;margin-right:2px;">📌 고정 열:</span>
+    ${chips.map(c=>`<button onclick="${setFn}(${c.n})" style="padding:2px 8px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid ${c.n===currentN?'#000':'rgba(0,0,0,.2)'};background:${c.n===currentN?'#000':'transparent'};color:${c.n===currentN?'#fff':'rgba(0,0,0,.55)'};font-family:inherit;line-height:1.6;white-space:nowrap;">${c.label}</button>`).join('')}
+  </div>`;
+}
+function setUserFrozen(n){
+  if(!curProjId) return;
+  localStorage.setItem('fc_user_'+curProjId, n);
+  renderUserTable();
+}
+function setRespFrozen(n){
+  const key='fc_resp_'+(curProjId||'')+'_'+(curRespFormId||'');
+  localStorage.setItem(key, n);
+  renderRespTable();
+}
+function setTfFrozen(n){
+  const key='fc_tf_'+(tfCurDocId||'');
+  localStorage.setItem(key, n);
+  renderTfRespTable();
+}
 async function resetAllRespColWidths(){
   const fWidths = (curRespColWidths[curRespFormId]||{});
   if(!Object.keys(fWidths).length) return;
@@ -2662,7 +2691,13 @@ function renderUserTable() {
     }).join('');
     summary = `<div class="prog-summary"><div style="font-weight:700;margin-bottom:8px;font-size:12px;">📊 스테이지 진행률 현황</div>${rows}</div>`;
   }
-  const CK_W = 44; // 체크박스 컬럼 고정 너비(px) - s-c2 left 위치와 동기화
+  const CK_W = 44;
+  // 고정 열 수 (localStorage 기반, 기본: 첫 번째 인증 필드까지)
+  const _ufKey = 'fc_user_'+(curProjId||'');
+  const userFrozen = Math.min(Math.max(0, parseInt(localStorage.getItem(_ufKey)??'1')), curAuthFields.length);
+  // 고정 인증 필드들의 left 오프셋 계산
+  const _ufLefts = [];
+  { let acc=CK_W; for(let i=0;i<userFrozen;i++){ _ufLefts.push(acc); acc+=(customColWidths[curAuthFields[i].key]||_colWidthDefaultPx(curAuthFields[i].type)); } }
   const chkTh = `<th class="s-c1" style="width:${CK_W}px;min-width:${CK_W}px;max-width:${CK_W}px;box-sizing:border-box;"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleSelectAll(this.checked)" style="cursor:pointer;"></th>`;
   const progTh = progStages.map(s => {
     const ttl = (s.title||'').replace(/</g,'&lt;');
@@ -2670,22 +2705,30 @@ function renderUserTable() {
     const style = _userColStyle(colKey, 'min-width:130px;max-width:220px;white-space:normal;word-break:keep-all;');
     return `<th style="${style}" title="${ttl} (체크 ${s.checkableCount}개)">${ttl}${_resizeHandle(colKey)}</th>`;
   }).join('');
+  const _authColStickyTh = (idx)=>{
+    if(idx>=userFrozen) return '';
+    const isLast = idx===userFrozen-1;
+    return `position:sticky;left:${_ufLefts[idx]}px;z-index:3;`+(isLast?'box-shadow:2px 0 4px rgba(0,0,0,.1);':'');
+  };
   const headers = chkTh + curAuthFields.map((f,idx)=>{
-    const cls = idx===0 ? ' class="s-c2"' : '';
-    const leftStyle = idx===0 ? `left:${CK_W}px;` : '';
     const style = _userColStyle(f.key, _colWidthCss(f.type));
-    return `<th${cls} style="${style}${leftStyle}">${f.label}${_resizeHandle(f.key)}</th>`;
+    return `<th style="${style}${_authColStickyTh(idx)}">${f.label}${_resizeHandle(f.key)}</th>`;
   }).join('') + progTh
     + `<th style="${_userColStyle('_lastLogin','white-space:nowrap;min-width:120px;')}">최근 로그인${_resizeHandle('_lastLogin')}</th>`
     + `<th style="${_userColStyle('_loginCount','white-space:nowrap;min-width:60px;')}">횟수${_resizeHandle('_loginCount')}</th>`
     + '<th></th>';
   const rows = curUsers.map(u => {
     const checked = selectedUserIds.has(u._id);
+    const rowBg = checked?'#f5f5f5':'#fff';
     const cells = curAuthFields.map((f,idx)=>{
-      const cls = idx===0 ? ' class="s-c2"' : '';
-      const leftStyle = idx===0 ? `left:${CK_W}px;` : '';
+      if(idx<userFrozen){
+        const isLast=idx===userFrozen-1;
+        const stickyS=`position:sticky;left:${_ufLefts[idx]}px;z-index:1;background:${rowBg};`+(isLast?'box-shadow:2px 0 4px rgba(0,0,0,.1);':'');
+        const style = _userColStyle(f.key, _colWidthCss(f.type));
+        return `<td style="${style}${stickyS}">${u[f.key]??''}</td>`;
+      }
       const style = _userColStyle(f.key, _colWidthCss(f.type));
-      return `<td${cls} style="${style}${leftStyle}">${u[f.key]??''}</td>`;
+      return `<td style="${style}">${u[f.key]??''}</td>`;
     }).join('');
     const progCells = progStages.map(s => {
       const total = s.checkableCount;
@@ -2703,7 +2746,7 @@ function renderUserTable() {
     const lastLogin = u.lastLoginAt?.seconds ? new Date(u.lastLoginAt.seconds*1000).toLocaleString('ko',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '-';
     const loginCnt = u.loginCount ?? '-';
     return `<tr class="${checked?'u-row-selected':''}">
-      <td class="s-c1" style="width:${CK_W}px;min-width:${CK_W}px;max-width:${CK_W}px;box-sizing:border-box;"><input type="checkbox" ${checked?'checked':''} onchange="toggleSelectUser('${u._id}',this.checked)" style="cursor:pointer;"></td>
+      <td class="s-c1" style="width:${CK_W}px;min-width:${CK_W}px;max-width:${CK_W}px;box-sizing:border-box;background:${rowBg};"><input type="checkbox" ${checked?'checked':''} onchange="toggleSelectUser('${u._id}',this.checked)" style="cursor:pointer;"></td>
       ${cells}
       ${progCells}
       <td style="font-size:11px;color:rgba(0,0,0,.6);${_userColStyle('_lastLogin','white-space:nowrap;')}">${lastLogin}</td>
@@ -2717,7 +2760,8 @@ function renderUserTable() {
   const resetLink = Object.keys(customColWidths).length
     ? `<span class="col-resize-reset" onclick="resetAllColWidths()">↺ 컬럼 너비 모두 기본값으로</span>`
     : `<span style="font-size:10px;color:rgba(0,0,0,.3);">💡 컬럼 헤더 우측을 드래그하면 너비를 조정할 수 있어요 (더블클릭: 기본값 복원)</span>`;
-  wrap.innerHTML = bulkBar + summary + `<div class="user-table-wrap"><table class="user-table"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></div>${resetLink}`;
+  const chipBar = _frozenChipBar(curAuthFields.map(f=>({label:f.label})), userFrozen, 'setUserFrozen');
+  wrap.innerHTML = chipBar + bulkBar + summary + `<div class="user-table-wrap"><table class="user-table"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></div>${resetLink}`;
 }
 function toggleSelectUser(id, checked) {
   if (checked) selectedUserIds.add(id); else selectedUserIds.delete(id);
@@ -3942,23 +3986,30 @@ function renderRespTable() {
   const el = document.getElementById('form-resp-scroll');
   if (!curRespData.length) { el.innerHTML = '<div class="empty-msg">응답이 없어요.</div>'; return; }
   const cols=_getRespCols();
-  // 고정 컬럼: 제출일시(항상), 첫 번째 인증필드(있을 때) — 사용자 식별용
-  const stickyCount = curAuthEnabled && curAuthFields.length ? 2 : 1;
   const TS_W = 170;
+  // 고정 열 선택 (localStorage, 기본: 인증 있으면 2, 없으면 1)
+  const _rfKey='fc_resp_'+(curProjId||'')+'_'+(curRespFormId||'');
+  const _rfDef = curAuthEnabled&&curAuthFields.length ? 2 : 1;
+  const stickyCount = Math.min(Math.max(0, parseInt(localStorage.getItem(_rfKey)??String(_rfDef))), cols.length);
+  // 고정 열 left 오프셋 계산
+  const _rfLefts=[]; { let acc=0; for(let i=0;i<stickyCount;i++){ _rfLefts.push(acc); acc+=((curRespColWidths[curRespFormId]||{})[cols[i].key]||_colWidthDefaultPx(cols[i].type)); } }
   const hasCustom = Object.keys(curRespColWidths[curRespFormId]||{}).length > 0;
   const resetLink = hasCustom ? `<span class="col-resize-reset" onclick="resetAllRespColWidths()">↺ 컬럼 너비 모두 기본값으로</span>` : '';
-  el.innerHTML = `<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
+  const chipBar = _frozenChipBar(cols.map(c=>({label:c.label})), stickyCount, 'setRespFrozen');
+  el.innerHTML = chipBar + `<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
     <thead><tr>${cols.map((c,idx)=>{
       const defaultW = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;` : _colWidthCss(c.type);
       const w = _respColStyle(c.key, defaultW);
-      const sticky = idx<stickyCount ? `position:sticky;left:${idx===0?0:TS_W}px;z-index:3;top:0;` : 'position:sticky;top:0;z-index:2;';
+      const isLast=idx===stickyCount-1;
+      const sticky = idx<stickyCount ? `position:sticky;left:${_rfLefts[idx]}px;z-index:3;top:0;`+(isLast?'box-shadow:2px 0 4px rgba(0,0,0,.1);':'') : 'position:sticky;top:0;z-index:2;';
       return `<th style="white-space:nowrap;padding:6px 10px;background:#000;color:#fff;font-size:11px;text-align:left;font-weight:700;${sticky}${w}">${c.label}${_resizeHandle(c.key,'resp')}</th>`;
     }).join('')}</tr></thead>
     <tbody>${curRespData.map(r=>
       `<tr>${cols.map((c,idx)=>{
         const defaultW = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;white-space:nowrap;` : _colWidthCss(c.type);
         const w = _respColStyle(c.key, defaultW);
-        const sticky = idx<stickyCount ? `position:sticky;left:${idx===0?0:TS_W}px;z-index:1;background:#fff;${idx===1?'box-shadow:1px 0 0 rgba(0,0,0,.12);':''}` : '';
+        const isLast=idx===stickyCount-1;
+        const sticky = idx<stickyCount ? `position:sticky;left:${_rfLefts[idx]}px;z-index:1;background:#fff;`+(isLast?'box-shadow:2px 0 4px rgba(0,0,0,.1);':'') : '';
         return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.08);font-size:12px;word-break:keep-all;overflow-wrap:break-word;background:#fff;${w}${sticky}">${c.val(r)}</td>`;
       }).join('')}</tr>`
     ).join('')}</tbody>
@@ -6051,17 +6102,23 @@ function renderTfRespTable(){
   if(!tfRespData.length){el.innerHTML='<div class="empty-msg" style="padding:12px;">응답이 없어요.</div>';return;}
   const cols=_getTfRespCols();
   const hasUserCol = cols.some(c=>c.type==='_user');
-  // 고정 컬럼: 제출일시(항상), 사용자(있을 때) — 사용자 식별용
-  const stickyCount = hasUserCol ? 2 : 1;
   const TS_W = 170;
+  // 고정 열 선택 (localStorage, 기본: 사용자 컬럼 있으면 2, 없으면 1)
+  const _tfKey='fc_tf_'+(tfCurDocId||'');
+  const _tfDef = hasUserCol ? 2 : 1;
+  const stickyCount = Math.min(Math.max(0, parseInt(localStorage.getItem(_tfKey)??String(_tfDef))), cols.length);
+  // 고정 열 left 오프셋 계산
+  const _tfLefts=[]; { let acc=0; for(let i=0;i<stickyCount;i++){ _tfLefts.push(acc); acc+=(tfRespColWidths[cols[i].key]||_colWidthDefaultPx(cols[i].type==='_user'?'string':cols[i].type)); } }
   const hasCustom = Object.keys(tfRespColWidths).length > 0;
   const resetLink = hasCustom ? `<span class="col-resize-reset" onclick="resetAllTfRespColWidths()">↺ 컬럼 너비 모두 기본값으로</span>` : '';
-  el.innerHTML=`<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
+  const chipBar = _frozenChipBar(cols.map(c=>({label:c.label})), stickyCount, 'setTfFrozen');
+  el.innerHTML=chipBar+`<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
     <thead><tr>${cols.map((c,idx)=>{
       const baseType=c.type==='_user'?'string':c.type;
       const defaultW = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;` : _colWidthCss(baseType);
       const w = _tfColStyle(c.key, defaultW);
-      const sticky = idx<stickyCount ? `position:sticky;left:${idx===0?0:TS_W}px;z-index:3;top:0;` : 'position:sticky;top:0;z-index:2;';
+      const isLast=idx===stickyCount-1;
+      const sticky = idx<stickyCount ? `position:sticky;left:${_tfLefts[idx]}px;z-index:3;top:0;`+(isLast?'box-shadow:2px 0 4px rgba(0,0,0,.1);':'') : 'position:sticky;top:0;z-index:2;';
       return `<th style="white-space:nowrap;padding:6px 10px;background:#000;color:#fff;font-size:11px;text-align:left;font-weight:700;${sticky}${w}">${c.label}${_resizeHandle(c.key,'tf')}</th>`;
     }).join('')}</tr></thead>
     <tbody>${tfRespData.map(r=>
@@ -6069,7 +6126,8 @@ function renderTfRespTable(){
         const baseType=c.type==='_user'?'string':c.type;
         const defaultW = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;white-space:nowrap;` : _colWidthCss(baseType);
         const w = _tfColStyle(c.key, defaultW);
-        const sticky = idx<stickyCount ? `position:sticky;left:${idx===0?0:TS_W}px;z-index:1;background:#fff;${idx===1?'box-shadow:1px 0 0 rgba(0,0,0,.12);':''}` : '';
+        const isLast=idx===stickyCount-1;
+        const sticky = idx<stickyCount ? `position:sticky;left:${_tfLefts[idx]}px;z-index:1;background:#fff;`+(isLast?'box-shadow:2px 0 4px rgba(0,0,0,.1);':'') : '';
         return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.08);font-size:12px;word-break:keep-all;overflow-wrap:break-word;background:#fff;${w}${sticky}">${c.val(r)}</td>`;
       }).join('')}</tr>`
     ).join('')}</tbody>
