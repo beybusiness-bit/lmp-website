@@ -847,6 +847,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <button class="prev-btn" onclick="openToolPreview('/tools/youtube-playlist/?id='+ytCurId)" style="font-size:12px;flex-shrink:0;">미리보기</button>
           </div>
           <div style="padding:16px;overflow-y:auto;flex:1;">
+            <div style="font-size:10px;color:rgba(0,0,0,.45);background:#f5f5f5;border-radius:6px;padding:8px 10px;margin-bottom:12px;line-height:1.6;">
+              💡 <b>변수 사용법</b> — 아래 4개 텍스트 필드에서 모두 사용 가능<br>
+              <code style="background:#e8e8e8;padding:1px 4px;border-radius:3px;">{{사용자필드키}}</code> → 로그인한 사용자 정보로 자동 치환 (예: <code style="background:#e8e8e8;padding:1px 4px;border-radius:3px;">{{name}}</code>)<br>
+              <code style="background:#e8e8e8;padding:1px 4px;border-radius:3px;">{count}</code> → 신청한 곡 수 (제출 완료 문구에서만 동작)
+            </div>
             <div class="ed-sect">
               <div class="ed-lbl">재생목록 이름 <span style="color:#c00;">*</span></div>
               <input class="fi" id="yt-plc-title" placeholder="예: GMBF 3회 신청곡 받기" style="margin-bottom:0;">
@@ -865,7 +870,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <input class="fi-sm" id="yt-plc-done-title" placeholder="신청 완료!" style="margin-bottom:0;">
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl">제출 완료 안내 문구 <span style="font-weight:400;color:rgba(0,0,0,.45);">({count} 사용 가능)</span></div>
+              <div class="ed-lbl">제출 완료 안내 문구 <span style="font-weight:400;color:rgba(0,0,0,.45);">({count} = 신청 곡 수)</span></div>
               <textarea class="fi" id="yt-plc-done-sub" placeholder="{count}곡을 신청해 주셔서 감사해요." style="resize:vertical;min-height:50px;margin-bottom:0;"></textarea>
             </div>
             <div style="margin-top:24px;padding-top:16px;border-top:1.5px solid rgba(0,0,0,.1);">
@@ -4593,7 +4598,33 @@ async function loadToolInstList(tt){
 function openToolManageLink(e){
   e.preventDefault();
   document.getElementById('block-modal').classList.remove('on');
-  openTool('form-mgr');
+  const tt = curBlkToolType;
+  const toolIdMap = {
+    'form':              'form-mgr',
+    'booth':             'deco',
+    'guide':             'guide',
+    'schedule':          'schedule',
+    'copy-gen':          'copy-gen',
+    'youtube-playlist':  'youtube-playlist',
+    'payment':           'payment',
+  };
+  const toolId = toolIdMap[tt] || 'form-mgr';
+  openTool(toolId);
+  // 인스턴스가 선택된 경우 해당 편집 화면으로 이동
+  const instId = tt==='form'?curBlkToolConfig?.formId
+    :tt==='booth'?curBlkToolConfig?.boothId
+    :tt==='guide'?curBlkToolConfig?.guideId
+    :tt==='schedule'?curBlkToolConfig?.scheduleId
+    :tt==='copy-gen'?curBlkToolConfig?.copyGenId
+    :tt==='youtube-playlist'?curBlkToolConfig?.youtubePlaylistId
+    :tt==='payment'?curBlkToolConfig?.paymentId:'';
+  if(instId){
+    if(tt==='form') toolFormEdit(instId);
+    else if(tt==='schedule') scEdit(instId);
+    else if(tt==='copy-gen') cgEdit(instId);
+    else if(tt==='youtube-playlist') ytPlaylistEdit(instId);
+    else if(tt==='payment') pyEdit(instId);
+  }
 }
 /* ── 이미지 초점 드래그 ── */
 let _focalDragging=false;

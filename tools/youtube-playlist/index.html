@@ -498,8 +498,8 @@ async function submitSelected() {
     selectedVideos = [];
     updateBadge();
 
-    const doneTitle = playlistConfig?.doneTitle || '신청 완료!';
-    const doneSub = (playlistConfig?.doneSub || `${count}곡을 신청해 주셔서 감사해요.`).replace('{count}', count);
+    const doneTitle = applyVars(playlistConfig?.doneTitle || '신청 완료!');
+    const doneSub = applyVars((playlistConfig?.doneSub || `${count}곡을 신청해 주셔서 감사해요.`).replace('{count}', count));
     document.getElementById('done-title').textContent = doneTitle;
     document.getElementById('done-sub').textContent = doneSub;
     document.getElementById('app').style.display = 'none';
@@ -565,6 +565,12 @@ async function loadPrevSubmissions() {
   }
 }
 
+// ── 사용자 변수 치환: {{key}} → ctxUserFields[key] ──
+function applyVars(str) {
+  if (!str) return str;
+  return str.replace(/\{\{(\w+)\}\}/g, (_, k) => ctxUserFields[k] ?? '');
+}
+
 // ── 재생목록 설정 ──
 async function loadPlaylistConfig() {
   if (!PLAYLIST_ID) return;
@@ -578,16 +584,16 @@ async function loadPlaylistConfig() {
     const header = document.getElementById('tool-header');
     const titleEl = document.getElementById('tool-title');
     const descEl  = document.getElementById('tool-desc');
-    if (playlistConfig.title) { titleEl.textContent = playlistConfig.title; header.style.display = ''; }
-    if (playlistConfig.desc)  { descEl.textContent  = playlistConfig.desc;  header.style.display = ''; }
+    if (playlistConfig.title) { titleEl.textContent = applyVars(playlistConfig.title); header.style.display = ''; }
+    if (playlistConfig.desc)  { descEl.textContent  = applyVars(playlistConfig.desc);  header.style.display = ''; }
     if (playlistConfig.submitBtnText) {
-      document.getElementById('submit-btn').textContent = playlistConfig.submitBtnText;
+      document.getElementById('submit-btn').textContent = applyVars(playlistConfig.submitBtnText);
     }
-    if (playlistConfig.title) document.title = playlistConfig.title;
+    if (playlistConfig.title) document.title = applyVars(playlistConfig.title);
     return true;
   } catch(e) {
     console.error('[loadPlaylistConfig]', e);
-    showErr('설정 로드에 실패했어요.');
+    showErr('설정 로드에 실패했어요.' + (e.code ? '\n(오류코드: ' + e.code + ')' : e.message ? '\n(' + e.message + ')' : ''));
     return false;
   }
 }

@@ -537,6 +537,7 @@ function applySettings(d){
       trackProgress:!!s.trackProgress,checkableCount:s.checkableCount||0,
       displayType:s.displayType||'text',stageImageUrl:s.stageImageUrl||'',
       publishStatus:s.publishStatus||(s.published===false?'hidden':'published'),
+      tagEnabled:!!s.tagEnabled,tagText:s.tagText||'',tagBgColor:s.tagBgColor||'',tagTextColor:s.tagTextColor||'',
     }));
   STATS = (d.stats||[]).filter(s=>s.enabled);
   ELEMENT_ORDER = d.elementOrder || ['edition','logo','dday','stats'];
