@@ -6329,6 +6329,7 @@ function renderTfFieldList(){
         ${i>0?`<span class="fbadge" onclick="mvTfField(${i},-1)">↑</span>`:''}
         ${i<tfFields.length-1?`<span class="fbadge" onclick="mvTfField(${i},1)">↓</span>`:''}
         <span class="fbadge" onclick="toolFormOpenFieldModal(${i})">편집</span>
+        <span class="fbadge" onclick="dupTfField(${i})" title="복제">⧉</span>
         <span class="fbadge danger" onclick="rmTfField(${i})">삭제</span>
       </div>
     </div>`;
@@ -6336,6 +6337,7 @@ function renderTfFieldList(){
 }
 function mvTfField(i,d){const j=i+d;if(j<0||j>=tfFields.length)return;[tfFields[i],tfFields[j]]=[tfFields[j],tfFields[i]];renderTfFieldList();}
 function rmTfField(i){if(!confirm('이 필드를 삭제할까요?'))return;tfFields.splice(i,1);renderTfFieldList();}
+function dupTfField(i){const copy=JSON.parse(JSON.stringify(tfFields[i]));copy.id=uid();copy.key=copy.key+'_copy';tfFields.splice(i+1,0,copy);renderTfFieldList();}
 function toolFormOpenFieldModal(idx){
   formFieldCtx='tool';
   curFormFields=tfFields;
