@@ -3037,6 +3037,17 @@ function renderStageList() {
           return `<button onclick="setStagePublish(${i},'${v}')" style="padding:3px 8px;border:1.5px solid #000;border-right:${v==='hidden'?'1.5px solid #000':'none'};background:${on?'#000':'transparent'};color:${on?'#fff':'#000'};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;${v==='published'?'border-radius:3px 0 0 3px;':v==='hidden'?'border-radius:0 3px 3px 0;':''}">${labels[v]}</button>`;
         }).join('')}
       </div>
+      <div style="margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);white-space:nowrap;">태그</div>
+        <button class="tgl-btn${s.tagEnabled?' on':''}" onclick="curStages[${i}].tagEnabled=!curStages[${i}].tagEnabled;renderStageList();schedulePreviewUpdate();projDirty=true;" style="font-size:11px;padding:5px 10px;">${s.tagEnabled?'ON':'OFF'}</button>
+        ${s.tagEnabled?`<input class="fi-sm" style="flex:1;min-width:70px;max-width:110px;margin-bottom:0;" placeholder="태그 텍스트" value="${(s.tagText||'').replace(/"/g,'&quot;')}" oninput="curStages[${i}].tagText=this.value;projDirty=true;schedulePreviewUpdate()">
+        <span style="font-size:10px;color:rgba(0,0,0,.4);">배경</span>
+        <button onclick="setStageTagProp(${i},'tagBgColor','home')" style="padding:2px 6px;border:1.5px solid #000;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;background:${s.tagBgColor==='home'?'#000':'transparent'};color:${s.tagBgColor==='home'?'#fff':'#000'};">홈배경</button>
+        <input type="color" value="${s.tagBgColor&&s.tagBgColor!=='home'?s.tagBgColor:'#000000'}" onchange="setStageTagProp(${i},'tagBgColor',this.value)" style="width:24px;height:24px;padding:1px;border:1.5px solid rgba(0,0,0,.2);cursor:pointer;border-radius:3px;">
+        <span style="font-size:10px;color:rgba(0,0,0,.4);">글자</span>
+        <button onclick="setStageTagProp(${i},'tagTextColor','home')" style="padding:2px 6px;border:1.5px solid #000;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;background:${s.tagTextColor==='home'?'#000':'transparent'};color:${s.tagTextColor==='home'?'#fff':'#000'};">홈배경</button>
+        <input type="color" value="${s.tagTextColor&&s.tagTextColor!=='home'?s.tagTextColor:'#ffffff'}" onchange="setStageTagProp(${i},'tagTextColor',this.value)" style="width:24px;height:24px;padding:1px;border:1.5px solid rgba(0,0,0,.2);cursor:pointer;border-radius:3px;">`:''}
+      </div>
     </div>`);
   el.innerHTML = _stageInsertRow(0) + items.map((h,i)=>h+_stageInsertRow(i+1)).join('');
 }
@@ -3045,6 +3056,7 @@ function mvStage(i,d) { const j=i+d; if(j<0||j>=curStages.length) return; [curSt
 function rmStage(i)   { if(!confirm('이 스테이지를 삭제할까요?')) return; curStages.splice(i,1); renderStageList(); schedulePreviewUpdate(); projDirty=true; }
 function getStagePublishStatus(s){ return s.publishStatus || (s.published===false?'hidden':'published'); }
 function setStagePublish(i, status){ curStages[i].publishStatus=status; curStages[i].published=(status!=='hidden'); renderStageList(); schedulePreviewUpdate(); projDirty=true; }
+function setStageTagProp(i, key, val){ curStages[i][key]=val; projDirty=true; renderStageList(); schedulePreviewUpdate(); }
 function openStageImageUpload(i, btn) {
   pendingStageUploadIdx = i;
   pendingUploadBtn = btn || null;
@@ -3666,6 +3678,8 @@ async function _autoSaveStage() {
       stageImageUrl:s.stageImageUrl||'', order:i,
       trackProgress:!!s.trackProgress, checkableCount:s.checkableCount||0,
       published:s.published!==false, publishStatus:s.publishStatus||'published',
+      tagEnabled:!!s.tagEnabled, tagText:s.tagText||'',
+      tagBgColor:s.tagBgColor||'#000000', tagTextColor:s.tagTextColor||'#ffffff',
     }));
     await db.collection('cms_projects').doc(curProjId).update({stages: updatedStages});
     stageDirty = false;
@@ -3689,6 +3703,8 @@ async function saveStageContent() {
       stageImageUrl:s.stageImageUrl||'', order:i,
       trackProgress:!!s.trackProgress, checkableCount:s.checkableCount||0,
       published:s.published!==false, publishStatus:s.publishStatus||'published',
+      tagEnabled:!!s.tagEnabled, tagText:s.tagText||'',
+      tagBgColor:s.tagBgColor||'#000000', tagTextColor:s.tagTextColor||'#ffffff',
     }));
     await db.collection('cms_projects').doc(curProjId).update({stages: updatedStages});
     stageDirty = false;
