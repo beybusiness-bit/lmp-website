@@ -1224,7 +1224,6 @@ function _effectivePageBg(){
 }
 function _lmpContext(iframeEl){
   let bb = iframeEl ? (iframeEl.getAttribute('data-block-bg')||'') : '';
-  if(!bb) bb = _effectivePageBg();
   return {
     type:'lmp-context',
     projectId: typeof PROJECT_ID!=='undefined' ? PROJECT_ID : '',

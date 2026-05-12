@@ -8,10 +8,10 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <style>
-:root{--lmp-block-bg:#fff;}
+:root{--lmp-block-bg:#fff;--lmp-input-bg:transparent;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:transparent;display:flex;justify-content:center;min-height:100vh;}
-#app{width:100%;max-width:430px;min-height:100vh;background:var(--lmp-block-bg);position:relative;display:flex;flex-direction:column;}
+#app{width:100%;max-width:430px;min-height:100vh;background:transparent;position:relative;display:flex;flex-direction:column;}
 
 /* ── lmp 버튼 ── */
 .lmp-btn{flex-shrink:0;padding:10px 18px;background:var(--lmp-block-bg);color:#000;border:2px solid #000;border-radius:0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;letter-spacing:-.2px;transition:background .15s,color .15s;}
@@ -23,7 +23,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .lmp-btn.danger:hover,.lmp-btn.danger:active{background:#c00;color:var(--lmp-block-bg);}
 
 /* ── 입력 ── */
-input[type=number],input[type=text]{font-family:inherit;font-size:16px;font-weight:700;border:2px solid #000;border-radius:0;padding:14px 16px;width:100%;background:var(--lmp-block-bg);color:#000;outline:none;-webkit-appearance:none;}
+input[type=number],input[type=text]{font-family:inherit;font-size:16px;font-weight:700;border:2px solid #000;border-radius:0;padding:14px 16px;width:100%;background:var(--lmp-input-bg);color:#000;outline:none;-webkit-appearance:none;}
 input:focus{border-color:#000;box-shadow:0 0 0 3px rgba(0,0,0,.08);}
 
 /* ── 헤더 ── */
@@ -123,7 +123,7 @@ const FORM_ID = params.get('id');
 /* lmp-context: blockBg 수신 → CSS 변수 설정 */
 window.addEventListener('message', e => {
   if (e.data?.type !== 'lmp-context') return;
-  if (e.data.blockBg) document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg);
+  if (e.data.blockBg) { document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg); document.documentElement.style.setProperty('--lmp-input-bg', e.data.blockBg); }
 });
 window.parent.postMessage({ type: 'lmp-ready' }, '*');
 

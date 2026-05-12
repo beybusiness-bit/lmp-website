@@ -7,7 +7,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
-:root{--lmp-block-bg:#fff;}
+:root{--lmp-block-bg:#fff;--lmp-input-bg:transparent;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:transparent;}
 
@@ -20,7 +20,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .ff-desc{font-size:13px;color:rgba(0,0,0,.62);margin-bottom:10px;font-weight:500;line-height:1.6;}
 .ff-desc *{font-size:inherit!important;color:inherit!important;}
 .ff-desc a{color:inherit;text-decoration:underline;}
-.ff-inp,.ff-textarea,.ff-sel{width:100%;border:2px solid #000;border-radius:0;padding:12px 14px;font-size:15px;font-family:inherit;background:var(--lmp-block-bg);color:#000;outline:none;-webkit-appearance:none;appearance:none;}
+.ff-inp,.ff-textarea,.ff-sel{width:100%;border:2px solid #000;border-radius:0;padding:12px 14px;font-size:15px;font-family:inherit;background:var(--lmp-input-bg);color:#000;outline:none;-webkit-appearance:none;appearance:none;}
 .ff-textarea{min-height:100px;resize:vertical;}
 .ff-inp:focus,.ff-textarea:focus,.ff-sel:focus{box-shadow:0 0 0 3px rgba(0,0,0,.08);}
 .ff-sel-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
@@ -84,7 +84,7 @@ window.addEventListener('message', e => {
   ctxProjectId = e.data.projectId || '';
   ctxUserId = e.data.userId || '';
   ctxUserFields = e.data.userFields || {};
-  if (e.data.blockBg) document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg);
+  if (e.data.blockBg) { document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg); document.documentElement.style.setProperty('--lmp-input-bg', e.data.blockBg); }
   if (!ctxReceived) { ctxReceived = true; resolveCtx(); }
 });
 

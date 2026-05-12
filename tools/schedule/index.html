@@ -7,7 +7,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
-:root{--lmp-block-bg:#fff;}
+:root{--lmp-block-bg:#fff;--lmp-input-bg:transparent;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:transparent;color:#000;}
 #app{min-height:60vh;padding:0 0 48px;}
@@ -54,7 +54,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .ff-wrap{margin-bottom:32px;padding:0 20px;}
 .ff-label{display:block;font-size:14px;font-weight:700;margin-bottom:6px;line-height:1.4;}
 .ff-desc{font-size:13px;color:rgba(0,0,0,.62);margin-bottom:8px;font-weight:500;line-height:1.6;}
-.ff-inp,.ff-ta,.ff-sel{width:100%;border:2px solid #000;border-radius:0;padding:11px 13px;font-size:15px;font-family:inherit;background:var(--lmp-block-bg);color:#000;outline:none;-webkit-appearance:none;appearance:none;}
+.ff-inp,.ff-ta,.ff-sel{width:100%;border:2px solid #000;border-radius:0;padding:11px 13px;font-size:15px;font-family:inherit;background:var(--lmp-input-bg);color:#000;outline:none;-webkit-appearance:none;appearance:none;}
 .ff-ta{min-height:80px;resize:vertical;}
 .ff-inp:focus,.ff-ta:focus,.ff-sel:focus{box-shadow:0 0 0 3px rgba(0,0,0,.08);}
 .ff-sel-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
@@ -170,7 +170,7 @@ window.addEventListener('message',e=>{
   ctxProjectId=e.data.projectId||'';
   ctxUserId=e.data.userId||e.data.userFields?.[e.data.authKeyField||'']||'';
   ctxUserFields=e.data.userFields||{};
-  if(e.data.blockBg) document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg);
+  if(e.data.blockBg) { document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg); document.documentElement.style.setProperty('--lmp-input-bg', e.data.blockBg); }
   if(!resolveCtx._done){resolveCtx();resolveCtx._done=true;}
 });
 setTimeout(()=>{if(!resolveCtx._done){resolveCtx();resolveCtx._done=true;}},2500);
