@@ -4031,7 +4031,8 @@ function saveFormField() {
     if (curFormFields.find(f=>f.key===key)) { alert('이미 같은 키가 있어요.'); return; }
     curFormFields.push({id:uid(), key, label, type, required:ffReqOn, options, ...extra});
   } else {
-    curFormFields[curEditingFormFieldIdx] = {...curFormFields[curEditingFormFieldIdx], label, type, required:ffReqOn, options, ...extra};
+    if (curFormFields.find((f,idx)=>f.key===key&&idx!==curEditingFormFieldIdx)) { alert('이미 같은 키가 있어요.'); return; }
+    curFormFields[curEditingFormFieldIdx] = {...curFormFields[curEditingFormFieldIdx], key, label, type, required:ffReqOn, options, ...extra};
   }
   document.getElementById('ff-key').dataset.userEdited = '';
   closeModal('form-field-modal');
