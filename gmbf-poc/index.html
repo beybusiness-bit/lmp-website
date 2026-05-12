@@ -88,7 +88,9 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .stage-pct-out{font-size:10px;font-weight:800;color:#000;margin-left:4px;white-space:nowrap;}
 .stage-pct-out.merged{color:rgba(255,255,255,.85);}
 /* stage tag (bookmark) */
-.stage-tag{position:absolute;top:0;right:14px;padding:5px 8px 12px;font-size:10px;font-weight:800;line-height:1.2;letter-spacing:-.3px;clip-path:polygon(0 0,100% 0,100% 76%,50% 100%,0 76%);z-index:5;pointer-events:none;white-space:nowrap;min-width:28px;text-align:center;}
+.stage-tag{position:absolute;top:0;right:14px;font-size:10px;font-weight:800;line-height:1.2;letter-spacing:-.3px;z-index:5;pointer-events:none;white-space:nowrap;min-width:28px;text-align:center;}
+.stage-tag.bookmark{padding:5px 8px 12px;clip-path:polygon(0 0,100% 0,100% 76%,50% 100%,0 76%);}
+.stage-tag.rect{padding:4px 8px 6px;border-radius:0 0 5px 5px;}
 /* side menu */
 #side-menu{position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:430px;background:var(--menu-bg);transform:translateX(calc(-50% - 100vw));transition:transform .35s cubic-bezier(.32,.72,0,1);z-index:80;display:flex;flex-direction:column;}
 #side-menu.open{transform:translateX(-50%);}
@@ -542,7 +544,7 @@ function applySettings(d){
       trackProgress:!!s.trackProgress,checkableCount:s.checkableCount||0,
       displayType:s.displayType||'text',stageImageUrl:s.stageImageUrl||'',
       publishStatus:s.publishStatus||(s.published===false?'hidden':'published'),
-      tagEnabled:!!s.tagEnabled,tagText:s.tagText||'',tagBgColor:s.tagBgColor||'',tagTextColor:s.tagTextColor||'',
+      tagEnabled:!!s.tagEnabled,tagText:s.tagText||'',tagBgColor:s.tagBgColor||'',tagTextColor:s.tagTextColor||'',tagShape:s.tagShape||'bookmark',
     }));
   STATS = (d.stats||[]).filter(s=>s.enabled);
   ELEMENT_ORDER = d.elementOrder || ['edition','logo','dday','stats'];
@@ -777,7 +779,7 @@ function renderSeparateStages(){
     const adminBadge=IS_ADMIN_PREVIEW&&(isDisabled||isHidden)?`<div style="position:absolute;top:6px;right:6px;background:#f95548;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;z-index:3;letter-spacing:.2px;">${isHidden?'숨김':'비활성'}</div>`:'';
     const hasTag=s.tagEnabled&&s.tagText;
     const needsRel=(IS_ADMIN_PREVIEW&&(isDisabled||isHidden))||hasTag?'position:relative;':'';
-    const tagHtml=hasTag?`<div class="stage-tag" style="background:${s.tagBgColor==='home'?'var(--prep-bg)':(s.tagBgColor||'#000000')};color:${s.tagTextColor==='home'?'var(--prep-bg)':(s.tagTextColor||'#ffffff')};">${s.tagText}</div>`:'';
+    const tagHtml=hasTag?`<div class="stage-tag ${s.tagShape||'bookmark'}" style="background:${s.tagBgColor==='home'?'var(--prep-bg)':(s.tagBgColor||'#000000')};color:${s.tagTextColor==='home'?'var(--prep-bg)':(s.tagTextColor||'#ffffff')};">${s.tagText}</div>`:'';
     const pct=calcPct(s);
     const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
     const dotHtml=s.trackProgress?`<div class="status-dot">${statusTxt}</div>`:'';
@@ -814,7 +816,7 @@ function renderMergedStages(){
     const adminBadge=IS_ADMIN_PREVIEW&&(isDisabled||isHidden)?`<div style="position:absolute;top:6px;right:6px;background:#f95548;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;z-index:3;letter-spacing:.2px;">${isHidden?'숨김':'비활성'}</div>`:'';
     const hasTag=s.tagEnabled&&s.tagText;
     const needsRel=(IS_ADMIN_PREVIEW&&(isDisabled||isHidden))||hasTag?'position:relative;':'';
-    const tagHtml=hasTag?`<div class="stage-tag" style="background:${s.tagBgColor==='home'?'var(--prep-bg)':(s.tagBgColor||'#000000')};color:${s.tagTextColor==='home'?'var(--prep-bg)':(s.tagTextColor||'#ffffff')};">${s.tagText}</div>`:'';
+    const tagHtml=hasTag?`<div class="stage-tag ${s.tagShape||'bookmark'}" style="background:${s.tagBgColor==='home'?'var(--prep-bg)':(s.tagBgColor||'#000000')};color:${s.tagTextColor==='home'?'var(--prep-bg)':(s.tagTextColor||'#ffffff')};">${s.tagText}</div>`:'';
     const pct=calcPct(s);
     const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
     if(s.displayType==='image' && s.stageImageUrl){

@@ -3045,7 +3045,11 @@ function renderStageList() {
       <div style="margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
         <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);white-space:nowrap;">태그</div>
         <button class="tgl-btn${s.tagEnabled?' on':''}" onclick="curStages[${i}].tagEnabled=!curStages[${i}].tagEnabled;renderStageList();schedulePreviewUpdate();projDirty=true;" style="font-size:11px;padding:5px 10px;">${s.tagEnabled?'ON':'OFF'}</button>
-        ${s.tagEnabled?`<input class="fi-sm" style="flex:1;min-width:70px;max-width:110px;margin-bottom:0;" placeholder="태그 텍스트" value="${(s.tagText||'').replace(/"/g,'&quot;')}" oninput="curStages[${i}].tagText=this.value;projDirty=true;schedulePreviewUpdate()">
+        ${s.tagEnabled?`<div style="display:flex;gap:0;border:1.5px solid #000;border-radius:3px;overflow:hidden;flex-shrink:0;">
+          <button onpointerdown="epd(event)" onclick="setStageTagProp(${i},'tagShape','bookmark')" style="padding:3px 7px;border:none;background:${(s.tagShape||'bookmark')==='bookmark'?'#000':'#fff'};color:${(s.tagShape||'bookmark')==='bookmark'?'#fff':'#000'};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;" title="북마크 모양">🔖</button>
+          <button onpointerdown="epd(event)" onclick="setStageTagProp(${i},'tagShape','rect')" style="padding:3px 7px;border:none;border-left:1.5px solid #000;background:${s.tagShape==='rect'?'#000':'#fff'};color:${s.tagShape==='rect'?'#fff':'#000'};font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;" title="네모 모양">▬</button>
+        </div>
+        <input class="fi-sm" style="flex:1;min-width:70px;max-width:110px;margin-bottom:0;" placeholder="태그 텍스트" value="${(s.tagText||'').replace(/"/g,'&quot;')}" oninput="curStages[${i}].tagText=this.value;projDirty=true;schedulePreviewUpdate()">
         <span style="font-size:10px;color:rgba(0,0,0,.4);">배경</span>
         <button onclick="setStageTagProp(${i},'tagBgColor','home')" style="padding:2px 6px;border:1.5px solid #000;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;background:${s.tagBgColor==='home'?'#000':'transparent'};color:${s.tagBgColor==='home'?'#fff':'#000'};">홈배경</button>
         <input type="color" value="${s.tagBgColor&&s.tagBgColor!=='home'?s.tagBgColor:'#000000'}" onchange="setStageTagProp(${i},'tagBgColor',this.value)" style="width:24px;height:24px;padding:1px;border:1.5px solid rgba(0,0,0,.2);cursor:pointer;border-radius:3px;">
@@ -3684,7 +3688,7 @@ async function _autoSaveStage() {
       trackProgress:!!s.trackProgress, checkableCount:s.checkableCount||0,
       published:s.published!==false, publishStatus:s.publishStatus||'published',
       tagEnabled:!!s.tagEnabled, tagText:s.tagText||'',
-      tagBgColor:s.tagBgColor||'#000000', tagTextColor:s.tagTextColor||'#ffffff',
+      tagBgColor:s.tagBgColor||'#000000', tagTextColor:s.tagTextColor||'#ffffff', tagShape:s.tagShape||'bookmark',
     }));
     await db.collection('cms_projects').doc(curProjId).update({stages: updatedStages});
     stageDirty = false;
@@ -3709,7 +3713,7 @@ async function saveStageContent() {
       trackProgress:!!s.trackProgress, checkableCount:s.checkableCount||0,
       published:s.published!==false, publishStatus:s.publishStatus||'published',
       tagEnabled:!!s.tagEnabled, tagText:s.tagText||'',
-      tagBgColor:s.tagBgColor||'#000000', tagTextColor:s.tagTextColor||'#ffffff',
+      tagBgColor:s.tagBgColor||'#000000', tagTextColor:s.tagTextColor||'#ffffff', tagShape:s.tagShape||'bookmark',
     }));
     await db.collection('cms_projects').doc(curProjId).update({stages: updatedStages});
     stageDirty = false;
