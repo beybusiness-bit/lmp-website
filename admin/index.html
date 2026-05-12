@@ -2198,6 +2198,7 @@ let pendingUploadBtn = null;
 let curFormFields = [];
 let curFormConfig = {};
 let curEditingFormFieldIdx = null;
+let curFieldInsertAt = null;
 let ffReqOn = false;
 let ffOtherOn = false;
 let ffSelectMode = 'dropdown';
@@ -3962,8 +3963,9 @@ function renderFormFields() {
 }
 function mvFormField(i,d){const j=i+d;if(j<0||j>=curFormFields.length)return;[curFormFields[i],curFormFields[j]]=[curFormFields[j],curFormFields[i]];renderFormFields();}
 function rmFormField(i){if(!confirm('이 필드를 삭제할까요?'))return;curFormFields.splice(i,1);renderFormFields();}
-function openFormFieldModal(idx) {
+function openFormFieldModal(idx, insertAt) {
   curEditingFormFieldIdx = idx;
+  curFieldInsertAt = (idx===null && insertAt!=null) ? insertAt : null;
   document.getElementById('form-field-modal-ttl').textContent = idx===null ? '필드 추가' : '필드 편집';
   const f = idx!==null ? curFormFields[idx] : {label:'',key:'',type:'string',required:false,options:[],description:'',placeholder:'',selectMode:'dropdown',allowOther:false,minSelect:null,maxSelect:null,minChars:null,maxChars:null};
   const labelEl = document.getElementById('ff-label');
@@ -4029,7 +4031,9 @@ function saveFormField() {
   const extra = {description, placeholder, selectMode: type==='select'?ffSelectMode:'dropdown', allowOther: type==='select'&&ffOtherOn, minSelect: minSel, maxSelect: maxSel, minChars, maxChars};
   if (curEditingFormFieldIdx===null) {
     if (curFormFields.find(f=>f.key===key)) { alert('이미 같은 키가 있어요.'); return; }
-    curFormFields.push({id:uid(), key, label, type, required:ffReqOn, options, ...extra});
+    const newField = {id:uid(), key, label, type, required:ffReqOn, options, ...extra};
+    if (curFieldInsertAt!=null) { curFormFields.splice(curFieldInsertAt,0,newField); curFieldInsertAt=null; }
+    else curFormFields.push(newField);
   } else {
     if (curFormFields.find((f,idx)=>f.key===key&&idx!==curEditingFormFieldIdx)) { alert('이미 같은 키가 있어요.'); return; }
     curFormFields[curEditingFormFieldIdx] = {...curFormFields[curEditingFormFieldIdx], key, label, type, required:ffReqOn, options, ...extra};
@@ -6314,12 +6318,13 @@ async function toolFormEdit(docId){
     loadTfInlineResponses();
   }catch(e){alert('로드 실패: '+e.message);}
 }
+function _tfInsertRow(pos){return `<div class="insert-row" onclick="toolFormOpenFieldModal(null,${pos})"><button class="insert-row-btn">+</button></div>`;}
 function renderTfFieldList(){
   const el=document.getElementById('tf-field-list');
   if(!el) return;
-  if(!tfFields.length){el.innerHTML='<div class="empty-msg" style="padding:6px 0;">필드가 없어요.</div>';return;}
   const typeLabel={string:'짧은텍스트',textarea:'긴텍스트',number:'숫자',select:'선택',color:'색상',file:'파일'};
-  el.innerHTML=tfFields.map((f,i)=>{
+  if(!tfFields.length){el.innerHTML=_tfInsertRow(0)+'<div class="empty-msg" style="padding:6px 0;">필드가 없어요.</div>';return;}
+  const items=tfFields.map((f,i)=>{
     const tl=f.type==='select'?(f.selectMode==='buttons'?'버튼선택':'드롭다운'):(typeLabel[f.type]||f.type);
     return `<div class="field-item">
       <div class="field-info">
@@ -6334,15 +6339,16 @@ function renderTfFieldList(){
         <span class="fbadge danger" onclick="rmTfField(${i})">삭제</span>
       </div>
     </div>`;
-  }).join('');
+  });
+  el.innerHTML=_tfInsertRow(0)+items.map((h,i)=>h+_tfInsertRow(i+1)).join('');
 }
 function mvTfField(i,d){const j=i+d;if(j<0||j>=tfFields.length)return;[tfFields[i],tfFields[j]]=[tfFields[j],tfFields[i]];renderTfFieldList();}
 function rmTfField(i){if(!confirm('이 필드를 삭제할까요?'))return;tfFields.splice(i,1);renderTfFieldList();}
 function dupTfField(i){const copy=JSON.parse(JSON.stringify(tfFields[i]));copy.id=uid();copy.key=copy.key+'_copy';tfFields.splice(i+1,0,copy);renderTfFieldList();}
-function toolFormOpenFieldModal(idx){
+function toolFormOpenFieldModal(idx, insertAt){
   formFieldCtx='tool';
   curFormFields=tfFields;
-  openFormFieldModal(idx);
+  openFormFieldModal(idx, insertAt);
 }
 async function toolFormSave(){
   if(!tfCurDocId) return;
