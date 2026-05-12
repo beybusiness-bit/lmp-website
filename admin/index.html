@@ -158,6 +158,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .ced{min-height:150px;max-height:260px;overflow-y:auto;border:2px solid #000;padding:10px;font-size:14px;line-height:1.7;outline:none;font-family:inherit;}
 .ced:empty::before{content:attr(data-ph);color:rgba(0,0,0,.3);pointer-events:none;}
 .ced a{color:inherit;text-decoration:underline;}
+/* ── 미니 RTE (도구 설명·완료메시지용) ── */
+.mini-rte-wrap{border:1.5px solid rgba(0,0,0,.2);margin-bottom:0;}
+.mini-rte-tb{display:flex;gap:0;padding:3px 4px;background:rgba(0,0,0,.04);border-bottom:1.5px solid rgba(0,0,0,.12);}
+.mini-rte-tb button{background:transparent;border:none;padding:3px 7px;cursor:pointer;font-size:12px;font-family:inherit;border-radius:2px;line-height:1;}
+.mini-rte-tb button:hover{background:rgba(0,0,0,.1);}
+.mini-rte-tb .rte-sep{width:1px;background:rgba(0,0,0,.15);margin:2px 3px;}
+.mini-rte{min-height:64px;padding:8px;font-size:13px;outline:none;font-family:inherit;line-height:1.6;word-break:break-word;}
+.mini-rte:empty::before{content:attr(data-ph);color:rgba(0,0,0,.3);pointer-events:none;}
 .ff-desc-editor-wrap{margin-bottom:10px;}
 .ff-desc-toolbar{display:flex;gap:4px;margin-bottom:4px;}
 .ff-desc-toolbar button{width:28px;height:28px;background:transparent;border:1.5px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;padding:0;color:#000;-webkit-tap-highlight-color:transparent;}
@@ -917,11 +925,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <div style="padding:16px;overflow-y:auto;flex:1;">
             <div class="ed-sect">
               <div class="ed-lbl">폼 이름</div>
-              <input class="fi" id="tf-title" placeholder="예: 참가 신청서" style="margin-bottom:0;">
+              <input class="fi" id="tf-title" placeholder="예: 참가 신청서" style="margin-bottom:4px;">
+              <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 <code>{{key}}</code>로 사용자 정보 변수 삽입 가능 (예: {{name}})</div>
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
-              <textarea class="fi-sm" id="tf-desc" placeholder="폼에 대한 안내 문구를 입력하세요." style="min-height:60px;resize:vertical;margin-bottom:0;"></textarea>
+              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">설명 <span style="font-weight:400;opacity:.55;">(선택)</span><button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('tf-desc')">{x} 변수</button></div>
+              <div class="mini-rte-wrap">
+                <div class="mini-rte-tb">
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('tf-desc','bold')" title="굵게"><b>B</b></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('tf-desc','italic')" title="기울임"><i>I</i></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('tf-desc','underline')" title="밑줄"><u>U</u></button>
+                  <div class="rte-sep"></div>
+                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('tf-desc')" title="링크">🔗</button>
+                </div>
+                <div class="mini-rte" id="rte-tf-desc" contenteditable="true" data-ph="폼에 대한 안내 문구를 입력하세요."></div>
+              </div>
             </div>
             <div class="sect-head" style="margin-bottom:8px;">필드</div>
             <div id="tf-field-list"></div>
@@ -929,11 +947,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div class="sect-head" style="margin-top:20px;margin-bottom:8px;">제출 설정</div>
             <div class="ed-sect">
               <div class="ed-lbl">제출 버튼 텍스트</div>
-              <input class="fi-sm" id="tf-submit-text" placeholder="제출하기" style="margin-bottom:0;">
+              <input class="fi-sm" id="tf-submit-text" placeholder="제출하기" style="margin-bottom:4px;">
+              <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 <code>{{key}}</code>로 사용자 변수 삽입 가능</div>
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl">완료 메시지 <span style="font-weight:400;opacity:.55;">(HTML 가능)</span></div>
-              <textarea class="fi-sm" id="tf-submit-msg" placeholder="제출이 완료됐어요!" style="min-height:80px;resize:vertical;margin-bottom:0;"></textarea>
+              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">완료 메시지<button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('tf-submit-msg')">{x} 변수</button></div>
+              <div class="mini-rte-wrap">
+                <div class="mini-rte-tb">
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('tf-submit-msg','bold')" title="굵게"><b>B</b></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('tf-submit-msg','italic')" title="기울임"><i>I</i></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('tf-submit-msg','underline')" title="밑줄"><u>U</u></button>
+                  <div class="rte-sep"></div>
+                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('tf-submit-msg')" title="링크">🔗</button>
+                </div>
+                <div class="mini-rte" id="rte-tf-submit-msg" contenteditable="true" data-ph="제출이 완료됐어요!"></div>
+              </div>
             </div>
             <div class="ed-sect">
               <div class="switch-row" style="margin-bottom:0;">
@@ -4237,6 +4265,38 @@ function setCheckPos(pos){
   document.querySelectorAll('.chk-pos-btn').forEach(b=>{b.classList.toggle('on',b.dataset.pos===pos);});
   scheduleBmPreview();
 }
+/* ── 미니 RTE 헬퍼 (도구 설명·완료메시지 전용) ── */
+function rteGet(id){
+  const el=document.getElementById('rte-'+id);
+  if(!el)return'';
+  const h=el.innerHTML.trim();
+  return(h==='<br>'||h==='')?'':h;
+}
+function rteSet(id,html){
+  const el=document.getElementById('rte-'+id);
+  if(!el)return;
+  if(html&&!/<[a-z]/i.test(html))html=html.replace(/\n/g,'<br>');
+  el.innerHTML=html||'';
+}
+function rteCmd(id,cmd){
+  const el=document.getElementById('rte-'+id);
+  if(el)el.focus();
+  document.execCommand(cmd,false,null);
+}
+function rteLinkCmd(id){
+  const el=document.getElementById('rte-'+id);
+  if(el)el.focus();
+  const url=prompt('링크 URL을 입력하세요:');
+  if(url)document.execCommand('createLink',false,url);
+}
+function rteInsertVar(id){
+  const el=document.getElementById('rte-'+id);
+  if(!el)return;
+  el.focus();
+  const key=prompt('삽입할 변수 키를 입력하세요\n예) name, phone, team …','name');
+  if(!key)return;
+  document.execCommand('insertText',false,'{{'+key+'}}');
+}
 function saveRange(el){if(_fmtPopType)return;const sel=window.getSelection();if(sel.rangeCount)savedRange={el,range:sel.getRangeAt(0).cloneRange()};}
 function restoreRange(el){if(!savedRange||savedRange.el!==el)return;const sel=window.getSelection();if(sel.rangeCount&&el.contains(sel.anchorNode))return;sel.removeAllRanges();sel.addRange(savedRange.range);}
 function renderBlkKeyColors(){
@@ -6184,9 +6244,9 @@ async function toolFormEdit(docId){
     const d=snap.data()||{};
     tfFields=JSON.parse(JSON.stringify(d.fields||[]));
     document.getElementById('tf-title').value=d.title||'';
-    document.getElementById('tf-desc').value=d.desc||'';
+    rteSet('tf-desc',d.desc||'');
     document.getElementById('tf-submit-text').value=d.submitBtnText||'제출하기';
-    document.getElementById('tf-submit-msg').value=d.submitMsg||'';
+    rteSet('tf-submit-msg',d.submitMsg||'');
     document.getElementById('tf-no-resubmit-sw').classList.toggle('on',!!d.noResubmit);
     tfRespFormConfig={sheetId:d.sheetId||'',sheetTab:d.sheetTab||'응답',sheetUrl:d.sheetUrl||''};
     renderTfFieldList();
@@ -6224,9 +6284,9 @@ function toolFormOpenFieldModal(idx){
 async function toolFormSave(){
   if(!tfCurDocId) return;
   const title=document.getElementById('tf-title')?.value.trim()||'';
-  const desc=document.getElementById('tf-desc')?.value.trim()||'';
+  const desc=rteGet('tf-desc');
   const submitBtnText=document.getElementById('tf-submit-text')?.value.trim()||'제출하기';
-  const submitMsg=document.getElementById('tf-submit-msg')?.value.trim()||'';
+  const submitMsg=rteGet('tf-submit-msg');
   const noResubmit=document.getElementById('tf-no-resubmit-sw')?.classList.contains('on')||false;
   if(!title){alert('폼 이름을 입력해주세요.');return;}
   try{

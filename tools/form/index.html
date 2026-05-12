@@ -33,7 +33,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
 #app{padding:24px 20px;}
 .form-title{font-size:17px;font-weight:800;margin-bottom:24px;letter-spacing:-.3px;line-height:1.4;}
-.form-desc{font-size:13px;color:rgba(0,0,0,.6);line-height:1.6;margin-bottom:20px;white-space:pre-wrap;}
+.form-desc{font-size:13px;color:rgba(0,0,0,.6);line-height:1.6;margin-bottom:20px;}
 #done-screen{display:none;padding:40px 20px;text-align:center;}
 #done-screen.on{display:block;}
 #form-screen.off{display:none;}
@@ -178,11 +178,19 @@ function showErr(msg) {
   el.classList.add('on');
 }
 
+function applyVars(str) {
+  if (!str) return '';
+  return str.replace(/\{\{(\w+)\}\}/g, (_, key) => {
+    const v = ctxUserFields[key];
+    return v != null ? String(v) : '{{' + key + '}}';
+  });
+}
+
 function showDone(html) {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('app').style.display = '';
   document.getElementById('form-screen').classList.add('off');
-  document.getElementById('done-msg').innerHTML = html || '제출이 완료됐어요!';
+  document.getElementById('done-msg').innerHTML = applyVars(html) || '제출이 완료됐어요!';
   document.getElementById('done-screen').classList.add('on');
 }
 
@@ -223,10 +231,10 @@ async function init() {
     }
 
     const titleEl = document.getElementById('form-title');
-    titleEl.textContent = formConfig.title || '';
+    titleEl.textContent = applyVars(formConfig.title || '');
     const descEl = document.getElementById('form-desc');
     if (formConfig.desc) {
-      descEl.textContent = formConfig.desc;
+      descEl.innerHTML = applyVars(formConfig.desc);
       descEl.style.display = '';
       titleEl.style.marginBottom = '6px';
     } else {
@@ -235,7 +243,7 @@ async function init() {
     const fields = (formConfig.fields || []).sort((a, b) => (a.order || 0) - (b.order || 0));
     document.getElementById('form-fields').innerHTML = fields.map(renderField).join('');
     const submitBtn = document.getElementById('submit-btn');
-    if (submitBtn) submitBtn.textContent = formConfig.submitBtnText || '제출하기';
+    if (submitBtn) submitBtn.textContent = applyVars(formConfig.submitBtnText || '제출하기');
 
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = '';
