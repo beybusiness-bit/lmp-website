@@ -33,6 +33,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
 #app{padding:24px 20px;}
 .form-title{font-size:17px;font-weight:800;margin-bottom:24px;letter-spacing:-.3px;line-height:1.4;}
+.form-desc{font-size:13px;color:rgba(0,0,0,.6);line-height:1.6;margin-bottom:20px;white-space:pre-wrap;}
 #done-screen{display:none;padding:40px 20px;text-align:center;}
 #done-screen.on{display:block;}
 #form-screen.off{display:none;}
@@ -47,6 +48,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 <div id="app" style="display:none;">
   <div id="form-screen">
     <div class="form-title" id="form-title"></div>
+    <div class="form-desc" id="form-desc" style="display:none;"></div>
     <div id="form-fields"></div>
     <div class="ff-err" id="form-err"></div>
     <button class="lmp-btn" id="submit-btn" onclick="submitForm()">제출하기</button>
@@ -220,7 +222,16 @@ async function init() {
       }
     }
 
-    document.getElementById('form-title').textContent = formConfig.title || '';
+    const titleEl = document.getElementById('form-title');
+    titleEl.textContent = formConfig.title || '';
+    const descEl = document.getElementById('form-desc');
+    if (formConfig.desc) {
+      descEl.textContent = formConfig.desc;
+      descEl.style.display = '';
+      titleEl.style.marginBottom = '6px';
+    } else {
+      titleEl.style.marginBottom = '24px';
+    }
     const fields = (formConfig.fields || []).sort((a, b) => (a.order || 0) - (b.order || 0));
     document.getElementById('form-fields').innerHTML = fields.map(renderField).join('');
     const submitBtn = document.getElementById('submit-btn');

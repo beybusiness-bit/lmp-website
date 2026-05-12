@@ -919,6 +919,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl">폼 이름</div>
               <input class="fi" id="tf-title" placeholder="예: 참가 신청서" style="margin-bottom:0;">
             </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
+              <textarea class="fi-sm" id="tf-desc" placeholder="폼에 대한 안내 문구를 입력하세요." style="min-height:60px;resize:vertical;margin-bottom:0;"></textarea>
+            </div>
             <div class="sect-head" style="margin-bottom:8px;">필드</div>
             <div id="tf-field-list"></div>
             <button class="add-btn" style="font-size:12px;padding:8px 0;margin-top:8px;" onclick="toolFormOpenFieldModal(null)">+ 필드 추가</button>
@@ -6180,6 +6184,7 @@ async function toolFormEdit(docId){
     const d=snap.data()||{};
     tfFields=JSON.parse(JSON.stringify(d.fields||[]));
     document.getElementById('tf-title').value=d.title||'';
+    document.getElementById('tf-desc').value=d.desc||'';
     document.getElementById('tf-submit-text').value=d.submitBtnText||'제출하기';
     document.getElementById('tf-submit-msg').value=d.submitMsg||'';
     document.getElementById('tf-no-resubmit-sw').classList.toggle('on',!!d.noResubmit);
@@ -6219,13 +6224,14 @@ function toolFormOpenFieldModal(idx){
 async function toolFormSave(){
   if(!tfCurDocId) return;
   const title=document.getElementById('tf-title')?.value.trim()||'';
+  const desc=document.getElementById('tf-desc')?.value.trim()||'';
   const submitBtnText=document.getElementById('tf-submit-text')?.value.trim()||'제출하기';
   const submitMsg=document.getElementById('tf-submit-msg')?.value.trim()||'';
   const noResubmit=document.getElementById('tf-no-resubmit-sw')?.classList.contains('on')||false;
   if(!title){alert('폼 이름을 입력해주세요.');return;}
   try{
     await db.collection('cms_form_configs').doc(tfCurDocId).update({
-      title,fields:tfFields,submitBtnText,submitMsg,noResubmit,
+      title,desc,fields:tfFields,submitBtnText,submitMsg,noResubmit,
       sheetId:tfRespFormConfig.sheetId||'',
       sheetTab:tfRespFormConfig.sheetTab||'응답',
       sheetUrl:tfRespFormConfig.sheetUrl||'',
