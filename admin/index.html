@@ -4289,6 +4289,12 @@ function openBlockModal(idx,insertAt){
   document.getElementById('bm-title').textContent=idx===null?'블록 추가':'블록 편집';
   const b=idx!==null?curBlocks[idx]:{type:'text',textContent:'',imageUrl:'',mixedLayout:'overlay'};
   curBlkType=b.type||'text';curMixedLayout=b.mixedLayout||'overlay';
+  /* tool 블록 상태는 switchBlkTab 전에 미리 세팅 — loadToolInstList가 올바른 toolType/Config로 호출되도록 */
+  if(b.type==='tool'){
+    curBlkToolType=b.toolType||'form';
+    curBlkToolConfig={...b.toolConfig||{}};
+    curBlkCompleteTrigger=b.completeTrigger||'tool-signal';
+  }
   switchBlkTab(curBlkType);
   document.getElementById('ced-text').innerHTML=b.type==='text'?(b.textContent||''):'';
   document.getElementById('text-link-url').value=b.type==='text'?(b.linkUrl||''):'';
@@ -4601,7 +4607,6 @@ async function loadToolInstList(tt){
 }
 function openToolManageLink(e){
   e.preventDefault();
-  document.getElementById('block-modal').classList.remove('on');
   const tt = curBlkToolType;
   const toolIdMap = {
     'form':              'form-mgr',
@@ -4613,8 +4618,6 @@ function openToolManageLink(e){
     'payment':           'payment',
   };
   const toolId = toolIdMap[tt] || 'form-mgr';
-  openTool(toolId);
-  // 인스턴스가 선택된 경우 해당 편집 화면으로 이동
   const instId = tt==='form'?curBlkToolConfig?.formId
     :tt==='booth'?curBlkToolConfig?.boothId
     :tt==='guide'?curBlkToolConfig?.guideId
@@ -4622,6 +4625,10 @@ function openToolManageLink(e){
     :tt==='copy-gen'?curBlkToolConfig?.copyGenId
     :tt==='youtube-playlist'?curBlkToolConfig?.youtubePlaylistId
     :tt==='payment'?curBlkToolConfig?.paymentId:'';
+  /* 블록 모달 닫고 도구 탭으로 전환 — popstate가 의도치 않게 도구 탭을 여는 것을 막기 위해 명시적으로 switchTab 호출 */
+  document.getElementById('block-modal').classList.remove('on');
+  switchTab('tools');
+  openTool(toolId);
   if(instId){
     if(tt==='form') toolFormEdit(instId);
     else if(tt==='schedule') scEdit(instId);
@@ -5536,6 +5543,8 @@ window.addEventListener('load', () => {
       if(st.toolId==='copy-gen') cgEdit(st.docId);
       else if(st.toolId==='schedule') scEdit(st.docId);
       else if(st.toolId==='form-mgr') toolFormEdit(st.docId);
+      else if(st.toolId==='youtube-playlist') ytPlaylistEdit(st.docId);
+      else if(st.toolId==='payment') pyEdit(st.docId);
       _navRestore=false;
       return;
     }
@@ -5979,6 +5988,7 @@ async function ytPlaylistCreate() {
 
 async function ytPlaylistEdit(id) {
   ytCurId = id;
+  if(!_navRestore) history.pushState({v:'tool-edit',toolId:'youtube-playlist',docId:id},'','#tools/youtube-playlist/'+id);
   document.getElementById('yt-list-screen').style.display = 'none';
   document.getElementById('yt-edit-screen').style.display = '';
   document.getElementById('yt-header-title').textContent = '재생목록 편집';
@@ -7603,6 +7613,7 @@ async function pyCreate(){
 
 async function pyEdit(id){
   pyCurDocId = id;
+  if(!_navRestore) history.pushState({v:'tool-edit',toolId:'payment',docId:id},'','#tools/payment/'+id);
   document.getElementById('py-list-screen').style.display = 'none';
   const ed = document.getElementById('py-edit-screen');
   ed.style.display = 'flex';
