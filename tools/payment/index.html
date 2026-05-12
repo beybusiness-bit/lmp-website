@@ -26,13 +26,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .pay-product{font-size:14px;font-weight:600;color:rgba(0,0,0,.7);line-height:1.5;margin-bottom:12px;}
 .pay-amount{font-size:28px;font-weight:900;letter-spacing:-.5px;margin-bottom:6px;}
 .pay-amount .won{font-size:18px;font-weight:700;margin-left:2px;}
-.pay-desc{font-size:13px;line-height:1.7;color:rgba(0,0,0,.6);margin-top:14px;padding:12px 14px;border:1.5px solid rgba(0,0,0,.12);background:rgba(0,0,0,.02);white-space:pre-wrap;}
+.pay-desc{font-size:13px;line-height:1.7;color:rgba(0,0,0,.6);margin-top:14px;padding:12px 14px;border:1.5px solid rgba(0,0,0,.12);background:rgba(0,0,0,.02);}
 
 #pay-result{display:none;text-align:center;padding:30px 16px;}
 #pay-result.on{display:block;}
 .pay-result-icon{font-size:48px;margin-bottom:12px;}
 .pay-result-title{font-size:17px;font-weight:800;margin-bottom:10px;letter-spacing:-.3px;}
-.pay-result-msg{font-size:13px;line-height:1.6;color:rgba(0,0,0,.7);margin-bottom:18px;white-space:pre-wrap;}
+.pay-result-msg{font-size:13px;line-height:1.6;color:rgba(0,0,0,.7);margin-bottom:18px;}
 .pay-receipt{margin-top:18px;padding:14px;border:1.5px solid rgba(0,0,0,.15);text-align:left;font-size:12px;line-height:1.7;color:rgba(0,0,0,.65);}
 .pay-receipt b{font-weight:700;color:#000;}
 
@@ -108,6 +108,13 @@ window.addEventListener('message', e => {
 });
 
 function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function applyVars(str) {
+  if (!str) return '';
+  return str.replace(/\{\{(\w+)\}\}/g, (_, key) => {
+    const v = ctxUserFields[key];
+    return v != null ? String(v) : '{{' + key + '}}';
+  });
+}
 function setStatus(msg) {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('app').style.display = 'none';
@@ -205,12 +212,12 @@ async function renderPayScreen() {
   if (!MERCHANT_ID) { showError('관리자가 페이업 가맹점 ID를 설정해야 해요.'); return; }
   if (!CONFIG.amount || CONFIG.amount < 100) { showError('결제 금액이 올바르지 않아요. (최소 100원)'); return; }
 
-  document.getElementById('p-title').textContent   = CONFIG.title || '결제';
+  document.getElementById('p-title').textContent   = applyVars(CONFIG.title || '결제');
   document.getElementById('p-product').textContent = CONFIG.productName || '';
   document.getElementById('p-amount').textContent  = Number(CONFIG.amount).toLocaleString();
   if (CONFIG.description) {
     const d = document.getElementById('p-desc');
-    d.textContent = CONFIG.description;
+    d.innerHTML = applyVars(CONFIG.description);
     d.style.display = 'block';
   }
 
@@ -331,7 +338,7 @@ function showResult(kind, title, msg, receipt) {
   document.getElementById('pay-result').classList.add('on');
   document.getElementById('r-icon').textContent  = kind === 'success' ? '✅' : kind === 'already' ? '✓' : '⚠️';
   document.getElementById('r-title').textContent = title;
-  document.getElementById('r-msg').textContent   = msg;
+  document.getElementById('r-msg').innerHTML   = applyVars(msg);
   if (receipt) {
     const r = document.getElementById('r-receipt');
     const lines = [];

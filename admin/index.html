@@ -714,17 +714,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <!-- 기본 정보 -->
             <div class="sect-head" style="margin-bottom:8px;">기본 정보</div>
             <div class="ed-sect">
-              <div class="ed-lbl">일정 제목 <span style="font-weight:400;opacity:.55;">({{변수}} 지원)</span></div>
-              <div style="display:flex;gap:6px;align-items:center;">
-                <input class="fi" id="sc-title" placeholder="예: {{name}}님의 상담 예약" style="flex:1;margin-bottom:0;">
-                <button class="prev-btn" onclick="scInsertVar('sc-title')">&#123;x&#125;</button>
-              </div>
+              <div class="ed-lbl">일정 제목</div>
+              <input class="fi" id="sc-title" placeholder="예: {{name}}님의 상담 예약" style="margin-bottom:4px;">
+              <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 <code>{{key}}</code>로 변수 삽입 가능</div>
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl">일정 설명 <span style="font-weight:400;opacity:.55;">({{변수}} 지원)</span></div>
-              <div style="display:flex;gap:6px;align-items:flex-start;">
-                <textarea class="fi-sm" id="sc-desc" placeholder="예: 30분간 1:1 상담을 진행합니다." rows="3" style="flex:1;resize:vertical;margin-bottom:0;"></textarea>
-                <button class="prev-btn" onclick="scInsertVar('sc-desc')" style="flex-shrink:0;">&#123;x&#125;</button>
+              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">일정 설명<button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('sc-desc')">{x} 변수</button></div>
+              <div class="mini-rte-wrap">
+                <div class="mini-rte-tb">
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('sc-desc','bold')"><b>B</b></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('sc-desc','italic')"><i>I</i></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('sc-desc','underline')"><u>U</u></button>
+                  <div class="rte-sep"></div>
+                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('sc-desc')">🔗</button>
+                </div>
+                <div class="mini-rte" id="rte-sc-desc" contenteditable="true" data-ph="예: 30분간 1:1 상담을 진행합니다."></div>
               </div>
             </div>
             <div class="ed-sect">
@@ -809,9 +813,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <!-- 완료 안내 메시지 -->
             <div class="sect-head" style="margin-top:20px;margin-bottom:8px;">완료 안내 메시지</div>
             <div class="ed-sect">
-              <div style="display:flex;gap:6px;align-items:flex-start;">
-                <textarea class="fi-sm" id="sc-confirm-msg" placeholder="예약해 주셔서 감사해요!" rows="3" style="flex:1;resize:vertical;margin-bottom:0;"></textarea>
-                <button class="prev-btn" onclick="scInsertVar('sc-confirm-msg')" style="flex-shrink:0;">&#123;x&#125;</button>
+              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">&nbsp;<button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('sc-confirm-msg')">{x} 변수</button></div>
+              <div class="mini-rte-wrap">
+                <div class="mini-rte-tb">
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('sc-confirm-msg','bold')"><b>B</b></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('sc-confirm-msg','italic')"><i>I</i></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('sc-confirm-msg','underline')"><u>U</u></button>
+                  <div class="rte-sep"></div>
+                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('sc-confirm-msg')">🔗</button>
+                </div>
+                <div class="mini-rte" id="rte-sc-confirm-msg" contenteditable="true" data-ph="예약해 주셔서 감사해요!"></div>
               </div>
             </div>
 
@@ -861,25 +872,45 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <code style="background:#e8e8e8;padding:1px 4px;border-radius:3px;">{count}</code> → 신청한 곡 수 (제출 완료 문구에서만 동작)
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl">재생목록 이름 <span style="color:#c00;">*</span></div>
+              <div class="ed-lbl">재생목록 이름 <span style="font-weight:400;opacity:.55;">💡 <code>{{key}}</code> 변수 삽입 가능</span> <span style="color:#c00;">*</span></div>
               <input class="fi" id="yt-plc-title" placeholder="예: GMBF 3회 신청곡 받기" style="margin-bottom:0;">
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl">설명 <span style="font-weight:400;color:rgba(0,0,0,.45);">(사용자에게 보여지는 안내문)</span></div>
-              <textarea class="fi" id="yt-plc-desc" placeholder="예: 행사에서 듣고 싶은 곡을 검색해서 신청해주세요." style="resize:vertical;min-height:60px;margin-bottom:0;"></textarea>
+              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">설명 <span style="font-weight:400;color:rgba(0,0,0,.45);">(사용자에게 보여지는 안내문)</span><button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('yt-plc-desc')">{x} 변수</button></div>
+              <div class="mini-rte-wrap">
+                <div class="mini-rte-tb">
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('yt-plc-desc','bold')"><b>B</b></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('yt-plc-desc','italic')"><i>I</i></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('yt-plc-desc','underline')"><u>U</u></button>
+                  <div class="rte-sep"></div>
+                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('yt-plc-desc')">🔗</button>
+                </div>
+                <div class="mini-rte" id="rte-yt-plc-desc" contenteditable="true" data-ph="예: 행사에서 듣고 싶은 곡을 검색해서 신청해주세요."></div>
+              </div>
             </div>
             <div class="sect-head" style="margin-top:20px;margin-bottom:8px;">제출 설정</div>
             <div class="ed-sect">
               <div class="ed-lbl">신청 버튼 텍스트</div>
-              <input class="fi-sm" id="yt-plc-submit-text" placeholder="신청하기" style="margin-bottom:0;">
+              <input class="fi-sm" id="yt-plc-submit-text" placeholder="신청하기" style="margin-bottom:4px;">
+              <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 <code>{{key}}</code>로 변수 삽입 가능</div>
             </div>
             <div class="ed-sect">
               <div class="ed-lbl">제출 완료 제목</div>
-              <input class="fi-sm" id="yt-plc-done-title" placeholder="신청 완료!" style="margin-bottom:0;">
+              <input class="fi-sm" id="yt-plc-done-title" placeholder="신청 완료!" style="margin-bottom:4px;">
+              <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 <code>{{key}}</code>로 변수 삽입 가능</div>
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl">제출 완료 안내 문구 <span style="font-weight:400;color:rgba(0,0,0,.45);">({count} = 신청 곡 수)</span></div>
-              <textarea class="fi" id="yt-plc-done-sub" placeholder="{count}곡을 신청해 주셔서 감사해요." style="resize:vertical;min-height:50px;margin-bottom:0;"></textarea>
+              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">제출 완료 안내 문구 <span style="font-weight:400;color:rgba(0,0,0,.45);">({count} = 곡 수)</span><button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('yt-plc-done-sub')">{x} 변수</button></div>
+              <div class="mini-rte-wrap">
+                <div class="mini-rte-tb">
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('yt-plc-done-sub','bold')"><b>B</b></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('yt-plc-done-sub','italic')"><i>I</i></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('yt-plc-done-sub','underline')"><u>U</u></button>
+                  <div class="rte-sep"></div>
+                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('yt-plc-done-sub')">🔗</button>
+                </div>
+                <div class="mini-rte" id="rte-yt-plc-done-sub" contenteditable="true" data-ph="{count}곡을 신청해 주셔서 감사해요."></div>
+              </div>
             </div>
             <div style="margin-top:24px;padding-top:16px;border-top:1.5px solid rgba(0,0,0,.1);">
               <button class="prev-btn danger" onclick="ytPlaylistDelete()" style="font-size:12px;">재생목록 삭제</button>
@@ -1134,7 +1165,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             </div>
             <div class="ed-sect">
               <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
-              <input class="fi-sm" id="cg-desc" placeholder="사용자에게 표시될 설명" style="margin-bottom:0;">
+              <input class="fi-sm" id="cg-desc" placeholder="사용자에게 표시될 설명" style="margin-bottom:4px;">
+              <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 <code>{{key}}</code>로 변수 삽입 가능</div>
             </div>
             <!-- 입력 필드 -->
             <div class="sect-head">입력 필드</div>
@@ -1172,8 +1204,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <input class="fi-sm" id="cg-speaker-desc" type="text" placeholder="예: 친환경 카페를 운영하는 30대 여성 사장님" style="margin-bottom:0;">
             </div>
             <div style="margin-bottom:8px;">
-              <div class="ed-lbl" style="margin-bottom:4px;">배경 및 컨텍스트</div>
-              <textarea class="fi-sm" id="cg-ai-context" rows="4" placeholder="예: 이 문구는 인스타그램 신메뉴 런칭에 사용됩니다. 브랜드 키워드는 '느림', '건강', '지속가능성'입니다." style="margin-bottom:0;min-height:80px;resize:vertical;"></textarea>
+              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">배경 및 컨텍스트<button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('cg-ai-context')">{x} 변수</button></div>
+              <div class="mini-rte-wrap">
+                <div class="mini-rte-tb">
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-ai-context','bold')"><b>B</b></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-ai-context','italic')"><i>I</i></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-ai-context','underline')"><u>U</u></button>
+                </div>
+                <div class="mini-rte" id="rte-cg-ai-context" contenteditable="true" data-ph="예: 이 문구는 인스타그램 신메뉴 런칭에 사용됩니다. 브랜드 키워드는 '느림', '건강', '지속가능성'입니다." style="min-height:80px;"></div>
+              </div>
             </div>
             <!-- 참고 문구 -->
             <div class="sect-head">참고 문구</div>
@@ -1231,7 +1270,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <div style="padding:16px;overflow-y:auto;flex:1;">
             <div class="ed-sect">
               <div class="ed-lbl">제목 <span style="font-weight:400;opacity:.55;">(관리용 · 사용자에게도 표시)</span></div>
-              <input class="fi" id="py-title" placeholder="예: 프로 멤버십" style="margin-bottom:0;">
+              <input class="fi" id="py-title" placeholder="예: 프로 멤버십" style="margin-bottom:4px;">
+              <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 <code>{{key}}</code>로 변수 삽입 가능</div>
             </div>
             <div class="ed-sect">
               <div class="ed-lbl">상품명 <span style="font-weight:400;opacity:.55;">(영수증·결제창에 표시)</span></div>
@@ -1242,8 +1282,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <input class="fi" id="py-amount" type="number" min="100" step="100" placeholder="9900" style="margin-bottom:0;">
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl">상세 설명 <span style="font-weight:400;opacity:.55;">(선택 · 결제창에 표시)</span></div>
-              <textarea class="fi" id="py-desc" rows="3" placeholder="결제 전 사용자에게 보여줄 설명" style="margin-bottom:0;resize:vertical;min-height:64px;"></textarea>
+              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">상세 설명 <span style="font-weight:400;opacity:.55;">(선택 · 결제창에 표시)</span><button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('py-desc')">{x} 변수</button></div>
+              <div class="mini-rte-wrap">
+                <div class="mini-rte-tb">
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('py-desc','bold')"><b>B</b></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('py-desc','italic')"><i>I</i></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('py-desc','underline')"><u>U</u></button>
+                  <div class="rte-sep"></div>
+                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('py-desc')">🔗</button>
+                </div>
+                <div class="mini-rte" id="rte-py-desc" contenteditable="true" data-ph="결제 전 사용자에게 보여줄 설명"></div>
+              </div>
             </div>
             <div class="ed-sect">
               <div class="ed-lbl">권한 라벨 (tier) <span style="font-weight:400;opacity:.55;">(선택 · 영문/숫자 · 추후 권한 분기에 사용)</span></div>
@@ -1251,8 +1300,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div style="font-size:10px;color:rgba(0,0,0,.45);line-height:1.6;margin-top:6px;">결제 성공 시 사용자에게 이 라벨이 부여돼요. 비워두면 결제 기록만 남아요.</div>
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl">결제 완료 메시지 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
-              <textarea class="fi" id="py-success" rows="2" placeholder="예: 결제가 완료되었어요. 이제 프로 콘텐츠를 볼 수 있어요." style="margin-bottom:0;resize:vertical;min-height:50px;"></textarea>
+              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">결제 완료 메시지 <span style="font-weight:400;opacity:.55;">(선택)</span><button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('py-success')">{x} 변수</button></div>
+              <div class="mini-rte-wrap">
+                <div class="mini-rte-tb">
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('py-success','bold')"><b>B</b></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('py-success','italic')"><i>I</i></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('py-success','underline')"><u>U</u></button>
+                  <div class="rte-sep"></div>
+                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('py-success')">🔗</button>
+                </div>
+                <div class="mini-rte" id="rte-py-success" contenteditable="true" data-ph="예: 결제가 완료되었어요. 이제 프로 콘텐츠를 볼 수 있어요."></div>
+              </div>
             </div>
             <!-- 결제 내역 인라인 (결제 내역 버튼 클릭 시 표시) -->
             <div id="py-records-section" style="display:none;margin-top:24px;">
@@ -1851,6 +1909,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <option value="number">숫자</option>
         <option value="file">파일 업로드</option>
         <option value="select">선택지</option>
+        <option value="color">색상 선택</option>
       </select>
       <div id="ff-options-wrap" style="display:none;margin-bottom:10px;">
         <div class="ed-lbl" style="margin-bottom:4px;">선택지 목록 (줄바꿈 또는 쉼표로 구분)</div>
@@ -3939,9 +3998,10 @@ function onFfTypeChange() {
   const t = document.getElementById('ff-type').value;
   const isSel = t==='select';
   const isText = t==='string' || t==='textarea';
+  const isColor = t==='color';
   document.getElementById('ff-options-wrap').style.display   = isSel ? '' : 'none';
   document.getElementById('ff-select-extra').style.display   = isSel ? '' : 'none';
-  document.getElementById('ff-placeholder-wrap').style.display = (t==='file'||t==='select') ? 'none' : '';
+  document.getElementById('ff-placeholder-wrap').style.display = (t==='file'||t==='select'||isColor) ? 'none' : '';
   document.getElementById('ff-charcount-wrap').style.display  = isText ? '' : 'none';
 }
 function setFfSelectMode(mode) {
@@ -5793,7 +5853,7 @@ async function scEdit(docId) {
     scWindowType = d.bookingWindow?.type || 'range';
 
     document.getElementById('sc-title').value = d.title || '';
-    document.getElementById('sc-desc').value = d.description || '';
+    rteSet('sc-desc', d.description || '');
     document.getElementById('sc-tz').value = d.timezone || 'Asia/Seoul';
     scSetDur(scDuration, true);
     scSetWindow(scWindowType);
@@ -5809,7 +5869,7 @@ async function scEdit(docId) {
     document.getElementById('sc-buf-ex-a').value = d.bufferExisting?.after || 0;
     document.getElementById('sc-buf-nw-b').value = d.bufferNew?.before || 0;
     document.getElementById('sc-buf-nw-a').value = d.bufferNew?.after || 0;
-    document.getElementById('sc-confirm-msg').value = d.confirmMsg || '';
+    rteSet('sc-confirm-msg', d.confirmMsg || '');
     document.getElementById('sc-no-resubmit-sw').classList.toggle('on', !!d.noResubmit);
 
     // 가용 시간 규칙 — Firestore 데이터 기반 재구성
@@ -5884,7 +5944,7 @@ function scRenderFieldList() {
   const el = document.getElementById('sc-field-list');
   if(!el) return;
   if(!scFields.length) { el.innerHTML = '<div class="empty-msg" style="padding:6px 0;">필드가 없어요.</div>'; return; }
-  const typeLabel = {string:'짧은텍스트',textarea:'긴텍스트',number:'숫자',select:'선택'};
+  const typeLabel = {string:'짧은텍스트',textarea:'긴텍스트',number:'숫자',select:'선택',color:'색상',file:'파일'};
   el.innerHTML = scFields.map((f,i) => `<div class="field-item">
     <div class="field-info">
       <div class="field-name">${f.label}</div>
@@ -5915,13 +5975,13 @@ async function scSave() {
   if(scWindowType==='range' && winEnd) bookingWindow.end = firebase.firestore.Timestamp.fromDate(new Date(winEnd+'T23:59:59'));
 
   const data = {
-    title, description: document.getElementById('sc-desc').value.trim(),
+    title, description: rteGet('sc-desc'),
     timezone: document.getElementById('sc-tz').value,
     duration: scDuration, bookingWindow, availableHours,
     bufferExisting: { before: parseInt(document.getElementById('sc-buf-ex-b').value)||0, after: parseInt(document.getElementById('sc-buf-ex-a').value)||0 },
     bufferNew: { before: parseInt(document.getElementById('sc-buf-nw-b').value)||0, after: parseInt(document.getElementById('sc-buf-nw-a').value)||0 },
     fields: scFields,
-    confirmMsg: document.getElementById('sc-confirm-msg').value.trim(),
+    confirmMsg: rteGet('sc-confirm-msg'),
     noResubmit: document.getElementById('sc-no-resubmit-sw').classList.contains('on'),
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
@@ -6062,10 +6122,10 @@ async function ytPlaylistEdit(id) {
     if (!doc.exists) { alert('재생목록을 찾을 수 없어요.'); ytPlaylistBackToList(); return; }
     ytCurDoc = doc.data();
     document.getElementById('yt-plc-title').value       = ytCurDoc.title || '';
-    document.getElementById('yt-plc-desc').value        = ytCurDoc.desc || '';
+    rteSet('yt-plc-desc', ytCurDoc.desc || '');
     document.getElementById('yt-plc-submit-text').value = ytCurDoc.submitBtnText || '신청하기';
     document.getElementById('yt-plc-done-title').value  = ytCurDoc.doneTitle || '신청 완료!';
-    document.getElementById('yt-plc-done-sub').value    = ytCurDoc.doneSub || '{count}곡을 신청해 주셔서 감사해요.';
+    rteSet('yt-plc-done-sub', ytCurDoc.doneSub || '{count}곡을 신청해 주셔서 감사해요.');
     await ytLoadSubmissions();
   } catch(e) {
     console.error('[ytPlaylistEdit]', e);
@@ -6091,10 +6151,10 @@ async function ytPlaylistSave() {
   try {
     await db.collection('cms_youtube_playlists').doc(ytCurId).set({
       title,
-      desc:          document.getElementById('yt-plc-desc').value.trim(),
+      desc:          rteGet('yt-plc-desc'),
       submitBtnText: document.getElementById('yt-plc-submit-text').value.trim() || '신청하기',
       doneTitle:     document.getElementById('yt-plc-done-title').value.trim() || '신청 완료!',
-      doneSub:       document.getElementById('yt-plc-done-sub').value.trim() || '{count}곡을 신청해 주셔서 감사해요.',
+      doneSub:       rteGet('yt-plc-done-sub') || '{count}곡을 신청해 주셔서 감사해요.',
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
     btn.textContent = '저장됨 ✓';
@@ -6257,7 +6317,7 @@ function renderTfFieldList(){
   const el=document.getElementById('tf-field-list');
   if(!el) return;
   if(!tfFields.length){el.innerHTML='<div class="empty-msg" style="padding:6px 0;">필드가 없어요.</div>';return;}
-  const typeLabel={string:'짧은텍스트',textarea:'긴텍스트',number:'숫자',select:'선택'};
+  const typeLabel={string:'짧은텍스트',textarea:'긴텍스트',number:'숫자',select:'선택',color:'색상',file:'파일'};
   el.innerHTML=tfFields.map((f,i)=>{
     const tl=f.type==='select'?(f.selectMode==='buttons'?'버튼선택':'드롭다운'):(typeLabel[f.type]||f.type);
     return `<div class="field-item">
@@ -7391,7 +7451,7 @@ async function cgEdit(docId){
     document.getElementById('cg-max-chars').value=d.outputConfig?.maxChars||'';
     document.getElementById('cg-max-gens').value=d.outputConfig?.maxGenerationsPerUser||0;
     document.getElementById('cg-speaker-desc').value=d.speakerDesc||'';
-    document.getElementById('cg-ai-context').value=d.aiContext||'';
+    rteSet('cg-ai-context', d.aiContext||'');
     cgRenderFieldList(); cgRenderStyleList(); cgRenderRefList();
   }catch(e){ alert('불러오기 실패: '+e.message); }
 }
@@ -7502,7 +7562,7 @@ async function cgSave(){
     await db.collection('cms_copy_gen_configs').doc(cgCurDocId).update({
       title, description:document.getElementById('cg-desc')?.value.trim()||'',
       speakerDesc:document.getElementById('cg-speaker-desc')?.value.trim()||'',
-      aiContext:document.getElementById('cg-ai-context')?.value.trim()||'',
+      aiContext:rteGet('cg-ai-context'),
       fields:cgFields, styleOptions, outputConfig, references:cgRefs, referenceRole:cgReferenceRole,
       updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
     });
@@ -7691,9 +7751,9 @@ async function pyEdit(id){
     document.getElementById('py-title').value     = r.title || '';
     document.getElementById('py-product').value   = r.productName || '';
     document.getElementById('py-amount').value    = r.amount || '';
-    document.getElementById('py-desc').value      = r.description || '';
+    rteSet('py-desc', r.description || '');
     document.getElementById('py-tier').value      = r.tier || '';
-    document.getElementById('py-success').value   = r.successMessage || '';
+    rteSet('py-success', r.successMessage || '');
   }catch(e){ alert('불러오기 실패: '+e.message); }
 }
 
@@ -7715,9 +7775,9 @@ async function pySave(){
       title:          document.getElementById('py-title').value.trim() || '(제목 없음)',
       productName:    document.getElementById('py-product').value.trim() || '',
       amount:         amount,
-      description:    document.getElementById('py-desc').value.trim() || '',
+      description:    rteGet('py-desc'),
       tier:           tier,
-      successMessage: document.getElementById('py-success').value.trim() || '',
+      successMessage: rteGet('py-success'),
       updatedAt:      firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge:true });
     alert('저장했어요.');

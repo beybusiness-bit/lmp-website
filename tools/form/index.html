@@ -30,6 +30,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .ff-required{color:#c00;}
 .ff-char-count{font-size:11px;font-weight:600;color:rgba(0,0,0,.4);text-align:right;margin-top:4px;}
 .ff-char-count.warn{color:#c00;}
+.ff-color-wrap{display:flex;align-items:center;gap:12px;}
+.ff-color-inp{width:56px;height:44px;padding:2px;border:2px solid #000;border-radius:0;background:transparent;cursor:pointer;-webkit-appearance:none;appearance:none;}
+.ff-color-hex{font-size:14px;font-weight:700;font-family:monospace;letter-spacing:.5px;}
 
 #app{padding:24px 20px;}
 .form-title{font-size:17px;font-weight:800;margin-bottom:24px;letter-spacing:-.3px;line-height:1.4;}
@@ -118,6 +121,9 @@ function renderField(f) {
   }
   if (type === 'number') {
     return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<input class="ff-inp" id="ff-${fid}" type="number" placeholder="${ph}"></div>`;
+  }
+  if (type === 'color') {
+    return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<div class="ff-color-wrap"><input class="ff-color-inp" id="ff-${fid}" type="color" value="#000000" oninput="document.getElementById('ff-${fid}-hex').textContent=this.value.toUpperCase()"><span class="ff-color-hex" id="ff-${fid}-hex">#000000</span></div></div>`;
   }
   if (type === 'select') {
     const mode = f.selectMode || 'dropdown';
@@ -277,6 +283,9 @@ async function submitForm() {
       val = s ? s.value : '';
       if (val === '__other__') { const oi = document.getElementById('ff-' + fid + '-other'); val = oi?.value.trim() || '기타'; }
       if (f.required && !val) { errEl.textContent = f.label + '을(를) 선택해주세요.'; return; }
+    } else if (f.type === 'color') {
+      const inp = document.getElementById('ff-' + fid);
+      val = inp ? inp.value.toUpperCase() : '#000000';
     } else {
       const inp = document.getElementById('ff-' + fid);
       val = inp ? inp.value.trim() : '';

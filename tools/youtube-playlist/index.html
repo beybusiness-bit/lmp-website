@@ -23,7 +23,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 /* 헤더 (제목·설명) */
 .tool-header{margin-bottom:18px;}
 .tool-title{font-size:18px;font-weight:800;line-height:1.4;letter-spacing:-.3px;margin-bottom:6px;}
-.tool-desc{font-size:13px;color:rgba(0,0,0,.65);line-height:1.7;font-weight:500;white-space:pre-wrap;}
+.tool-desc{font-size:13px;color:rgba(0,0,0,.65);line-height:1.7;font-weight:500;}
 
 /* 검색 바 */
 .search-row{display:flex;gap:8px;margin-bottom:16px;}
@@ -516,7 +516,7 @@ async function submitSelected() {
     const doneTitle = applyVars(playlistConfig?.doneTitle || '신청 완료!');
     const doneSub = applyVars((playlistConfig?.doneSub || `${count}곡을 신청해 주셔서 감사해요.`).replace('{count}', count));
     document.getElementById('done-title').textContent = doneTitle;
-    document.getElementById('done-sub').textContent = doneSub;
+    document.getElementById('done-sub').innerHTML = doneSub;
     document.getElementById('app').style.display = 'none';
     document.getElementById('done-screen').classList.add('on');
 
@@ -600,7 +600,7 @@ async function loadPlaylistConfig() {
     const titleEl = document.getElementById('tool-title');
     const descEl  = document.getElementById('tool-desc');
     if (playlistConfig.title) { titleEl.textContent = applyVars(playlistConfig.title); header.style.display = ''; }
-    if (playlistConfig.desc)  { descEl.textContent  = applyVars(playlistConfig.desc);  header.style.display = ''; }
+    if (playlistConfig.desc)  { descEl.innerHTML  = applyVars(playlistConfig.desc);  header.style.display = ''; }
     if (playlistConfig.submitBtnText) {
       document.getElementById('submit-btn').textContent = applyVars(playlistConfig.submitBtnText);
     }

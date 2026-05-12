@@ -16,7 +16,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
 /* 공통 */
 .sc-ttl{font-size:18px;font-weight:900;letter-spacing:-.4px;line-height:1.3;margin-bottom:8px;}
-.sc-desc{font-size:14px;color:rgba(0,0,0,.6);line-height:1.7;margin-bottom:12px;white-space:pre-wrap;}
+.sc-desc{font-size:14px;color:rgba(0,0,0,.6);line-height:1.7;margin-bottom:12px;}
 .sc-badge{display:inline-block;padding:4px 10px;border:1.5px solid #000;font-size:12px;font-weight:700;margin-bottom:20px;}
 .sc-top{padding:20px 20px 0;}
 .sc-divider{border:none;border-top:1.5px solid rgba(0,0,0,.1);margin:16px 0;}
@@ -227,7 +227,7 @@ async function init(){
         document.getElementById('loading-screen').style.display='none';
         document.getElementById('app').style.display='';
         showScreen('sc-confirm');
-        document.getElementById('sc-confirm-msg').textContent='이미 예약하셨습니다.';
+        document.getElementById('sc-confirm-msg').innerHTML='이미 예약하셨습니다.';
         document.getElementById('confirm-schedule-name').textContent=applyVars(config.title,ctxUserFields);
         document.getElementById('confirm-datetime').textContent='';
         document.getElementById('btn-gcal').style.display='none';
@@ -247,7 +247,7 @@ function setupCalendar(){
   calMonth=parseInt(new Intl.DateTimeFormat('en-US',{timeZone:tz,month:'numeric'}).format(now))-1;
 
   document.getElementById('sc-title-cal').textContent=applyVars(config.title,ctxUserFields);
-  document.getElementById('sc-desc-cal').textContent=applyVars(config.description||'',ctxUserFields);
+  document.getElementById('sc-desc-cal').innerHTML=applyVars(config.description||'',ctxUserFields);
   document.getElementById('sc-dur-badge').textContent=`⏱ ${config.duration||30}분`;
   renderCalendar();
   showScreen('sc-calendar');
@@ -567,7 +567,7 @@ async function submitBooking(){
 function showConfirm(){
   const tz=config.timezone||'Asia/Seoul';
   const msg=applyVars(config.confirmMsg||'예약해 주셔서 감사해요!',ctxUserFields);
-  document.getElementById('sc-confirm-msg').textContent=msg;
+  document.getElementById('sc-confirm-msg').innerHTML=msg;
   document.getElementById('confirm-schedule-name').textContent=confirmedBooking.evTitle;
   document.getElementById('confirm-datetime').textContent=
     `${fmtFullDate(confirmedBooking.start,tz)} ${fmtTime(confirmedBooking.start,tz)} ~ ${fmtTime(confirmedBooking.end,tz)}`;
