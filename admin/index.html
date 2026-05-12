@@ -660,7 +660,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div class="pi-meta">AI 카피 자동 생성 · 스타일 조합 · 결과 기록 관리</div>
           </div>
           <div class="proj-item" onclick="openTool('payment')" style="cursor:pointer;">
-            <div class="pi-name">결제 (토스페이먼츠)</div>
+            <div class="pi-name">결제 (페이업)</div>
             <div class="pi-meta">상품·금액 설정 · 결제 권한 부여 · 결제 내역 조회</div>
           </div>
         </div>
@@ -1153,23 +1153,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         </div>
       </div>
 
-      <!-- 결제(토스페이먼츠) 관리 화면 -->
+      <!-- 결제(페이업) 관리 화면 -->
       <div id="tool-payment-view" style="display:none;flex-direction:column;overflow:hidden;">
         <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
           <span class="back-btn" onclick="pyBack()">←</span>
-          <span id="py-header-title" style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">결제 (토스페이먼츠)</span>
+          <span id="py-header-title" style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">결제 (페이업)</span>
           <div style="flex:1;"></div>
         </div>
         <!-- 목록 화면 -->
         <div id="py-list-screen" style="padding:16px;overflow-y:auto;flex:1;">
           <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">상품·금액을 등록한 뒤 블록 에디터의 "도구" 탭에서 결제 블록으로 연결할 수 있어요.</div>
           <div class="ed-sect" style="border:1.5px solid rgba(0,0,0,.15);padding:14px;margin-bottom:18px;">
-            <div class="ed-lbl" style="margin-bottom:6px;">토스 클라이언트 키 <span style="font-weight:400;opacity:.55;">(공개 키 · test_ck_ 또는 live_ck_)</span></div>
-            <input class="fi" id="py-client-key" placeholder="test_ck_... 또는 live_ck_..." style="margin-bottom:8px;font-family:monospace;font-size:11px;">
-            <button class="save-btn" onclick="pySaveSettings()" style="width:100%;font-size:12px;padding:8px 0;">키 저장</button>
+            <div class="ed-lbl" style="margin-bottom:6px;">페이업 가맹점 ID <span style="font-weight:400;opacity:.55;">(merchantId · 테스트: standard_test)</span></div>
+            <input class="fi" id="py-merchant-id" placeholder="가맹점 아이디 입력" style="margin-bottom:8px;font-family:monospace;font-size:11px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600;">
+                <input type="checkbox" id="py-test-mode" onchange="projDirty=true;">
+                테스트 모드 사용 (테스트 서버 · 실제 결제 안 됨)
+              </label>
+            </div>
+            <button class="save-btn" onclick="pySaveSettings()" style="width:100%;font-size:12px;padding:8px 0;">설정 저장</button>
             <div style="font-size:10px;color:rgba(0,0,0,.45);line-height:1.55;margin-top:8px;">
-              📌 <b>시크릿 키</b>는 Vercel 환경변수 <code>TOSS_SECRET_KEY</code>에 설정해주세요. (Vercel → Settings → Environment Variables)<br>
-              📌 토스페이먼츠 → 내 상점 → API 키 메뉴에서 발급받을 수 있어요.
+              📌 <b>API 키(apiKey)</b>는 Vercel 환경변수 <code>PAYUP_API_KEY</code>에 설정해주세요.<br>
+              📌 가맹점 ID도 Vercel 환경변수 <code>PAYUP_MERCHANT_ID</code>에 동일하게 입력해주세요.<br>
+              📌 테스트 모드일 때도 Vercel 환경변수 <code>PAYUP_TEST=true</code>로 설정해야 해요.
             </div>
           </div>
           <button class="save-btn" onclick="pyCreate()" style="width:100%;margin-bottom:16px;">+ 새 결제 상품 만들기</button>
@@ -7476,7 +7483,7 @@ function ffdRemoveLink(){
 }
 
 /* ────────────────────────────────────────────────────────────
-   결제 도구 (토스페이먼츠) 관리
+   결제 도구 (페이업) 관리
 ──────────────────────────────────────────────────────────── */
 let pyCurDocId = null;
 
@@ -7490,16 +7497,20 @@ function pyBack(){ closeTool(); }
 async function pyLoadSettings(){
   try{
     const doc = await db.collection('cms_admin_settings').doc('payment').get();
-    const ck = doc.exists ? (doc.data().tossClientKey || '') : '';
-    const inp = document.getElementById('py-client-key');
-    if(inp) inp.value = ck;
+    const mid  = doc.exists ? (doc.data().payupMerchantId || '') : '';
+    const test = doc.exists ? !!(doc.data().payupTestMode)        : false;
+    const inp  = document.getElementById('py-merchant-id');
+    const chk  = document.getElementById('py-test-mode');
+    if(inp) inp.value   = mid;
+    if(chk) chk.checked = test;
   }catch(e){ console.error('[pyLoadSettings]',e); }
 }
 async function pySaveSettings(){
-  const v = (document.getElementById('py-client-key').value || '').trim();
+  const mid  = (document.getElementById('py-merchant-id')?.value || '').trim();
+  const test = !!(document.getElementById('py-test-mode')?.checked);
   try{
-    await db.collection('cms_admin_settings').doc('payment').set({ tossClientKey: v, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
-    alert('토스 클라이언트 키를 저장했어요.');
+    await db.collection('cms_admin_settings').doc('payment').set({ payupMerchantId: mid, payupTestMode: test, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+    alert('페이업 설정을 저장했어요.');
   }catch(e){ alert('저장 실패: '+e.message); }
 }
 
