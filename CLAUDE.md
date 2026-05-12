@@ -662,9 +662,120 @@ closeHelpPanel();
 - 관리자 프리뷰 모드 end-to-end 테스트 (admin에서 URL 복사 → 시크릿창 접속 → 비공개·비활성·숨김 스테이지 진입 확인)
 
 **다음 세션 시작점**
+- 🔲 **모든 도구 안내문구 통합 작업** (자세한 계획은 아래 "📐 다음 세션 작업: 도구 텍스트 필드 통합" 참고)
 - 🔲 관리자 프리뷰 모드 실제 테스트 + 기존 배포 프로젝트 재배포 (admin 패널에서 "저장 + 배포")
 - 🔲 일정 잡기 도구 end-to-end 테스트 (GAS 재배포 후)
 - PAT: 만료 시 재발급 필요 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
+
+---
+
+### 📐 다음 세션 작업: 도구 텍스트 필드 통합 (안내문구·완료메시지 변수+에디터)
+
+#### 배경
+사용자 요청: 모든 도구의 "설명·안내문구·완료메시지" 같은 텍스트 필드에 공통으로 다음 두 가지를 적용한다.
+
+1. **변수값 적용**: `{{key}}` 문법으로 사용자 필드 변수 삽입 가능. 필드 옆에 "변수 사용 가능" 안내 + 변수 삽입 버튼.
+2. **일반적인 텍스트 편집기 기능**: 제목 같은 짧은 텍스트 제외, 긴 텍스트 필드(설명·완료메시지 등)는 굵게/기울임/링크/줄바꿈 등의 서식 지원.
+
+기존 폼·꾸미기·계산기 도구들에 모두 소급 적용하고, 앞으로 만들 도구도 동일 규칙 따른다.
+
+#### 영향 범위 — 도구별 필드 인벤토리
+
+| 도구 | 필드 ID | 현재 형태 | 분류 | 작업 |
+|------|---------|-----------|------|------|
+| 폼 (`form-mgr`) | `tf-title` | input | 짧음 | 변수 hint만 |
+| 폼 | `tf-desc` | textarea | 긴 텍스트 | RTE + 변수 hint |
+| 폼 | `tf-submit-text` | input | 짧음 | 변수 hint만 |
+| 폼 | `tf-submit-msg` | textarea | 긴 텍스트 | RTE + 변수 hint |
+| 유튜브 (`youtube-playlist`) | `yt-plc-title` | input | 짧음 | 변수 hint만 (기존 안내 있음) |
+| 유튜브 | `yt-plc-desc` | textarea | 긴 텍스트 | RTE + 변수 hint |
+| 유튜브 | `yt-plc-submit-text` | input | 짧음 | 변수 hint만 |
+| 유튜브 | `yt-plc-done-title` | input | 짧음 | 변수 hint만 |
+| 유튜브 | `yt-plc-done-sub` | textarea | 긴 텍스트 | RTE + 변수 hint (기존 `{count}` 지원 유지) |
+| 결제 (`payment`) | `py-title` | input | 짧음 | 변수 hint만 |
+| 결제 | `py-desc` | textarea | 긴 텍스트 | RTE + 변수 hint |
+| 결제 | `py-success` | textarea | 긴 텍스트 | RTE + 변수 hint |
+| 일정 (`schedule`) | `sc-title` | input (scInsertVar 버튼 있음) | 짧음 | 변수 버튼 → 신규 패턴으로 통일 |
+| 일정 | `sc-desc` | textarea (scInsertVar 있음) | 긴 텍스트 | RTE + 변수 hint |
+| 일정 | `sc-confirm-msg` | textarea (scInsertVar 있음) | 긴 텍스트 | RTE + 변수 hint |
+| 문구생성 (`copy-gen`) | `cg-desc` | input | 짧음? | 확인 후 결정 |
+| 꾸미기 (`deco`) | (booth name 정도?) | - | - | 도구 구조 확인 필요 |
+| 계산기 (`guide`) | (`gbForm.title` 등) | - | - | 도구 구조 확인 필요 |
+
+#### 구현 전략
+
+##### 1. 재사용 가능한 RTE 컴포넌트 (admin/index.html)
+
+```javascript
+// 헬퍼 함수
+function rteCreate(id, opts={}){ /* contenteditable div + 툴바 */ }
+function rteGet(id){ return document.getElementById(id).innerHTML; }
+function rteSet(id, html){ document.getElementById(id).innerHTML = html||''; }
+function rteInsertVar(id, key){ /* 커서 위치에 {{key}} 삽입 */ }
+```
+
+툴바 최소 기능 (일반 텍스트 편집기 기준):
+- 굵게 (Bold) — `document.execCommand('bold')`
+- 기울임 (Italic) — `document.execCommand('italic')`
+- 밑줄 (Underline) — `document.execCommand('underline')`
+- 링크 (Link) — `document.execCommand('createLink', false, url)`
+- 변수 삽입 (`{x}` 버튼) → 사용 가능한 변수 목록을 dropdown으로 보여주고 클릭 시 삽입
+
+기존 admin 블록 텍스트 편집기(`ced-text`, `ced-mixed`)와 디자인 톤 통일. 단, 도구 필드용은 더 컴팩트한 툴바로.
+
+##### 2. 변수 hint 메시지
+
+```html
+<div class="var-hint" style="font-size:11px;color:rgba(0,0,0,.5);margin-top:4px;">
+  💡 변수 사용 가능: 인증 필드 키를 <code>{{key}}</code>로 삽입
+</div>
+```
+
+짧은 input 필드 옆에 표시. 긴 텍스트 RTE 툴바에는 `{x}` 버튼으로 통합.
+
+##### 3. 사용 가능한 변수 목록 동적 수집
+
+각 도구가 속한 프로젝트의 인증 필드(authFields)를 알아야 한다. 하지만 도구는 프로젝트와 독립적으로 관리됨(여러 프로젝트에서 같은 도구를 쓸 수 있음). 따라서:
+- 사용자가 직접 키 이름 입력 (현재 `scInsertVar`의 prompt 방식과 유사) — 가장 단순
+- 또는 도구 편집 시 "이 도구를 사용 중인 프로젝트의 변수" 목록을 추출 — 복잡
+
+→ **단순한 방식 선택**: 변수 삽입 버튼 클릭 시 텍스트 입력 prompt + 자주 쓰는 변수 chip (`{{name}}`, `{{phone}}` 등) 표시.
+
+##### 4. 플레이어 측 (tools/*/index.html) 변경
+
+각 도구 플레이어:
+- `applyVars(str)` 함수가 모두 존재해야 함 (없으면 추가)
+- `lmp-context` 핸들러에서 `userFields` 저장
+- 긴 텍스트 필드는 `innerHTML = applyVars(html)` (textContent 아님)
+- 짧은 텍스트 필드는 `textContent = applyVars(text)` 유지 가능
+
+레거시 데이터 호환:
+- 기존 평문 텍스트(줄바꿈 `\n` 포함)는 RTE에 로드해도 무방하지만 줄바꿈이 사라짐
+- 해결: admin에서 RTE 초기 로드 시 `\n` → `<br>` 자동 변환 (한 번만)
+- 플레이어 렌더링 시에도 호환 위해 `white-space:pre-wrap` 적용
+
+##### 5. 저장 형식
+
+- Firestore 필드는 그대로 사용 (`desc`, `submitMsg`, `successMessage` 등 string)
+- 다만 내용이 HTML이 될 수 있음
+- 기존 평문 데이터는 그대로 보존, 사용자가 한 번 저장하면 HTML로 업데이트됨
+
+#### 작업 순서 (다음 세션)
+
+1. admin/index.html에 재사용 RTE 헬퍼 함수 추가
+2. 폼 도구 부터 적용 (가장 표준적) — `tf-desc`, `tf-submit-msg`
+3. 폼 도구 플레이어(tools/form/) HTML 렌더링 + applyVars
+4. 유튜브 재생목록 도구 적용
+5. 결제 도구 적용
+6. 일정 잡기 도구 적용 (기존 scInsertVar 제거 후 통합)
+7. 문구생성·꾸미기·계산기 — 필드 구조 확인 후 적용
+8. 모든 도구에서 변수 hint UI 일관성 확인
+9. e2e 테스트: 변수 치환 + 서식 표시
+
+#### ⚠️ 주의사항
+
+- 기존 데이터 손실 없도록 모든 변경은 backward compatible
+- 도구 플레이어 3개 파일 동기화 룰: 도구 플레이어는 별도 파일이므로 영향 없음. 단 `p/index.html` + `block-test-demo/` + `gmbf-poc/`는 도구 블록 렌더링에 변경이 있으면 동기화 필요 (이번 작업은 도구 내부만 바꾸므로 동기화 불필요할 가능성 큼)
 
 #### 📐 ✅ 완료된 구현: 유튜브 뮤직 재생목록 도구
 
