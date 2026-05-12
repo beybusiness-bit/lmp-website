@@ -236,6 +236,7 @@ let nextPageToken = '';
 let lastQuery = '';
 let curPreviewId = '';
 let seenResultIds = new Set();  // pagination 중복 방지
+let _searchEpoch = 0;           // race condition 방지: 오래된 응답 무시
 
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -267,7 +268,10 @@ function updateBadge() {
 async function doSearch(pageToken) {
   const q = document.getElementById('search-inp').value.trim();
   if (!q) return;
+  let myEpoch;
   if (!pageToken) {
+    _searchEpoch++;
+    myEpoch = _searchEpoch;
     lastQuery = q;
     nextPageToken = '';
     seenResultIds = new Set();
@@ -275,6 +279,10 @@ async function doSearch(pageToken) {
     document.getElementById('search-status').textContent = '';
     document.getElementById('next-page-wrap').style.display = 'none';
     closePreview();
+    document.getElementById('search-inp').disabled = true;
+    document.querySelector('.search-btn').disabled = true;
+  } else {
+    myEpoch = _searchEpoch;
   }
   try {
     const params = new URLSearchParams({
@@ -284,6 +292,7 @@ async function doSearch(pageToken) {
     });
     const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
     const data = await res.json();
+    if (_searchEpoch !== myEpoch) return; // 새 검색이 시작됐으면 이 응답 무시
     if (data.error) {
       document.getElementById('result-list').innerHTML = `<div class="empty-msg">검색 오류: ${esc(data.error.message)}</div>`;
       return;
@@ -311,8 +320,14 @@ async function doSearch(pageToken) {
     document.getElementById('search-status').textContent = totalCount ? `검색 결과 ${totalCount}건` : '';
     document.getElementById('next-page-wrap').style.display = nextPageToken ? '' : 'none';
   } catch(e) {
+    if (_searchEpoch !== myEpoch) return;
     console.error('[search]', e);
     document.getElementById('result-list').innerHTML = '<div class="empty-msg">검색에 실패했어요. 잠시 후 다시 시도해주세요.</div>';
+  } finally {
+    if (_searchEpoch === myEpoch) {
+      document.getElementById('search-inp').disabled = false;
+      document.querySelector('.search-btn').disabled = false;
+    }
   }
 }
 
