@@ -30,14 +30,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .ff-required{color:#c00;}
 .ff-char-count{font-size:11px;font-weight:600;color:rgba(0,0,0,.4);text-align:right;margin-top:4px;}
 .ff-char-count.warn{color:#c00;}
-.ff-color-wrap{display:flex;align-items:center;gap:12px;}
-.ff-color-inp{width:56px;height:44px;padding:2px;border:2px solid #000;border-radius:0;background:transparent;cursor:pointer;-webkit-appearance:none;appearance:none;}
-.ff-color-hex{font-size:14px;font-weight:700;font-family:monospace;letter-spacing:.5px;}
-.ff-color-wrap[data-picked="0"] .ff-color-inp{display:none;}
-.ff-color-wrap[data-picked="0"] .ff-color-hex{display:none;}
-.ff-color-ph{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:2px dashed rgba(0,0,0,.3);font-size:13px;color:rgba(0,0,0,.45);cursor:pointer;font-family:inherit;background:transparent;}
-.ff-color-ph:hover{border-color:#000;color:#000;}
+.ff-color-wrap{display:flex;align-items:center;}
+.ff-color-label{position:relative;display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border:2px dashed rgba(0,0,0,.3);cursor:pointer;min-width:150px;transition:border-color .15s;}
+.ff-color-label:hover{border-color:#000;}
+.ff-color-wrap[data-picked="1"] .ff-color-label{border-style:solid;border-color:#000;}
+/* input은 항상 버튼 위에 투명하게 깔아서 피커가 버튼 위치에서 열리게 함 */
+.ff-color-inp{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;border:none;padding:0;-webkit-appearance:none;appearance:none;}
+.ff-color-ph{font-size:13px;color:rgba(0,0,0,.45);font-family:inherit;pointer-events:none;}
 .ff-color-wrap[data-picked="1"] .ff-color-ph{display:none;}
+.ff-color-swatch{width:26px;height:26px;border:1.5px solid rgba(0,0,0,.25);flex-shrink:0;pointer-events:none;}
+.ff-color-hex{font-size:13px;font-weight:700;font-family:monospace;letter-spacing:.5px;pointer-events:none;}
+.ff-color-preview{display:none;align-items:center;gap:8px;}
+.ff-color-wrap[data-picked="1"] .ff-color-preview{display:flex;}
 
 #app{padding:24px 20px;}
 .form-title{font-size:17px;font-weight:800;margin-bottom:24px;letter-spacing:-.3px;line-height:1.4;}
@@ -128,7 +132,7 @@ function renderField(f) {
     return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<input class="ff-inp" id="ff-${fid}" type="number" placeholder="${ph}"></div>`;
   }
   if (type === 'color') {
-    return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<div class="ff-color-wrap" id="ff-${fid}-wrap" data-picked="0"><span class="ff-color-ph" onclick="document.getElementById('ff-${fid}').click()">🎨 색상 선택</span><input class="ff-color-inp" id="ff-${fid}" type="color" oninput="onColorPick('${fid}',this.value)"><span class="ff-color-hex" id="ff-${fid}-hex"></span></div></div>`;
+    return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<div class="ff-color-wrap" id="ff-${fid}-wrap" data-picked="0"><label class="ff-color-label"><span class="ff-color-ph">🎨 색상 선택</span><span class="ff-color-preview"><span class="ff-color-swatch" id="ff-${fid}-swatch"></span><span class="ff-color-hex" id="ff-${fid}-hex"></span></span><input class="ff-color-inp" id="ff-${fid}" type="color" oninput="onColorPick('${fid}',this.value)"></label></div></div>`;
   }
   if (type === 'select') {
     const mode = f.selectMode || 'dropdown';
@@ -194,6 +198,8 @@ function onColorPick(fid, val) {
   if (wrap) wrap.dataset.picked = '1';
   const hex = document.getElementById('ff-' + fid + '-hex');
   if (hex) hex.textContent = val.toUpperCase();
+  const swatch = document.getElementById('ff-' + fid + '-swatch');
+  if (swatch) swatch.style.background = val;
 }
 function applyVars(str) {
   if (!str) return '';
