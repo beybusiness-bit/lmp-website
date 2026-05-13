@@ -385,6 +385,7 @@ let backgrounds = []; // [{type, label, urls:[]}]
 let fieldKey = 'name'; // config에서 로드 (빈칸이면 'name' 기본)
 let currentRefPx = 0; // 출력 이미지(1080px 기준) 픽셀 수 = 10cm; 0이면 표시 안 함
 let commonPresetImages = []; // 필드값 무관 공통 꾸미기 소스
+let lastContextData = null; // lmp-context 원본 저장 (loadBackgrounds 이후 재처리용)
 let items = [];       // 데코 아이템 목록
 let selectedItem = null;
 let drawMode = false;
@@ -465,7 +466,20 @@ async function loadBackgrounds() {
         document.getElementById('page-title').textContent = data.name;
         toolTitle = data.name;
       }
-      if(userBoothType) autoSelectBg();
+      // lmp-context가 먼저 도착한 경우: fieldKey가 확정된 지금 다시 값 추출
+      if(lastContextData) {
+        const d = lastContextData;
+        const bt = d.boothType || d.userFields?.[fieldKey] || d.userFields?.boothType || d.userFields?.type || '';
+        if(bt) {
+          userBoothType = bt;
+          hideBgBtn();
+          autoSelectBg();
+        } else {
+          showBgBtn();
+        }
+      } else if(userBoothType) {
+        autoSelectBg();
+      }
     }
   } catch(e) {}
 }
@@ -1315,6 +1329,7 @@ function closeExport() { document.getElementById('export-modal').classList.remov
 window.addEventListener('message', e => {
   if(e.data?.type !== 'lmp-context') return;
   const d = e.data;
+  lastContextData = d; // fieldKey 확정 후 재처리를 위해 저장
   contextReceived = true;
   if(d.blockBg) document.documentElement.style.setProperty('--lmp-block-bg', d.blockBg);
   if(d.keyColors?.length) { keyColors = d.keyColors; renderKeyColorSwatches(); }
@@ -1323,6 +1338,7 @@ window.addEventListener('message', e => {
   if(bt) {
     userBoothType = bt;
     hideBgBtn();
+    // backgrounds가 이미 로드된 경우에만 즉시 적용 (미로드면 loadBackgrounds 완료 후 처리)
     if(backgrounds.length) autoSelectBg();
   } else {
     showBgBtn();
