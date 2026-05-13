@@ -1224,14 +1224,15 @@ function _effectivePageBg(){
 }
 function _lmpContext(iframeEl){
   let bb = iframeEl ? (iframeEl.getAttribute('data-block-bg')||'') : '';
+  const _session = JSON.parse(sessionStorage.getItem('userSession')||'{}');
   return {
     type:'lmp-context',
     projectId: typeof PROJECT_ID!=='undefined' ? PROJECT_ID : '',
     userId: typeof USER_DOC_ID!=='undefined' ? USER_DOC_ID : '',
-    boothType: (typeof user!=='undefined'&&user) ? (user.boothType||user.type||'') : '',
+    boothType: _session.boothType||_session.type||'',
     keyColors: typeof KEY_COLORS!=='undefined' ? KEY_COLORS : [],
     prepBg: typeof prepBg!=='undefined' ? prepBg : '',
-    userFields: (typeof user!=='undefined'&&user) ? user : {},
+    userFields: _session,
     blockBg: bb
   };
 }
