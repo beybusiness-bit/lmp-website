@@ -4280,11 +4280,19 @@ async function disconnectRespSheet() {
     updateRespSheetStatus();
   } catch(e) { alert('해제 실패: ' + e.message); }
 }
+function _respCellHtml(col, row) {
+  const raw = col.val(row);
+  if (col.isFile && raw && raw.startsWith('http')) {
+    const name = decodeURIComponent(raw.split('/').pop().split('?')[0]).replace(/^\d+_/, '');
+    return `<a href="${raw}" target="_blank" rel="noopener" style="color:#000;font-weight:700;text-decoration:underline;word-break:break-all;">📎 ${name || '파일 보기'}</a>`;
+  }
+  return raw;
+}
 function _getRespCols(){
   const block=curRespFormBlock;
   const formFields=block?.formFields||[];
   const authCols=curAuthEnabled?curAuthFields.map(f=>({key:'_auth_'+f.key,label:f.label,type:f.type,val:r=>{ const v=r['_auth_'+f.key]; return String(v!==undefined?v:(f.key===curAuthKeyField?r._user||'':'')); }})):[];
-  const formCols=formFields.map(f=>({key:f.key,label:f.label,type:f.type,val:r=>{ const v=r[f.key]; return Array.isArray(v)?v.join(', '):String(v??''); }}));
+  const formCols=formFields.map(f=>({key:f.key,label:f.label,type:f.type,isFile:f.type==='file',val:r=>{ const v=r[f.key]; return Array.isArray(v)?v.join(', '):String(v??''); }}));
   const tsCol={key:'_ts',label:'제출일시',type:'timestamp',val:r=>r.submittedAt?.seconds?new Date(r.submittedAt.seconds*1000).toLocaleString('ko'):''};
   return [tsCol,...authCols,...formCols];
 }
@@ -4319,7 +4327,7 @@ function renderRespTable() {
         const w = _respColStyle(c.key, defaultW);
         const isLast=idx===stickyCount-1;
         const sticky = idx<stickyCount ? `position:sticky;left:${_rfLefts[idx]}px;z-index:1;background:#fff;`+(isLast?'box-shadow:2px 0 4px rgba(0,0,0,.1);':'') : '';
-        return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.08);font-size:12px;word-break:keep-all;overflow-wrap:break-word;background:#fff;${w}${sticky}">${c.val(r)}</td>`;
+        return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.08);font-size:12px;word-break:keep-all;overflow-wrap:break-word;background:#fff;${w}${sticky}">${_respCellHtml(c,r)}</td>`;
       }).join('')}</tr>`
     ).join('')}</tbody>
   </table>
@@ -6529,7 +6537,7 @@ function renderTfRespTable(){
         const w = _tfColStyle(c.key, defaultW);
         const isLast=idx===stickyCount-1;
         const sticky = idx<stickyCount ? `position:sticky;left:${_tfLefts[idx]}px;z-index:1;background:#fff;`+(isLast?'box-shadow:2px 0 4px rgba(0,0,0,.1);':'') : '';
-        return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.08);font-size:12px;word-break:keep-all;overflow-wrap:break-word;background:#fff;${w}${sticky}">${c.val(r)}</td>`;
+        return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.08);font-size:12px;word-break:keep-all;overflow-wrap:break-word;background:#fff;${w}${sticky}">${_respCellHtml(c,r)}</td>`;
       }).join('')}</tr>`
     ).join('')}</tbody>
   </table>
@@ -6545,7 +6553,7 @@ function _getTfRespCols(){
     const uf=r._userFields||{};
     return Object.values(uf).filter(v=>v!=null&&v!=='').slice(0,2).join(' · ');
   }}] : [];
-  const formCols=fields.map(f=>({key:f.key,label:f.label,type:f.type,val:r=>{const v=r[f.key];return Array.isArray(v)?v.join(', '):String(v??'');}}));
+  const formCols=fields.map(f=>({key:f.key,label:f.label,type:f.type,isFile:f.type==='file',val:r=>{const v=r[f.key];return Array.isArray(v)?v.join(', '):String(v??'');}}));
   return [tsCol,...userCol,...formCols];
 }
 
