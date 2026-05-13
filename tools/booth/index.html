@@ -231,6 +231,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     <div class="panel-row">
       <span class="panel-label">크기</span>
       <input type="range" id="img-size-range" min="20" max="400" value="120" oninput="onItemSizeChange(this.value)">
+      <span id="img-size-cm" style="font-size:11px;font-weight:700;color:rgba(0,0,0,.45);min-width:44px;text-align:right;white-space:nowrap;"></span>
     </div>
     <div class="panel-row">
       <span class="panel-label">프레임</span>
@@ -262,6 +263,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     <div class="panel-row">
       <span class="panel-label">크기</span>
       <input type="range" id="shape-size-range" min="20" max="400" value="120" oninput="onShapeSizeChange(this.value)">
+      <span id="shape-size-cm" style="font-size:11px;font-weight:700;color:rgba(0,0,0,.45);min-width:44px;text-align:right;white-space:nowrap;"></span>
       <button class="lmp-btn" onclick="deleteSelectedItem()">삭제</button>
       <button class="lmp-btn" onclick="deselectAll()" style="background:#000;color:var(--lmp-block-bg);">완료</button>
     </div>
@@ -381,6 +383,7 @@ let canvasW = 0, canvasH = 0;
 let bgImage = null;
 let backgrounds = []; // [{type, label, urls:[]}]
 let fieldKey = 'boothType'; // config에서 로드
+let currentRefPx = 0; // 출력 이미지(1080px 기준) 픽셀 수 = 10cm; 0이면 표시 안 함
 let items = [];       // 데코 아이템 목록
 let selectedItem = null;
 let drawMode = false;
@@ -522,20 +525,20 @@ function autoSelectBg() {
   const urls = match.urls || (match.url ? [match.url] : []);
   if(!urls.length) return;
   if(urls.length === 1) {
-    selectBgByUrl(urls[0], match.label || '', true);
+    selectBgByUrl(urls[0], match.label || '', true, match.refPx || 0);
     showBgDesc(match.description || '');
   } else {
-    showAutoBgSelect(urls, match.description || '', match.urlNames || []);
+    showAutoBgSelect(urls, match.description || '', match.urlNames || [], match.refPx || 0);
   }
 }
 
-function showAutoBgSelect(urls, desc, names) {
+function showAutoBgSelect(urls, desc, names, refPx=0) {
   const grid = document.getElementById('auto-bg-grid');
   grid.innerHTML = urls.map((url, i) => {
     const safeUrl = url.replace(/'/g, '%27');
     const safeDesc = (desc||'').replace(/'/g, '%27');
     const name = (names && names[i]) ? names[i] : '';
-    return `<div class="auto-bg-thumb" onclick="pickAutoBg('${safeUrl}','${safeDesc}')">
+    return `<div class="auto-bg-thumb" onclick="pickAutoBg('${safeUrl}','${safeDesc}',${refPx})">
       <img src="${url}" loading="lazy" crossorigin="anonymous" onerror="this.parentElement.style.opacity='.3'">
       ${name ? `<div class="bg-label">${name}</div>` : ''}
     </div>`;
@@ -543,9 +546,9 @@ function showAutoBgSelect(urls, desc, names) {
   document.getElementById('auto-bg-select').classList.add('on');
 }
 
-function pickAutoBg(url, desc) {
+function pickAutoBg(url, desc, refPx=0) {
   document.getElementById('auto-bg-select').classList.remove('on');
-  selectBgByUrl(decodeURIComponent(url), '', false);
+  selectBgByUrl(decodeURIComponent(url), '', false, refPx);
   showBgDesc(desc ? decodeURIComponent(desc) : '');
 }
 
@@ -560,11 +563,12 @@ function showBgDesc(desc) {
 function selectBg(i, silent=false) {
   const b = backgrounds[i];
   const urls = b.urls || (b.url ? [b.url] : []);
-  if(urls.length === 1) selectBgByUrl(urls[0], b.label||'', silent);
-  else if(urls.length > 1) showAutoBgSelect(urls, b.description||'', b.urlNames||[]);
+  if(urls.length === 1) selectBgByUrl(urls[0], b.label||'', silent, b.refPx||0);
+  else if(urls.length > 1) showAutoBgSelect(urls, b.description||'', b.urlNames||[], b.refPx||0);
 }
 
-function selectBgByUrl(url, label='', silent=false) {
+function selectBgByUrl(url, label='', silent=false, refPx=0) {
+  currentRefPx = refPx;
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = () => {
@@ -760,6 +764,7 @@ function onShapeSizeChange(val) {
   selectedItem.h = +val;
   const el = itemsLayer.querySelector(`[data-id="${selectedItem.id}"]`);
   if(el) { el.style.width = val+'px'; el.style.height = val+'px'; }
+  refreshSizeCm(+val, 'shape-size-cm');
 }
 
 // Canvas2D 도형 그리기 (내보내기용)
@@ -916,6 +921,7 @@ function startResizeItem(e, item) {
     if(el) { el.style.width = item.w+'px'; el.style.height = item.h+'px'; }
     const rangeEl = document.getElementById('img-size-range');
     if(rangeEl) rangeEl.value = item.w;
+    refreshSizeCm(item.w, 'img-size-cm');
   }
   function onUp() {
     window.removeEventListener('pointermove', onMove);
@@ -971,6 +977,7 @@ function updatePanelForSelection() {
     document.getElementById('shape-stroke-color').value = selectedItem.strokeColor||'#000000';
     document.getElementById('shape-stroke-w').value = selectedItem.strokeWidth||3;
     document.getElementById('shape-sw-val').textContent = selectedItem.strokeWidth||3;
+    refreshSizeCm(selectedItem.w, 'shape-size-cm');
   } else if(selectedItem) {
     pImage.style.display='flex';
     const sizeRange = document.getElementById('img-size-range');
@@ -981,9 +988,23 @@ function updatePanelForSelection() {
     document.querySelectorAll('.frame-btn').forEach(b=>{
       b.classList.toggle('active', b.dataset.frame===(selectedItem.frame||''));
     });
+    refreshSizeCm(selectedItem.w, 'img-size-cm');
   } else {
     pDefault.style.display='flex';
   }
+}
+
+// ── 실제 크기(cm) 변환 ──
+function pxToCm(screenPx) {
+  if(!currentRefPx || !canvasW) return '';
+  const cm = screenPx * EXPORT_W / canvasW / currentRefPx * 10;
+  return cm.toFixed(1) + 'cm';
+}
+
+function refreshSizeCm(screenPx, elId) {
+  const el = document.getElementById(elId);
+  if(!el) return;
+  el.textContent = pxToCm(screenPx);
 }
 
 function onItemSizeChange(val) {
@@ -993,6 +1014,7 @@ function onItemSizeChange(val) {
   selectedItem.h = +val * ratio;
   const el = itemsLayer.querySelector(`[data-id="${selectedItem.id}"]`);
   if(el) { el.style.width = selectedItem.w+'px'; el.style.height = selectedItem.h+'px'; }
+  refreshSizeCm(+val, 'img-size-cm');
 }
 
 function setFrame(btn, frame) {

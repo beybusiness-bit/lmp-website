@@ -7288,6 +7288,11 @@ function renderBoothBgList(bgs) {
         <div style="font-size:11px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:3px;">설명 <span style="font-weight:400;">(배경 선택 후 편집 화면 상단에 표시)</span></div>
         <textarea class="fi" rows="2" style="font-size:12px;line-height:1.5;resize:vertical;margin-bottom:0;" placeholder="이 배경을 선택한 사용자에게 보여줄 안내 문구 (선택사항)" oninput="decoState.curConfig.backgrounds[${i}].description=this.value">${b.description||''}</textarea>
       </div>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:11px;font-weight:700;color:rgba(0,0,0,.5);white-space:nowrap;">실제 크기 기준</span>
+        <input type="number" class="fi" value="${b.refPx||0}" min="0" max="9999" step="1" style="width:75px;font-size:12px;padding:4px 6px;margin-bottom:0;" oninput="decoState.curConfig.backgrounds[${i}].refPx=+this.value">
+        <span style="font-size:11px;color:rgba(0,0,0,.4);">출력 픽셀 = 10cm · 0이면 크기 표시 안 함</span>
+      </div>
       <div style="margin-top:12px;">
         <div style="font-size:11px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">기본 이미지 <span style="font-weight:400;">(사용자가 "이미지 추가" 탭 시 선택 가능한 소스)</span></div>
         <div style="background:rgba(0,0,0,.03);border:1.5px solid rgba(0,0,0,.1);padding:8px 10px;">
