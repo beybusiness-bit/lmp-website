@@ -555,7 +555,7 @@ function showAutoBgSelect(urls, desc, names, refPx=0) {
     const safeDesc = (desc||'').replace(/'/g, '%27');
     const name = (names && names[i]) ? names[i] : '';
     return `<div class="auto-bg-thumb" onclick="pickAutoBg('${safeUrl}','${safeDesc}',${refPx})">
-      <img src="${url}" loading="lazy" crossorigin="anonymous" onerror="this.parentElement.style.opacity='.3'">
+      <img src="${url}" loading="lazy" onerror="this.parentElement.style.opacity='.3'">
       ${name ? `<div class="bg-label">${name}</div>` : ''}
     </div>`;
   }).join('');
@@ -631,7 +631,7 @@ function openPresetModal() {
   const grid = document.getElementById('preset-img-grid');
   grid.innerHTML = presets.map((p, i) => `
     <div onclick="addPresetImage(${i})" style="cursor:pointer;position:relative;border:1.5px solid rgba(0,0,0,.12);overflow:hidden;">
-      <img src="${p.url}" loading="lazy" crossorigin="anonymous" style="width:100%;aspect-ratio:1/1;object-fit:cover;display:block;" onerror="this.style.opacity='.3'">
+      <img src="${p.url}" loading="lazy" style="width:100%;aspect-ratio:1/1;object-fit:cover;display:block;" onerror="this.style.opacity='.3'">
       ${p.name ? `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:700;padding:3px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>` : ''}
       ${p.lockSize ? `<div style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.65);color:#fff;font-size:9px;font-weight:700;padding:2px 4px;border-radius:3px;">🔒</div>` : ''}
     </div>`).join('');
