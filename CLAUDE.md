@@ -77,6 +77,49 @@ body {
 
 ---
 
+### 🛠️ 신규 도구 설계 규칙 (글로벌, 예외 없음)
+
+새 도구(`tools/*/index.html`)를 만들 때 반드시 아래 규칙을 지킨다.
+
+#### 1. lmp-context 수신 — 사용자 필드 데이터 추출
+
+```javascript
+// ✅ 올바른 구현 — 반드시 이 패턴 사용
+let ctxProjectId = '';
+let ctxUserId = '';
+let ctxUserFields = {};
+
+window.addEventListener('message', e => {
+  if (e.data?.type !== 'lmp-context') return;
+  ctxProjectId  = e.data.projectId  || '';
+  ctxUserId     = e.data.userId     || '';
+  ctxUserFields = e.data.userFields || {};
+  // 필요 시: blockBg, keyColors, prepBg도 여기서 처리
+});
+window.parent.postMessage({ type: 'lmp-ready' }, '*');
+```
+
+- `e.data.userFields`에는 로그인 사용자의 Firestore 문서 데이터 전체가 담겨 있음
+- `e.data.userId`는 사용자의 Firestore 문서 ID (noResubmit 체크, 기록 저장에 사용)
+- `e.data.projectId`는 도구가 속한 프로젝트 ID
+
+#### 2. 이미지 썸네일에 crossorigin 금지
+
+모달/그리드에서 썸네일로만 표시하는 `<img>` 태그에는 `crossorigin` 속성을 붙이지 않는다.
+Firebase Storage 이미지는 CORS 설정에 따라 `crossorigin="anonymous"` 시 로딩이 실패할 수 있다.
+
+```html
+<!-- ❌ 잘못된 예 — 썸네일이 안 뜰 수 있음 -->
+<img src="${url}" crossorigin="anonymous">
+
+<!-- ✅ 올바른 예 — 표시용 썸네일은 CORS 속성 없이 -->
+<img src="${url}">
+```
+
+`crossorigin="anonymous"`는 canvas에 `drawImage()` 해야 할 때만, **JS 코드에서** `img.crossOrigin = 'anonymous'` 형태로 쓴다.
+
+---
+
 ### 🖼️ 이미지 입력 필드 구현 규칙 (글로벌, 예외 없음)
 
 **admin 패널(`admin/index.html`)의 모든 이미지·아이콘 입력 필드는 반드시 아래 두 가지를 함께 구현한다. 별도 언급이 없어도 항상 적용한다.**
