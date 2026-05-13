@@ -397,6 +397,7 @@ const ADMIN_PARAM = new URLSearchParams(location.search).get('admin') || '';
 let IS_ADMIN_PREVIEW = false;
 const COLORS     = ['#00CE6B','#FFF100','#F95548','#0BC6FF','#FFFFFF'];
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1weS1u1eML_R8nKpMXSP6U-IDGDsazUg-duw/exec';
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 const formBlockData = {};
 let USER_DOC_ID = '';
 let userProgress = {}; // {stageId: Set<blockId>}
@@ -513,7 +514,7 @@ async function loadProjectSettings(){
     const doc=await db.collection('cms_projects').doc(PROJECT_ID).get();
     if(!doc.exists){ showError('프로젝트를 찾을 수 없어요.','관리자에게 문의해주세요.'); return; }
     applySettings(doc.data());
-  }catch(e){ console.error('[loadProjectSettings error]', e); showError('연결에 실패했어요.','잠시 후 다시 시도해주세요.'); }
+  }catch(e){ showError('연결에 실패했어요.','잠시 후 다시 시도해주세요.'); }
 }
 function applySettings(d){
   // 게시 상태 확인 (published===false → 준비중, 미설정=true)
