@@ -655,6 +655,24 @@ closeHelpPanel();
   - 설정 localStorage 저장: `fc_user_{projId}`, `fc_resp_{projId}_{formId}`, `fc_tf_{configId}`
   - `_frozenChipBar()`, `_colWidthDefaultPx()`, `setUserFrozen()`, `setRespFrozen()`, `setTfFrozen()` 구현
 
+**완료 ✅ (이번 세션 추가)**
+- **✅ admin 테이블 열 표시/숨기기**: 사용자 테이블·폼 응답 테이블·도구 응답 테이블에 열 숨기기/해제 칩 바 추가
+  - `_colVisBar()`, `toggleUserColVis()`, `toggleRespColVis()`, `toggleTfColVis()`, `_getHiddenSet()`, `_setHiddenSet()`
+  - localStorage 저장: `vis_user_{projId}`, `vis_resp_{projId}_{formId}`, `vis_tf_{configId}`
+- **✅ 꾸미기 도구: 필드값별 기본 이미지(프리셋)** — 관리자가 배경이미지마다 기본 이미지 복수 등록
+  - 크기 고정 토글: `lockSize: true`이면 `fixedSize`(px) 지정, 사용자 크기 변경 불가
+  - `presetImages: [{url, name, lockSize, fixedSize}]` Firestore 저장
+  - 도구: `getCurrentPresetImages()`, `addPresetImage()`, `_sizeFixed` 플래그
+- **✅ 폼 도구 파일 업로드 필드 버그 수정 및 기능 개선**
+  - `type:'file'` 필드 렌더링 버그 수정 (기존에 화면에 미표시)
+  - Firebase Storage 업로드 (`form_uploads/{formId}/...`), 최대 10MB 제한
+  - 파일 선택 후 파일명 표시 + ✕ 취소 버튼 추가 (`clearFile()`)
+  - admin 응답 테이블에서 파일 URL → 📎 링크로 렌더링
+- **✅ 이미지 높이 260px 기본값 제거**: 배치 방식 미입력 시 원본 비율로 표시 (height 0 = 자연 비율)
+  - `p/index.html` + `block-test-demo` + `gmbf-poc` + admin 미리보기(`_gBlockCore`) 모두 적용
+- **✅ 혼합형 분리형 전체화면 버튼 숨김**: `setMixedLayout('split')` 호출 시 전체화면 버튼 비활성화
+  - 이유: 분리형에서 이미지 전체화면이면 아래 텍스트 영역이 가려짐
+
 **진행 예정 🔲**
 - GAS 재배포 후 시트 생성 + 백필 end-to-end 테스트
 - 도구 블록 end-to-end 테스트 (폼 생성 → 블록 연결 → 플레이어 제출 → 진행률 반영)
@@ -662,6 +680,7 @@ closeHelpPanel();
 - 관리자 프리뷰 모드 end-to-end 테스트 (admin에서 URL 복사 → 시크릿창 접속 → 비공개·비활성·숨김 스테이지 진입 확인)
 
 **다음 세션 시작점**
+- 🔲 **꾸미기 도구 실제 크기 표시** — 기준 10cm / 배경마다 `refPx` 입력 / 슬라이더 조작 시 cm 실시간 표시 (계획 완성됨, 바로 구현 가능)
 - 🔲 **모든 도구 안내문구 통합 작업** (자세한 계획은 아래 "📐 다음 세션 작업: 도구 텍스트 필드 통합" 참고)
 - 🔲 관리자 프리뷰 모드 실제 테스트 + 기존 배포 프로젝트 재배포 (admin 패널에서 "저장 + 배포")
 - 🔲 일정 잡기 도구 end-to-end 테스트 (GAS 재배포 후)
