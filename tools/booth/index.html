@@ -69,10 +69,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 #panel-default{display:flex;gap:6px;justify-content:center;align-items:center;}
 #panel-image{display:none;flex-direction:column;gap:10px;}
 #panel-draw{display:none;flex-direction:column;gap:8px;}
-.draw-num-btn{width:26px;height:26px;border:2px solid #000;background:transparent;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
-.draw-num-btn:hover,.draw-num-btn:active{background:#000;color:var(--lmp-block-bg);}
-#draw-size-num{width:38px;text-align:center;border:2px solid #000;font-size:12px;font-weight:700;padding:4px 2px;font-family:inherit;-moz-appearance:textfield;-webkit-appearance:none;border-radius:0;background:#fff;}
-#draw-size-num::-webkit-inner-spin-button,#draw-size-num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+#draw-size-num{width:58px;text-align:center;border:2px solid #000;font-size:12px;font-weight:700;padding:4px 6px;font-family:inherit;border-radius:0;background:#fff;}
 #draw-color-cur{width:26px;height:26px;border:2px solid #000;cursor:pointer;flex-shrink:0;padding:0;}
 #draw-color-picker{display:none;position:absolute;bottom:34px;left:0;background:#fff;border:2px solid #000;padding:8px;gap:6px;flex-wrap:wrap;z-index:50;min-width:110px;}
 #draw-color-picker.open{display:flex;}
@@ -141,7 +138,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 #auto-bg-select{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:250;align-items:flex-end;justify-content:center;}
 #auto-bg-select.on{display:flex;}
 #auto-bg-inner{background:#fff;border-top:2px solid #000;padding:0;width:100%;max-width:480px;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;}
-#auto-bg-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 16px 24px;overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;}
+#auto-bg-scroll{flex:1;overflow-y:auto;min-height:0;-webkit-overflow-scrolling:touch;}
+#auto-bg-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:12px 16px 24px;}
 .auto-bg-thumb{position:relative;overflow:hidden;cursor:pointer;border:2px solid rgba(0,0,0,.12);background:#f0f0f0;transition:border-color .15s;aspect-ratio:4/5;}
 .auto-bg-thumb:hover{border-color:rgba(0,0,0,.45);}
 .auto-bg-thumb.active{border-color:#000;border-width:3px;}
@@ -209,7 +207,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
       <span>배경을 선택해 주세요</span>
       <button onclick="cancelAutoBg()">✕</button>
     </div>
-    <div id="auto-bg-grid"></div>
+    <div id="auto-bg-scroll"><div id="auto-bg-grid"></div></div>
     <div id="auto-bg-actions">
       <button id="auto-bg-confirm-btn" disabled onclick="confirmAutoBg()">선택 완료</button>
     </div>
@@ -326,10 +324,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   <div id="panel-draw">
     <div class="panel-row">
       <span class="panel-label">굵기</span>
-      <button class="draw-num-btn" onclick="changeDrawSize(-1)">−</button>
       <input type="number" id="draw-size-num" min="2" max="40" value="8" oninput="onDrawSizeNum(this.value)">
-      <span class="panel-label" style="font-weight:400;opacity:.45;margin-left:2px;">px</span>
-      <button class="draw-num-btn" onclick="changeDrawSize(1)">+</button>
+      <span class="panel-label" style="font-weight:400;opacity:.45;">px</span>
       <div class="tool-sep" style="height:20px;margin:0 6px;"></div>
       <span class="panel-label">색상</span>
       <div style="position:relative;display:inline-flex;">
