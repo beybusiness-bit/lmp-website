@@ -101,7 +101,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 #bg-modal-inner{background:#fff;border-top:2px solid #000;padding:0;width:100%;max-width:480px;max-height:72vh;display:flex;flex-direction:column;overflow:hidden;}
 .bg-modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;flex-shrink:0;border-bottom:1.5px solid rgba(0,0,0,.1);}
 .bg-modal-header span{font-size:14px;font-weight:700;color:#000;}
-.bg-modal-header button{background:none;border:none;font-size:20px;cursor:pointer;color:#000;line-height:1;padding:2px;}
+.bg-modal-header button{background:none;border:none;font-size:24px;font-weight:700;cursor:pointer;color:#000;line-height:1;padding:4px;}
 #bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 .bg-thumb{position:relative;overflow:hidden;cursor:pointer;border:2px solid transparent;background:#f0f0f0;aspect-ratio:4/5;}
 .bg-thumb:hover,.bg-thumb.active{border-color:#000;}
@@ -164,13 +164,12 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .shape-color-btn{width:26px;height:26px;border:2px solid rgba(0,0,0,.25);cursor:pointer;padding:0;flex-shrink:0;}
 .shape-none-btn{padding:4px 10px;border:2px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#000;}
 .shape-none-btn.active{background:#000;color:#fff;border-color:#000;}
-/* ── 설명 드롭다운 (툴바 아래 붙는 시트) ── */
-#desc-overlay{display:none;position:absolute;top:0;left:0;right:0;z-index:70;}
+/* ── 설명 드롭다운 (툴바 바로 아래 — 메타바 포함 덮음) ── */
+#desc-overlay{display:none;position:absolute;left:0;right:0;z-index:90;}
 #desc-overlay.on{display:block;}
 #desc-card{background:#fff;border-bottom:2px solid #000;padding:14px 16px;width:100%;display:flex;flex-direction:column;gap:10px;box-shadow:0 4px 16px rgba(0,0,0,.18);}
 #desc-card-header{font-size:12px;font-weight:700;color:rgba(0,0,0,.55);letter-spacing:.4px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
-#desc-card-header button{background:none;border:none;font-size:18px;cursor:pointer;color:rgba(0,0,0,.5);line-height:1;padding:2px;}
-#desc-card-header button:hover{color:#000;}
+#desc-card-header button{background:none;border:none;font-size:24px;font-weight:700;cursor:pointer;color:#000;line-height:1;padding:4px;}
 #desc-card-content{font-size:13px;line-height:1.65;color:#000;white-space:pre-wrap;word-break:break-word;max-height:35vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .auto-bg-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 .auto-bg-thumb .bg-label{z-index:1;}
@@ -262,15 +261,16 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     <div id="items-layer"></div>
     <canvas id="draw-canvas"></canvas>
   </div>
-  <!-- 설명 드롭다운 패널 -->
-  <div id="desc-overlay">
-    <div id="desc-card">
-      <div id="desc-card-header">
-        <span>💬 안내</span>
-        <button onclick="collapseDesc()">✕</button>
-      </div>
-      <div id="desc-card-content"></div>
+</div>
+
+<!-- 설명 드롭다운 패널 (body 레벨 — 툴바 바로 아래부터 메타바 포함 덮음) -->
+<div id="desc-overlay">
+  <div id="desc-card">
+    <div id="desc-card-header">
+      <span>💬 안내</span>
+      <button onclick="collapseDesc()">✕</button>
     </div>
+    <div id="desc-card-content"></div>
   </div>
 </div>
 
@@ -654,6 +654,9 @@ function showAutoBgSelect(urls, desc, names, refPx=0) {
   }).join('');
   const btn = document.getElementById('auto-bg-confirm-btn');
   if(btn) btn.disabled = true;
+  // 명시적 height 설정 — flex:1 그리드가 올바르게 높이를 받도록
+  const inner = document.getElementById('auto-bg-inner');
+  inner.style.height = Math.floor(window.innerHeight * 0.85) + 'px';
   document.getElementById('auto-bg-select').classList.add('on');
 }
 
@@ -680,6 +683,12 @@ function confirmAutoBg() {
   });
 }
 
+function _setDescTop() {
+  const toolbar = document.getElementById('toolbar');
+  if(!toolbar) return;
+  document.getElementById('desc-overlay').style.top = toolbar.offsetTop + toolbar.offsetHeight + 'px';
+}
+
 function showBgDesc(desc) {
   const overlay = document.getElementById('desc-overlay');
   const content = document.getElementById('desc-card-content');
@@ -696,6 +705,7 @@ function showBgDesc(desc) {
   }
   _hasDesc = true;
   content.textContent = desc;
+  _setDescTop();
   overlay.classList.add('on'); // 최초 진입 시 열린 채로
   if(btnGuide) btnGuide.style.display = ''; // 안내 버튼 항상 표시
   if(sepGuide) sepGuide.style.display = '';
@@ -709,10 +719,10 @@ function collapseDesc() {
 function expandDesc() {
   if(!_hasDesc) return;
   const overlay = document.getElementById('desc-overlay');
-  // 이미 열려있으면 닫기, 닫혀있으면 열기 (토글)
   if(overlay.classList.contains('on')) {
     overlay.classList.remove('on');
   } else {
+    _setDescTop();
     overlay.classList.add('on');
   }
 }
