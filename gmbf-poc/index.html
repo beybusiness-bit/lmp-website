@@ -779,7 +779,7 @@ function renderSeparateStages(){
     const adminBadge=IS_ADMIN_PREVIEW&&(isDisabled||isHidden)?`<div style="position:absolute;top:6px;right:6px;background:#f95548;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;z-index:3;letter-spacing:.2px;">${isHidden?'숨김':'비활성'}</div>`:'';
     const hasTag=s.tagEnabled&&s.tagText;
     const needsRel=(IS_ADMIN_PREVIEW&&(isDisabled||isHidden))||hasTag?'position:relative;':'';
-    const tagHtml=hasTag?`<div class="stage-tag ${s.tagShape||'bookmark'}" style="background:${s.tagBgColor==='home'?'var(--prep-bg)':(s.tagBgColor||'#000000')};color:${s.tagTextColor==='home'?'var(--prep-bg)':(s.tagTextColor||'#ffffff')};">${s.tagText}</div>`:'';
+    const tagHtml=hasTag?`<div class="stage-tag ${s.tagShape||'bookmark'}" style="background:${s.tagBgColor==='home'?'var(--prep-bg)':(s.tagBgColor||'#000000')};color:${s.tagTextColor==='home'?'var(--prep-bg)':(s.tagTextColor||'#ffffff')};">${esc(s.tagText)}</div>`:'';
     const pct=calcPct(s);
     const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
     const dotHtml=s.trackProgress?`<div class="status-dot">${statusTxt}</div>`:'';
@@ -816,7 +816,7 @@ function renderMergedStages(){
     const adminBadge=IS_ADMIN_PREVIEW&&(isDisabled||isHidden)?`<div style="position:absolute;top:6px;right:6px;background:#f95548;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;z-index:3;letter-spacing:.2px;">${isHidden?'숨김':'비활성'}</div>`:'';
     const hasTag=s.tagEnabled&&s.tagText;
     const needsRel=(IS_ADMIN_PREVIEW&&(isDisabled||isHidden))||hasTag?'position:relative;':'';
-    const tagHtml=hasTag?`<div class="stage-tag ${s.tagShape||'bookmark'}" style="background:${s.tagBgColor==='home'?'var(--prep-bg)':(s.tagBgColor||'#000000')};color:${s.tagTextColor==='home'?'var(--prep-bg)':(s.tagTextColor||'#ffffff')};">${s.tagText}</div>`:'';
+    const tagHtml=hasTag?`<div class="stage-tag ${s.tagShape||'bookmark'}" style="background:${s.tagBgColor==='home'?'var(--prep-bg)':(s.tagBgColor||'#000000')};color:${s.tagTextColor==='home'?'var(--prep-bg)':(s.tagTextColor||'#ffffff')};">${esc(s.tagText)}</div>`:'';
     const pct=calcPct(s);
     const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
     if(s.displayType==='image' && s.stageImageUrl){
@@ -928,13 +928,14 @@ async function submitRegistration(){
       btn.textContent='등록'; btn.disabled=false; return;
     }
     const sessionId=_newSessionId();
+    const deviceId=_getDeviceId();
     const ref=await db.collection(AUTH_COLLECTION).add({
       ...data,
-      activeSession:{id:sessionId, deviceId:_getDeviceId(), deviceInfo:_getDeviceInfo(),
-        startedAt:firebase.firestore.FieldValue.serverTimestamp(),
-        lastSeenAt:firebase.firestore.FieldValue.serverTimestamp()},
-      lastLoginAt:firebase.firestore.FieldValue.serverTimestamp(),
-      loginCount:1
+      activeSession:{ id:sessionId, deviceId, deviceInfo:_getDeviceInfo(),
+        startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        lastSeenAt: firebase.firestore.FieldValue.serverTimestamp() },
+      lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(),
+      loginCount: 1
     });
     USER_DOC_ID=ref.id;
     sessionStorage.setItem('userSession',JSON.stringify({...data,project:PROJECT_ID,_docId:USER_DOC_ID,_sessionId:sessionId}));
@@ -956,19 +957,64 @@ async function submitRegistration(){
   }catch(e){ document.getElementById('reg-err').textContent='등록 실패. 다시 시도해주세요.'; btn.textContent='등록'; btn.disabled=false; }
 }
 /* ── Single-session (active session) helpers ── */
-const SESSION_HEARTBEAT_MS=3*60*1000, SESSION_STALE_MS=10*60*1000;
-function _getDeviceId(){ let id=''; try{id=localStorage.getItem('lmp_device_id')||'';}catch(_){} if(!id){id='dev_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-6); try{localStorage.setItem('lmp_device_id',id);}catch(_){}} return id; }
+const SESSION_HEARTBEAT_MS = 3*60*1000;   // 3분마다 하트비트
+const SESSION_STALE_MS    = 10*60*1000;   // 10분 미활동 시 만료 처리
+function _getDeviceId(){
+  let id=''; try{ id=localStorage.getItem('lmp_device_id')||''; }catch(_){}
+  if(!id){ id='dev_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-6);
+    try{ localStorage.setItem('lmp_device_id',id); }catch(_){} }
+  return id;
+}
 function _newSessionId(){ return 'sess_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-6); }
-function _getDeviceInfo(){ const ua=navigator.userAgent||''; let b='브라우저'; if(/SamsungBrowser/.test(ua))b='Samsung Internet'; else if(/EdgiOS|Edg\//.test(ua))b='Edge'; else if(/FxiOS|Firefox/.test(ua))b='Firefox'; else if(/CriOS|Chrome/.test(ua))b='Chrome'; else if(/Safari/.test(ua))b='Safari'; let o=''; if(/iPhone/.test(ua))o='iPhone'; else if(/iPad/.test(ua))o='iPad'; else if(/Android/.test(ua))o='Android'; else if(/Mac/.test(ua))o='Mac'; else if(/Windows/.test(ua))o='Windows'; return o?`${b} (${o})`:b; }
+function _getDeviceInfo(){
+  const ua=navigator.userAgent||''; let b='브라우저';
+  if(/SamsungBrowser/.test(ua)) b='Samsung Internet';
+  else if(/EdgiOS|Edg\//.test(ua)) b='Edge';
+  else if(/FxiOS|Firefox/.test(ua)) b='Firefox';
+  else if(/CriOS|Chrome/.test(ua)) b='Chrome';
+  else if(/Safari/.test(ua)) b='Safari';
+  let o='';
+  if(/iPhone/.test(ua)) o='iPhone';
+  else if(/iPad/.test(ua)) o='iPad';
+  else if(/Android/.test(ua)) o='Android';
+  else if(/Mac/.test(ua)) o='Mac';
+  else if(/Windows/.test(ua)) o='Windows';
+  return o?`${b} (${o})`:b;
+}
 let _sessionHeartbeat=null;
-function _startSessionHeartbeat(docId){ _stopSessionHeartbeat(); if(!docId)return; _sessionHeartbeat=setInterval(()=>{ db.collection(AUTH_COLLECTION).doc(docId).update({'activeSession.lastSeenAt':firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{}); },SESSION_HEARTBEAT_MS); }
-function _stopSessionHeartbeat(){ if(_sessionHeartbeat){clearInterval(_sessionHeartbeat); _sessionHeartbeat=null;} }
-function _checkSessionConflict(userData){ const a=userData.activeSession; if(!a?.id)return''; const myDev=_getDeviceId(); if(a.deviceId&&a.deviceId===myDev)return''; const lastMs=a.lastSeenAt?.toMillis?.()||a.lastSeenAt?.seconds*1000||a.startedAt?.toMillis?.()||a.startedAt?.seconds*1000||0; if(!lastMs)return''; const elapsed=Date.now()-lastMs; if(elapsed>SESSION_STALE_MS)return''; const dev=a.deviceInfo||'알 수 없는 기기'; const mins=Math.floor(elapsed/60000); const ago=mins<1?'방금':`${mins}분 전`; return `<b>이미 다른 기기에서 로그인되어 있어요.</b><br><span style="font-size:11px;opacity:.75;display:block;margin-top:6px;line-height:1.55;">접속 기기: <b>${dev}</b><br>마지막 활동: ${ago}<br>먼저 그 기기에서 로그아웃 후 다시 시도해 주세요.<br>(10분 이상 미활동 시 자동 해제)</span>`; }
+function _startSessionHeartbeat(docId){
+  _stopSessionHeartbeat();
+  if(!docId) return;
+  _sessionHeartbeat=setInterval(()=>{
+    db.collection(AUTH_COLLECTION).doc(docId).update({
+      'activeSession.lastSeenAt': firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(()=>{});
+  }, SESSION_HEARTBEAT_MS);
+}
+function _stopSessionHeartbeat(){ if(_sessionHeartbeat){ clearInterval(_sessionHeartbeat); _sessionHeartbeat=null; } }
+function _checkSessionConflict(userData){
+  const a=userData.activeSession;
+  if(!a?.id) return '';
+  const myDev=_getDeviceId();
+  if(a.deviceId && a.deviceId===myDev) return ''; // 같은 기기는 허용
+  const lastMs=a.lastSeenAt?.toMillis?.()||a.lastSeenAt?.seconds*1000||a.startedAt?.toMillis?.()||a.startedAt?.seconds*1000||0;
+  if(!lastMs) return ''; // 시각 불명 → 통과
+  const elapsed=Date.now()-lastMs;
+  if(elapsed>SESSION_STALE_MS) return ''; // 만료
+  const dev=a.deviceInfo||'알 수 없는 기기';
+  const mins=Math.floor(elapsed/60000);
+  const ago=mins<1?'방금':`${mins}분 전`;
+  return `<b>이미 다른 기기에서 로그인되어 있어요.</b><br>`
+    +`<span style="font-size:11px;opacity:.75;display:block;margin-top:6px;line-height:1.55;">`
+    +`접속 기기: <b>${dev}</b><br>마지막 활동: ${ago}<br>`
+    +`먼저 그 기기에서 로그아웃 후 다시 시도해 주세요.<br>(10분 이상 미활동 시 자동 해제)</span>`;
+}
 async function confirmAuth(){
   const val=document.getElementById('auth-key-input').value.trim();
   if(!val){ document.getElementById('auth-err').textContent='값을 입력해주세요.'; return; }
   const btn=document.getElementById('auth-ok');
-  const errEl=document.getElementById('auth-err'); errEl.textContent='';
+  const errEl=document.getElementById('auth-err');
+  errEl.textContent='';
   btn.textContent='확인 중…'; btn.disabled=true;
   try{
     const keyField=AUTH_FIELDS.find(f=>f.key===AUTH_KEY_FIELD);
@@ -978,23 +1024,26 @@ async function confirmAuth(){
     if(snap.empty){ errEl.textContent='인증 정보를 찾을 수 없어요.'; return; }
     const u=snap.docs[0].data();
     const docId=snap.docs[0].id;
+    // 단일-세션 검사: 다른 기기 활성 세션이 있으면 차단
     const blockHtml=_checkSessionConflict(u);
     if(blockHtml){ errEl.innerHTML=blockHtml; return; }
     USER_DOC_ID=docId;
     const sessionId=_newSessionId();
-    const {activeSession:_omit,...uClean}=u;
+    const deviceId=_getDeviceId();
+    const {activeSession:_omit, ...uClean}=u;
     sessionStorage.setItem('userSession',JSON.stringify({...uClean,project:PROJECT_ID,_docId:USER_DOC_ID,_sessionId:sessionId}));
     db.collection(AUTH_COLLECTION).doc(USER_DOC_ID).update({
-      activeSession:{id:sessionId, deviceId:_getDeviceId(), deviceInfo:_getDeviceInfo(),
-        startedAt:firebase.firestore.FieldValue.serverTimestamp(),
-        lastSeenAt:firebase.firestore.FieldValue.serverTimestamp()},
-      lastLoginAt:firebase.firestore.FieldValue.serverTimestamp(),
-      loginCount:firebase.firestore.FieldValue.increment(1)
+      activeSession:{ id:sessionId, deviceId, deviceInfo:_getDeviceInfo(),
+        startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        lastSeenAt: firebase.firestore.FieldValue.serverTimestamp() },
+      lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(),
+      loginCount: firebase.firestore.FieldValue.increment(1)
     }).catch(()=>{});
     _startSessionHeartbeat(USER_DOC_ID);
     loadUserProgress(u);
     applyGreeting(u);
     closeModal('auth-modal');
+    // 보류된 동작이 있으면 실행 (필요 시 로그인 모드)
     if(_pendingAuthAction){
       const fn=_pendingAuthAction; _pendingAuthAction=null; _pendingAuthReason='';
       renderMenu(); refreshStageProgress();
@@ -1071,11 +1120,26 @@ function logout(){
   if(!confirm('로그아웃 하시겠어요?')) return;
   _stopSessionHeartbeat();
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
-  if(saved._docId){ db.collection(AUTH_COLLECTION).doc(saved._docId).update({activeSession:firebase.firestore.FieldValue.delete()}).catch(()=>{}); }
+  if(saved._docId){
+    db.collection(AUTH_COLLECTION).doc(saved._docId).update({
+      activeSession: firebase.firestore.FieldValue.delete()
+    }).catch(()=>{});
+  }
   try{ sessionStorage.removeItem('userSession'); }catch(_){}
   location.reload();
 }
-window.addEventListener('beforeunload',()=>{ if(!AUTH_ENABLED)return; const s=JSON.parse(sessionStorage.getItem('userSession')||'{}'); if(s._docId&&s.project===PROJECT_ID&&s._sessionId){ try{ db.collection(AUTH_COLLECTION).doc(s._docId).update({activeSession:firebase.firestore.FieldValue.delete()}); }catch(_){}} });
+/* 페이지 닫힘 시 최선 노력으로 세션 해제 */
+window.addEventListener('beforeunload', () => {
+  if(!AUTH_ENABLED) return;
+  const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  if(saved._docId && saved.project===PROJECT_ID && saved._sessionId){
+    try{
+      db.collection(AUTH_COLLECTION).doc(saved._docId).update({
+        activeSession: firebase.firestore.FieldValue.delete()
+      });
+    }catch(_){}
+  }
+});
 function toggleMenu(){
   const m=document.getElementById('side-menu');
   if(m.classList.contains('open')) closeMenu();
@@ -1202,10 +1266,17 @@ function blockHtml(b){
     const wrapH=isFull?'height:calc(100svh - 60px);':(isPx?'':`min-height:60vh;`);
     const trigger=b.completeTrigger||'tool-signal';
     const onloadAttr=trigger==='open'?` onload="if(this.src&&this.src!=='about:blank')autoCheckBlock('${b.id}')"`:'';
+    // 필요 시 로그인 모드 + 비로그인 → 잠금 오버레이 (iframe은 렌더링하지 않음)
     const needsLogin=AUTH_ENABLED && AUTH_MODE==='on-demand' && !USER_DOC_ID && !IS_ADMIN_PREVIEW
                      && !(JSON.parse(sessionStorage.getItem('userSession')||'{}').project===PROJECT_ID);
     if(needsLogin){
-      return `<div class="g-block-embed g-tool-locked" style="${mS}${bgS}${wrapH}min-height:160px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1.5px dashed rgba(0,0,0,.25);background:rgba(0,0,0,.04);" onclick="requireAuthOr(()=>location.reload(),'이 도구를 사용하려면 로그인이 필요해요.')"><div style="text-align:center;padding:24px 16px;"><div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-size:13px;font-weight:800;margin-bottom:4px;">로그인 후 사용 가능</div><div style="font-size:11px;opacity:.6;line-height:1.5;">탭해서 로그인하기</div></div></div>`;
+      return `<div class="g-block-embed g-tool-locked" style="${mS}${bgS}${wrapH}min-height:160px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1.5px dashed rgba(0,0,0,.25);background:rgba(0,0,0,.04);" onclick="requireAuthOr(()=>location.reload(),'이 도구를 사용하려면 로그인이 필요해요.')">
+        <div style="text-align:center;padding:24px 16px;">
+          <div style="font-size:28px;margin-bottom:8px;">🔒</div>
+          <div style="font-size:13px;font-weight:800;margin-bottom:4px;">로그인 후 사용 가능</div>
+          <div style="font-size:11px;opacity:.6;line-height:1.5;">탭해서 로그인하기</div>
+        </div>
+      </div>`;
     }
     return `<div class="g-block-embed" style="${mS}${bgS}${wrapH}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}" data-block-bg="${b.bgColor||''}" data-complete-trigger="${trigger}"${onloadAttr}></iframe></div>`;
   }
@@ -1432,6 +1503,7 @@ function refreshStageProgress(){
   if(html) card.insertAdjacentHTML('beforeend',html);
 }
 async function toggleBlockCheck(blockId){
+  // 필요 시 로그인 모드: 비로그인 사용자는 로그인 요청 후 재시도
   if(AUTH_ENABLED && AUTH_MODE==='on-demand' && !USER_DOC_ID && !IS_ADMIN_PREVIEW){
     requireAuthOr(()=>toggleBlockCheck(blockId), '진행률을 체크하려면 로그인이 필요해요.');
     return;
@@ -1587,7 +1659,10 @@ async function init(){
   loadUserProgress();
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
   const loggedIn=saved.project===PROJECT_ID;
-  if(loggedIn&&AUTH_ENABLED&&USER_DOC_ID&&!IS_ADMIN_PREVIEW){ _startSessionHeartbeat(USER_DOC_ID); }
+  /* 페이지 새로고침/재진입 시 하트비트 재개 (USER_DOC_ID는 loadUserProgress에서 복원됨) */
+  if(loggedIn && AUTH_ENABLED && USER_DOC_ID && !IS_ADMIN_PREVIEW){
+    _startSessionHeartbeat(USER_DOC_ID);
+  }
   /* merged + auth: show modal immediately (skip auth in admin preview) */
   if(LAYOUT_TYPE==='merged'&&AUTH_ENABLED){
     if(IS_ADMIN_PREVIEW){
