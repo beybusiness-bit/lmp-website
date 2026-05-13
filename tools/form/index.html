@@ -33,6 +33,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .ff-color-wrap{display:flex;align-items:center;gap:12px;}
 .ff-color-inp{width:56px;height:44px;padding:2px;border:2px solid #000;border-radius:0;background:transparent;cursor:pointer;-webkit-appearance:none;appearance:none;}
 .ff-color-hex{font-size:14px;font-weight:700;font-family:monospace;letter-spacing:.5px;}
+.ff-color-wrap[data-picked="0"] .ff-color-inp{display:none;}
+.ff-color-wrap[data-picked="0"] .ff-color-hex{display:none;}
+.ff-color-ph{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:2px dashed rgba(0,0,0,.3);font-size:13px;color:rgba(0,0,0,.45);cursor:pointer;font-family:inherit;background:transparent;}
+.ff-color-ph:hover{border-color:#000;color:#000;}
+.ff-color-wrap[data-picked="1"] .ff-color-ph{display:none;}
 
 #app{padding:24px 20px;}
 .form-title{font-size:17px;font-weight:800;margin-bottom:24px;letter-spacing:-.3px;line-height:1.4;}
@@ -123,7 +128,7 @@ function renderField(f) {
     return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<input class="ff-inp" id="ff-${fid}" type="number" placeholder="${ph}"></div>`;
   }
   if (type === 'color') {
-    return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<div class="ff-color-wrap"><input class="ff-color-inp" id="ff-${fid}" type="color" value="#000000" oninput="document.getElementById('ff-${fid}-hex').textContent=this.value.toUpperCase()"><span class="ff-color-hex" id="ff-${fid}-hex">#000000</span></div></div>`;
+    return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<div class="ff-color-wrap" id="ff-${fid}-wrap" data-picked="0"><span class="ff-color-ph" onclick="document.getElementById('ff-${fid}').click()">🎨 색상 선택</span><input class="ff-color-inp" id="ff-${fid}" type="color" oninput="onColorPick('${fid}',this.value)"><span class="ff-color-hex" id="ff-${fid}-hex"></span></div></div>`;
   }
   if (type === 'select') {
     const mode = f.selectMode || 'dropdown';
@@ -184,6 +189,12 @@ function showErr(msg) {
   el.classList.add('on');
 }
 
+function onColorPick(fid, val) {
+  const wrap = document.getElementById('ff-' + fid + '-wrap');
+  if (wrap) wrap.dataset.picked = '1';
+  const hex = document.getElementById('ff-' + fid + '-hex');
+  if (hex) hex.textContent = val.toUpperCase();
+}
 function applyVars(str) {
   if (!str) return '';
   return str.replace(/\{\{(\w+)\}\}/g, (_, key) => {
@@ -284,8 +295,11 @@ async function submitForm() {
       if (val === '__other__') { const oi = document.getElementById('ff-' + fid + '-other'); val = oi?.value.trim() || '기타'; }
       if (f.required && !val) { errEl.textContent = f.label + '을(를) 선택해주세요.'; return; }
     } else if (f.type === 'color') {
+      const wrap = document.getElementById('ff-' + fid + '-wrap');
+      const picked = wrap?.dataset.picked === '1';
+      if (f.required && !picked) { errEl.textContent = f.label + ' 색상을 선택해주세요.'; return; }
       const inp = document.getElementById('ff-' + fid);
-      val = inp ? inp.value.toUpperCase() : '#000000';
+      val = picked && inp ? inp.value.toUpperCase() : '';
     } else {
       const inp = document.getElementById('ff-' + fid);
       val = inp ? inp.value.trim() : '';
