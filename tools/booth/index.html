@@ -574,7 +574,7 @@ function autoSelectBg() {
 let autoBgState = { urls: [], names: [], desc: '', refPx: 0, selectedIdx: -1 };
 
 function showAutoBgSelect(urls, desc, names, refPx=0) {
-  autoBgState = { urls: urls.slice(), names: (names||[]).slice(), desc: desc||'', refPx: refPx||0, selectedIdx: -1 };
+  autoBgState = { urls: urls.slice(), names: (names||[]).slice(), desc: desc||'', refPx: refPx||0, selectedIdx: -1, _bodyScrollY: window.scrollY || 0 };
   const grid = document.getElementById('auto-bg-grid');
   grid.innerHTML = urls.map((url, i) => {
     const name = (names && names[i]) ? names[i] : '';
@@ -585,9 +585,13 @@ function showAutoBgSelect(urls, desc, names, refPx=0) {
   }).join('');
   const btn = document.getElementById('auto-bg-confirm-btn');
   if(btn) btn.disabled = true;
-  // 모바일 iframe에서 svh 단위 오작동 방지: JS로 실제 viewport 높이 기준 지정
+  // iOS Safari: body position:fixed로 rubber-band scroll 완전 차단
+  document.body.style.position = 'fixed';
+  document.body.style.top = '0';
+  document.body.style.width = '100%';
+  // 모달 높이: window.innerHeight는 iframe 전체 높이라 screen.height(실제 기기 화면) 기준으로 제한
   const inner = document.getElementById('auto-bg-inner');
-  const safeH = Math.floor((window.visualViewport ? window.visualViewport.height : window.innerHeight) * 0.88);
+  const safeH = Math.floor(Math.min(window.screen.height, window.innerHeight) * 0.80);
   inner.style.height = safeH + 'px';
   inner.style.maxHeight = safeH + 'px';
   document.getElementById('auto-bg-select').classList.add('on');
@@ -609,7 +613,11 @@ function confirmAutoBg() {
   const desc = autoBgState.desc || '';
   const refPx = autoBgState.refPx;
   document.getElementById('auto-bg-select').classList.remove('on');
-  // iOS Safari: position:fixed 오버레이 닫힌 후 렌더링 복구
+  // iOS Safari: body 스크롤 잠금 해제 + scroll 위치 0으로 복원 (toolbar가 밀려나지 않도록)
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.width = '';
+  window.scrollTo(0, 0);
   document.body.scrollTop = 0;
   document.documentElement.scrollTop = 0;
   requestAnimationFrame(() => {
