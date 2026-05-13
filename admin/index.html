@@ -7339,8 +7339,11 @@ function renderBoothBgList(bgs) {
     const desc = (b.description||'').replace(/`/g,'\\`').replace(/\$/g,'\\$');
     return `<div class="booth-bg-item" data-idx="${i}">
       <div class="booth-bg-type">
-        <span>${b.type}</span>
-        <button class="del-btn" style="margin:0;font-size:11px;padding:4px 8px;" onclick="deleteBoothBg(${i})">항목 삭제</button>
+        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+          <span style="font-size:11px;color:rgba(0,0,0,.5);white-space:nowrap;">필드값</span>
+          <input class="fi" value="${(b.type||'').replace(/"/g,'&quot;')}" style="font-size:12px;font-weight:700;padding:3px 6px;flex:1;min-width:0;" oninput="decoState.curConfig.backgrounds[${i}].type=this.value;decoState.curConfig.backgrounds[${i}].label=this.value">
+        </div>
+        <button class="del-btn" style="margin:0;font-size:11px;padding:4px 8px;flex-shrink:0;" onclick="deleteBoothBg(${i})">항목 삭제</button>
       </div>
       <div class="booth-img-row">
         ${thumbs}
