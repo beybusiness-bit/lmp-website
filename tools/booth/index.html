@@ -117,6 +117,15 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 
 /* ── 배경 없을 때 안내 ── */
 #no-bg-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:rgba(0,0,0,.3);font-size:13px;font-weight:700;z-index:0;pointer-events:none;}
+
+/* ── 자동 배경 선택 UI ── */
+#auto-bg-select{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:250;align-items:flex-end;justify-content:center;}
+#auto-bg-select.on{display:flex;}
+#auto-bg-inner{background:#fff;border-top:2px solid #000;padding:0;width:100%;max-width:480px;max-height:72vh;display:flex;flex-direction:column;overflow:hidden;}
+#auto-bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px 16px;overflow-y:auto;}
+.auto-bg-thumb{aspect-ratio:4/5;overflow:hidden;cursor:pointer;border:2px solid transparent;position:relative;background:#f0f0f0;}
+.auto-bg-thumb:hover{border-color:#000;}
+.auto-bg-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 </style>
 </head>
 <body>
@@ -131,6 +140,16 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 </svg>
 
 <div id="loading"><p>불러오는 중…</p></div>
+
+<!-- 자동 배경 선택 (여러 장일 때) -->
+<div id="auto-bg-select">
+  <div id="auto-bg-inner">
+    <div class="bg-modal-header" style="padding:14px 16px;">
+      <span>배경을 선택해주세요</span>
+    </div>
+    <div id="auto-bg-grid"></div>
+  </div>
+</div>
 
 <!-- 상단 툴바 -->
 <div id="toolbar">
@@ -295,7 +314,8 @@ const EXPORT_H = 1350;
 // ── 앱 상태 ──
 let canvasW = 0, canvasH = 0;
 let bgImage = null;
-let backgrounds = []; // [{type, label, url}]
+let backgrounds = []; // [{type, label, urls:[]}]
+let fieldKey = 'boothType'; // config에서 로드
 let items = [];       // 데코 아이템 목록
 let selectedItem = null;
 let drawMode = false;
@@ -368,11 +388,12 @@ async function loadBackgrounds() {
   try {
     const doc = await db.collection('game_configs').doc(CONFIG_ID).get();
     if(doc.exists) {
-      backgrounds = doc.data().backgrounds || [];
-      // 설정 문서에 name 필드가 있으면 페이지 타이틀 업데이트
-      if(doc.data().name) {
-        document.getElementById('page-title').textContent = doc.data().name;
-        toolTitle = doc.data().name;
+      const data = doc.data();
+      backgrounds = data.backgrounds || [];
+      fieldKey = data.fieldKey || 'boothType';
+      if(data.name) {
+        document.getElementById('page-title').textContent = data.name;
+        toolTitle = data.name;
       }
       if(userBoothType) autoSelectBg();
     }
@@ -431,12 +452,36 @@ function onBgUpload(e) {
 }
 
 function autoSelectBg() {
-  const match = backgrounds.findIndex(b => b.type === userBoothType);
-  if(match >= 0) selectBg(match, true);
+  const match = backgrounds.find(b => b.type === userBoothType);
+  if(!match) return;
+  const urls = match.urls || (match.url ? [match.url] : []);
+  if(!urls.length) return;
+  if(urls.length === 1) {
+    selectBgByUrl(urls[0], match.label || '', true);
+  } else {
+    showAutoBgSelect(urls);
+  }
+}
+
+function showAutoBgSelect(urls) {
+  const grid = document.getElementById('auto-bg-grid');
+  grid.innerHTML = urls.map((url, i) => `
+    <div class="auto-bg-thumb" onclick="pickAutoBg('${url}')">
+      <img src="${url}" loading="lazy" crossorigin="anonymous" onerror="this.parentElement.style.opacity='.3'">
+    </div>`).join('');
+  document.getElementById('auto-bg-select').classList.add('on');
+}
+
+function pickAutoBg(url) {
+  document.getElementById('auto-bg-select').classList.remove('on');
+  selectBgByUrl(url, '', false);
 }
 
 function selectBg(i, silent=false) {
-  selectBgByUrl(backgrounds[i].url, backgrounds[i].label||'', silent);
+  const b = backgrounds[i];
+  const urls = b.urls || (b.url ? [b.url] : []);
+  if(urls.length === 1) selectBgByUrl(urls[0], b.label||'', silent);
+  else if(urls.length > 1) showAutoBgSelect(urls);
 }
 
 function selectBgByUrl(url, label='', silent=false) {
@@ -954,14 +999,14 @@ window.addEventListener('message', e => {
   contextReceived = true;
   if(d.blockBg) document.documentElement.style.setProperty('--lmp-block-bg', d.blockBg);
   if(d.keyColors?.length) { keyColors = d.keyColors; renderKeyColorSwatches(); }
-  // boothType: 부모가 명시적으로 보내거나 userFields.type 에서 추출
-  const bt = d.boothType || d.userFields?.boothType || d.userFields?.type || '';
+  // fieldKey 기반으로 사용자 필드값 추출 (기존 boothType 하위호환 포함)
+  const bt = d.boothType || d.userFields?.[fieldKey] || d.userFields?.boothType || d.userFields?.type || '';
   if(bt) {
     userBoothType = bt;
     hideBgBtn();
     if(backgrounds.length) autoSelectBg();
   } else {
-    showBgBtn(); // 컨텍스트 왔지만 부스 종류 없으면 버튼 표시
+    showBgBtn();
   }
 });
 

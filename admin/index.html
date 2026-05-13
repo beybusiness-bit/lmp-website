@@ -257,14 +257,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .proj-item{padding:14px 0;border-bottom:1.5px solid #000;}
 .pi-name{font-size:15px;font-weight:700;margin-bottom:2px;}
 .pi-meta{font-size:11px;color:rgba(0,0,0,.45);}
-.booth-bg-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1.5px solid rgba(0,0,0,.08);}
+.booth-bg-item{padding:12px 0;border-bottom:1.5px solid rgba(0,0,0,.08);}
 .booth-bg-item:last-child{border-bottom:none;}
-.booth-bg-thumb{width:60px;height:75px;object-fit:cover;border:1.5px solid rgba(0,0,0,.15);flex-shrink:0;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(0,0,0,.3);}
-.booth-bg-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-.booth-bg-info{flex:1;min-width:0;}
-.booth-bg-type{font-size:13px;font-weight:700;margin-bottom:2px;}
-.booth-bg-url{font-size:10px;color:rgba(0,0,0,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.booth-bg-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+.booth-bg-type{font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.booth-img-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;}
+.booth-img-cell{position:relative;width:60px;flex-shrink:0;}
+.booth-img-cell img{width:60px;height:75px;object-fit:cover;border:1.5px solid rgba(0,0,0,.15);display:block;background:#f0f0f0;}
+.booth-img-del{position:absolute;top:2px;right:2px;background:rgba(0,0,0,.65);color:#fff;border:none;width:18px;height:18px;border-radius:50%;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;}
+.booth-img-add{width:60px;height:75px;display:flex;align-items:center;justify-content:center;border:2px dashed rgba(0,0,0,.25);font-size:22px;color:rgba(0,0,0,.3);cursor:pointer;background:transparent;flex-shrink:0;}
+.booth-img-add:hover{border-color:#000;color:#000;}
 .booth-conn-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1.5px solid rgba(0,0,0,.08);}
 .booth-conn-item:last-child{border-bottom:none;}
 </style>
@@ -1073,11 +1074,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <input class="fi" id="deco-config-name" placeholder="예: 플리마켓 부스 꾸미기" style="margin-bottom:0;" oninput="decoState.curConfig&&(decoState.curConfig.name=this.value)">
           </div>
 
-          <div class="sect-head" style="margin-bottom:4px;">부스 종류별 배경 이미지</div>
-          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">각 부스 종류에 맞는 배경 이미지를 업로드하세요. 사용자가 도구 시작 시 자동으로 선택됩니다. 권장 크기: 1080×1350px (4:5)</div>
+          <div style="margin-bottom:16px;">
+            <div class="ed-lbl" style="margin-bottom:4px;">연결 필드 키</div>
+            <input class="fi" id="deco-field-key" placeholder="비워두면 boothType 사용" style="margin-bottom:4px;" oninput="saveDecoFieldKey(this.value)">
+            <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 사용자 인증 필드 중 어떤 필드값으로 배경을 자동 선택할지 키를 입력하세요. 예: <code>boothType</code>, <code>category</code></div>
+          </div>
+
+          <div class="sect-head" style="margin-bottom:4px;">필드 값별 배경 이미지</div>
+          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">각 필드 값에 해당하는 배경 이미지를 설정하세요. 값이 일치하는 사용자에게 자동 적용됩니다. 이미지를 여러 장 등록하면 사용자가 직접 고릅니다. 권장 크기: 1080×1350px (4:5)</div>
 
           <div style="display:flex;gap:8px;margin-bottom:20px;">
-            <input class="fi" id="new-booth-type" placeholder="부스 종류 입력 (예: food, craft, beauty)" style="flex:1;margin-bottom:0;">
+            <input class="fi" id="new-booth-type" placeholder="필드 값 입력 (예: food, craft, beauty)" style="flex:1;margin-bottom:0;">
             <button class="save-btn" onclick="addBoothType()">추가</button>
           </div>
           <div id="booth-bg-list">
@@ -7137,11 +7144,14 @@ async function loadBoothBgs(configId = 'booth') {
   el.innerHTML = '<div class="empty-msg">불러오는 중…</div>';
   try {
     const doc = await db.collection('game_configs').doc(configId).get();
-    const bgs = doc.exists ? (doc.data().backgrounds || []) : [];
-    if(doc.exists && doc.data().name && configId !== 'booth') {
-      decoState.curConfig = doc.data();
-      document.getElementById('deco-config-name').value = doc.data().name;
+    const data = doc.exists ? doc.data() : {};
+    const bgs = data.backgrounds || [];
+    if(doc.exists && data.name && configId !== 'booth') {
+      decoState.curConfig = data;
+      document.getElementById('deco-config-name').value = data.name;
     }
+    const fkEl = document.getElementById('deco-field-key');
+    if(fkEl) fkEl.value = data.fieldKey || '';
     renderBoothBgList(bgs);
   } catch(e) {
     el.innerHTML = '<div class="empty-msg">불러오기 실패: ' + e.message + '</div>';
@@ -7151,27 +7161,27 @@ async function loadBoothBgs(configId = 'booth') {
 function renderBoothBgList(bgs) {
   const el = document.getElementById('booth-bg-list');
   if(!bgs.length) {
-    el.innerHTML = '<div class="empty-msg">등록된 배경이 없어요. 위에서 부스 종류를 추가하고 이미지를 업로드하세요.</div>';
+    el.innerHTML = '<div class="empty-msg">등록된 배경이 없어요. 위에서 필드 값을 추가하고 이미지를 업로드하세요.</div>';
     return;
   }
-  el.innerHTML = bgs.map((b, i) => `
-    <div class="booth-bg-item" data-idx="${i}">
-      <div class="booth-bg-thumb">
-        ${b.url ? `<img src="${b.url}" onerror="this.style.display='none'">` : '없음'}
+  el.innerHTML = bgs.map((b, i) => {
+    const urls = b.urls || (b.url ? [b.url] : []);
+    const thumbs = urls.map((url, j) => `
+      <div class="booth-img-cell">
+        <img src="${url}" onerror="this.style.display='none'">
+        <button class="booth-img-del" onclick="deleteBoothBgImage(${i},${j})" title="이미지 삭제">✕</button>
+      </div>`).join('');
+    return `<div class="booth-bg-item" data-idx="${i}">
+      <div class="booth-bg-type">
+        <span>${b.type}</span>
+        <button class="del-btn" style="margin:0;font-size:11px;padding:4px 8px;" onclick="deleteBoothBg(${i})">항목 삭제</button>
       </div>
-      <div class="booth-bg-info">
-        <div class="booth-bg-type">${b.type}</div>
-        <div class="booth-bg-url">${b.label || ''}</div>
-        <div class="booth-bg-url" style="margin-top:2px;">${b.url ? '이미지 등록됨' : '이미지 없음'}</div>
+      <div class="booth-img-row">
+        ${thumbs}
+        <label class="booth-img-add" title="이미지 추가">＋<input type="file" accept="image/*" style="display:none;" onchange="uploadBoothBg(event,${i})"></label>
       </div>
-      <div class="booth-bg-actions">
-        <label class="save-btn" style="margin:0;cursor:pointer;font-size:11px;padding:6px 10px;">
-          이미지 변경
-          <input type="file" accept="image/*" style="display:none;" onchange="uploadBoothBg(event,${i})">
-        </label>
-        <button class="del-btn" style="margin:0;" onclick="deleteBoothBg(${i})">삭제</button>
-      </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 async function addBoothType() {
@@ -7185,7 +7195,7 @@ async function addBoothType() {
     if(bgs.find(b => b.type === type)) {
       alert('이미 존재하는 부스 종류예요: ' + type); return;
     }
-    bgs.push({ type, label: type, url: '' });
+    bgs.push({ type, label: type, urls: [] });
     await db.collection('game_configs').doc(configId).set({ backgrounds: bgs }, { merge: true });
     input.value = '';
     renderBoothBgList(bgs);
@@ -7198,16 +7208,19 @@ async function uploadBoothBg(e, idx) {
   const configId = decoState.curConfigId || 'booth';
   const file = e.target.files[0];
   if(!file) return;
-  e.target.closest('.booth-bg-item').querySelector('.booth-bg-url').textContent = '업로드 중…';
+  const addBtn = e.target.closest('label');
+  if(addBtn) addBtn.textContent = '…';
   const compressed = await compressImage(file, { maxWidth: 1600, quality: 0.85 });
   try {
     const ref = storage.ref('game_configs/booth_bgs/' + Date.now() + '.webp');
     await ref.put(compressed, { contentType: 'image/webp' });
     const url = await ref.getDownloadURL();
-
     const doc = await db.collection('game_configs').doc(configId).get();
     const bgs = doc.data().backgrounds || [];
-    bgs[idx].url = url;
+    const urls = bgs[idx].urls || (bgs[idx].url ? [bgs[idx].url] : []);
+    urls.push(url);
+    bgs[idx].urls = urls;
+    delete bgs[idx].url;
     await db.collection('game_configs').doc(configId).set({ backgrounds: bgs }, { merge: true });
     renderBoothBgList(bgs);
   } catch(err) {
@@ -7272,7 +7285,7 @@ function renderBoothConnections(connections) {
 
 async function deleteBoothBg(idx) {
   const configId = decoState.curConfigId || 'booth';
-  if(!confirm('이 부스 종류를 삭제할까요?')) return;
+  if(!confirm('이 필드 값 항목을 삭제할까요? 등록된 이미지도 함께 삭제됩니다.')) return;
   try {
     const doc = await db.collection('game_configs').doc(configId).get();
     const bgs = doc.data().backgrounds || [];
@@ -7283,6 +7296,34 @@ async function deleteBoothBg(idx) {
     alert('삭제 실패: ' + e.message);
   }
 }
+
+async function deleteBoothBgImage(typeIdx, imgIdx) {
+  if(!confirm('이 이미지를 삭제할까요?')) return;
+  const configId = decoState.curConfigId || 'booth';
+  try {
+    const doc = await db.collection('game_configs').doc(configId).get();
+    const bgs = doc.data().backgrounds || [];
+    const urls = bgs[typeIdx].urls || (bgs[typeIdx].url ? [bgs[typeIdx].url] : []);
+    urls.splice(imgIdx, 1);
+    bgs[typeIdx].urls = urls;
+    delete bgs[typeIdx].url;
+    await db.collection('game_configs').doc(configId).set({ backgrounds: bgs }, { merge: true });
+    renderBoothBgList(bgs);
+  } catch(e) {
+    alert('삭제 실패: ' + e.message);
+  }
+}
+
+async function saveDecoFieldKey(val) {
+  const configId = decoState.curConfigId || 'booth';
+  clearTimeout(saveDecoFieldKey._t);
+  saveDecoFieldKey._t = setTimeout(async () => {
+    try {
+      await db.collection('game_configs').doc(configId).set({ fieldKey: val.trim() }, { merge: true });
+    } catch(e) { /* silent */ }
+  }, 600);
+}
+
 /* ════════════════════════════════════════════
    문구 생성기 관리 (Copy Generator Manager)
 ════════════════════════════════════════════ */
