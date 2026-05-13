@@ -25,8 +25,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 #toolbar .lmp-btn{margin-right:6px;}
 .tool-sep{flex-shrink:0;width:1px;height:20px;background:#000;margin:0 4px;}
 
-/* ── 캔버스 영역 ── */
-#canvas-wrap{position:relative;width:100%;max-width:480px;flex:1;min-height:0;overflow:hidden;background:transparent;touch-action:none;}
+/* ── 메타 바 (사용자 필드값 + 배경 이미지 제목) ── */
+#meta-bar{display:none;width:100%;max-width:480px;padding:6px 12px;font-size:11px;font-weight:700;color:rgba(0,0,0,.7);background:rgba(0,0,0,.04);border-bottom:1.5px solid rgba(0,0,0,.06);align-items:center;gap:10px;overflow-x:auto;white-space:nowrap;flex-shrink:0;}
+#meta-bar.on{display:flex;}
+#meta-bar::-webkit-scrollbar{display:none;}
+.meta-chip{flex-shrink:0;display:inline-flex;align-items:center;gap:4px;letter-spacing:-.2px;}
+
+/* ── 캔버스 영역 (실제 비율 유지용 컨테이너) ── */
+#canvas-area{position:relative;flex:1;min-height:0;width:100%;max-width:480px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+#canvas-wrap{position:relative;width:auto;height:auto;max-width:100%;max-height:100%;aspect-ratio:1/1;overflow:hidden;background:rgba(0,0,0,.04);touch-action:none;}
 #bg-canvas,#draw-canvas,#items-layer{position:absolute;top:0;left:0;width:100%;height:100%;}
 #bg-canvas{z-index:1;}
 #items-layer{z-index:2;pointer-events:none;}
@@ -89,11 +96,12 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .bg-modal-header span{font-size:14px;font-weight:700;color:#000;}
 .bg-modal-header button{background:none;border:none;font-size:20px;cursor:pointer;color:#000;line-height:1;padding:2px;}
 #bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-.bg-thumb{aspect-ratio:4/5;overflow:hidden;cursor:pointer;border:2px solid transparent;position:relative;background:#f0f0f0;}
+.bg-thumb{position:relative;overflow:hidden;cursor:pointer;border:2px solid transparent;background:#f0f0f0;}
+.bg-thumb::before{content:'';display:block;padding-bottom:125%;}
 .bg-thumb:hover,.bg-thumb.active{border-color:#000;}
-.bg-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.bg-thumb img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block;}
 .bg-thumb.broken{opacity:.35;}
-.bg-thumb .bg-label{position:absolute;bottom:0;left:0;right:0;font-size:10px;font-weight:700;color:#fff;text-align:center;padding:3px 4px;background:rgba(0,0,0,.55);}
+.bg-thumb .bg-label{position:absolute;bottom:0;left:0;right:0;font-size:10px;font-weight:700;color:#fff;text-align:center;padding:3px 4px;background:rgba(0,0,0,.55);z-index:1;}
 
 /* 배경 모달 탭 */
 .bg-tabs{display:flex;border-bottom:2px solid #000;margin:10px 16px 0;flex-shrink:0;}
@@ -129,9 +137,10 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 #auto-bg-inner{background:#fff;border-top:2px solid #000;padding:0;width:100%;max-width:480px;height:88vh;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;}
 .auto-bg-header{display:flex;align-items:center;justify-content:center;padding:14px 16px 10px;flex-shrink:0;border-bottom:1.5px solid rgba(0,0,0,.06);}
 .auto-bg-header span{font-size:14px;font-weight:700;color:#000;}
-#auto-bg-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 16px;overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;}
+#auto-bg-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 16px 24px;overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;}
 @media(min-width:420px){#auto-bg-grid{grid-template-columns:repeat(3,1fr);}}
-.auto-bg-thumb{aspect-ratio:4/5;overflow:hidden;cursor:pointer;border:2px solid rgba(0,0,0,.12);position:relative;background:#f0f0f0;transition:border-color .15s;}
+.auto-bg-thumb{position:relative;overflow:hidden;cursor:pointer;border:2px solid rgba(0,0,0,.12);background:#f0f0f0;transition:border-color .15s;}
+.auto-bg-thumb::before{content:'';display:block;padding-bottom:125%;}
 .auto-bg-thumb:hover{border-color:rgba(0,0,0,.45);}
 .auto-bg-thumb.active{border-color:#000;border-width:3px;}
 .auto-bg-thumb.active::after{content:'✓';position:absolute;top:6px;right:6px;width:24px;height:24px;background:#000;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;line-height:1;}
@@ -153,8 +162,18 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .shape-color-btn{width:26px;height:26px;border:2px solid rgba(0,0,0,.25);cursor:pointer;padding:0;flex-shrink:0;}
 .shape-none-btn{padding:4px 10px;border:2px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#000;}
 .shape-none-btn.active{background:#000;color:#fff;border-color:#000;}
-#bg-desc-bar{display:none;width:100%;max-width:480px;padding:10px 16px;font-size:13px;line-height:1.6;background:rgba(0,0,0,.05);border-top:1.5px solid rgba(0,0,0,.12);color:#000;white-space:pre-wrap;word-break:break-word;flex-shrink:0;}
-.auto-bg-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+/* ── 설명 오버레이 (배경 선택 후 펼쳐진 채로 시작, 접기 가능) ── */
+#desc-overlay{display:none;position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:70;align-items:center;justify-content:center;padding:20px;}
+#desc-overlay.on{display:flex;}
+#desc-card{background:#fff;border:2px solid #000;padding:18px 18px 14px;width:100%;max-width:340px;max-height:90%;display:flex;flex-direction:column;gap:14px;box-shadow:0 8px 24px rgba(0,0,0,.18);}
+#desc-card-header{font-size:12px;font-weight:700;color:rgba(0,0,0,.55);letter-spacing:.4px;text-transform:uppercase;}
+#desc-card-content{font-size:13px;line-height:1.65;color:#000;white-space:pre-wrap;word-break:break-word;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
+#desc-card-collapse{align-self:stretch;padding:10px 12px;background:#000;color:#fff;border:2px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.2px;flex-shrink:0;}
+#desc-card-collapse:hover{background:transparent;color:#000;}
+#desc-icon{display:none;position:absolute;top:10px;right:10px;width:40px;height:40px;border:2px solid #000;background:#fff;color:#000;border-radius:50%;font-size:18px;cursor:pointer;z-index:60;align-items:center;justify-content:center;font-family:inherit;line-height:1;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+#desc-icon.on{display:flex;}
+#desc-icon:hover{background:#000;color:#fff;}
+.auto-bg-thumb img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;display:block;}
 .auto-bg-thumb .bg-label{z-index:1;}
 </style>
 </head>
@@ -227,19 +246,31 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   <input type="file" id="img-file-input" accept="image/*" style="display:none;" onchange="onImageFileSelected(event)">
 </div>
 
-<!-- 캔버스 영역 -->
-<div id="canvas-wrap">
-  <div id="no-bg-msg">
-    <span style="font-size:32px;">🏕</span>
-    <span>배경을 선택해 주세요</span>
-  </div>
-  <canvas id="bg-canvas"></canvas>
-  <div id="items-layer"></div>
-  <canvas id="draw-canvas"></canvas>
-</div>
+<!-- 메타 바: 사용자 필드값 + 배경 이미지 제목 -->
+<div id="meta-bar"></div>
 
-<!-- 배경 설명 바 (배경 선택 후 표시) -->
-<div id="bg-desc-bar"></div>
+<!-- 캔버스 영역 (실제 비율 유지 컨테이너) -->
+<div id="canvas-area">
+  <div id="canvas-wrap">
+    <div id="no-bg-msg">
+      <span style="font-size:32px;">🏕</span>
+      <span>배경을 선택해 주세요</span>
+    </div>
+    <canvas id="bg-canvas"></canvas>
+    <div id="items-layer"></div>
+    <canvas id="draw-canvas"></canvas>
+  </div>
+  <!-- 설명 오버레이 패널 -->
+  <div id="desc-overlay">
+    <div id="desc-card">
+      <div id="desc-card-header">📋 안내</div>
+      <div id="desc-card-content"></div>
+      <button id="desc-card-collapse" onclick="collapseDesc()">접기</button>
+    </div>
+  </div>
+  <!-- 접힌 상태: 다시 펴기 버튼 -->
+  <button id="desc-icon" onclick="expandDesc()" title="안내 다시 보기" aria-label="안내 다시 보기">💬</button>
+</div>
 
 <!-- 하단 패널 -->
 <div id="bottom-panel">
@@ -405,6 +436,8 @@ let bgImage = null;
 let backgrounds = []; // [{type, label, urls:[]}]
 let fieldKey = 'name'; // config에서 로드 (빈칸이면 'name' 기본)
 let currentRefPx = 0; // 출력 이미지(1080px 기준) 픽셀 수 = 10cm; 0이면 표시 안 함
+let currentBgLabel = ''; // 선택된 배경 이미지 라벨 (메타 바 표시용)
+let _hasDesc = false; // 현재 설명 보유 여부 (오버레이 토글 상태 관리)
 let commonPresetImages = []; // 필드값 무관 공통 꾸미기 소스
 let lastContextData = null; // lmp-context 원본 저장 (loadBackgrounds 이후 재처리용)
 let items = [];       // 데코 아이템 목록
@@ -497,11 +530,14 @@ async function loadBackgrounds() {
         if(bt) {
           userBoothType = bt;
           hideBgBtn();
+          updateMetaBar();
           autoSelectBg();
         } else {
           showBgBtn();
+          updateMetaBar();
         }
       } else if(userBoothType) {
+        updateMetaBar();
         autoSelectBg();
       }
     }
@@ -550,8 +586,16 @@ function onBgUpload(e) {
         if(!ok) { e.target.value = ''; return; }
       }
       bgImage = img; bgImage._src = ev.target.result;
+      currentBgLabel = '내가 업로드한 배경';
       document.getElementById('no-bg-msg').style.display = 'none';
-      drawBg(); closeBgModal();
+      canvasWrap.style.aspectRatio = `${img.naturalWidth}/${img.naturalHeight}`;
+      requestAnimationFrame(() => {
+        resizeCanvases();
+        drawBg();
+        updateMetaBar();
+      });
+      closeBgModal();
+      showBgDesc(''); // 업로드 배경은 설명 없음
     };
     img.src = ev.target.result;
   };
@@ -609,36 +653,92 @@ function confirmAutoBg() {
   const url = autoBgState.urls[idx];
   const desc = autoBgState.desc || '';
   const refPx = autoBgState.refPx;
+  const name = (autoBgState.names && autoBgState.names[idx]) ? autoBgState.names[idx] : '';
   document.getElementById('auto-bg-select').classList.remove('on');
   requestAnimationFrame(() => {
-    selectBgByUrl(url, '', false, refPx);
+    selectBgByUrl(url, name, false, refPx);
     showBgDesc(desc);
   });
 }
 
 function showBgDesc(desc) {
-  const bar = document.getElementById('bg-desc-bar');
+  const overlay = document.getElementById('desc-overlay');
+  const icon = document.getElementById('desc-icon');
+  const content = document.getElementById('desc-card-content');
+  if(!overlay || !icon || !content) return;
+  if(!desc) {
+    _hasDesc = false;
+    overlay.classList.remove('on');
+    icon.classList.remove('on');
+    content.textContent = '';
+    return;
+  }
+  _hasDesc = true;
+  content.textContent = desc;
+  overlay.classList.add('on');   // 진입 시 펼쳐진 채로
+  icon.classList.remove('on');   // 오버레이 떠있는 동안 아이콘 숨김
+}
+
+function collapseDesc() {
+  document.getElementById('desc-overlay').classList.remove('on');
+  if(_hasDesc) document.getElementById('desc-icon').classList.add('on');
+}
+
+function expandDesc() {
+  if(!_hasDesc) return;
+  document.getElementById('desc-overlay').classList.add('on');
+  document.getElementById('desc-icon').classList.remove('on');
+}
+
+function updateMetaBar() {
+  const bar = document.getElementById('meta-bar');
   if(!bar) return;
-  if(!desc) { bar.style.display = 'none'; return; }
-  bar.textContent = desc;
-  bar.style.display = 'block';
+  const userVal = (userBoothType||'').trim();
+  const bgVal = (currentBgLabel||'').trim();
+  bar.innerHTML = '';
+  if(!userVal && !bgVal) { bar.classList.remove('on'); return; }
+  if(userVal) {
+    const c = document.createElement('span');
+    c.className = 'meta-chip';
+    c.textContent = '👤 ' + userVal;
+    bar.appendChild(c);
+  }
+  if(bgVal) {
+    const c = document.createElement('span');
+    c.className = 'meta-chip';
+    c.textContent = '🖼 ' + bgVal;
+    bar.appendChild(c);
+  }
+  bar.classList.add('on');
 }
 
 function selectBg(i, silent=false) {
   const b = backgrounds[i];
   const urls = b.urls || (b.url ? [b.url] : []);
-  if(urls.length === 1) selectBgByUrl(urls[0], b.label||'', silent, b.refPx||0);
+  if(urls.length === 1) {
+    selectBgByUrl(urls[0], b.label||'', silent, b.refPx||0);
+    showBgDesc(b.description||'');
+  }
   else if(urls.length > 1) showAutoBgSelect(urls, b.description||'', b.urlNames||[], b.refPx||0);
 }
 
 function selectBgByUrl(url, label='', silent=false, refPx=0) {
   currentRefPx = refPx;
+  currentBgLabel = label||'';
+  showBgDesc(''); // 이전 설명 초기화 (caller가 별도로 다시 set)
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = () => {
     bgImage = img; bgImage._src = url;
     document.getElementById('no-bg-msg').style.display = 'none';
-    drawBg();
+    // 캔버스 컨테이너 비율을 이미지 자연 비율로 변경 → contain 방식으로 화면에 맞춤
+    canvasWrap.style.aspectRatio = `${img.naturalWidth}/${img.naturalHeight}`;
+    // 레이아웃 적용 후 캔버스 픽셀 차원 재계산
+    requestAnimationFrame(() => {
+      resizeCanvases();
+      drawBg();
+      updateMetaBar();
+    });
     if(!silent) closeBgModal();
   };
   img.onerror = () => { img.crossOrigin = undefined; img.src = url; };
@@ -648,10 +748,8 @@ function selectBgByUrl(url, label='', silent=false, refPx=0) {
 function drawBg() {
   if(!bgImage) return;
   bgCtx.clearRect(0,0,canvasW,canvasH);
-  const iw = bgImage.naturalWidth, ih = bgImage.naturalHeight;
-  const scale = Math.max(canvasW/iw, canvasH/ih);
-  const dw = iw*scale, dh = ih*scale;
-  bgCtx.drawImage(bgImage, (canvasW-dw)/2, (canvasH-dh)/2, dw, dh);
+  // 캔버스가 이미지 비율과 동일하므로 그대로 채움 (자연 비율 유지)
+  bgCtx.drawImage(bgImage, 0, 0, canvasW, canvasH);
 }
 
 function openBgModal() { document.getElementById('bg-modal').classList.add('on'); }
@@ -1257,17 +1355,17 @@ function renderKeyColorSwatches() {
 async function openExport() {
   window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
   const expCanvas = document.getElementById('export-canvas');
-  expCanvas.width = EXPORT_W;
-  expCanvas.height = EXPORT_H;
+  // 화면 캔버스 비율(=배경 이미지 자연 비율)에 맞춰 출력 캔버스 차원 산출
+  const expW = EXPORT_W;
+  const expH = canvasW > 0 ? Math.round(expW * canvasH / canvasW) : EXPORT_H;
+  expCanvas.width = expW;
+  expCanvas.height = expH;
   const ctx = expCanvas.getContext('2d');
-  const scale = EXPORT_W / canvasW; // 화면→출력 배율 (4:5 고정이므로 scaleX=scaleY)
+  const scale = expW / canvasW; // 화면→출력 배율 (가로/세로 동일)
 
-  // 1. 배경
+  // 1. 배경 (캔버스 비율이 이미지와 동일 → 정확히 채움)
   if(bgImage) {
-    const iw = bgImage.naturalWidth, ih = bgImage.naturalHeight;
-    const s = Math.max(EXPORT_W/iw, EXPORT_H/ih);
-    const dw = iw*s, dh = ih*s;
-    ctx.drawImage(bgImage, (EXPORT_W-dw)/2, (EXPORT_H-dh)/2, dw, dh);
+    ctx.drawImage(bgImage, 0, 0, expW, expH);
   }
 
   // 2. 아이템들 (순서대로)
@@ -1386,10 +1484,12 @@ window.addEventListener('message', e => {
   if(bt) {
     userBoothType = bt;
     hideBgBtn();
+    updateMetaBar();
     // backgrounds가 이미 로드된 경우에만 즉시 적용 (미로드면 loadBackgrounds 완료 후 처리)
     if(backgrounds.length) autoSelectBg();
   } else {
     showBgBtn();
+    updateMetaBar();
   }
 });
 
