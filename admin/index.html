@@ -1080,10 +1080,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 사용자 인증 필드 중 어떤 필드값으로 배경을 자동 선택할지 키를 입력하세요. 예: <code>boothType</code>, <code>category</code></div>
           </div>
 
-          <div class="sect-head" style="margin-bottom:4px;">공통 기본 이미지</div>
-          <div class="ed-lbl" style="margin-bottom:12px;color:rgba(0,0,0,.5);">필드 값과 관계없이 이 도구에 접속한 모든 사용자가 "이미지 추가" 시 선택할 수 있는 이미지입니다.</div>
-          <div id="common-preset-list" style="margin-bottom:20px;"></div>
-
           <div class="sect-head" style="margin-bottom:4px;">필드 값별 배경 이미지</div>
           <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">각 필드 값에 해당하는 배경 이미지를 설정하세요. 값이 일치하는 사용자에게 자동 적용됩니다. 이미지를 여러 장 등록하면 사용자가 직접 고릅니다. 권장 크기: 1080×1350px (4:5)</div>
 
@@ -7238,68 +7234,15 @@ async function loadBoothBgs(configId = 'booth') {
       name: data.name || (configId === 'booth' ? '부스 꾸미기' : ''),
       fieldKey: data.fieldKey || '',
       backgrounds: JSON.parse(JSON.stringify(data.backgrounds || [])),
-      commonPresetImages: JSON.parse(JSON.stringify(data.commonPresetImages || [])),
       _type: data._type,
     };
     document.getElementById('deco-config-name').value = decoState.curConfig.name;
     const fkEl = document.getElementById('deco-field-key');
     if(fkEl) fkEl.value = decoState.curConfig.fieldKey;
-    renderCommonPresetList(decoState.curConfig.commonPresetImages);
     renderBoothBgList(decoState.curConfig.backgrounds);
   } catch(e) {
     el.innerHTML = '<div class="empty-msg">불러오기 실패: ' + e.message + '</div>';
   }
-}
-
-function renderCommonPresetList(presets) {
-  const el = document.getElementById('common-preset-list');
-  if(!el) return;
-  const itemsHtml = (presets || []).map((p, i) => `
-    <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06);">
-      <img src="${p.url}" onerror="this.style.opacity='.3'" style="width:52px;height:65px;object-fit:cover;border:1.5px solid rgba(0,0,0,.15);flex-shrink:0;background:#f0f0f0;">
-      <div style="flex:1;display:flex;flex-direction:column;gap:5px;min-width:0;">
-        <input class="fi" placeholder="이름 (선택사항)" value="${(p.name||'').replace(/"/g,'&quot;')}" style="font-size:11px;padding:4px 6px;" oninput="decoState.curConfig.commonPresetImages[${i}].name=this.value">
-        <label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;">
-          <input type="checkbox" ${p.lockSize?'checked':''} onchange="decoState.curConfig.commonPresetImages[${i}].lockSize=this.checked;renderCommonPresetList(decoState.curConfig.commonPresetImages)">
-          크기 고정
-        </label>
-        ${p.lockSize ? `<div style="display:flex;align-items:center;gap:4px;"><input type="number" class="fi" value="${p.fixedSize||120}" min="20" max="600" style="width:60px;font-size:11px;padding:3px 6px;" oninput="decoState.curConfig.commonPresetImages[${i}].fixedSize=+this.value"><span style="font-size:10px;color:rgba(0,0,0,.45);">px 고정</span></div>` : ''}
-      </div>
-      <button class="del-btn" style="margin:0;font-size:10px;padding:3px 7px;flex-shrink:0;" onclick="deleteCommonPresetImg(${i})">삭제</button>
-    </div>`).join('');
-  el.innerHTML = `
-    <div style="background:rgba(0,0,0,.03);border:1.5px solid rgba(0,0,0,.1);padding:8px 10px;">
-      ${itemsHtml || '<div style="font-size:11px;color:rgba(0,0,0,.35);padding:4px 0;">등록된 공통 이미지 없음</div>'}
-      <label style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:5px 10px;border:1.5px dashed rgba(0,0,0,.25);font-size:11px;font-weight:700;cursor:pointer;color:rgba(0,0,0,.55);">
-        ＋ 공통 이미지 추가
-        <input type="file" accept="image/*" style="display:none;" onchange="uploadCommonPresetImg(event)">
-      </label>
-    </div>`;
-}
-
-async function uploadCommonPresetImg(e) {
-  const file = e.target.files[0];
-  if(!file) return;
-  const label = e.target.closest('label');
-  if(label) label.textContent = '업로드 중…';
-  try {
-    const compressed = await compressImage(file, { maxWidth: 800, quality: 0.85 });
-    const ref = storage.ref('game_configs/booth_presets/common_' + Date.now() + '.webp');
-    await ref.put(compressed, { contentType: 'image/webp' });
-    const url = await ref.getDownloadURL();
-    if(!decoState.curConfig.commonPresetImages) decoState.curConfig.commonPresetImages = [];
-    decoState.curConfig.commonPresetImages.push({ url, name: '', lockSize: false, fixedSize: 120 });
-    renderCommonPresetList(decoState.curConfig.commonPresetImages);
-  } catch(err) {
-    renderCommonPresetList(decoState.curConfig.commonPresetImages || []);
-    alert('업로드 실패: ' + err.message);
-  }
-}
-
-function deleteCommonPresetImg(idx) {
-  if(!confirm('이 공통 이미지를 삭제할까요?')) return;
-  if(decoState.curConfig.commonPresetImages) decoState.curConfig.commonPresetImages.splice(idx, 1);
-  renderCommonPresetList(decoState.curConfig.commonPresetImages);
 }
 
 function renderBoothBgList(bgs) {
@@ -7511,7 +7454,6 @@ async function saveDecoConfig() {
   try {
     const payload = {
       backgrounds: cfg.backgrounds || [],
-      commonPresetImages: cfg.commonPresetImages || [],
       fieldKey: (document.getElementById('deco-field-key')?.value || '').trim(),
     };
     if(configId !== 'booth') {
