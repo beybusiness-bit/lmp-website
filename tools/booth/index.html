@@ -470,7 +470,7 @@ async function init() {
   document.getElementById('draw-color-input').addEventListener('input', e => {
     setDrawColor(e.target.value);
   });
-  window.addEventListener('resize', resizeCanvases);
+  new ResizeObserver(() => resizeCanvases()).observe(canvasWrap);
   // UI 준비 완료 → 로딩 스크린 즉시 제거 (Firestore 응답 안 기다림)
   document.getElementById('loading').style.display = 'none';
   // 부모 플레이어에 ready 신호 전송 (컨텍스트 수신 시작)
@@ -498,8 +498,10 @@ function hideBgBtn() {
 
 function resizeCanvases() {
   const wrap = canvasWrap.getBoundingClientRect();
-  canvasW = Math.round(wrap.width);
-  canvasH = Math.round(wrap.height);
+  const w = Math.round(wrap.width);
+  const h = Math.round(wrap.height);
+  if(w === 0 || h === 0) return; // 레이아웃 미확정 — ResizeObserver가 크기 확정 후 재호출
+  canvasW = w; canvasH = h;
   [bgCanvas, drawCanvas].forEach(c => { c.width = canvasW; c.height = canvasH; });
   if(bgImage) drawBg();
 }
@@ -729,26 +731,33 @@ function selectBgByUrl(url, label='', silent=false, refPx=0) {
   currentRefPx = refPx;
   currentBgLabel = label||'';
   showBgDesc('');
-  function doLoad(withCors) {
-    const img = new Image();
-    if(withCors) img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      // Safari는 CORS 실패 시 onerror 대신 naturalWidth=0으로 onload를 호출하는 경우가 있음
-      if(img.naturalWidth === 0 && withCors) { doLoad(false); return; }
-      bgImage = img; bgImage._src = url;
-      document.getElementById('no-bg-msg').style.display = 'none';
-      canvasWrap.style.aspectRatio = `${img.naturalWidth}/${img.naturalHeight}`;
-      requestAnimationFrame(() => {
-        resizeCanvases();
-        drawBg();
-        updateMetaBar();
-      });
-      if(!silent) closeBgModal();
-    };
-    img.onerror = () => { if(withCors) doLoad(false); };
-    img.src = url;
+
+  function applyBgImage(img) {
+    bgImage = img; bgImage._src = url;
+    document.getElementById('no-bg-msg').style.display = 'none';
+    canvasWrap.style.aspectRatio = `${img.naturalWidth}/${img.naturalHeight}`;
+    requestAnimationFrame(() => { resizeCanvases(); drawBg(); updateMetaBar(); });
+    if(!silent) closeBgModal();
   }
-  doLoad(true);
+
+  // 1차: CORS 없이 즉시 로드 — 항상 표시 가능 (CORS 여부 무관)
+  const img1 = new Image();
+  img1.onload = () => {
+    if(img1.naturalWidth === 0) { if(!silent) alert('배경 이미지를 불러올 수 없어요.\n관리자에게 URL 재등록을 요청해 주세요.'); showBgBtn(); return; }
+    applyBgImage(img1);
+    // 2차: 백그라운드에서 CORS 버전 로드 시도 — 성공하면 export용으로 교체
+    const img2 = new Image();
+    img2.crossOrigin = 'anonymous';
+    img2.onload = () => {
+      if(img2.naturalWidth > 0 && bgImage && bgImage._src === url) {
+        bgImage = img2; bgImage._src = url;
+      }
+    };
+    const sep = url.includes('?') ? '&' : '?';
+    img2.src = url + sep + '_cb=' + Date.now();
+  };
+  img1.onerror = () => { if(!silent) alert('배경 이미지를 불러올 수 없어요.\n관리자에게 URL 재등록을 요청해 주세요.'); showBgBtn(); };
+  img1.src = url;
 }
 
 function drawBg() {
