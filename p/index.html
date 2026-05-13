@@ -1257,8 +1257,8 @@ function blockHtml(b){
     const h=b.height;
     const isFull=h==='full';
     const isPx=!isFull&&h&&h>0;
-    const heightCss=isFull?'height:100svh':(isPx?`height:${h}px`:'min-height:60vh');
-    const wrapH=isFull?'height:100svh;':(isPx?'':`min-height:60vh;`);
+    const heightCss=isFull?'height:calc(100svh - 60px)':(isPx?`height:${h}px`:'min-height:60vh');
+    const wrapH=isFull?'height:calc(100svh - 60px);':(isPx?'':`min-height:60vh;`);
     const trigger=b.completeTrigger||'tool-signal';
     const onloadAttr=trigger==='open'?` onload="if(this.src&&this.src!=='about:blank')autoCheckBlock('${b.id}')"`:'';
     // 필요 시 로그인 모드 + 비로그인 → 잠금 오버레이 (iframe은 렌더링하지 않음)
