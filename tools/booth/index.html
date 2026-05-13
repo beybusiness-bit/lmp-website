@@ -382,7 +382,7 @@ const EXPORT_H = 1350;
 let canvasW = 0, canvasH = 0;
 let bgImage = null;
 let backgrounds = []; // [{type, label, urls:[]}]
-let fieldKey = 'boothType'; // config에서 로드
+let fieldKey = 'name'; // config에서 로드 (빈칸이면 'name' 기본)
 let currentRefPx = 0; // 출력 이미지(1080px 기준) 픽셀 수 = 10cm; 0이면 표시 안 함
 let commonPresetImages = []; // 필드값 무관 공통 꾸미기 소스
 let items = [];       // 데코 아이템 목록
@@ -460,7 +460,7 @@ async function loadBackgrounds() {
       const data = doc.data();
       backgrounds = data.backgrounds || [];
       commonPresetImages = data.commonPresetImages || [];
-      fieldKey = data.fieldKey || 'boothType';
+      fieldKey = data.fieldKey || 'name';
       if(data.name) {
         document.getElementById('page-title').textContent = data.name;
         toolTitle = data.name;
