@@ -4754,8 +4754,10 @@ function openToolManageLink(e){
     :tt==='copy-gen'?curBlkToolConfig?.copyGenId
     :tt==='youtube-playlist'?curBlkToolConfig?.youtubePlaylistId
     :tt==='payment'?curBlkToolConfig?.paymentId:'';
-  /* 블록 모달 닫고 도구 탭으로 전환 — popstate가 의도치 않게 도구 탭을 여는 것을 막기 위해 명시적으로 switchTab 호출 */
+  /* 블록 모달 + 스테이지 오버레이(z-index:200) 닫기 — 오버레이가 열린 채로 switchTab 하면 도구 패널이 가려짐 */
   document.getElementById('block-modal').classList.remove('on');
+  const sco = document.getElementById('stage-content-overlay');
+  if(sco && sco.style.display !== 'none'){ sco.style.display='none'; stageDirty=false; }
   switchTab('tools');
   openTool(toolId);
   if(instId){
