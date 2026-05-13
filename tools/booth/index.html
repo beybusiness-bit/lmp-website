@@ -168,7 +168,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 #desc-card-content{font-size:13px;line-height:1.65;color:#000;white-space:pre-wrap;word-break:break-word;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
 #desc-card-collapse{align-self:stretch;padding:10px 12px;background:#000;color:#fff;border:2px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.2px;flex-shrink:0;}
 #desc-card-collapse:hover{background:transparent;color:#000;}
-#desc-icon{display:none;position:absolute;top:10px;right:10px;width:40px;height:40px;border:2px solid #000;background:#fff;color:#000;border-radius:50%;font-size:18px;cursor:pointer;z-index:60;align-items:center;justify-content:center;font-family:inherit;line-height:1;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+#desc-icon{display:none;position:absolute;top:10px;right:10px;width:30px;height:30px;border:2px solid #000;background:#fff;color:#000;border-radius:50%;font-size:14px;cursor:pointer;z-index:60;align-items:center;justify-content:center;font-family:inherit;line-height:1;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.15);}
 #desc-icon.on{display:flex;}
 #desc-icon:hover{background:#000;color:#fff;}
 .auto-bg-thumb img{width:100%;height:auto;display:block;}
@@ -261,7 +261,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   <!-- 설명 오버레이 패널 -->
   <div id="desc-overlay">
     <div id="desc-card">
-      <div id="desc-card-header">📋 안내</div>
+      <div id="desc-card-header">💬 안내</div>
       <div id="desc-card-content"></div>
       <button id="desc-card-collapse" onclick="collapseDesc()">접기</button>
     </div>
@@ -693,20 +693,11 @@ function updateMetaBar() {
   if(!bar) return;
   const userVal = (userBoothType||'').trim();
   const bgVal = (currentBgLabel||'').trim();
-  bar.innerHTML = '';
-  if(!userVal && !bgVal) { bar.classList.remove('on'); return; }
-  if(userVal) {
-    const c = document.createElement('span');
-    c.className = 'meta-chip';
-    c.textContent = '👤 ' + userVal;
-    bar.appendChild(c);
-  }
-  if(bgVal) {
-    const c = document.createElement('span');
-    c.className = 'meta-chip';
-    c.textContent = '🖼 ' + bgVal;
-    bar.appendChild(c);
-  }
+  if(!userVal && !bgVal) { bar.innerHTML=''; bar.classList.remove('on'); return; }
+  const parts = [];
+  if(userVal) parts.push(userVal);
+  if(bgVal) parts.push(bgVal);
+  bar.textContent = parts.join(' | ');
   bar.classList.add('on');
 }
 
@@ -723,24 +714,25 @@ function selectBg(i, silent=false) {
 function selectBgByUrl(url, label='', silent=false, refPx=0) {
   currentRefPx = refPx;
   currentBgLabel = label||'';
-  showBgDesc(''); // 이전 설명 초기화 (caller가 별도로 다시 set)
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
-    bgImage = img; bgImage._src = url;
-    document.getElementById('no-bg-msg').style.display = 'none';
-    // 캔버스 컨테이너 비율을 이미지 자연 비율로 변경 → contain 방식으로 화면에 맞춤
-    canvasWrap.style.aspectRatio = `${img.naturalWidth}/${img.naturalHeight}`;
-    // 레이아웃 적용 후 캔버스 픽셀 차원 재계산
-    requestAnimationFrame(() => {
-      resizeCanvases();
-      drawBg();
-      updateMetaBar();
-    });
-    if(!silent) closeBgModal();
-  };
-  img.onerror = () => { img.crossOrigin = undefined; img.src = url; };
-  img.src = url;
+  showBgDesc('');
+  function doLoad(withCors) {
+    const img = new Image();
+    if(withCors) img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      bgImage = img; bgImage._src = url;
+      document.getElementById('no-bg-msg').style.display = 'none';
+      canvasWrap.style.aspectRatio = `${img.naturalWidth}/${img.naturalHeight}`;
+      requestAnimationFrame(() => {
+        resizeCanvases();
+        drawBg();
+        updateMetaBar();
+      });
+      if(!silent) closeBgModal();
+    };
+    img.onerror = () => { if(withCors) doLoad(false); };
+    img.src = url;
+  }
+  doLoad(true);
 }
 
 function drawBg() {
