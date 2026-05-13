@@ -508,17 +508,19 @@ function autoSelectBg() {
     selectBgByUrl(urls[0], match.label || '', true);
     showBgDesc(match.description || '');
   } else {
-    showAutoBgSelect(urls, match.description || '');
+    showAutoBgSelect(urls, match.description || '', match.urlNames || []);
   }
 }
 
-function showAutoBgSelect(urls, desc) {
+function showAutoBgSelect(urls, desc, names) {
   const grid = document.getElementById('auto-bg-grid');
-  grid.innerHTML = urls.map((url) => {
+  grid.innerHTML = urls.map((url, i) => {
     const safeUrl = url.replace(/'/g, '%27');
     const safeDesc = (desc||'').replace(/'/g, '%27');
+    const name = (names && names[i]) ? names[i] : '';
     return `<div class="auto-bg-thumb" onclick="pickAutoBg('${safeUrl}','${safeDesc}')">
       <img src="${url}" loading="lazy" crossorigin="anonymous" onerror="this.parentElement.style.opacity='.3'">
+      ${name ? `<div class="bg-label">${name}</div>` : ''}
     </div>`;
   }).join('');
   document.getElementById('auto-bg-select').classList.add('on');
@@ -542,7 +544,7 @@ function selectBg(i, silent=false) {
   const b = backgrounds[i];
   const urls = b.urls || (b.url ? [b.url] : []);
   if(urls.length === 1) selectBgByUrl(urls[0], b.label||'', silent);
-  else if(urls.length > 1) showAutoBgSelect(urls, b.description||'');
+  else if(urls.length > 1) showAutoBgSelect(urls, b.description||'', b.urlNames||[]);
 }
 
 function selectBgByUrl(url, label='', silent=false) {

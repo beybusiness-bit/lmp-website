@@ -7170,10 +7170,12 @@ function renderBoothBgList(bgs) {
   }
   el.innerHTML = bgs.map((b, i) => {
     const urls = b.urls || (b.url ? [b.url] : []);
+    const names = b.urlNames || [];
     const thumbs = urls.map((url, j) => `
-      <div class="booth-img-cell">
-        <img src="${url}" onerror="this.style.display='none'">
+      <div class="booth-img-cell" style="width:72px;">
+        <img src="${url}" onerror="this.style.display='none'" style="width:72px;height:90px;object-fit:cover;border:1.5px solid rgba(0,0,0,.15);display:block;background:#f0f0f0;">
         <button class="booth-img-del" onclick="deleteBoothBgImage(${i},${j})" title="이미지 삭제">✕</button>
+        <input style="width:72px;margin-top:3px;border:1.5px solid rgba(0,0,0,.2);padding:3px 4px;font-size:10px;font-family:inherit;outline:none;background:#fff;" placeholder="이름" value="${(names[j]||'').replace(/"/g,'&quot;')}" oninput="decoState.curConfig.backgrounds[${i}].urlNames=decoState.curConfig.backgrounds[${i}].urlNames||[];decoState.curConfig.backgrounds[${i}].urlNames[${j}]=this.value">
       </div>`).join('');
     const desc = (b.description||'').replace(/`/g,'\\`').replace(/\$/g,'\\$');
     return `<div class="booth-bg-item" data-idx="${i}">
@@ -7222,6 +7224,9 @@ async function uploadBoothBg(e, idx) {
     urls.push(url);
     bgs[idx].urls = urls;
     delete bgs[idx].url;
+    if(!bgs[idx].urlNames) bgs[idx].urlNames = [];
+    while(bgs[idx].urlNames.length < urls.length - 1) bgs[idx].urlNames.push('');
+    bgs[idx].urlNames.push('');
     renderBoothBgList(bgs);
   } catch(err) {
     renderBoothBgList(decoState.curConfig.backgrounds);
@@ -7297,6 +7302,7 @@ function deleteBoothBgImage(typeIdx, imgIdx) {
   urls.splice(imgIdx, 1);
   bgs[typeIdx].urls = urls;
   delete bgs[typeIdx].url;
+  if(bgs[typeIdx].urlNames) bgs[typeIdx].urlNames.splice(imgIdx, 1);
   renderBoothBgList(bgs);
 }
 
