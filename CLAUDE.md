@@ -131,24 +131,37 @@ body {
 
 #### Step 1-R. Remote 세션 (☁️ 환경)
 
-- **🔑 PAT 확인 (Remote 세션에서는 필수):**
+- **🔑 PAT 확인:**
   ```bash
   git remote -v
   ```
-  출력된 origin URL에 `ghp_` 또는 `github_pat_`로 시작하는 토큰이 포함되어 있으면 OK.
-  없다면 → 아래 "🔑 PAT 설정 프로토콜" 섹션을 먼저 수행한다.
+  GitHub MCP 도구로 PR/머지 작업을 하므로 PAT은 git remote 기반 push에만 필요. 출력된 origin URL이 `local_proxy@127.0.0.1...` 형식이면 정상 (이 환경에서는 GitHub MCP가 우회 채널).
 
-- **⬇️ main 최신화 (PAT 확인 후 반드시 수행):**
+- **🌿 작업 브랜치 확인:**
+  ```bash
+  git branch --show-current
+  ```
+  시스템이 자동으로 만든 `claude/...` feature 브랜치 위에 있을 것이다. **이 브랜치에 머무른다.** main으로 checkout하지 않는다.
+
+- **⬇️ origin/main 최신 상태 파악 (현재 작업 베이스 확인용):**
   ```bash
   git fetch origin main
   git log HEAD..origin/main --oneline
   ```
-  항상 main으로 전환하고 최신화한다:
-  ```bash
-  git checkout main
-  git pull origin main
+  결과가 있으면 → main이 feature 브랜치보다 앞서 있다는 뜻 → 사용자에게 알리고 feature 브랜치를 rebase 또는 새 feature 브랜치 시작 여부 확인.
+
+- **⚠️ 절대 시도 금지:**
+  - `git checkout main` 후 작업 (다시 feature로 복귀 못 할 수 있음)
+  - `git push origin main` (HTTP 403)
+  - `git push origin <feature>:main` (HTTP 403)
+  - local main에 force-push (origin/main이 손상될 수 있음)
+
+- **배포 = PR 머지 방식:**
+  세션 중 또는 마무리 시, 사용자가 "배포" 또는 "메인 반영" 요청 시:
   ```
-  **⚠️ 이 단계 필수. 이후 모든 작업은 main에서 직접 수행한다. feature 브랜치로 이동하지 않는다.**
+  mcp__github__create_pull_request  →  mcp__github__merge_pull_request
+  ```
+  머지 후 `git fetch origin main && git reset --hard origin/main`로 로컬 동기화.
 
 #### Step 1-L. Local 세션 (💻 환경)
 
@@ -193,43 +206,72 @@ claude
 
 1. `git status` — 변경된 파일 목록 확인
 2. 변경 목록 + 제안 커밋 메시지를 사용자에게 보여주고 승인 받기
-3. 승인 후 `git add [변경 파일 명시] && git commit && git push origin main`
+3. 승인 후 커밋 + push:
+   - Remote 세션(☁️): `git add [변경 파일] && git commit -m "..." && git push -u origin <현재 feature 브랜치>`
+   - Local 세션(💻): main 직접 push 시도 → 403이면 feature 브랜치로 push 후 4번으로
    - ⚠️ `git add .` / `git add -A` 금지
-4. push 성공 확인
-5. CLAUDE.md 직접 갱신 (완료 단계 ✅, 다음 시작점 업데이트)
-6. CLAUDE.md 갱신분도 함께 커밋·push
-7. PAT 설정된 경우 현재 PAT 출력
-8. 다음 세션 시작 프롬프트 출력
+4. **main으로 머지 (Remote 세션 필수, Local에서 main push 실패 시):**
+   - `mcp__github__create_pull_request` (head: 현재 브랜치, base: main)
+   - 사용자에게 PR URL 보여주고 확인
+   - `mcp__github__merge_pull_request` (PR 번호, method: merge)
+   - `git fetch origin main && git reset --hard origin/main` (로컬 동기화)
+5. Vercel 자동 배포 안내 (~1분 후 Ctrl+Shift+R)
+6. CLAUDE.md 직접 갱신 (완료 단계 ✅, 다음 시작점 업데이트)
+7. CLAUDE.md 갱신분도 동일 절차로 push + PR 머지
+8. PAT 설정된 경우 현재 PAT 출력
+9. **다음 세션 시작 프롬프트 출력** — 아래 템플릿 사용:
+
+```
+환경 확인: Remote(☁️)인지 Local(💻)인지 먼저 판별해줘.
+Remote라면 시스템이 자동 생성한 feature 브랜치(claude/...)에서 작업하고,
+배포 시점에 `mcp__github__create_pull_request` + `mcp__github__merge_pull_request`로 main에 머지하는 방식이야.
+`git push origin main` 직접 시도는 403으로 거부되니까 절대 시도하지 말아줘.
+(상세 규칙은 CLAUDE.md "브랜치 운영 규칙" 섹션 참고)
+
+PAT: ghp_xxx (만료됐으면 재발급 요청)
+
+이번 세션 작업: [작업 내용]
+```
 
 ---
 
-### ⚠️ 브랜치 운영 규칙
+### ⚠️ 브랜치 운영 규칙 (환경별로 다름 — 반드시 확인)
 
-**⚠️ Claude Code 세션은 자동으로 feature 브랜치(claude/...)를 생성하지만, 이 프로젝트에서는 main에 직접 작업한다.**
+이 프로젝트는 **`main` 브랜치 = 배포 브랜치**다 (Vercel이 `main`을 지켜본다).
+하지만 작업 방식은 실행 환경에 따라 다르므로, 세션 시작 시 환경을 먼저 판별하고 그에 맞게 진행한다.
 
-이유: 관리자 패널이 GitHub API로 main에 직접 커밋하기 때문에, feature 브랜치와 머지할 때 충돌이 발생해 기능이 원복되는 문제가 반복됨.
+#### ☁️ Remote 세션 (Claude Code 웹/Code 탭)
 
-#### 세션 시작 시 main으로 즉시 전환
+**환경 특성:**
+- 시스템이 자동으로 `claude/...` feature 브랜치를 만들고 그 위에 작업하도록 강제한다.
+- `git push origin main`이 **HTTP 403으로 차단된다** (local proxy 정책).
+- 따라서 `main` 직접 작업은 불가능하다.
 
-```bash
-# 세션 시작 직후 항상 실행
-git checkout main
-git pull origin main
-# 이후 모든 작업은 main에서 직접 수행
-```
+**올바른 워크플로우:**
+1. 시스템이 만든 feature 브랜치에서 그대로 작업 (예: `claude/add-xxx-feature-yyy`)
+2. 커밋·push는 feature 브랜치로
+   ```bash
+   git push -u origin claude/...
+   ```
+3. **세션 마무리(또는 사용자가 배포 요청) 시점에 GitHub MCP로 PR 생성 + 머지:**
+   ```
+   mcp__github__create_pull_request  (head: claude/..., base: main)
+   mcp__github__merge_pull_request   (방금 생성된 PR 번호, method: merge)
+   ```
+4. 머지 직후 로컬 동기화:
+   ```bash
+   git fetch origin main && git reset --hard origin/main
+   ```
+5. Vercel 자동 배포 시작 (~1분)
 
-#### 커밋·push 방식
+**⚠️ 절대 하지 말 것:**
+- `git checkout main && git push origin main` ← 403으로 거부됨
+- `git push origin <feature>:main` ← cross-branch push도 403
+- local `main`이 origin/main과 갈라져 보여도 **함부로 force-push 금지** (과거 미push 잔재일 수 있음 — 먼저 `git log` 확인)
 
-```bash
-# feature 브랜치 없이 main에서 직접
-git add [변경 파일]
-git commit -m "설명"
-git push -u origin main
-```
+#### 💻 Local 세션 (터미널에서 직접)
 
-- 머지 단계 없음 → 충돌 없음
-- push 즉시 Vercel이 자동 배포 시작
-- feature 브랜치(claude/...)는 무시하고 사용하지 않음
+PAT 인증이 있을 경우 `main` 직접 push가 가능할 수 있다. 단, 시도 전 PAT 권한과 GitHub 측 branch protection 룰을 확인하고, 안 되면 Remote 세션과 동일하게 PR 머지 방식으로 진행한다.
 
 #### ⚠️ 기존 생성 프로젝트 파일 동기화 필수 — 절대 빠뜨리지 말 것
 
