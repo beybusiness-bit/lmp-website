@@ -2824,6 +2824,47 @@ function _frozenChipBar(items, currentN, setFn){
     ${chips.map(c=>`<button onclick="${setFn}(${c.n})" style="padding:2px 8px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid ${c.n===currentN?'#000':'rgba(0,0,0,.2)'};background:${c.n===currentN?'#000':'transparent'};color:${c.n===currentN?'#fff':'rgba(0,0,0,.55)'};font-family:inherit;line-height:1.6;white-space:nowrap;">${c.label}</button>`).join('')}
   </div>`;
 }
+
+/* ── 열 표시/숨기기 ── */
+function _colVisBar(items, hiddenSet, toggleFn){
+  // items: [{key, label}]
+  const hiddenCount = items.filter(it=>hiddenSet.has(it.key)).length;
+  const summary = hiddenCount > 0 ? `<span style="font-size:10px;color:#c00;margin-left:4px;">(${hiddenCount}개 숨김)</span>` : '';
+  return `<div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;flex-wrap:wrap;">
+    <span style="font-size:11px;color:rgba(0,0,0,.4);white-space:nowrap;margin-right:2px;">👁 열 표시:${summary}</span>
+    ${items.map(it=>{
+      const hidden=hiddenSet.has(it.key);
+      return `<button onclick="${toggleFn}('${it.key}')" style="padding:2px 8px;font-size:11px;font-weight:700;cursor:pointer;border:1.5px solid ${hidden?'rgba(0,0,0,.15)':'rgba(0,0,0,.6)'};background:${hidden?'transparent':'#000'};color:${hidden?'rgba(0,0,0,.3)':'#fff'};font-family:inherit;line-height:1.6;white-space:nowrap;text-decoration:${hidden?'line-through':'none'};">${it.label}</button>`;
+    }).join('')}
+  </div>`;
+}
+function _getHiddenSet(lsKey){ try{ return new Set(JSON.parse(localStorage.getItem(lsKey)||'[]')); }catch(e){ return new Set(); } }
+function _setHiddenSet(lsKey, set){ localStorage.setItem(lsKey, JSON.stringify([...set])); }
+
+/* 사용자 테이블 열 숨기기 */
+function _userVisKey(){ return 'hc_user_'+(curProjId||''); }
+function toggleUserColVis(key){
+  const s=_getHiddenSet(_userVisKey());
+  s.has(key)?s.delete(key):s.add(key);
+  _setHiddenSet(_userVisKey(),s);
+  renderUserTable();
+}
+/* 레거시 폼 응답 테이블 열 숨기기 */
+function _respVisKey(){ return 'hc_resp_'+(curProjId||'')+'_'+(curRespFormId||''); }
+function toggleRespColVis(key){
+  const s=_getHiddenSet(_respVisKey());
+  s.has(key)?s.delete(key):s.add(key);
+  _setHiddenSet(_respVisKey(),s);
+  renderRespTable();
+}
+/* 폼 도구 응답 테이블 열 숨기기 */
+function _tfVisKey(){ return 'hc_tf_'+(tfCurDocId||''); }
+function toggleTfColVis(key){
+  const s=_getHiddenSet(_tfVisKey());
+  s.has(key)?s.delete(key):s.add(key);
+  _setHiddenSet(_tfVisKey(),s);
+  renderTfRespTable();
+}
 function setUserFrozen(n){
   if(!curProjId) return;
   localStorage.setItem('fc_user_'+curProjId, n);
@@ -2914,14 +2955,21 @@ function renderUserTable() {
     summary = `<div class="prog-summary"><div style="font-weight:700;margin-bottom:8px;font-size:12px;">📊 스테이지 진행률 현황</div>${rows}</div>`;
   }
   const CK_W = 44;
-  // 고정 열 수 (localStorage 기반, 기본: 첫 번째 인증 필드까지)
+  // 숨겨진 열
+  const _uHidden = _getHiddenSet(_userVisKey());
+  // 표시 대상 인증 필드
+  const visAuthFields = curAuthFields.filter(f=>!_uHidden.has(f.key));
+  const visProgStages = progStages.filter(s=>!_uHidden.has('stage_'+s.id));
+  const showLastLogin = !_uHidden.has('_lastLogin');
+  const showLoginCount = !_uHidden.has('_loginCount');
+  // 고정 열 수 (localStorage 기반, 기본: 첫 번째 인증 필드까지, 숨겨진 열 제외 후 재계산)
   const _ufKey = 'fc_user_'+(curProjId||'');
-  const userFrozen = Math.min(Math.max(0, parseInt(localStorage.getItem(_ufKey)??'1')), curAuthFields.length);
+  const userFrozen = Math.min(Math.max(0, parseInt(localStorage.getItem(_ufKey)??'1')), visAuthFields.length);
   // 고정 인증 필드들의 left 오프셋 계산
   const _ufLefts = [];
-  { let acc=CK_W; for(let i=0;i<userFrozen;i++){ _ufLefts.push(acc); acc+=(customColWidths[curAuthFields[i].key]||_colWidthDefaultPx(curAuthFields[i].type)); } }
+  { let acc=CK_W; for(let i=0;i<userFrozen;i++){ _ufLefts.push(acc); acc+=(customColWidths[visAuthFields[i].key]||_colWidthDefaultPx(visAuthFields[i].type)); } }
   const chkTh = `<th class="s-c1" style="width:${CK_W}px;min-width:${CK_W}px;max-width:${CK_W}px;box-sizing:border-box;"><input type="checkbox" ${allChecked?'checked':''} onchange="toggleSelectAll(this.checked)" style="cursor:pointer;"></th>`;
-  const progTh = progStages.map(s => {
+  const progTh = visProgStages.map(s => {
     const ttl = (s.title||'').replace(/</g,'&lt;');
     const colKey = 'stage_'+s.id;
     const style = _userColStyle(colKey, 'min-width:130px;max-width:220px;white-space:normal;word-break:keep-all;');
@@ -2932,17 +2980,17 @@ function renderUserTable() {
     const isLast = idx===userFrozen-1;
     return `position:sticky;left:${_ufLefts[idx]}px;z-index:3;`+(isLast?'box-shadow:2px 0 4px rgba(0,0,0,.1);':'');
   };
-  const headers = chkTh + curAuthFields.map((f,idx)=>{
+  const headers = chkTh + visAuthFields.map((f,idx)=>{
     const style = _userColStyle(f.key, _colWidthCss(f.type));
     return `<th style="${style}${_authColStickyTh(idx)}">${f.label}${_resizeHandle(f.key)}</th>`;
   }).join('') + progTh
-    + `<th style="${_userColStyle('_lastLogin','white-space:nowrap;min-width:120px;')}">최근 로그인${_resizeHandle('_lastLogin')}</th>`
-    + `<th style="${_userColStyle('_loginCount','white-space:nowrap;min-width:60px;')}">횟수${_resizeHandle('_loginCount')}</th>`
+    + (showLastLogin ? `<th style="${_userColStyle('_lastLogin','white-space:nowrap;min-width:120px;')}">최근 로그인${_resizeHandle('_lastLogin')}</th>` : '')
+    + (showLoginCount ? `<th style="${_userColStyle('_loginCount','white-space:nowrap;min-width:60px;')}">횟수${_resizeHandle('_loginCount')}</th>` : '')
     + '<th></th>';
   const rows = curUsers.map(u => {
     const checked = selectedUserIds.has(u._id);
     const rowBg = checked?'#f5f5f5':'#fff';
-    const cells = curAuthFields.map((f,idx)=>{
+    const cells = visAuthFields.map((f,idx)=>{
       if(idx<userFrozen){
         const isLast=idx===userFrozen-1;
         const stickyS=`position:sticky;left:${_ufLefts[idx]}px;z-index:1;background:${rowBg};`+(isLast?'box-shadow:2px 0 4px rgba(0,0,0,.1);':'');
@@ -2952,7 +3000,7 @@ function renderUserTable() {
       const style = _userColStyle(f.key, _colWidthCss(f.type));
       return `<td style="${style}">${u[f.key]??''}</td>`;
     }).join('');
-    const progCells = progStages.map(s => {
+    const progCells = visProgStages.map(s => {
       const total = s.checkableCount;
       const arr = u.stageProgress?.[s.id] || [];
       const done = Math.min(arr.length, total);
@@ -2971,8 +3019,8 @@ function renderUserTable() {
       <td class="s-c1" style="width:${CK_W}px;min-width:${CK_W}px;max-width:${CK_W}px;box-sizing:border-box;background:${rowBg};"><input type="checkbox" ${checked?'checked':''} onchange="toggleSelectUser('${u._id}',this.checked)" style="cursor:pointer;"></td>
       ${cells}
       ${progCells}
-      <td style="font-size:11px;color:rgba(0,0,0,.6);${_userColStyle('_lastLogin','white-space:nowrap;')}">${lastLogin}</td>
-      <td style="font-size:12px;font-weight:700;text-align:center;${_userColStyle('_loginCount','')}">${loginCnt}</td>
+      ${showLastLogin?`<td style="font-size:11px;color:rgba(0,0,0,.6);${_userColStyle('_lastLogin','white-space:nowrap;')}">${lastLogin}</td>`:''}
+      ${showLoginCount?`<td style="font-size:12px;font-weight:700;text-align:center;${_userColStyle('_loginCount','')}">${loginCnt}</td>`:''}
       <td><div style="display:flex;gap:4px;">
         <button class="u-btn" onclick="openUserModal('${u._id}')">편집</button>
         <button class="u-btn" onclick="deleteUser('${u._id}')">삭제</button>
@@ -2982,8 +3030,16 @@ function renderUserTable() {
   const resetLink = Object.keys(customColWidths).length
     ? `<span class="col-resize-reset" onclick="resetAllColWidths()">↺ 컬럼 너비 모두 기본값으로</span>`
     : `<span style="font-size:10px;color:rgba(0,0,0,.3);">💡 컬럼 헤더 우측을 드래그하면 너비를 조정할 수 있어요 (더블클릭: 기본값 복원)</span>`;
-  const chipBar = _frozenChipBar(curAuthFields.map(f=>({label:f.label})), userFrozen, 'setUserFrozen');
-  wrap.innerHTML = chipBar + bulkBar + summary + `<div class="user-table-wrap"><table class="user-table"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></div>${resetLink}`;
+  const chipBar = _frozenChipBar(visAuthFields.map(f=>({label:f.label})), userFrozen, 'setUserFrozen');
+  // 열 표시/숨기기 바 — 모든 가능한 열 목록
+  const _uAllCols = [
+    ...curAuthFields.map(f=>({key:f.key,label:f.label})),
+    ...progStages.map(s=>({key:'stage_'+s.id,label:s.title||'스테이지'})),
+    {key:'_lastLogin',label:'최근 로그인'},
+    {key:'_loginCount',label:'횟수'},
+  ];
+  const visBar = _colVisBar(_uAllCols, _uHidden, 'toggleUserColVis');
+  wrap.innerHTML = chipBar + visBar + bulkBar + summary + `<div class="user-table-wrap"><table class="user-table"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table></div>${resetLink}`;
 }
 function toggleSelectUser(id, checked) {
   if (checked) selectedUserIds.add(id); else selectedUserIds.delete(id);
@@ -4235,9 +4291,11 @@ function _getRespCols(){
 function renderRespTable() {
   const el = document.getElementById('form-resp-scroll');
   if (!curRespData.length) { el.innerHTML = '<div class="empty-msg">응답이 없어요.</div>'; return; }
-  const cols=_getRespCols();
+  const allCols=_getRespCols();
+  const _rHidden = _getHiddenSet(_respVisKey());
+  const cols = allCols.filter(c=>!_rHidden.has(c.key));
   const TS_W = 170;
-  // 고정 열 선택 (localStorage, 기본: 인증 있으면 2, 없으면 1)
+  // 고정 열 선택 (localStorage, 기본: 인증 있으면 2, 없으면 1, 숨겨진 열 제외 후 재계산)
   const _rfKey='fc_resp_'+(curProjId||'')+'_'+(curRespFormId||'');
   const _rfDef = curAuthEnabled&&curAuthFields.length ? 2 : 1;
   const stickyCount = Math.min(Math.max(0, parseInt(localStorage.getItem(_rfKey)??String(_rfDef))), cols.length);
@@ -4246,7 +4304,8 @@ function renderRespTable() {
   const hasCustom = Object.keys(curRespColWidths[curRespFormId]||{}).length > 0;
   const resetLink = hasCustom ? `<span class="col-resize-reset" onclick="resetAllRespColWidths()">↺ 컬럼 너비 모두 기본값으로</span>` : '';
   const chipBar = _frozenChipBar(cols.map(c=>({label:c.label})), stickyCount, 'setRespFrozen');
-  el.innerHTML = chipBar + `<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
+  const visBar = _colVisBar(allCols.map(c=>({key:c.key,label:c.label})), _rHidden, 'toggleRespColVis');
+  el.innerHTML = chipBar + visBar + `<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
     <thead><tr>${cols.map((c,idx)=>{
       const defaultW = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;` : _colWidthCss(c.type);
       const w = _respColStyle(c.key, defaultW);
@@ -6439,10 +6498,12 @@ function updateTfRespSheetStatus(){
 function renderTfRespTable(){
   const el=document.getElementById('tf-resp-scroll');
   if(!tfRespData.length){el.innerHTML='<div class="empty-msg" style="padding:12px;">응답이 없어요.</div>';return;}
-  const cols=_getTfRespCols();
-  const hasUserCol = cols.some(c=>c.type==='_user');
+  const allCols=_getTfRespCols();
+  const _tfHidden = _getHiddenSet(_tfVisKey());
+  const cols = allCols.filter(c=>!_tfHidden.has(c.key));
+  const hasUserCol = allCols.some(c=>c.type==='_user');
   const TS_W = 170;
-  // 고정 열 선택 (localStorage, 기본: 사용자 컬럼 있으면 2, 없으면 1)
+  // 고정 열 선택 (localStorage, 기본: 사용자 컬럼 있으면 2, 없으면 1, 숨겨진 열 제외 후 재계산)
   const _tfKey='fc_tf_'+(tfCurDocId||'');
   const _tfDef = hasUserCol ? 2 : 1;
   const stickyCount = Math.min(Math.max(0, parseInt(localStorage.getItem(_tfKey)??String(_tfDef))), cols.length);
@@ -6451,7 +6512,8 @@ function renderTfRespTable(){
   const hasCustom = Object.keys(tfRespColWidths).length > 0;
   const resetLink = hasCustom ? `<span class="col-resize-reset" onclick="resetAllTfRespColWidths()">↺ 컬럼 너비 모두 기본값으로</span>` : '';
   const chipBar = _frozenChipBar(cols.map(c=>({label:c.label})), stickyCount, 'setTfFrozen');
-  el.innerHTML=chipBar+`<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
+  const visBar = _colVisBar(allCols.map(c=>({key:c.key,label:c.label})), _tfHidden, 'toggleTfColVis');
+  el.innerHTML=chipBar+visBar+`<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
     <thead><tr>${cols.map((c,idx)=>{
       const baseType=c.type==='_user'?'string':c.type;
       const defaultW = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;` : _colWidthCss(baseType);
