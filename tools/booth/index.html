@@ -95,10 +95,10 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .bg-modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;flex-shrink:0;}
 .bg-modal-header span{font-size:14px;font-weight:700;color:#000;}
 .bg-modal-header button{background:none;border:none;font-size:20px;cursor:pointer;color:#000;line-height:1;padding:2px;}
-#bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-items:start;}
-.bg-thumb{position:relative;overflow:hidden;cursor:pointer;border:2px solid transparent;background:#f0f0f0;align-self:start;}
+#bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.bg-thumb{position:relative;overflow:hidden;cursor:pointer;border:2px solid transparent;background:#f0f0f0;aspect-ratio:4/5;}
 .bg-thumb:hover,.bg-thumb.active{border-color:#000;}
-.bg-thumb img{width:100%;height:auto;display:block;}
+.bg-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 .bg-thumb.broken{opacity:.35;}
 .bg-thumb .bg-label{position:absolute;bottom:0;left:0;right:0;font-size:10px;font-weight:700;color:#fff;text-align:center;padding:3px 4px;background:rgba(0,0,0,.55);z-index:1;}
 
@@ -136,9 +136,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 #auto-bg-inner{background:#fff;border-top:2px solid #000;padding:0;width:100%;max-width:480px;height:88vh;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;}
 .auto-bg-header{display:flex;align-items:center;justify-content:center;padding:14px 16px 10px;flex-shrink:0;border-bottom:1.5px solid rgba(0,0,0,.06);}
 .auto-bg-header span{font-size:14px;font-weight:700;color:#000;}
-#auto-bg-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 16px 24px;overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;align-items:start;}
-@media(min-width:420px){#auto-bg-grid{grid-template-columns:repeat(3,1fr);}}
-.auto-bg-thumb{position:relative;overflow:hidden;cursor:pointer;border:2px solid rgba(0,0,0,.12);background:#f0f0f0;transition:border-color .15s;align-self:start;}
+#auto-bg-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 16px 24px;overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;}
+.auto-bg-thumb{position:relative;overflow:hidden;cursor:pointer;border:2px solid rgba(0,0,0,.12);background:#f0f0f0;transition:border-color .15s;aspect-ratio:4/5;}
 .auto-bg-thumb:hover{border-color:rgba(0,0,0,.45);}
 .auto-bg-thumb.active{border-color:#000;border-width:3px;}
 .auto-bg-thumb.active::after{content:'✓';position:absolute;top:6px;right:6px;width:24px;height:24px;background:#000;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;line-height:1;}
@@ -171,7 +170,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 #desc-icon{display:none;position:absolute;top:10px;right:10px;width:30px;height:30px;border:2px solid #000;background:#fff;color:#000;border-radius:50%;font-size:14px;cursor:pointer;z-index:60;align-items:center;justify-content:center;font-family:inherit;line-height:1;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.15);}
 #desc-icon.on{display:flex;}
 #desc-icon:hover{background:#000;color:#fff;}
-.auto-bg-thumb img{width:100%;height:auto;display:block;}
+.auto-bg-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 .auto-bg-thumb .bg-label{z-index:1;}
 </style>
 </head>
@@ -565,9 +564,24 @@ function switchBgTab(tab, btn) {
   document.getElementById('bg-tab-'+tab).classList.add('active');
 }
 
+function checkUnsupportedFormat(file) {
+  const n = file.name.toLowerCase(), t = (file.type || '').toLowerCase();
+  if(n.endsWith('.heic') || n.endsWith('.heif') || t === 'image/heic' || t === 'image/heif') {
+    alert('HEIC/HEIF 파일은 지원하지 않아요 📵\n\n아이폰에서 촬영한 사진이라면:\n• 사진 앱 → 공유 → JPG로 내보내기\n• 또는 설정 > 카메라 > 포맷 > "호환성 우선" 으로 변경 후 재촬영');
+    return true;
+  }
+  if(n.endsWith('.tif') || n.endsWith('.tiff') || t === 'image/tiff') {
+    alert('TIFF 파일은 지원하지 않아요.\nJPG, PNG, WebP 형식으로 변환 후 업로드해 주세요.');
+    return true;
+  }
+  return false;
+}
+
 function onBgUpload(e) {
   const file = e.target.files[0];
   if(!file) return;
+  e.target.value = '';
+  if(checkUnsupportedFormat(file)) return;
   const reader = new FileReader();
   reader.onload = ev => {
     const img = new Image();
@@ -622,7 +636,7 @@ function showAutoBgSelect(urls, desc, names, refPx=0) {
   grid.innerHTML = urls.map((url, i) => {
     const name = (names && names[i]) ? names[i] : '';
     return `<div class="auto-bg-thumb" onclick="selectAutoBg(${i})">
-      <img src="${url}" loading="lazy" onerror="this.parentElement.style.opacity='.3'">
+      <img src="${url}" onerror="this.parentElement.style.opacity='.3'">
       ${name ? `<div class="bg-label">${name}</div>` : ''}
     </div>`;
   }).join('');
@@ -814,6 +828,8 @@ function addPresetImage(presetIdx) {
 function onImageFileSelected(e) {
   const file = e.target.files[0];
   if(!file) return;
+  e.target.value = '';
+  if(checkUnsupportedFormat(file)) return;
   const reader = new FileReader();
   reader.onload = ev => {
     const img = new Image();
@@ -821,7 +837,6 @@ function onImageFileSelected(e) {
     img.src = ev.target.result;
   };
   reader.readAsDataURL(file);
-  e.target.value = '';
 }
 
 function addImageItem(imgEl, src) {
