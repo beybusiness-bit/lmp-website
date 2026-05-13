@@ -33,7 +33,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
 /* ── 캔버스 영역 (실제 비율 유지용 컨테이너) ── */
 #canvas-area{position:relative;flex:1;min-height:0;width:100%;max-width:480px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
-#canvas-wrap{position:relative;width:100%;max-height:100%;aspect-ratio:1/1;overflow:hidden;background:rgba(0,0,0,.04);touch-action:none;}
+#canvas-wrap{position:relative;overflow:hidden;background:rgba(0,0,0,.04);touch-action:none;}
 #bg-canvas,#draw-canvas,#items-layer{position:absolute;top:0;left:0;width:100%;height:100%;}
 #bg-canvas{z-index:1;}
 #items-layer{z-index:2;pointer-events:none;}
@@ -456,6 +456,8 @@ const drawCanvas = document.getElementById('draw-canvas');
 const drawCtx = drawCanvas.getContext('2d');
 const itemsLayer = document.getElementById('items-layer');
 const canvasWrap = document.getElementById('canvas-wrap');
+const canvasArea = document.getElementById('canvas-area');
+let currentAspectRatio = 1;
 
 // ── 초기화 ──
 async function init() {
@@ -470,7 +472,7 @@ async function init() {
   document.getElementById('draw-color-input').addEventListener('input', e => {
     setDrawColor(e.target.value);
   });
-  new ResizeObserver(() => resizeCanvases()).observe(canvasWrap);
+  new ResizeObserver(() => resizeCanvases()).observe(canvasArea);
   // UI 준비 완료 → 로딩 스크린 즉시 제거 (Firestore 응답 안 기다림)
   document.getElementById('loading').style.display = 'none';
   // 부모 플레이어에 ready 신호 전송 (컨텍스트 수신 시작)
@@ -497,10 +499,16 @@ function hideBgBtn() {
 }
 
 function resizeCanvases() {
-  const wrap = canvasWrap.getBoundingClientRect();
-  const w = Math.round(wrap.width);
-  const h = Math.round(wrap.height);
-  if(w === 0 || h === 0) return; // 레이아웃 미확정 — ResizeObserver가 크기 확정 후 재호출
+  const areaRect = canvasArea.getBoundingClientRect();
+  const areaW = Math.round(areaRect.width);
+  const areaH = Math.round(areaRect.height);
+  if(areaW === 0 || areaH === 0) return;
+  const ar = currentAspectRatio;
+  let w, h;
+  if(areaW / ar <= areaH) { w = areaW; h = Math.round(w / ar); }
+  else { h = areaH; w = Math.round(h * ar); }
+  canvasWrap.style.width = w + 'px';
+  canvasWrap.style.height = h + 'px';
   canvasW = w; canvasH = h;
   [bgCanvas, drawCanvas].forEach(c => { c.width = canvasW; c.height = canvasH; });
   if(bgImage) drawBg();
@@ -602,7 +610,7 @@ function onBgUpload(e) {
       bgImage = img; bgImage._src = ev.target.result;
       currentBgLabel = '내가 업로드한 배경';
       document.getElementById('no-bg-msg').style.display = 'none';
-      canvasWrap.style.aspectRatio = `${img.naturalWidth}/${img.naturalHeight}`;
+      currentAspectRatio = img.naturalWidth / img.naturalHeight;
       requestAnimationFrame(() => {
         resizeCanvases();
         drawBg();
@@ -649,6 +657,7 @@ function showAutoBgSelect(urls, desc, names, refPx=0) {
   const safeH = Math.floor(window.innerHeight * 0.80);
   inner.style.height = safeH + 'px';
   inner.style.maxHeight = safeH + 'px';
+  _hideToolbars();
   document.getElementById('auto-bg-select').classList.add('on');
 }
 
@@ -668,6 +677,7 @@ function confirmAutoBg() {
   const desc = autoBgState.desc || '';
   const refPx = autoBgState.refPx;
   const name = (autoBgState.names && autoBgState.names[idx]) ? autoBgState.names[idx] : '';
+  _showToolbars();
   document.getElementById('auto-bg-select').classList.remove('on');
   requestAnimationFrame(() => {
     selectBgByUrl(url, name, false, refPx);
@@ -735,7 +745,7 @@ function selectBgByUrl(url, label='', silent=false, refPx=0) {
   function applyBgImage(img) {
     bgImage = img; bgImage._src = url;
     document.getElementById('no-bg-msg').style.display = 'none';
-    canvasWrap.style.aspectRatio = `${img.naturalWidth}/${img.naturalHeight}`;
+    currentAspectRatio = img.naturalWidth / img.naturalHeight;
     requestAnimationFrame(() => { resizeCanvases(); drawBg(); updateMetaBar(); });
     if(!silent) closeBgModal();
   }
@@ -767,8 +777,18 @@ function drawBg() {
   bgCtx.drawImage(bgImage, 0, 0, canvasW, canvasH);
 }
 
-function openBgModal() { document.getElementById('bg-modal').classList.add('on'); }
-function closeBgModal() { document.getElementById('bg-modal').classList.remove('on'); }
+function _hideToolbars() {
+  document.getElementById('toolbar').style.display = 'none';
+  const mb = document.getElementById('meta-bar');
+  if(mb) mb.style.display = 'none';
+}
+function _showToolbars() {
+  document.getElementById('toolbar').style.display = '';
+  const mb = document.getElementById('meta-bar');
+  if(mb) mb.style.display = '';
+}
+function openBgModal() { _hideToolbars(); document.getElementById('bg-modal').classList.add('on'); }
+function closeBgModal() { _showToolbars(); document.getElementById('bg-modal').classList.remove('on'); }
 
 // ── 이미지 추가 ──
 function getCurrentPresetImages() {
@@ -898,9 +918,10 @@ function openShapeModal() {
       </svg>
       <span>${d.label}</span>
     </button>`).join('');
+  _hideToolbars();
   document.getElementById('shape-modal').classList.add('on');
 }
-function closeShapeModal() { document.getElementById('shape-modal').classList.remove('on'); }
+function closeShapeModal() { _showToolbars(); document.getElementById('shape-modal').classList.remove('on'); }
 
 function addShape(shapeKey) {
   const size = Math.min(canvasW, canvasH) * 0.35;
@@ -1389,6 +1410,7 @@ async function openExport() {
     await drawItemOnCanvas(ctx, item, scale);
   }
 
+  _hideToolbars();
   document.getElementById('export-modal').classList.add('on');
 }
 
@@ -1485,7 +1507,7 @@ async function shareExport() {
   });
 }
 
-function closeExport() { document.getElementById('export-modal').classList.remove('on'); }
+function closeExport() { _showToolbars(); document.getElementById('export-modal').classList.remove('on'); }
 
 // ── postMessage: 부모 플레이어에서 사용자 데이터 수신 ──
 window.addEventListener('message', e => {
