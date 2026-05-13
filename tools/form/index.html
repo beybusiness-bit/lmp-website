@@ -233,11 +233,23 @@ function onFileChange(fid) {
     if (nameEl) nameEl.innerHTML = '';
     return;
   }
-  const rows = files.map(f => {
+  const rows = files.map((f, i) => {
     const sizeTxt = f.size < 1024*1024 ? `${Math.round(f.size/1024)}KB` : `${(f.size/1024/1024).toFixed(1)}MB`;
-    return `<div>✅ ${esc(f.name)} (${sizeTxt})</div>`;
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 0;">
+      <span>✅ ${esc(f.name)} (${sizeTxt})</span>
+      <button type="button" onclick="removeOneFile('${fid}',${i})" style="flex-shrink:0;border:none;background:none;cursor:pointer;font-size:14px;line-height:1;color:rgba(0,0,0,.4);padding:0;" title="이 파일 제거">✕</button>
+    </div>`;
   }).join('');
-  if (nameEl) nameEl.innerHTML = rows + `<button type="button" onclick="clearFile('${fid}')" style="margin-top:4px;border:none;background:none;cursor:pointer;font-size:12px;color:rgba(0,0,0,.45);padding:0;display:block;">전체 취소 ✕</button>`;
+  if (nameEl) nameEl.innerHTML = rows;
+}
+
+function removeOneFile(fid, index) {
+  const inp = document.getElementById('ff-' + fid);
+  if (!inp) return;
+  const dt = new DataTransfer();
+  Array.from(inp.files).forEach((f, i) => { if (i !== index) dt.items.add(f); });
+  inp.files = dt.files;
+  onFileChange(fid);
 }
 
 function clearFile(fid) {
