@@ -4,9 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title id="page-title">내 부스 꾸미기</title>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="dns-prefetch" href="https://firebasestorage.googleapis.com">
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 <style>
 :root{--lmp-block-bg:#fff;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -112,8 +114,10 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .exp-btn.primary:hover{background:transparent;color:#fff;}
 
 /* ── 로딩 ── */
-#loading{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:999;}
-#loading p{color:#000;font-size:14px;font-weight:700;}
+#loading{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:999;}
+#loading .lmp-spinner{width:36px;height:36px;border:3px solid rgba(0,0,0,.12);border-top-color:#000;border-radius:50%;animation:lmp-spin .8s linear infinite;}
+@keyframes lmp-spin{to{transform:rotate(360deg);}}
+#loading p{color:#000;font-size:13px;font-weight:700;letter-spacing:-.2px;}
 
 /* ── 배경 없을 때 안내 ── */
 #no-bg-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:rgba(0,0,0,.3);font-size:13px;font-weight:700;z-index:0;pointer-events:none;}
@@ -121,10 +125,19 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 /* ── 자동 배경 선택 UI ── */
 #auto-bg-select{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:250;align-items:flex-end;justify-content:center;}
 #auto-bg-select.on{display:flex;}
-#auto-bg-inner{background:#fff;border-top:2px solid #000;padding:0;width:100%;max-width:480px;max-height:72vh;display:flex;flex-direction:column;overflow:hidden;}
-#auto-bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px 16px;overflow-y:auto;}
-.auto-bg-thumb{aspect-ratio:4/5;overflow:hidden;cursor:pointer;border:2px solid transparent;position:relative;background:#f0f0f0;}
-.auto-bg-thumb:hover{border-color:#000;}
+#auto-bg-inner{background:#fff;border-top:2px solid #000;padding:0;width:100%;max-width:480px;height:88svh;max-height:88svh;display:flex;flex-direction:column;overflow:hidden;}
+.auto-bg-header{display:flex;align-items:center;justify-content:center;padding:14px 16px 10px;flex-shrink:0;border-bottom:1.5px solid rgba(0,0,0,.06);}
+.auto-bg-header span{font-size:14px;font-weight:700;color:#000;}
+#auto-bg-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 16px;overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;}
+@media(min-width:420px){#auto-bg-grid{grid-template-columns:repeat(3,1fr);}}
+.auto-bg-thumb{aspect-ratio:4/5;overflow:hidden;cursor:pointer;border:2px solid rgba(0,0,0,.12);position:relative;background:#f0f0f0;transition:border-color .15s;}
+.auto-bg-thumb:hover{border-color:rgba(0,0,0,.45);}
+.auto-bg-thumb.active{border-color:#000;border-width:3px;}
+.auto-bg-thumb.active::after{content:'✓';position:absolute;top:6px;right:6px;width:24px;height:24px;background:#000;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;line-height:1;}
+.auto-bg-thumb .bg-label{position:absolute;bottom:0;left:0;right:0;font-size:11px;font-weight:700;color:#fff;text-align:center;padding:5px 6px;background:rgba(0,0,0,.6);letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#auto-bg-actions{padding:10px 16px 14px;padding-bottom:max(14px,calc(env(safe-area-inset-bottom,0px) + 10px));border-top:1.5px solid rgba(0,0,0,.08);flex-shrink:0;background:#fff;}
+#auto-bg-confirm-btn{width:100%;padding:13px 14px;background:#000;color:#fff;border:2px solid #000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.2px;transition:opacity .15s;}
+#auto-bg-confirm-btn:disabled{opacity:.35;cursor:not-allowed;}
 /* ── 도형 선택 모달 ── */
 #shape-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-end;justify-content:center;}
 #shape-modal.on{display:flex;}
@@ -141,6 +154,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .shape-none-btn.active{background:#000;color:#fff;border-color:#000;}
 #bg-desc-bar{display:none;width:100%;max-width:480px;padding:10px 16px;font-size:13px;line-height:1.6;background:rgba(0,0,0,.05);border-top:1.5px solid rgba(0,0,0,.12);color:#000;white-space:pre-wrap;word-break:break-word;flex-shrink:0;}
 .auto-bg-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.auto-bg-thumb .bg-label{z-index:1;}
 </style>
 </head>
 <body>
@@ -154,7 +168,10 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   </defs>
 </svg>
 
-<div id="loading"><p>불러오는 중…</p></div>
+<div id="loading">
+  <div class="lmp-spinner"></div>
+  <p>꾸미기 도구를 준비하고 있어요…</p>
+</div>
 
 <!-- 도형 선택 모달 -->
 <div id="shape-modal">
@@ -170,10 +187,13 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 <!-- 자동 배경 선택 (여러 장일 때) -->
 <div id="auto-bg-select">
   <div id="auto-bg-inner">
-    <div class="bg-modal-header" style="padding:14px 16px;">
-      <span>배경을 선택해주세요</span>
+    <div class="auto-bg-header">
+      <span>배경을 선택해 주세요</span>
     </div>
     <div id="auto-bg-grid"></div>
+    <div id="auto-bg-actions">
+      <button id="auto-bg-confirm-btn" disabled onclick="confirmAutoBg()">선택 완료</button>
+    </div>
   </div>
 </div>
 
@@ -408,14 +428,8 @@ const canvasWrap = document.getElementById('canvas-wrap');
 
 // ── 초기화 ──
 async function init() {
+  // UI 동기 설정 — Firebase 로드와 무관하게 먼저 화면 보이도록
   resizeCanvases();
-  // 부모 플레이어에 ready 신호 전송
-  window.parent.postMessage({type:'lmp-ready'}, '*');
-  // 1.5초 안에 컨텍스트가 안 오면 배경 버튼 표시
-  setTimeout(() => {
-    if(!contextReceived) showBgBtn();
-  }, 1500);
-  await loadBackgrounds();
   renderFreeBgGrid();
   setupDrawEvents();
   document.getElementById('draw-size-range').addEventListener('input', e => {
@@ -425,8 +439,17 @@ async function init() {
   document.getElementById('draw-color-input').addEventListener('input', e => {
     setDrawColor(e.target.value);
   });
-  document.getElementById('loading').style.display = 'none';
   window.addEventListener('resize', resizeCanvases);
+  // UI 준비 완료 → 로딩 스크린 즉시 제거 (Firestore 응답 안 기다림)
+  document.getElementById('loading').style.display = 'none';
+  // 부모 플레이어에 ready 신호 전송 (컨텍스트 수신 시작)
+  window.parent.postMessage({type:'lmp-ready'}, '*');
+  // 1.5초 안에 컨텍스트가 안 오면 배경 버튼 표시
+  setTimeout(() => {
+    if(!contextReceived) showBgBtn();
+  }, 1500);
+  // 배경 설정 로드는 백그라운드로 (autoSelectBg는 컨텍스트 수신과 타이밍 무관하게 재처리됨)
+  loadBackgrounds();
 }
 
 function showBgBtn() {
@@ -548,24 +571,39 @@ function autoSelectBg() {
   }
 }
 
+let autoBgState = { urls: [], names: [], desc: '', refPx: 0, selectedIdx: -1 };
+
 function showAutoBgSelect(urls, desc, names, refPx=0) {
+  autoBgState = { urls: urls.slice(), names: (names||[]).slice(), desc: desc||'', refPx: refPx||0, selectedIdx: -1 };
   const grid = document.getElementById('auto-bg-grid');
   grid.innerHTML = urls.map((url, i) => {
-    const safeUrl = url.replace(/'/g, '%27');
-    const safeDesc = (desc||'').replace(/'/g, '%27');
     const name = (names && names[i]) ? names[i] : '';
-    return `<div class="auto-bg-thumb" onclick="pickAutoBg('${safeUrl}','${safeDesc}',${refPx})">
+    return `<div class="auto-bg-thumb" onclick="selectAutoBg(${i})">
       <img src="${url}" loading="lazy" onerror="this.parentElement.style.opacity='.3'">
       ${name ? `<div class="bg-label">${name}</div>` : ''}
     </div>`;
   }).join('');
+  const btn = document.getElementById('auto-bg-confirm-btn');
+  if(btn) btn.disabled = true;
   document.getElementById('auto-bg-select').classList.add('on');
 }
 
-function pickAutoBg(url, desc, refPx=0) {
+function selectAutoBg(idx) {
+  autoBgState.selectedIdx = idx;
+  document.querySelectorAll('#auto-bg-grid .auto-bg-thumb').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+  const btn = document.getElementById('auto-bg-confirm-btn');
+  if(btn) btn.disabled = false;
+}
+
+function confirmAutoBg() {
+  const idx = autoBgState.selectedIdx;
+  if(idx < 0) return;
+  const url = autoBgState.urls[idx];
   document.getElementById('auto-bg-select').classList.remove('on');
-  selectBgByUrl(decodeURIComponent(url), '', false, refPx);
-  showBgDesc(desc ? decodeURIComponent(desc) : '');
+  selectBgByUrl(url, '', false, autoBgState.refPx);
+  showBgDesc(autoBgState.desc || '');
 }
 
 function showBgDesc(desc) {
