@@ -224,16 +224,23 @@ function showErr(msg) {
 function onFileChange(fid) {
   const inp = document.getElementById('ff-' + fid);
   const nameEl = document.getElementById('ff-' + fid + '-name');
-  if (!inp || !inp.files[0]) { if (nameEl) nameEl.textContent = ''; return; }
+  if (!inp || !inp.files[0]) { if (nameEl) nameEl.innerHTML = ''; return; }
   const file = inp.files[0];
   if (file.size > MAX_FILE_BYTES) {
     alert(`파일이 너무 커요.\n최대 ${MAX_FILE_MB}MB까지 업로드할 수 있어요.\n선택한 파일: ${(file.size / 1024 / 1024).toFixed(1)}MB`);
     inp.value = '';
-    if (nameEl) nameEl.textContent = '';
+    if (nameEl) nameEl.innerHTML = '';
     return;
   }
   const sizeTxt = file.size < 1024*1024 ? `${Math.round(file.size/1024)}KB` : `${(file.size/1024/1024).toFixed(1)}MB`;
-  if (nameEl) nameEl.textContent = `✅ ${file.name} (${sizeTxt})`;
+  if (nameEl) nameEl.innerHTML = `✅ ${file.name} (${sizeTxt})<button type="button" onclick="clearFile('${fid}')" style="margin-left:8px;border:none;background:none;cursor:pointer;font-size:14px;line-height:1;color:rgba(0,0,0,.45);padding:0;vertical-align:middle;" title="취소">✕</button>`;
+}
+
+function clearFile(fid) {
+  const inp = document.getElementById('ff-' + fid);
+  const nameEl = document.getElementById('ff-' + fid + '-name');
+  if (inp) inp.value = '';
+  if (nameEl) nameEl.innerHTML = '';
 }
 
 function onColorPick(fid, val) {
