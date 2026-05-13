@@ -2222,7 +2222,32 @@ let curBlkToolType = 'form';
 let curBlkToolConfig = {};
 let curBlkCompleteTrigger = 'tool-signal';
 let curToolHeightMode = 'auto'; // 'auto'|'full'|'px'
+
+// 스크롤형 스테이지에서 전체화면 옵션을 막는 공통 가드
+// 새 블록 타입에서 전체화면 옵션을 추가할 때 이 함수를 호출하면 됨
+function _assertFullScreenAllowed() {
+  if (curGuideDispType === 'scroll') {
+    _showFullScreenWarning();
+    return false;
+  }
+  return true;
+}
+function _showFullScreenWarning() {
+  let w = document.getElementById('_fullscreen-warn');
+  if (!w) {
+    w = document.createElement('div');
+    w.id = '_fullscreen-warn';
+    w.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#000;color:#fff;font-size:13px;font-weight:700;padding:10px 18px;z-index:9999;pointer-events:none;white-space:nowrap;letter-spacing:-.2px;';
+    document.body.appendChild(w);
+  }
+  w.textContent = '⚠️ 스크롤형 스테이지에서는 전체화면을 사용할 수 없어요. 슬라이드형으로 바꿔주세요.';
+  w.style.opacity = '1';
+  clearTimeout(w._t);
+  w._t = setTimeout(() => { w.style.opacity = '0'; }, 3000);
+}
+
 function setToolHeightMode(mode){
+  if (mode === 'full' && !_assertFullScreenAllowed()) return;
   curToolHeightMode=mode;
   ['auto','full','px'].forEach(m=>{
     const btn=document.getElementById('tool-h-'+m);
@@ -4377,7 +4402,10 @@ let curImgFit='natural',curImgPos='center';
 let curMixedImgFit='cover',curMixedImgPos='center',curMixedHeightFull=false;
 let curOverlayShadow=0.4;
 let curOverlayColor='#000000';
-function setMixedHeightFull(){curMixedHeightFull=true;document.getElementById('mixed-height-val').value='';document.getElementById('mixed-height-full-btn').classList.add('on');scheduleBmPreview();}
+function setMixedHeightFull(){
+  if (!_assertFullScreenAllowed()) return;
+  curMixedHeightFull=true;document.getElementById('mixed-height-val').value='';document.getElementById('mixed-height-full-btn').classList.add('on');scheduleBmPreview();
+}
 function setImgFit(fit){
   curImgFit=fit;
   document.querySelectorAll('.img-fit-btn[data-ctx="img"]').forEach(b=>b.classList.toggle('on',b.dataset.fit===fit));
@@ -4550,7 +4578,7 @@ function openBlockModal(idx,insertAt){
     const _singleN=document.getElementById('tool-single-notice');
     if(_instSec) _instSec.style.display=_isSingle?'none':'';
     if(_singleN) _singleN.style.display=_isSingle?'':'none';
-    const _hMode=b.height==='full'?'full':(b.height&&b.height>0?'px':'auto');
+    const _hMode=(b.height==='full'&&curGuideDispType==='scroll')?'auto':(b.height==='full'?'full':(b.height&&b.height>0?'px':'auto'));
     setToolHeightMode(_hMode);
     if(_hMode==='px'){ const hi=document.getElementById('tool-height'); if(hi) hi.value=b.height; }
     document.querySelectorAll('input[name="complete-trigger"]').forEach(r=>{
@@ -4578,7 +4606,7 @@ function openBlockModal(idx,insertAt){
   const _ihv=document.getElementById('img-height-val'); if(_ihv) _ihv.value=b.type==='image'?(b.imageHeight||''):'';
   setMixedImgFit(b.type==='mixed'?(b.imageFit||'cover'):'cover');
   setMixedImgPos(b.type==='mixed'?(b.imagePosition||'center'):'center');
-  curMixedHeightFull=b.type==='mixed'&&b.imageHeight==='full';
+  curMixedHeightFull=b.type==='mixed'&&b.imageHeight==='full'&&curGuideDispType!=='scroll';
   const _mhv=document.getElementById('mixed-height-val'); if(_mhv) _mhv.value=b.type==='mixed'&&b.imageHeight!=='full'?(b.imageHeight||''):'';
   const _mhfb=document.getElementById('mixed-height-full-btn'); if(_mhfb) _mhfb.classList.toggle('on',curMixedHeightFull);
   curOverlayVAlign=b.type==='mixed'?(b.overlayTextVAlign||'bottom'):'bottom';setOverlayVAlign(curOverlayVAlign);
