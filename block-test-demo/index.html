@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>준비 포털</title>
+<title>블록 기능 테스트</title>
+<meta property="og:title" content="블록 기능 테스트">
+<meta property="og:description" content="">
+<meta property="og:image" content="">
+<meta property="og:url" content="https://lazymaxpotential.kr/block-test-demo/">
+<meta property="og:type" content="website">
+<meta name="description" content="">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 html{height:100%;}
@@ -284,14 +290,14 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
   <div id="return-btn" onclick="reopenPrep()">↑</div>
   <div id="return-greeting"></div>
 
+  <div id="error-screen">
+    <div class="error-msg" id="error-msg">프로젝트를 찾을 수 없어요.</div>
+    <div class="error-sub" id="error-sub">URL을 확인해주세요.</div>
+  </div>
   <div id="coming-soon-screen" style="display:none;position:absolute;inset:0;z-index:200;background:#fff;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:40px;gap:16px;">
     <div style="font-size:40px;">🔒</div>
     <div style="font-size:20px;font-weight:800;letter-spacing:-.3px;">준비 중이에요</div>
     <div style="font-size:14px;color:rgba(0,0,0,.45);line-height:1.7;">곧 공개될 예정이에요.<br>조금만 기다려주세요.</div>
-  </div>
-  <div id="error-screen">
-    <div class="error-msg" id="error-msg">프로젝트를 찾을 수 없어요.</div>
-    <div class="error-sub" id="error-sub">URL을 확인해주세요.</div>
   </div>
 
   <!-- Prep screen (separate layout only) -->
@@ -506,9 +512,15 @@ async function loadProjectSettings(){
   }catch(e){ showError('연결에 실패했어요.','잠시 후 다시 시도해주세요.'); }
 }
 function applySettings(d){
-  const previewParam=new URLSearchParams(location.search).get('preview');
-  const isPreview=d.previewToken&&previewParam===d.previewToken;
-  if(d.published===false&&!isPreview&&!IS_ADMIN_PREVIEW){const el=document.getElementById('coming-soon-screen');if(el){el.style.display='flex';}return;}
+  // 게시 상태 확인 (published===false → 준비중, 미설정=true)
+  const previewParam = new URLSearchParams(location.search).get('preview');
+  const isPreview = d.previewToken && previewParam === d.previewToken;
+  if(d.published === false && !isPreview && !IS_ADMIN_PREVIEW){
+    const el = document.getElementById('coming-soon-screen');
+    if(el){ el.style.display='flex'; }
+    return;
+  }
+
   LAYOUT_TYPE     = d.layoutType     || 'separate';
   DDAY_ENABLED    = d.ddayEnabled    || false;
   DDAY_DATE       = d.ddayDate       || '';
@@ -916,13 +928,14 @@ async function submitRegistration(){
       btn.textContent='등록'; btn.disabled=false; return;
     }
     const sessionId=_newSessionId();
+    const deviceId=_getDeviceId();
     const ref=await db.collection(AUTH_COLLECTION).add({
       ...data,
-      activeSession:{id:sessionId, deviceId:_getDeviceId(), deviceInfo:_getDeviceInfo(),
-        startedAt:firebase.firestore.FieldValue.serverTimestamp(),
-        lastSeenAt:firebase.firestore.FieldValue.serverTimestamp()},
-      lastLoginAt:firebase.firestore.FieldValue.serverTimestamp(),
-      loginCount:1
+      activeSession:{ id:sessionId, deviceId, deviceInfo:_getDeviceInfo(),
+        startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        lastSeenAt: firebase.firestore.FieldValue.serverTimestamp() },
+      lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(),
+      loginCount: 1
     });
     USER_DOC_ID=ref.id;
     sessionStorage.setItem('userSession',JSON.stringify({...data,project:PROJECT_ID,_docId:USER_DOC_ID,_sessionId:sessionId}));
@@ -944,19 +957,64 @@ async function submitRegistration(){
   }catch(e){ document.getElementById('reg-err').textContent='등록 실패. 다시 시도해주세요.'; btn.textContent='등록'; btn.disabled=false; }
 }
 /* ── Single-session (active session) helpers ── */
-const SESSION_HEARTBEAT_MS=3*60*1000, SESSION_STALE_MS=10*60*1000;
-function _getDeviceId(){ let id=''; try{id=localStorage.getItem('lmp_device_id')||'';}catch(_){} if(!id){id='dev_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-6); try{localStorage.setItem('lmp_device_id',id);}catch(_){}} return id; }
+const SESSION_HEARTBEAT_MS = 3*60*1000;   // 3분마다 하트비트
+const SESSION_STALE_MS    = 10*60*1000;   // 10분 미활동 시 만료 처리
+function _getDeviceId(){
+  let id=''; try{ id=localStorage.getItem('lmp_device_id')||''; }catch(_){}
+  if(!id){ id='dev_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-6);
+    try{ localStorage.setItem('lmp_device_id',id); }catch(_){} }
+  return id;
+}
 function _newSessionId(){ return 'sess_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-6); }
-function _getDeviceInfo(){ const ua=navigator.userAgent||''; let b='브라우저'; if(/SamsungBrowser/.test(ua))b='Samsung Internet'; else if(/EdgiOS|Edg\//.test(ua))b='Edge'; else if(/FxiOS|Firefox/.test(ua))b='Firefox'; else if(/CriOS|Chrome/.test(ua))b='Chrome'; else if(/Safari/.test(ua))b='Safari'; let o=''; if(/iPhone/.test(ua))o='iPhone'; else if(/iPad/.test(ua))o='iPad'; else if(/Android/.test(ua))o='Android'; else if(/Mac/.test(ua))o='Mac'; else if(/Windows/.test(ua))o='Windows'; return o?`${b} (${o})`:b; }
+function _getDeviceInfo(){
+  const ua=navigator.userAgent||''; let b='브라우저';
+  if(/SamsungBrowser/.test(ua)) b='Samsung Internet';
+  else if(/EdgiOS|Edg\//.test(ua)) b='Edge';
+  else if(/FxiOS|Firefox/.test(ua)) b='Firefox';
+  else if(/CriOS|Chrome/.test(ua)) b='Chrome';
+  else if(/Safari/.test(ua)) b='Safari';
+  let o='';
+  if(/iPhone/.test(ua)) o='iPhone';
+  else if(/iPad/.test(ua)) o='iPad';
+  else if(/Android/.test(ua)) o='Android';
+  else if(/Mac/.test(ua)) o='Mac';
+  else if(/Windows/.test(ua)) o='Windows';
+  return o?`${b} (${o})`:b;
+}
 let _sessionHeartbeat=null;
-function _startSessionHeartbeat(docId){ _stopSessionHeartbeat(); if(!docId)return; _sessionHeartbeat=setInterval(()=>{ db.collection(AUTH_COLLECTION).doc(docId).update({'activeSession.lastSeenAt':firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{}); },SESSION_HEARTBEAT_MS); }
-function _stopSessionHeartbeat(){ if(_sessionHeartbeat){clearInterval(_sessionHeartbeat); _sessionHeartbeat=null;} }
-function _checkSessionConflict(userData){ const a=userData.activeSession; if(!a?.id)return''; const myDev=_getDeviceId(); if(a.deviceId&&a.deviceId===myDev)return''; const lastMs=a.lastSeenAt?.toMillis?.()||a.lastSeenAt?.seconds*1000||a.startedAt?.toMillis?.()||a.startedAt?.seconds*1000||0; if(!lastMs)return''; const elapsed=Date.now()-lastMs; if(elapsed>SESSION_STALE_MS)return''; const dev=a.deviceInfo||'알 수 없는 기기'; const mins=Math.floor(elapsed/60000); const ago=mins<1?'방금':`${mins}분 전`; return `<b>이미 다른 기기에서 로그인되어 있어요.</b><br><span style="font-size:11px;opacity:.75;display:block;margin-top:6px;line-height:1.55;">접속 기기: <b>${dev}</b><br>마지막 활동: ${ago}<br>먼저 그 기기에서 로그아웃 후 다시 시도해 주세요.<br>(10분 이상 미활동 시 자동 해제)</span>`; }
+function _startSessionHeartbeat(docId){
+  _stopSessionHeartbeat();
+  if(!docId) return;
+  _sessionHeartbeat=setInterval(()=>{
+    db.collection(AUTH_COLLECTION).doc(docId).update({
+      'activeSession.lastSeenAt': firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(()=>{});
+  }, SESSION_HEARTBEAT_MS);
+}
+function _stopSessionHeartbeat(){ if(_sessionHeartbeat){ clearInterval(_sessionHeartbeat); _sessionHeartbeat=null; } }
+function _checkSessionConflict(userData){
+  const a=userData.activeSession;
+  if(!a?.id) return '';
+  const myDev=_getDeviceId();
+  if(a.deviceId && a.deviceId===myDev) return ''; // 같은 기기는 허용
+  const lastMs=a.lastSeenAt?.toMillis?.()||a.lastSeenAt?.seconds*1000||a.startedAt?.toMillis?.()||a.startedAt?.seconds*1000||0;
+  if(!lastMs) return ''; // 시각 불명 → 통과
+  const elapsed=Date.now()-lastMs;
+  if(elapsed>SESSION_STALE_MS) return ''; // 만료
+  const dev=a.deviceInfo||'알 수 없는 기기';
+  const mins=Math.floor(elapsed/60000);
+  const ago=mins<1?'방금':`${mins}분 전`;
+  return `<b>이미 다른 기기에서 로그인되어 있어요.</b><br>`
+    +`<span style="font-size:11px;opacity:.75;display:block;margin-top:6px;line-height:1.55;">`
+    +`접속 기기: <b>${dev}</b><br>마지막 활동: ${ago}<br>`
+    +`먼저 그 기기에서 로그아웃 후 다시 시도해 주세요.<br>(10분 이상 미활동 시 자동 해제)</span>`;
+}
 async function confirmAuth(){
   const val=document.getElementById('auth-key-input').value.trim();
   if(!val){ document.getElementById('auth-err').textContent='값을 입력해주세요.'; return; }
   const btn=document.getElementById('auth-ok');
-  const errEl=document.getElementById('auth-err'); errEl.textContent='';
+  const errEl=document.getElementById('auth-err');
+  errEl.textContent='';
   btn.textContent='확인 중…'; btn.disabled=true;
   try{
     const keyField=AUTH_FIELDS.find(f=>f.key===AUTH_KEY_FIELD);
@@ -966,23 +1024,26 @@ async function confirmAuth(){
     if(snap.empty){ errEl.textContent='인증 정보를 찾을 수 없어요.'; return; }
     const u=snap.docs[0].data();
     const docId=snap.docs[0].id;
+    // 단일-세션 검사: 다른 기기 활성 세션이 있으면 차단
     const blockHtml=_checkSessionConflict(u);
     if(blockHtml){ errEl.innerHTML=blockHtml; return; }
     USER_DOC_ID=docId;
     const sessionId=_newSessionId();
-    const {activeSession:_omit,...uClean}=u;
+    const deviceId=_getDeviceId();
+    const {activeSession:_omit, ...uClean}=u;
     sessionStorage.setItem('userSession',JSON.stringify({...uClean,project:PROJECT_ID,_docId:USER_DOC_ID,_sessionId:sessionId}));
     db.collection(AUTH_COLLECTION).doc(USER_DOC_ID).update({
-      activeSession:{id:sessionId, deviceId:_getDeviceId(), deviceInfo:_getDeviceInfo(),
-        startedAt:firebase.firestore.FieldValue.serverTimestamp(),
-        lastSeenAt:firebase.firestore.FieldValue.serverTimestamp()},
-      lastLoginAt:firebase.firestore.FieldValue.serverTimestamp(),
-      loginCount:firebase.firestore.FieldValue.increment(1)
+      activeSession:{ id:sessionId, deviceId, deviceInfo:_getDeviceInfo(),
+        startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        lastSeenAt: firebase.firestore.FieldValue.serverTimestamp() },
+      lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(),
+      loginCount: firebase.firestore.FieldValue.increment(1)
     }).catch(()=>{});
     _startSessionHeartbeat(USER_DOC_ID);
     loadUserProgress(u);
     applyGreeting(u);
     closeModal('auth-modal');
+    // 보류된 동작이 있으면 실행 (필요 시 로그인 모드)
     if(_pendingAuthAction){
       const fn=_pendingAuthAction; _pendingAuthAction=null; _pendingAuthReason='';
       renderMenu(); refreshStageProgress();
@@ -1033,7 +1094,6 @@ function applyGreeting(userRecord){
   });
 }
 
-
 /* ── Side menu (both layouts) ── */
 function renderMenu(){
   const target=LAYOUT_TYPE==='merged'?'merged-side':'side';
@@ -1060,11 +1120,26 @@ function logout(){
   if(!confirm('로그아웃 하시겠어요?')) return;
   _stopSessionHeartbeat();
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
-  if(saved._docId){ db.collection(AUTH_COLLECTION).doc(saved._docId).update({activeSession:firebase.firestore.FieldValue.delete()}).catch(()=>{}); }
+  if(saved._docId){
+    db.collection(AUTH_COLLECTION).doc(saved._docId).update({
+      activeSession: firebase.firestore.FieldValue.delete()
+    }).catch(()=>{});
+  }
   try{ sessionStorage.removeItem('userSession'); }catch(_){}
   location.reload();
 }
-window.addEventListener('beforeunload',()=>{ if(!AUTH_ENABLED)return; const s=JSON.parse(sessionStorage.getItem('userSession')||'{}'); if(s._docId&&s.project===PROJECT_ID&&s._sessionId){ try{ db.collection(AUTH_COLLECTION).doc(s._docId).update({activeSession:firebase.firestore.FieldValue.delete()}); }catch(_){}} });
+/* 페이지 닫힘 시 최선 노력으로 세션 해제 */
+window.addEventListener('beforeunload', () => {
+  if(!AUTH_ENABLED) return;
+  const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  if(saved._docId && saved.project===PROJECT_ID && saved._sessionId){
+    try{
+      db.collection(AUTH_COLLECTION).doc(saved._docId).update({
+        activeSession: firebase.firestore.FieldValue.delete()
+      });
+    }catch(_){}
+  }
+});
 function toggleMenu(){
   const m=document.getElementById('side-menu');
   if(m.classList.contains('open')) closeMenu();
@@ -1096,6 +1171,7 @@ async function openStageContent(stage){
     if(!doc.exists){ showGuideEmpty('안내 내용이 아직 준비되지 않았어요.'); return; }
     const g=doc.data();
     const blocks=(g.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
+    /* checkableCount 보정: Firestore 스테이지 데이터가 stale할 수 있으므로 실제 블록 기준으로 갱신 */
     const actualCnt=blocks.filter(b=>b.checkable||b.type==='form'||b.type==='tool').length;
     if(STAGES[curStageIdx]) STAGES[curStageIdx].checkableCount=actualCnt;
     if(g.displayType==='slide') renderGuideSlide(blocks);
@@ -1108,11 +1184,13 @@ function closeGuide(){
 window.addEventListener('popstate', function(e) {
   const guide = document.getElementById('guide-screen');
   if (e.state && e.state.stageId) {
+    /* 앞으로가기: 스테이지 화면 재진입 */
     if (guide && !guide.classList.contains('open')) {
       const stage = STAGES.find(s => s.id === e.state.stageId);
       if (stage) { _navRestore=true; openStageContent(stage).finally(()=>{ _navRestore=false; }); }
     }
   } else {
+    /* 뒤로가기: 스테이지 화면 닫기 */
     if (guide && guide.classList.contains('open')) guide.classList.remove('open');
   }
 });
@@ -1171,7 +1249,15 @@ function blockHtml(b){
     return `<div class="g-block-embed" style="${mS}${bgS}${b.embedHeight===0?'min-height:60vh;':''}"><iframe src="${b.embedUrl}" width="100%" height="${_eh}" frameborder="0" allowfullscreen style="display:block;border:none;${_eStyle}" data-block-bg="${b.bgColor||''}"></iframe></div>`;
   }
   if(b.type==='tool'){
-    const toolUrls={form:`/tools/form/?id=${b.toolConfig?.formId||''}`,booth:`/tools/booth/?id=${b.toolConfig?.boothId||''}`,guide:`/tools/guide/?id=${b.toolConfig?.guideId||''}`,'youtube-playlist':`/tools/youtube-playlist/?id=${b.toolConfig?.youtubePlaylistId||''}`,schedule:`/tools/schedule/?id=${b.toolConfig?.scheduleId||''}`,'copy-gen':`/tools/copy-gen/?id=${b.toolConfig?.copyGenId||''}`,payment:`/tools/payment/?id=${b.toolConfig?.paymentId||''}`};
+    const toolUrls={
+      form:`/tools/form/?id=${b.toolConfig?.formId||''}`,
+      booth:`/tools/booth/?id=${b.toolConfig?.boothId||''}`,
+      guide:`/tools/guide/?id=${b.toolConfig?.guideId||''}`,
+      'youtube-playlist':`/tools/youtube-playlist/?id=${b.toolConfig?.youtubePlaylistId||''}`,
+      schedule:`/tools/schedule/?id=${b.toolConfig?.scheduleId||''}`,
+      'copy-gen':`/tools/copy-gen/?id=${b.toolConfig?.copyGenId||''}`,
+      payment:`/tools/payment/?id=${b.toolConfig?.paymentId||''}`,
+    };
     const src=toolUrls[b.toolType]||'';
     const h=b.height;
     const isFull=h==='full';
@@ -1180,10 +1266,17 @@ function blockHtml(b){
     const wrapH=isFull?'height:calc(100svh - 60px);':(isPx?'':`min-height:60vh;`);
     const trigger=b.completeTrigger||'tool-signal';
     const onloadAttr=trigger==='open'?` onload="if(this.src&&this.src!=='about:blank')autoCheckBlock('${b.id}')"`:'';
+    // 필요 시 로그인 모드 + 비로그인 → 잠금 오버레이 (iframe은 렌더링하지 않음)
     const needsLogin=AUTH_ENABLED && AUTH_MODE==='on-demand' && !USER_DOC_ID && !IS_ADMIN_PREVIEW
                      && !(JSON.parse(sessionStorage.getItem('userSession')||'{}').project===PROJECT_ID);
     if(needsLogin){
-      return `<div class="g-block-embed g-tool-locked" style="${mS}${bgS}${wrapH}min-height:160px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1.5px dashed rgba(0,0,0,.25);background:rgba(0,0,0,.04);" onclick="requireAuthOr(()=>location.reload(),'이 도구를 사용하려면 로그인이 필요해요.')"><div style="text-align:center;padding:24px 16px;"><div style="font-size:28px;margin-bottom:8px;">🔒</div><div style="font-size:13px;font-weight:800;margin-bottom:4px;">로그인 후 사용 가능</div><div style="font-size:11px;opacity:.6;line-height:1.5;">탭해서 로그인하기</div></div></div>`;
+      return `<div class="g-block-embed g-tool-locked" style="${mS}${bgS}${wrapH}min-height:160px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1.5px dashed rgba(0,0,0,.25);background:rgba(0,0,0,.04);" onclick="requireAuthOr(()=>location.reload(),'이 도구를 사용하려면 로그인이 필요해요.')">
+        <div style="text-align:center;padding:24px 16px;">
+          <div style="font-size:28px;margin-bottom:8px;">🔒</div>
+          <div style="font-size:13px;font-weight:800;margin-bottom:4px;">로그인 후 사용 가능</div>
+          <div style="font-size:11px;opacity:.6;line-height:1.5;">탭해서 로그인하기</div>
+        </div>
+      </div>`;
     }
     return `<div class="g-block-embed" style="${mS}${bgS}${wrapH}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}" data-block-bg="${b.bgColor||''}" data-complete-trigger="${trigger}"${onloadAttr}></iframe></div>`;
   }
@@ -1201,6 +1294,7 @@ function blockHtml(b){
   if(b.type==='form' && b.formId){
     formBlockData[b.formId]={formFields:b.formFields||[],formConfig:b.formConfig||{},blockId:b.id};
     const config=b.formConfig||{};
+    /* 중복제출 불허 + 인증사용자 + 이미 제출한 경우 → 완료 화면으로 고정 */
     const noResubmit=!config.allowDuplicates&&AUTH_ENABLED&&USER_DOC_ID&&(userProgress[curStageId]||new Set()).has(b.id);
     const doneHtml=`${config.postSubmitImage?`<img src="${config.postSubmitImage}" style="width:100%;display:block;margin-bottom:16px;" loading="lazy">`:''}<div>${config.postSubmitHtml||'제출되었어요!'}</div>`;
     const titleHtml=config.formTitle?`<div class="ff-form-title">${config.formTitle}</div>`:'';
@@ -1222,23 +1316,60 @@ function attachCheck(h,b){
   if(vPos==='top') return checkEl+h;
   return h+checkEl;
 }
-function _effectivePageBg(){const cs=getComputedStyle(document.documentElement);return (cs.getPropertyValue('--prep-bg')||cs.getPropertyValue('--body-bg')||cs.getPropertyValue('--c')||'').trim();}
-function _lmpContext(iframeEl){let bb=iframeEl?(iframeEl.getAttribute('data-block-bg')||''):'';const _session=JSON.parse(sessionStorage.getItem('userSession')||'{}');return{type:'lmp-context',projectId:typeof PROJECT_ID!=='undefined'?PROJECT_ID:'',userId:typeof USER_DOC_ID!=='undefined'?USER_DOC_ID:'',boothType:_session.boothType||_session.type||'',keyColors:typeof KEY_COLORS!=='undefined'?KEY_COLORS:[],prepBg:typeof prepBg!=='undefined'?prepBg:'',userFields:_session,blockBg:bb};}
-function _sendContextToEmbeds(){
-  setTimeout(()=>{document.querySelectorAll('iframe').forEach(f=>{try{f.contentWindow.postMessage(_lmpContext(f),'*');}catch(e){}});},300);
+// ── 임베드 iframe에 사용자 컨텍스트 전달 ──
+function _effectivePageBg(){
+  const cs=getComputedStyle(document.documentElement);
+  return (cs.getPropertyValue('--prep-bg')||cs.getPropertyValue('--body-bg')||cs.getPropertyValue('--c')||'').trim();
 }
+function _lmpContext(iframeEl){
+  let bb = iframeEl ? (iframeEl.getAttribute('data-block-bg')||'') : '';
+  const _session = JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  return {
+    type:'lmp-context',
+    projectId: typeof PROJECT_ID!=='undefined' ? PROJECT_ID : '',
+    userId: typeof USER_DOC_ID!=='undefined' ? USER_DOC_ID : '',
+    boothType: _session.boothType||_session.type||'',
+    keyColors: typeof KEY_COLORS!=='undefined' ? KEY_COLORS : [],
+    prepBg: typeof prepBg!=='undefined' ? prepBg : '',
+    userFields: _session,
+    blockBg: bb
+  };
+}
+function _sendContextToEmbeds(){
+  setTimeout(()=>{
+    document.querySelectorAll('iframe').forEach(f=>{
+      try{ f.contentWindow.postMessage(_lmpContext(f),'*'); }catch(e){}
+    });
+  },300);
+}
+// lmp-ready 수신 시 즉시 전송
+// lmp-tool-complete 수신 시 autoCheckBlock 처리
 window.addEventListener('message',e=>{
-  if(e.data?.type==='lmp-ready'&&e.source){let sourceIframe=null;document.querySelectorAll('iframe').forEach(f=>{if(f.contentWindow===e.source)sourceIframe=f;});try{e.source.postMessage(_lmpContext(sourceIframe),'*');}catch(er){}return;}
+  if(e.data?.type==='lmp-ready'&&e.source){
+    let sourceIframe=null;
+    document.querySelectorAll('iframe').forEach(f=>{ if(f.contentWindow===e.source) sourceIframe=f; });
+    try{ e.source.postMessage(_lmpContext(sourceIframe),'*'); }catch(er){}
+    return;
+  }
   if(e.data?.type==='lmp-tool-complete'){
-    document.querySelectorAll('iframe[data-tool-block]').forEach(f=>{try{if(f.contentWindow===e.source&&f.getAttribute('data-complete-trigger')!=='manual')autoCheckBlock(f.getAttribute('data-tool-block'));}catch(_){}});
+    document.querySelectorAll('iframe[data-tool-block]').forEach(f=>{
+      try{
+        if(f.contentWindow===e.source&&f.getAttribute('data-complete-trigger')!=='manual')
+          autoCheckBlock(f.getAttribute('data-tool-block'));
+      }catch(_){}
+    });
     return;
   }
 });
+// 텍스트 링크에서 /tools/ URL 클릭 시 모달로 열기
 document.addEventListener('click',e=>{
   const a=e.target.closest('a[href]');
   if(!a) return;
   const href=a.getAttribute('href');
-  if(href&&href.startsWith('/tools/')){e.preventDefault();openToolLinkModal(href);}
+  if(href&&href.startsWith('/tools/')){
+    e.preventDefault();
+    openToolLinkModal(href);
+  }
 });
 function openToolLinkModal(url){
   const modal=document.getElementById('tool-link-modal');
@@ -1267,6 +1398,7 @@ function renderGuideScroll(blocks){
     return (bgS||mS)?`<div style="${bgS}${mS}">${inner}</div>`:inner;
   }).join('');
   document.getElementById('guide-scroll-body').style.display='block';
+  _sendContextToEmbeds();
 }
 function renderGuideSlide(blocks){
   gSlideIdx=0; gSlideTotal=blocks.length;
@@ -1286,6 +1418,7 @@ function renderGuideSlide(blocks){
     return `<div class="guide-slide-item"${va?` data-valign="${va}"`:''}  style="width:${100/N}%;justify-content:${jc};${bgS}${mS}${scrollS}">${inner}</div>`;
   }).join('');
   track.style.width=(N*100)+'%';
+  track.style.transform='translateX(0)';
   updateDots(); document.getElementById('guide-slide-body').style.display='flex';
   _sendContextToEmbeds();
   const sb=document.getElementById('guide-slide-body');
@@ -1361,6 +1494,7 @@ function refreshStageProgress(){
   if(!card) return;
   const dot=card.querySelector('.status-dot');
   if(dot) dot.textContent=statusTxt;
+  /* pbar 요소 통째로 교체 (0%↔비0% 전환, 텍스트 안/밖 전환 모두 처리) */
   const existingPbar=card.querySelector('.stage-pbar');
   if(existingPbar) existingPbar.remove();
   const isMerged=LAYOUT_TYPE==='merged';
@@ -1369,6 +1503,7 @@ function refreshStageProgress(){
   if(html) card.insertAdjacentHTML('beforeend',html);
 }
 async function toggleBlockCheck(blockId){
+  // 필요 시 로그인 모드: 비로그인 사용자는 로그인 요청 후 재시도
   if(AUTH_ENABLED && AUTH_MODE==='on-demand' && !USER_DOC_ID && !IS_ADMIN_PREVIEW){
     requireAuthOr(()=>toggleBlockCheck(blockId), '진행률을 체크하려면 로그인이 필요해요.');
     return;
@@ -1495,6 +1630,7 @@ async function submitForm(formId){
     await db.collection('cms_form_responses').doc(formId).collection('responses').add(docData);
     document.getElementById('form-body-'+formId).style.display='none';
     document.getElementById('form-done-'+formId).style.display='';
+    /* 폼 제출 = 블록 체크로 자동 처리 */
     const _bid=formBlockData[formId]?.blockId;
     if(_bid&&!(userProgress[curStageId]||new Set()).has(_bid)) await toggleBlockCheck(_bid);
     if(formConfig.sheetId){
@@ -1523,7 +1659,10 @@ async function init(){
   loadUserProgress();
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
   const loggedIn=saved.project===PROJECT_ID;
-  if(loggedIn&&AUTH_ENABLED&&USER_DOC_ID&&!IS_ADMIN_PREVIEW){ _startSessionHeartbeat(USER_DOC_ID); }
+  /* 페이지 새로고침/재진입 시 하트비트 재개 (USER_DOC_ID는 loadUserProgress에서 복원됨) */
+  if(loggedIn && AUTH_ENABLED && USER_DOC_ID && !IS_ADMIN_PREVIEW){
+    _startSessionHeartbeat(USER_DOC_ID);
+  }
   /* merged + auth: show modal immediately (skip auth in admin preview) */
   if(LAYOUT_TYPE==='merged'&&AUTH_ENABLED){
     if(IS_ADMIN_PREVIEW){
