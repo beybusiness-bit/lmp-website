@@ -480,6 +480,12 @@ async function submitForm() {
 
 window.parent.postMessage({ type: 'lmp-ready' }, '*');
 init();
+
+// iframe 높이를 내용 크기에 맞게 부모에게 알림
+function _sendHeight() {
+  window.parent.postMessage({ type: 'lmp-resize', height: document.body.scrollHeight }, '*');
+}
+new ResizeObserver(_sendHeight).observe(document.body);
 </script>
 </body>
 </html>

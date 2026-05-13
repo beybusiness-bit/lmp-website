@@ -1357,6 +1357,12 @@ window.addEventListener('message',e=>{
     try{ e.source.postMessage(_lmpContext(sourceIframe),'*'); }catch(er){}
     return;
   }
+  if(e.data?.type==='lmp-resize' && typeof e.data.height==='number'){
+    document.querySelectorAll('iframe').forEach(f=>{
+      try{ if(f.contentWindow===e.source && !f.closest('.g-tool-full-wrap')) f.style.height=e.data.height+'px'; }catch(_){}
+    });
+    return;
+  }
   if(e.data?.type==='lmp-tool-complete'){
     document.querySelectorAll('iframe[data-tool-block]').forEach(f=>{
       try{
