@@ -125,7 +125,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 /* ── 자동 배경 선택 UI ── */
 #auto-bg-select{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:250;align-items:flex-end;justify-content:center;}
 #auto-bg-select.on{display:flex;}
-#auto-bg-inner{background:#fff;border-top:2px solid #000;padding:0;width:100%;max-width:480px;height:88svh;max-height:88svh;display:flex;flex-direction:column;overflow:hidden;}
+#auto-bg-inner{background:#fff;border-top:2px solid #000;padding:0;width:100%;max-width:480px;height:88vh;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;}
 .auto-bg-header{display:flex;align-items:center;justify-content:center;padding:14px 16px 10px;flex-shrink:0;border-bottom:1.5px solid rgba(0,0,0,.06);}
 .auto-bg-header span{font-size:14px;font-weight:700;color:#000;}
 #auto-bg-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 16px;overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;}
@@ -585,6 +585,11 @@ function showAutoBgSelect(urls, desc, names, refPx=0) {
   }).join('');
   const btn = document.getElementById('auto-bg-confirm-btn');
   if(btn) btn.disabled = true;
+  // 모바일 iframe에서 svh 단위 오작동 방지: JS로 실제 viewport 높이 기준 지정
+  const inner = document.getElementById('auto-bg-inner');
+  const safeH = Math.floor((window.visualViewport ? window.visualViewport.height : window.innerHeight) * 0.88);
+  inner.style.height = safeH + 'px';
+  inner.style.maxHeight = safeH + 'px';
   document.getElementById('auto-bg-select').classList.add('on');
 }
 
@@ -601,9 +606,16 @@ function confirmAutoBg() {
   const idx = autoBgState.selectedIdx;
   if(idx < 0) return;
   const url = autoBgState.urls[idx];
+  const desc = autoBgState.desc || '';
+  const refPx = autoBgState.refPx;
   document.getElementById('auto-bg-select').classList.remove('on');
-  selectBgByUrl(url, '', false, autoBgState.refPx);
-  showBgDesc(autoBgState.desc || '');
+  // iOS Safari: position:fixed 오버레이 닫힌 후 렌더링 복구
+  document.body.scrollTop = 0;
+  document.documentElement.scrollTop = 0;
+  requestAnimationFrame(() => {
+    selectBgByUrl(url, '', false, refPx);
+    showBgDesc(desc);
+  });
 }
 
 function showBgDesc(desc) {
@@ -611,7 +623,7 @@ function showBgDesc(desc) {
   if(!bar) return;
   if(!desc) { bar.style.display = 'none'; return; }
   bar.textContent = desc;
-  bar.style.display = '';
+  bar.style.display = 'block';
 }
 
 function selectBg(i, silent=false) {
