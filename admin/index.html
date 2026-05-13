@@ -1076,7 +1076,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
           <div style="margin-bottom:16px;">
             <div class="ed-lbl" style="margin-bottom:4px;">연결 필드 키</div>
-            <input class="fi" id="deco-field-key" placeholder="비워두면 boothType 사용" style="margin-bottom:4px;" oninput="saveDecoFieldKey(this.value)">
+            <input class="fi" id="deco-field-key" placeholder="비워두면 boothType 사용" style="margin-bottom:4px;">
             <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 사용자 인증 필드 중 어떤 필드값으로 배경을 자동 선택할지 키를 입력하세요. 예: <code>boothType</code>, <code>category</code></div>
           </div>
 
@@ -6630,7 +6630,9 @@ async function decoOpenConfig(configId) {
   loadBoothBgs(configId);
   loadBoothConnections(configId);
   const pvUrl = configId === 'booth' ? '/tools/booth/' : `/tools/booth/?config=${configId}`;
-  document.getElementById('deco-header-actions').innerHTML = `<button class="prev-btn" onclick="openToolPreview('${pvUrl}')" style="font-size:12px;padding:4px 8px;">미리보기</button>`;
+  document.getElementById('deco-header-actions').innerHTML = `
+    <button class="prev-btn" onclick="openToolPreview('${pvUrl}')" style="font-size:12px;padding:4px 8px;">미리보기</button>
+    <button class="save-btn" id="deco-save-btn" onclick="saveDecoConfig()" style="font-size:12px;padding:4px 12px;margin:0;">저장</button>`;
 }
 
 /* ════════════════════════════════════════════
@@ -7145,14 +7147,16 @@ async function loadBoothBgs(configId = 'booth') {
   try {
     const doc = await db.collection('game_configs').doc(configId).get();
     const data = doc.exists ? doc.data() : {};
-    const bgs = data.backgrounds || [];
-    if(doc.exists && data.name && configId !== 'booth') {
-      decoState.curConfig = data;
-      document.getElementById('deco-config-name').value = data.name;
-    }
+    decoState.curConfig = {
+      name: data.name || (configId === 'booth' ? '부스 꾸미기' : ''),
+      fieldKey: data.fieldKey || '',
+      backgrounds: JSON.parse(JSON.stringify(data.backgrounds || [])),
+      _type: data._type,
+    };
+    document.getElementById('deco-config-name').value = decoState.curConfig.name;
     const fkEl = document.getElementById('deco-field-key');
-    if(fkEl) fkEl.value = data.fieldKey || '';
-    renderBoothBgList(bgs);
+    if(fkEl) fkEl.value = decoState.curConfig.fieldKey;
+    renderBoothBgList(decoState.curConfig.backgrounds);
   } catch(e) {
     el.innerHTML = '<div class="empty-msg">불러오기 실패: ' + e.message + '</div>';
   }
@@ -7171,6 +7175,7 @@ function renderBoothBgList(bgs) {
         <img src="${url}" onerror="this.style.display='none'">
         <button class="booth-img-del" onclick="deleteBoothBgImage(${i},${j})" title="이미지 삭제">✕</button>
       </div>`).join('');
+    const desc = (b.description||'').replace(/`/g,'\\`').replace(/\$/g,'\\$');
     return `<div class="booth-bg-item" data-idx="${i}">
       <div class="booth-bg-type">
         <span>${b.type}</span>
@@ -7180,32 +7185,29 @@ function renderBoothBgList(bgs) {
         ${thumbs}
         <label class="booth-img-add" title="이미지 추가">＋<input type="file" accept="image/*" style="display:none;" onchange="uploadBoothBg(event,${i})"></label>
       </div>
+      <div style="margin-top:10px;">
+        <div style="font-size:11px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:3px;">설명 <span style="font-weight:400;">(배경 선택 후 편집 화면 상단에 표시)</span></div>
+        <textarea class="fi" rows="2" style="font-size:12px;line-height:1.5;resize:vertical;margin-bottom:0;" placeholder="이 배경을 선택한 사용자에게 보여줄 안내 문구 (선택사항)" oninput="decoState.curConfig.backgrounds[${i}].description=this.value">${b.description||''}</textarea>
+      </div>
     </div>`;
   }).join('');
 }
 
-async function addBoothType() {
-  const configId = decoState.curConfigId || 'booth';
+function addBoothType() {
   const input = document.getElementById('new-booth-type');
   const type = input.value.trim();
   if(!type) return;
-  try {
-    const doc = await db.collection('game_configs').doc(configId).get();
-    const bgs = doc.exists ? (doc.data().backgrounds || []) : [];
-    if(bgs.find(b => b.type === type)) {
-      alert('이미 존재하는 부스 종류예요: ' + type); return;
-    }
-    bgs.push({ type, label: type, urls: [] });
-    await db.collection('game_configs').doc(configId).set({ backgrounds: bgs }, { merge: true });
-    input.value = '';
-    renderBoothBgList(bgs);
-  } catch(e) {
-    alert('추가 실패: ' + e.message);
+  if(!decoState.curConfig) decoState.curConfig = { backgrounds: [] };
+  if(!decoState.curConfig.backgrounds) decoState.curConfig.backgrounds = [];
+  if(decoState.curConfig.backgrounds.find(b => b.type === type)) {
+    alert('이미 존재하는 값이에요: ' + type); return;
   }
+  decoState.curConfig.backgrounds.push({ type, label: type, urls: [], description: '' });
+  input.value = '';
+  renderBoothBgList(decoState.curConfig.backgrounds);
 }
 
 async function uploadBoothBg(e, idx) {
-  const configId = decoState.curConfigId || 'booth';
   const file = e.target.files[0];
   if(!file) return;
   const addBtn = e.target.closest('label');
@@ -7215,15 +7217,14 @@ async function uploadBoothBg(e, idx) {
     const ref = storage.ref('game_configs/booth_bgs/' + Date.now() + '.webp');
     await ref.put(compressed, { contentType: 'image/webp' });
     const url = await ref.getDownloadURL();
-    const doc = await db.collection('game_configs').doc(configId).get();
-    const bgs = doc.data().backgrounds || [];
+    const bgs = decoState.curConfig.backgrounds;
     const urls = bgs[idx].urls || (bgs[idx].url ? [bgs[idx].url] : []);
     urls.push(url);
     bgs[idx].urls = urls;
     delete bgs[idx].url;
-    await db.collection('game_configs').doc(configId).set({ backgrounds: bgs }, { merge: true });
     renderBoothBgList(bgs);
   } catch(err) {
+    renderBoothBgList(decoState.curConfig.backgrounds);
     alert('업로드 실패: ' + err.message);
   }
 }
@@ -7283,45 +7284,42 @@ function renderBoothConnections(connections) {
     </div>`).join('');
 }
 
-async function deleteBoothBg(idx) {
-  const configId = decoState.curConfigId || 'booth';
-  if(!confirm('이 필드 값 항목을 삭제할까요? 등록된 이미지도 함께 삭제됩니다.')) return;
-  try {
-    const doc = await db.collection('game_configs').doc(configId).get();
-    const bgs = doc.data().backgrounds || [];
-    bgs.splice(idx, 1);
-    await db.collection('game_configs').doc(configId).set({ backgrounds: bgs }, { merge: true });
-    renderBoothBgList(bgs);
-  } catch(e) {
-    alert('삭제 실패: ' + e.message);
-  }
+function deleteBoothBg(idx) {
+  if(!confirm('이 필드 값 항목을 삭제할까요?')) return;
+  decoState.curConfig.backgrounds.splice(idx, 1);
+  renderBoothBgList(decoState.curConfig.backgrounds);
 }
 
-async function deleteBoothBgImage(typeIdx, imgIdx) {
+function deleteBoothBgImage(typeIdx, imgIdx) {
   if(!confirm('이 이미지를 삭제할까요?')) return;
-  const configId = decoState.curConfigId || 'booth';
-  try {
-    const doc = await db.collection('game_configs').doc(configId).get();
-    const bgs = doc.data().backgrounds || [];
-    const urls = bgs[typeIdx].urls || (bgs[typeIdx].url ? [bgs[typeIdx].url] : []);
-    urls.splice(imgIdx, 1);
-    bgs[typeIdx].urls = urls;
-    delete bgs[typeIdx].url;
-    await db.collection('game_configs').doc(configId).set({ backgrounds: bgs }, { merge: true });
-    renderBoothBgList(bgs);
-  } catch(e) {
-    alert('삭제 실패: ' + e.message);
-  }
+  const bgs = decoState.curConfig.backgrounds;
+  const urls = bgs[typeIdx].urls || (bgs[typeIdx].url ? [bgs[typeIdx].url] : []);
+  urls.splice(imgIdx, 1);
+  bgs[typeIdx].urls = urls;
+  delete bgs[typeIdx].url;
+  renderBoothBgList(bgs);
 }
 
-async function saveDecoFieldKey(val) {
+async function saveDecoConfig() {
   const configId = decoState.curConfigId || 'booth';
-  clearTimeout(saveDecoFieldKey._t);
-  saveDecoFieldKey._t = setTimeout(async () => {
-    try {
-      await db.collection('game_configs').doc(configId).set({ fieldKey: val.trim() }, { merge: true });
-    } catch(e) { /* silent */ }
-  }, 600);
+  const cfg = decoState.curConfig;
+  if(!cfg) return;
+  const saveBtn = document.getElementById('deco-save-btn');
+  if(saveBtn) { saveBtn.textContent = '저장 중…'; saveBtn.disabled = true; }
+  try {
+    const payload = {
+      backgrounds: cfg.backgrounds || [],
+      fieldKey: (document.getElementById('deco-field-key')?.value || '').trim(),
+    };
+    if(configId !== 'booth') {
+      payload.name = (document.getElementById('deco-config-name')?.value || '').trim() || cfg.name || '';
+    }
+    await db.collection('game_configs').doc(configId).set(payload, { merge: true });
+    if(saveBtn) { saveBtn.textContent = '저장됨 ✓'; saveBtn.disabled = false; setTimeout(() => { if(saveBtn) saveBtn.textContent = '저장'; }, 1800); }
+  } catch(e) {
+    if(saveBtn) { saveBtn.textContent = '저장'; saveBtn.disabled = false; }
+    alert('저장 실패: ' + e.message);
+  }
 }
 
 /* ════════════════════════════════════════════

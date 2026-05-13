@@ -125,6 +125,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 #auto-bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px 16px;overflow-y:auto;}
 .auto-bg-thumb{aspect-ratio:4/5;overflow:hidden;cursor:pointer;border:2px solid transparent;position:relative;background:#f0f0f0;}
 .auto-bg-thumb:hover{border-color:#000;}
+/* ── 배경 설명 바 ── */
+#bg-desc-bar{display:none;width:100%;max-width:480px;padding:10px 16px;font-size:13px;line-height:1.6;background:rgba(0,0,0,.05);border-top:1.5px solid rgba(0,0,0,.12);color:#000;white-space:pre-wrap;word-break:break-word;flex-shrink:0;}
 .auto-bg-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 </style>
 </head>
@@ -172,6 +174,9 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   <div id="items-layer"></div>
   <canvas id="draw-canvas"></canvas>
 </div>
+
+<!-- 배경 설명 바 (배경 선택 후 표시) -->
+<div id="bg-desc-bar"></div>
 
 <!-- 하단 패널 -->
 <div id="bottom-panel">
@@ -458,30 +463,43 @@ function autoSelectBg() {
   if(!urls.length) return;
   if(urls.length === 1) {
     selectBgByUrl(urls[0], match.label || '', true);
+    showBgDesc(match.description || '');
   } else {
-    showAutoBgSelect(urls);
+    showAutoBgSelect(urls, match.description || '');
   }
 }
 
-function showAutoBgSelect(urls) {
+function showAutoBgSelect(urls, desc) {
   const grid = document.getElementById('auto-bg-grid');
-  grid.innerHTML = urls.map((url, i) => `
-    <div class="auto-bg-thumb" onclick="pickAutoBg('${url}')">
+  grid.innerHTML = urls.map((url) => {
+    const safeUrl = url.replace(/'/g, '%27');
+    const safeDesc = (desc||'').replace(/'/g, '%27');
+    return `<div class="auto-bg-thumb" onclick="pickAutoBg('${safeUrl}','${safeDesc}')">
       <img src="${url}" loading="lazy" crossorigin="anonymous" onerror="this.parentElement.style.opacity='.3'">
-    </div>`).join('');
+    </div>`;
+  }).join('');
   document.getElementById('auto-bg-select').classList.add('on');
 }
 
-function pickAutoBg(url) {
+function pickAutoBg(url, desc) {
   document.getElementById('auto-bg-select').classList.remove('on');
-  selectBgByUrl(url, '', false);
+  selectBgByUrl(decodeURIComponent(url), '', false);
+  showBgDesc(desc ? decodeURIComponent(desc) : '');
+}
+
+function showBgDesc(desc) {
+  const bar = document.getElementById('bg-desc-bar');
+  if(!bar) return;
+  if(!desc) { bar.style.display = 'none'; return; }
+  bar.textContent = desc;
+  bar.style.display = '';
 }
 
 function selectBg(i, silent=false) {
   const b = backgrounds[i];
   const urls = b.urls || (b.url ? [b.url] : []);
   if(urls.length === 1) selectBgByUrl(urls[0], b.label||'', silent);
-  else if(urls.length > 1) showAutoBgSelect(urls);
+  else if(urls.length > 1) showAutoBgSelect(urls, b.description||'');
 }
 
 function selectBgByUrl(url, label='', silent=false) {
