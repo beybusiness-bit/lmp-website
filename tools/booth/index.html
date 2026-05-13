@@ -95,8 +95,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 .bg-modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;flex-shrink:0;}
 .bg-modal-header span{font-size:14px;font-weight:700;color:#000;}
 .bg-modal-header button{background:none;border:none;font-size:20px;cursor:pointer;color:#000;line-height:1;padding:2px;}
-#bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-.bg-thumb{position:relative;overflow:hidden;cursor:pointer;border:2px solid transparent;background:#f0f0f0;}
+#bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;align-items:start;}
+.bg-thumb{position:relative;overflow:hidden;cursor:pointer;border:2px solid transparent;background:#f0f0f0;align-self:start;}
 .bg-thumb:hover,.bg-thumb.active{border-color:#000;}
 .bg-thumb img{width:100%;height:auto;display:block;}
 .bg-thumb.broken{opacity:.35;}
@@ -136,9 +136,9 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 #auto-bg-inner{background:#fff;border-top:2px solid #000;padding:0;width:100%;max-width:480px;height:88vh;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;}
 .auto-bg-header{display:flex;align-items:center;justify-content:center;padding:14px 16px 10px;flex-shrink:0;border-bottom:1.5px solid rgba(0,0,0,.06);}
 .auto-bg-header span{font-size:14px;font-weight:700;color:#000;}
-#auto-bg-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 16px 24px;overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;}
+#auto-bg-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:12px 16px 24px;overflow-y:auto;flex:1;min-height:0;-webkit-overflow-scrolling:touch;align-items:start;}
 @media(min-width:420px){#auto-bg-grid{grid-template-columns:repeat(3,1fr);}}
-.auto-bg-thumb{position:relative;overflow:hidden;cursor:pointer;border:2px solid rgba(0,0,0,.12);background:#f0f0f0;transition:border-color .15s;}
+.auto-bg-thumb{position:relative;overflow:hidden;cursor:pointer;border:2px solid rgba(0,0,0,.12);background:#f0f0f0;transition:border-color .15s;align-self:start;}
 .auto-bg-thumb:hover{border-color:rgba(0,0,0,.45);}
 .auto-bg-thumb.active{border-color:#000;border-width:3px;}
 .auto-bg-thumb.active::after{content:'✓';position:absolute;top:6px;right:6px;width:24px;height:24px;background:#000;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;line-height:1;}
@@ -715,24 +715,31 @@ function selectBgByUrl(url, label='', silent=false, refPx=0) {
   currentRefPx = refPx;
   currentBgLabel = label||'';
   showBgDesc('');
-  function doLoad(withCors) {
-    const img = new Image();
-    if(withCors) img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      bgImage = img; bgImage._src = url;
-      document.getElementById('no-bg-msg').style.display = 'none';
-      canvasWrap.style.aspectRatio = `${img.naturalWidth}/${img.naturalHeight}`;
-      requestAnimationFrame(() => {
-        resizeCanvases();
-        drawBg();
-        updateMetaBar();
-      });
-      if(!silent) closeBgModal();
-    };
-    img.onerror = () => { if(withCors) doLoad(false); };
-    img.src = url;
+  function onSuccess(img) {
+    bgImage = img; bgImage._src = url;
+    document.getElementById('no-bg-msg').style.display = 'none';
+    canvasWrap.style.aspectRatio = `${img.naturalWidth}/${img.naturalHeight}`;
+    requestAnimationFrame(() => {
+      resizeCanvases();
+      drawBg();
+      updateMetaBar();
+    });
+    if(!silent) closeBgModal();
   }
-  doLoad(true);
+  // CORS로 먼저 시도 (canvas toDataURL 내보내기용)
+  const img1 = new Image();
+  img1.crossOrigin = 'anonymous';
+  img1.onload = () => onSuccess(img1);
+  img1.onerror = () => {
+    // CORS 실패 시 캐시버스터를 붙여 비-CORS로 재시도
+    // (브라우저 CORS 캐시 오염 방지)
+    const img2 = new Image();
+    const sep = url.includes('?') ? '&' : '?';
+    img2.onload = () => onSuccess(img2);
+    img2.onerror = () => {}; // URL 자체가 잘못된 경우 — 무음 처리
+    img2.src = url + sep + '_t=' + Date.now();
+  };
+  img1.src = url;
 }
 
 function drawBg() {
