@@ -155,11 +155,11 @@ function renderField(f) {
       <label class="ff-label">${esc(f.label)}${req}</label>${desc}
       <label class="ff-file-label" id="ff-${fid}-label">
         📎 파일 선택
-        <input type="file" id="ff-${fid}"${acceptAttr} onchange="onFileChange('${fid}')">
+        <input type="file" id="ff-${fid}"${acceptAttr} multiple onchange="onFileChange('${fid}')">
       </label>
       <div class="ff-file-name" id="ff-${fid}-name"></div>
       <div class="ff-file-progress" id="ff-${fid}-progress"><div class="ff-file-progress-bar" id="ff-${fid}-bar"></div></div>
-      <div class="ff-file-size-note">최대 ${MAX_FILE_MB}MB</div>
+      <div class="ff-file-size-note">파일당 최대 ${MAX_FILE_MB}MB · 여러 파일 선택 가능</div>
     </div>`;
   }
   if (type === 'select') {
@@ -224,16 +224,20 @@ function showErr(msg) {
 function onFileChange(fid) {
   const inp = document.getElementById('ff-' + fid);
   const nameEl = document.getElementById('ff-' + fid + '-name');
-  if (!inp || !inp.files[0]) { if (nameEl) nameEl.innerHTML = ''; return; }
-  const file = inp.files[0];
-  if (file.size > MAX_FILE_BYTES) {
-    alert(`파일이 너무 커요.\n최대 ${MAX_FILE_MB}MB까지 업로드할 수 있어요.\n선택한 파일: ${(file.size / 1024 / 1024).toFixed(1)}MB`);
+  if (!inp || !inp.files.length) { if (nameEl) nameEl.innerHTML = ''; return; }
+  const files = Array.from(inp.files);
+  const oversized = files.filter(f => f.size > MAX_FILE_BYTES);
+  if (oversized.length) {
+    alert(`파일이 너무 커요. 파일당 최대 ${MAX_FILE_MB}MB까지 업로드할 수 있어요.\n${oversized.map(f => `• ${f.name} (${(f.size/1024/1024).toFixed(1)}MB)`).join('\n')}`);
     inp.value = '';
     if (nameEl) nameEl.innerHTML = '';
     return;
   }
-  const sizeTxt = file.size < 1024*1024 ? `${Math.round(file.size/1024)}KB` : `${(file.size/1024/1024).toFixed(1)}MB`;
-  if (nameEl) nameEl.innerHTML = `✅ ${file.name} (${sizeTxt})<button type="button" onclick="clearFile('${fid}')" style="margin-left:8px;border:none;background:none;cursor:pointer;font-size:14px;line-height:1;color:rgba(0,0,0,.45);padding:0;vertical-align:middle;" title="취소">✕</button>`;
+  const rows = files.map(f => {
+    const sizeTxt = f.size < 1024*1024 ? `${Math.round(f.size/1024)}KB` : `${(f.size/1024/1024).toFixed(1)}MB`;
+    return `<div>✅ ${esc(f.name)} (${sizeTxt})</div>`;
+  }).join('');
+  if (nameEl) nameEl.innerHTML = rows + `<button type="button" onclick="clearFile('${fid}')" style="margin-top:4px;border:none;background:none;cursor:pointer;font-size:12px;color:rgba(0,0,0,.45);padding:0;display:block;">전체 취소 ✕</button>`;
 }
 
 function clearFile(fid) {
@@ -358,9 +362,9 @@ async function submitForm() {
       val = picked && inp ? inp.value.toUpperCase() : '';
     } else if (f.type === 'file') {
       const inp = document.getElementById('ff-' + fid);
-      const file = inp?.files?.[0] || null;
-      if (f.required && !file) { errEl.textContent = f.label + ' 파일을 선택해주세요.'; return; }
-      val = file || null; // 실제 업로드는 아래에서
+      const files = inp ? Array.from(inp.files) : [];
+      if (f.required && !files.length) { errEl.textContent = f.label + ' 파일을 선택해주세요.'; return; }
+      val = files.length ? files : null;
     } else {
       const inp = document.getElementById('ff-' + fid);
       val = inp ? inp.value.trim() : '';
@@ -388,35 +392,37 @@ async function submitForm() {
 
   try {
     // 파일 필드 Storage 업로드 (있는 경우)
-    const fileFields = fields.filter(f => f.type === 'file' && result[f.key || f.id] instanceof File);
+    const fileFields = fields.filter(f => f.type === 'file' && Array.isArray(result[f.key || f.id]));
     if (fileFields.length) {
       if (btn) btn.textContent = '파일 업로드 중…';
       const uploadTimestamp = Date.now();
       for (const f of fileFields) {
         const fid = f.key || f.id;
-        const file = result[fid];
-        const ext = file.name.split('.').pop();
-        const safeName = file.name.replace(/[^a-zA-Z0-9가-힣._-]/g, '_');
-        const path = `form_uploads/${FORM_ID}/${uploadTimestamp}_${safeName}`;
+        const files = result[fid];
         const progressBar = document.getElementById('ff-' + fid + '-bar');
         const progressWrap = document.getElementById('ff-' + fid + '-progress');
         if (progressWrap) progressWrap.style.display = '';
-        const ref = storage.ref(path);
-        const task = ref.put(file);
-        await new Promise((resolve, reject) => {
-          task.on('state_changed',
-            snap => {
-              const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
-              if (progressBar) progressBar.style.width = pct + '%';
-            },
-            reject,
-            async () => {
-              const url = await ref.getDownloadURL();
-              result[fid] = url; // File 객체 → 다운로드 URL로 교체
-              resolve();
-            }
-          );
-        });
+        const urls = [];
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const safeName = file.name.replace(/[^a-zA-Z0-9가-힣._-]/g, '_');
+          const path = `form_uploads/${FORM_ID}/${uploadTimestamp}_${i > 0 ? i + '_' : ''}${safeName}`;
+          const ref = storage.ref(path);
+          const task = ref.put(file);
+          const url = await new Promise((resolve, reject) => {
+            task.on('state_changed',
+              snap => {
+                const base = i / files.length;
+                const pct = Math.round((base + snap.bytesTransferred / snap.totalBytes / files.length) * 100);
+                if (progressBar) progressBar.style.width = pct + '%';
+              },
+              reject,
+              async () => resolve(await ref.getDownloadURL())
+            );
+          });
+          urls.push(url);
+        }
+        result[fid] = urls.length === 1 ? urls[0] : urls;
       }
       if (btn) btn.textContent = '제출 중…';
     }
