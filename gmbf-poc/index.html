@@ -927,9 +927,18 @@ async function submitRegistration(){
       document.getElementById('reg-err').innerHTML=`이미 등록된 정보예요.<br><span style="font-size:11px;opacity:.75;">${detail}</span>`;
       btn.textContent='등록'; btn.disabled=false; return;
     }
-    const ref=await db.collection(AUTH_COLLECTION).add(data);
+    const sessionId=_newSessionId();
+    const ref=await db.collection(AUTH_COLLECTION).add({
+      ...data,
+      activeSession:{id:sessionId, deviceId:_getDeviceId(), deviceInfo:_getDeviceInfo(),
+        startedAt:firebase.firestore.FieldValue.serverTimestamp(),
+        lastSeenAt:firebase.firestore.FieldValue.serverTimestamp()},
+      lastLoginAt:firebase.firestore.FieldValue.serverTimestamp(),
+      loginCount:1
+    });
     USER_DOC_ID=ref.id;
-    sessionStorage.setItem('userSession',JSON.stringify({...data,project:PROJECT_ID,_docId:USER_DOC_ID}));
+    sessionStorage.setItem('userSession',JSON.stringify({...data,project:PROJECT_ID,_docId:USER_DOC_ID,_sessionId:sessionId}));
+    _startSessionHeartbeat(USER_DOC_ID);
     loadUserProgress(data);
     applyGreeting(data);
     const _regMsg=(SELF_REG_SUCCESS_MSG||'등록 완료!').replace(/\{\{(\w+)\}\}/g,(_,k)=>data[k]??`{{${k}}}`);
@@ -946,40 +955,55 @@ async function submitRegistration(){
     }, 1800);
   }catch(e){ document.getElementById('reg-err').textContent='등록 실패. 다시 시도해주세요.'; btn.textContent='등록'; btn.disabled=false; }
 }
+/* ── Single-session (active session) helpers ── */
+const SESSION_HEARTBEAT_MS=3*60*1000, SESSION_STALE_MS=10*60*1000;
+function _getDeviceId(){ let id=''; try{id=localStorage.getItem('lmp_device_id')||'';}catch(_){} if(!id){id='dev_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-6); try{localStorage.setItem('lmp_device_id',id);}catch(_){}} return id; }
+function _newSessionId(){ return 'sess_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-6); }
+function _getDeviceInfo(){ const ua=navigator.userAgent||''; let b='브라우저'; if(/SamsungBrowser/.test(ua))b='Samsung Internet'; else if(/EdgiOS|Edg\//.test(ua))b='Edge'; else if(/FxiOS|Firefox/.test(ua))b='Firefox'; else if(/CriOS|Chrome/.test(ua))b='Chrome'; else if(/Safari/.test(ua))b='Safari'; let o=''; if(/iPhone/.test(ua))o='iPhone'; else if(/iPad/.test(ua))o='iPad'; else if(/Android/.test(ua))o='Android'; else if(/Mac/.test(ua))o='Mac'; else if(/Windows/.test(ua))o='Windows'; return o?`${b} (${o})`:b; }
+let _sessionHeartbeat=null;
+function _startSessionHeartbeat(docId){ _stopSessionHeartbeat(); if(!docId)return; _sessionHeartbeat=setInterval(()=>{ db.collection(AUTH_COLLECTION).doc(docId).update({'activeSession.lastSeenAt':firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{}); },SESSION_HEARTBEAT_MS); }
+function _stopSessionHeartbeat(){ if(_sessionHeartbeat){clearInterval(_sessionHeartbeat); _sessionHeartbeat=null;} }
+function _checkSessionConflict(userData){ const a=userData.activeSession; if(!a?.id)return''; const myDev=_getDeviceId(); if(a.deviceId&&a.deviceId===myDev)return''; const lastMs=a.lastSeenAt?.toMillis?.()||a.lastSeenAt?.seconds*1000||a.startedAt?.toMillis?.()||a.startedAt?.seconds*1000||0; if(!lastMs)return''; const elapsed=Date.now()-lastMs; if(elapsed>SESSION_STALE_MS)return''; const dev=a.deviceInfo||'알 수 없는 기기'; const mins=Math.floor(elapsed/60000); const ago=mins<1?'방금':`${mins}분 전`; return `<b>이미 다른 기기에서 로그인되어 있어요.</b><br><span style="font-size:11px;opacity:.75;display:block;margin-top:6px;line-height:1.55;">접속 기기: <b>${dev}</b><br>마지막 활동: ${ago}<br>먼저 그 기기에서 로그아웃 후 다시 시도해 주세요.<br>(10분 이상 미활동 시 자동 해제)</span>`; }
 async function confirmAuth(){
   const val=document.getElementById('auth-key-input').value.trim();
   if(!val){ document.getElementById('auth-err').textContent='값을 입력해주세요.'; return; }
   const btn=document.getElementById('auth-ok');
+  const errEl=document.getElementById('auth-err'); errEl.textContent='';
   btn.textContent='확인 중…'; btn.disabled=true;
   try{
     const keyField=AUTH_FIELDS.find(f=>f.key===AUTH_KEY_FIELD);
     const queryVal=keyField?.type==='number'?(parseFloat(val)||0):val;
     const snap=await db.collection(AUTH_COLLECTION).where(AUTH_KEY_FIELD,'==',queryVal).limit(1).get();
     btn.textContent='확인'; btn.disabled=false;
-    if(!snap.empty){
-      const u=snap.docs[0].data();
-      USER_DOC_ID=snap.docs[0].id;
-      sessionStorage.setItem('userSession',JSON.stringify({...u,project:PROJECT_ID,_docId:USER_DOC_ID}));
-      // 로그인 기록
-      db.collection(AUTH_COLLECTION).doc(USER_DOC_ID).update({
-        lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(),
-        loginCount: firebase.firestore.FieldValue.increment(1)
-      }).catch(()=>{});
-      loadUserProgress(u);
-      applyGreeting(u);
-      closeModal('auth-modal');
-      if(_pendingAuthAction){
-        const fn=_pendingAuthAction; _pendingAuthAction=null; _pendingAuthReason='';
-        renderMenu(); refreshStageProgress();
-        try{ fn(); }catch(_){}
-        return;
-      }
-      if(LAYOUT_TYPE==='merged') renderMergedStages();
-      else openPrep();
-    } else {
-      document.getElementById('auth-err').textContent='인증 정보를 찾을 수 없어요.';
+    if(snap.empty){ errEl.textContent='인증 정보를 찾을 수 없어요.'; return; }
+    const u=snap.docs[0].data();
+    const docId=snap.docs[0].id;
+    const blockHtml=_checkSessionConflict(u);
+    if(blockHtml){ errEl.innerHTML=blockHtml; return; }
+    USER_DOC_ID=docId;
+    const sessionId=_newSessionId();
+    const {activeSession:_omit,...uClean}=u;
+    sessionStorage.setItem('userSession',JSON.stringify({...uClean,project:PROJECT_ID,_docId:USER_DOC_ID,_sessionId:sessionId}));
+    db.collection(AUTH_COLLECTION).doc(USER_DOC_ID).update({
+      activeSession:{id:sessionId, deviceId:_getDeviceId(), deviceInfo:_getDeviceInfo(),
+        startedAt:firebase.firestore.FieldValue.serverTimestamp(),
+        lastSeenAt:firebase.firestore.FieldValue.serverTimestamp()},
+      lastLoginAt:firebase.firestore.FieldValue.serverTimestamp(),
+      loginCount:firebase.firestore.FieldValue.increment(1)
+    }).catch(()=>{});
+    _startSessionHeartbeat(USER_DOC_ID);
+    loadUserProgress(u);
+    applyGreeting(u);
+    closeModal('auth-modal');
+    if(_pendingAuthAction){
+      const fn=_pendingAuthAction; _pendingAuthAction=null; _pendingAuthReason='';
+      renderMenu(); refreshStageProgress();
+      try{ fn(); }catch(_){}
+      return;
     }
-  }catch(e){ btn.textContent='확인'; btn.disabled=false; document.getElementById('auth-err').textContent='연결 실패. 다시 시도해주세요.'; }
+    if(LAYOUT_TYPE==='merged') renderMergedStages();
+    else openPrep();
+  }catch(e){ btn.textContent='확인'; btn.disabled=false; errEl.textContent='연결 실패. 다시 시도해주세요.'; }
 }
 
 /* ── Prep screen (separate) ── */
@@ -1045,9 +1069,13 @@ function renderMenu(){
 }
 function logout(){
   if(!confirm('로그아웃 하시겠어요?')) return;
+  _stopSessionHeartbeat();
+  const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  if(saved._docId){ db.collection(AUTH_COLLECTION).doc(saved._docId).update({activeSession:firebase.firestore.FieldValue.delete()}).catch(()=>{}); }
   try{ sessionStorage.removeItem('userSession'); }catch(_){}
   location.reload();
 }
+window.addEventListener('beforeunload',()=>{ if(!AUTH_ENABLED)return; const s=JSON.parse(sessionStorage.getItem('userSession')||'{}'); if(s._docId&&s.project===PROJECT_ID&&s._sessionId){ try{ db.collection(AUTH_COLLECTION).doc(s._docId).update({activeSession:firebase.firestore.FieldValue.delete()}); }catch(_){}} });
 function toggleMenu(){
   const m=document.getElementById('side-menu');
   if(m.classList.contains('open')) closeMenu();
@@ -1559,6 +1587,7 @@ async function init(){
   loadUserProgress();
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
   const loggedIn=saved.project===PROJECT_ID;
+  if(loggedIn&&AUTH_ENABLED&&USER_DOC_ID&&!IS_ADMIN_PREVIEW){ _startSessionHeartbeat(USER_DOC_ID); }
   /* merged + auth: show modal immediately (skip auth in admin preview) */
   if(LAYOUT_TYPE==='merged'&&AUTH_ENABLED){
     if(IS_ADMIN_PREVIEW){
