@@ -2489,6 +2489,19 @@ function openBgUpload(i) {
   pendingBgUploadIdx = i;
   document.getElementById('bg-file-input').click();
 }
+function checkUnsupportedImageFormat(file) {
+  const n = file.name.toLowerCase(), t = (file.type || '').toLowerCase();
+  if(n.endsWith('.heic') || n.endsWith('.heif') || t === 'image/heic' || t === 'image/heif') {
+    alert('HEIC/HEIF 파일은 브라우저에서 지원하지 않아요 📵\n\n아이폰에서 촬영한 사진이라면:\n• 사진 앱 → 공유 → JPG로 내보내기\n• 또는 설정 > 카메라 > 포맷 > "호환성 우선" 으로 변경 후 재촬영');
+    return true;
+  }
+  if(n.endsWith('.tif') || n.endsWith('.tiff') || t === 'image/tiff') {
+    alert('TIFF 파일은 지원하지 않아요.\nJPG, PNG, WebP 형식으로 변환 후 업로드해 주세요.');
+    return true;
+  }
+  return false;
+}
+
 async function compressImage(file, { maxWidth = 1200, quality = 0.85 } = {}) {
   return new Promise(resolve => {
     const url = URL.createObjectURL(file);
@@ -7285,6 +7298,7 @@ function renderCommonPresetList(presets) {
 async function uploadCommonPresetImg(e) {
   const file = e.target.files[0];
   if(!file) return;
+  if(checkUnsupportedImageFormat(file)) { e.target.value=''; return; }
   const label = e.target.closest('label');
   if(label) label.textContent = '업로드 중…';
   try {
@@ -7387,7 +7401,11 @@ function addBoothType() {
 }
 
 async function uploadBoothBg(e, idx) {
-  const files = Array.from(e.target.files || []);
+  const files = Array.from(e.target.files || []).filter(f => {
+    if(checkUnsupportedImageFormat(f)) return false;
+    return true;
+  });
+  e.target.value = '';
   if(!files.length) return;
   const addBtn = e.target.closest('label');
   const origText = addBtn ? addBtn.textContent : '';
@@ -7489,6 +7507,7 @@ function deleteBoothBgImage(typeIdx, imgIdx) {
 async function uploadBoothPresetImg(e, bgIdx) {
   const file = e.target.files[0];
   if(!file) return;
+  if(checkUnsupportedImageFormat(file)) { e.target.value=''; return; }
   const label = e.target.closest('label');
   if(label) label.textContent = '업로드 중…';
   try {

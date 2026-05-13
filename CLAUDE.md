@@ -364,9 +364,21 @@ PAT 인증이 있을 경우 `main` 직접 push가 가능할 수 있다. 단, 시
 lmp-website/
 ├── admin/index.html       ← 관리자 CMS 패널 (lazymaxpotential.kr/admin/)
 ├── p/index.html           ← 프로젝트 플레이어 (lazymaxpotential.kr/{project-id}/)
+├── tools/
+│   ├── booth/             ← 꾸미기 도구 (Canvas 기반 이미지 합성)
+│   ├── form/              ← 폼 도구 (cms_form_configs 기반)
+│   ├── guide/             ← 계산기·가이드 도구
+│   ├── schedule/          ← 일정 잡기 도구 (Google Calendar 연동)
+│   ├── payment/           ← 결제 도구 (토스페이먼츠)
+│   ├── copy-gen/          ← 문구 생성기 (Claude AI)
+│   └── youtube-playlist/  ← 유튜브 뮤직 재생목록
+├── api/
+│   ├── confirm-payment.js ← 토스페이먼츠 서버 검증 (Vercel function)
+│   └── generate-copy.js   ← 문구 생성 API (Vercel function, Anthropic)
 ├── apps-script/Code.gs    ← Google Apps Script 코드 (폼 응답 → 시트 저장용)
+├── block-test-demo/       ← 테스트용 배포 프로젝트 (p/index.html 동기화 필요)
+├── gmbf-poc/              ← 기존 배포 프로젝트 (p/index.html 동기화 필요)
 ├── gmbf/po-c/index.html   ← 구 플리마켓 셀러 포털 (별도 운영)
-├── gmbf/visitor/          ← 구 방문객 페이지 (미사용)
 └── .nojekyll              ← GitHub Pages 필수
 ```
 
@@ -382,17 +394,24 @@ lmp-website/
 cms_projects/{projectId}
   name, layoutType, editionText
   logoType, logoImageUrl, logoText, logoTextSize, logoTextAlign, logoImgW
-  ctaIconUrl, ctaText, ctaIconSize  ← ctaIconSize: 24~200px (새로 추가)
+  ctaIconUrl, ctaText, ctaIconSize  ← ctaIconSize: 24~200px
   ddayEnabled, ddayDate
   authEnabled, authCollection, authFields, authKeyField, authTitle, authDesc
+  authMode: 'normal' | 'lazy'  ← 'lazy': 비로그인 둘러보기 + 동작 시점 로그인 요청
   greetingText: string  ← 로그인 후 인사 문구 ({{필드키}} 변수 치환 지원)
   bgImages: [{url, overlay, timing}]
   stages: [{id, title, displayType, stageImageUrl, order,
-            trackProgress: boolean,    ← 진행률 표시 ON/OFF
-            checkableCount: number}]   ← 체크 가능한 블록 수 (비정규화)
+            trackProgress: boolean,
+            checkableCount: number,
+            publishStatus: 'published'|'disabled'|'hidden'}]
   stats: [{id, label, collection, countType, unit, enabled}]
   elementOrder: string[]
   keyColors: string[]
+  published: boolean  ← 프로젝트 공개 여부
+  previewToken: string  ← 비공개 미리보기 URL 토큰
+  selfRegCtaSeparate, selfRegCtaIconUrl, selfRegCtaSepText  ← 등록 CTA 별도 표시
+  ogTitle, ogDescription, ogImageUrl  ← SNS 공유 미리보기 (OG 메타태그)
+  userColumnWidths: object  ← 사용자 테이블 컬럼 너비 (admin)
   updatedAt: timestamp
 
 cms_projects/{projectId}/stage_content/{stageId}
@@ -401,70 +420,69 @@ cms_projects/{projectId}/stage_content/{stageId}
     id, type ('text'|'image'|'mixed'|'embed'|'form'|'tool'), order,
     textContent, imageUrl, mixedLayout, embedUrl, embedHeight,
     bgColor, marginV, marginH, linkUrl,
-    checkable,     ← 사용자 체크 가능 여부 (boolean)
+    checkable,        ← 사용자 체크 가능 여부
+    checkTextColor,   ← 체크 완료 텍스트 색상
+    imageFit, imagePosition, imageHeight,  ← 이미지 배치 설정
+    overlayTextVAlign,  ← 오버레이형 텍스트 세로 정렬
     -- type:'form' 전용 (레거시, 하위 호환 유지) --
     formId, formTitle, formFields[], formConfig{submitBtnText,noResubmit,sheetId,sheetTab}
     -- type:'tool' 전용 (신규) --
-    toolType,      ← 'form' | 'booth' | 'guide'
-    toolConfig,    ← { formId?, boothId?, guideId? } 선택한 인스턴스 ID
-    height,        ← iframe 높이 px (0=자동, min-height:60vh)
+    toolType,      ← 'form' | 'booth' | 'guide' | 'schedule' | 'payment' | 'copy-gen' | 'youtube-playlist'
+    toolConfig,    ← { formId?, boothId?, guideId?, scheduleId?, paymentId?, copyGenId? }
+    height,        ← iframe 높이 px (0=자동, 'full'=100svh)
+    completeTrigger,  ← 'tool-signal'(기본) | 'open'(열면 완료) | 'manual'(수동만)
   }]
 
 cms_users_{projectId}/{userId}
   (프로젝트별 authFields에 따라 자유 구조)
-  stageProgress: {stageId: [blockId, blockId, ...]}  ← 체크된 블록 ID 목록
+  stageProgress: {stageId: [blockId, ...]}
+  lastLoginAt, loginCount
+  paidConfigs: { [configId]: { paidAt, amount, tier, paymentKey, orderId } }
+  paidTiers: string[]
 
-cms_form_configs/{formId}           ← 글로벌 폼 설정 (프로젝트 무관)
-  title: string                     ← 폼 이름 (도구 탭 식별용)
-  fields: [{id, label, type ('text'|'textarea'|'number'|'select'|'file'),
-            required, options (선택형 전용), order}]
-  submitBtnText: string
-  submitMsg: string                 ← 제출 완료 메시지 (HTML)
-  noResubmit: boolean               ← 중복 제출 방지
-  sheetId: string                   ← Google Sheet ID
-  sheetTab: string                  ← 시트 탭명
-  createdAt, updatedAt: timestamp
+cms_form_configs/{formId}
+  title, fields[], submitBtnText, submitMsg (HTML), noResubmit, sheetId, sheetTab
+  columnWidths: object  ← 응답 테이블 컬럼 너비 (admin)
+  createdAt, updatedAt
 
 cms_form_responses/{formId}/responses/{responseId}
-  submittedAt, userId (인증 시), projectId, ...fieldValues
-  ← projectId: 도구 블록이 속한 프로젝트 (lmp-context로 전달받음)
+  submittedAt, userId, projectId, ...fieldValues
 
-game_configs/booth                  ← 꾸미기 도구 구성 (컬렉션명 유지)
+game_configs/booth                  ← 꾸미기 도구 구성
   booths: [{id, name, ...}]
 
 game_configs/guide/forms/{formId}   ← 계산기·가이드 폼 설정
 
 cms_admin_settings/github
   pat: string
+  adminPreviewToken: string  ← 관리자 프리뷰 URL 토큰 (adm_ prefix)
 
 cms_admin_settings/payment
-  tossClientKey: string                       ← 토스 클라이언트 키 (공개 키 · admin에서 입력)
-  ← 토스 secret 키는 절대 Firestore에 두지 않음. Vercel 환경변수 TOSS_SECRET_KEY로만 관리.
+  tossClientKey: string  ← 토스 클라이언트 키 (secret은 Vercel 환경변수 TOSS_SECRET_KEY)
 
-cms_payment_configs/{configId}                ← 결제 인스턴스 (상품)
-  title: string                               ← 관리용·사용자에게도 표시
-  productName: string                         ← 영수증·결제창에 표시
-  amount: number                              ← 금액(원, 최소 100)
-  description: string                         ← 결제창 안내문
-  tier: string                                ← 권한 라벨(영문/숫자/_/-) · 결제 성공 시 부여
-  successMessage: string                      ← 결제 완료 메시지
-  createdAt, updatedAt: timestamp
+cms_payment_configs/{configId}
+  title, productName, amount, description, tier, successMessage
+  createdAt, updatedAt
 
-cms_payment_records/{paymentKey}              ← 서버 검증 통과한 결제 기록
+cms_payment_records/{paymentKey}
   paymentKey, orderId, orderName, amount, method, status, approvedAt
-  configId, configTitle, tier
-  projectId, userId, userFields: object
-  createdAt: timestamp
+  configId, configTitle, tier, projectId, userId, userFields
+  createdAt
 
-cms_users_{projectId}/{userId}                ← (기존) + paid 필드 추가
-  paidConfigs: { [configId]: { paidAt, amount, tier, paymentKey, orderId } }
-  paidTiers: string[]                         ← arrayUnion으로 누적 (예: ['pro', 'premium'])
+cms_youtube_submissions/{projectId}/songs/{docId}
+  ← 유튜브 재생목록 도구 제출 기록
+
+cms_copy_gen_usages/{configId}__{userId}
+  ← 문구 생성기 사용 횟수 추적
 ```
 
 #### Firestore 보안 규칙 (현재 적용된 것 기준)
 ```
 match /cms_form_responses/{document=**} { allow write: if true; allow read: if request.auth != null; }
 match /{col}/{doc} { allow read, write: if col.matches('cms_users_.*'); }
+match /cms_form_configs/{document=**} { allow write: if true; }
+match /cms_youtube_submissions/{document=**} { allow write: if true; }
+match /cms_copy_gen_usages/{document=**} { allow write: if true; }
 ```
 
 #### 외부 연동
@@ -474,18 +492,50 @@ match /{col}/{doc} { allow read, write: if col.matches('cms_users_.*'); }
 | **Firebase Storage** | 이미지 업로드 |
 | **Google Apps Script** | 폼 응답 → Google Sheets 저장 전용 |
 | **GitHub API** | 관리자 저장+배포 (p/{id}/index.html 자동 생성) |
+| **Anthropic Claude API** | 문구 생성기 (claude-haiku-4-5-20251001) |
+| **토스페이먼츠** | 결제 도구 (v2 결제위젯) |
+| **YouTube Data API v3** | 유튜브 뮤직 검색 |
+| **Google Calendar (GAS)** | 일정 잡기 도구 |
 
 #### Apps Script 정보
 ```
 URL: https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1weS1u1eML_R8nKpMXSP6U-IDGDsazUg-duw/exec
-역할: 폼 응답 저장 전용 (사용자 인증은 Firestore에서 처리)
+역할: 폼 응답 저장 + Google Calendar 연동 (일정 잡기 도구)
 액션:
-  - doGet?action=createSheet&title=xxx&headers=[...] → 새 스프레드시트 생성
-  - doPost {action:'submitForm', sheetId, headers, row} → 응답 행 추가
-  - doPost {action:'bulkAppend', sheetId, rows:[[],[],[]]} → 여러 행 일괄 추가 (기존 응답 백필용)
+  - doGet?action=createSheet&title=xxx&headers=[...]  → 새 스프레드시트 생성
+  - doPost {action:'submitForm', sheetId, headers, row}  → 응답 행 추가
+  - doPost {action:'bulkAppend', sheetId, rows:[...]}  → 여러 행 일괄 추가
+  - doGet?action=getCalendars  → 캘린더 목록
+  - doGet?action=getCalendarEvents  → 슬롯 조회
+  - doPost {action:'createCalendarEvent'}  → 예약 생성
 코드: apps-script/Code.gs
-⚠️ GAS 재배포 필요 시: bulkAppend 코드가 추가됐으므로 GAS 편집기에서 '기존 배포 편집 → 새 버전' 으로 재배포해야 함
+⚠️ GAS 재배포 필요: GAS 편집기 → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
 ```
+
+#### admin RTE(리치텍스트) 헬퍼 함수 (admin/index.html 전역)
+도구 설명·완료메시지 등 긴 텍스트 필드에 사용. 모든 도구 admin UI에서 재사용.
+```javascript
+rteGet(id)        // contenteditable div → HTML 추출
+rteSet(id, html)  // HTML → contenteditable div에 설정
+rteCmd(id, cmd)   // execCommand 실행 (bold/italic/underline 등)
+rteLinkCmd(id)    // 링크 삽입
+rteInsertVar(id)  // 커서 위치에 {{key}} 변수 삽입 (prompt로 키 입력)
+```
+현재 적용된 도구 admin 필드: sc-desc, sc-confirm-msg, yt-plc-desc, yt-plc-done-sub, tf-desc, tf-submit-msg, cg-ai-context, py-desc, py-success
+
+#### 도구 블록 시스템
+| toolType | URL | 분류 |
+|----------|-----|------|
+| `form` | `/tools/form/?id={formId}` | 선택형(인스턴스 선택) |
+| `booth` | `/tools/booth/` | 선택형 |
+| `guide` | `/tools/guide/?id={guideId}` | 선택형 |
+| `schedule` | `/tools/schedule/?id={scheduleId}` | 선택형 |
+| `payment` | `/tools/payment/?id={configId}` | 선택형 |
+| `copy-gen` | `/tools/copy-gen/?id={configId}` | 선택형 |
+| `youtube-playlist` | `/tools/youtube-playlist/` | 단일(인스턴스 없음) |
+
+도구 완료 신호: `window.parent.postMessage({ type: 'lmp-tool-complete' }, '*')`
+플레이어 수신 후 `autoCheckBlock(blockId)` 호출 → 진행률 저장
 
 ---
 
@@ -498,32 +548,20 @@ URL: https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1w
 `admin/index.html`에 전역으로 구현되어 있음. 어디서든 한 줄로 호출 가능.
 
 ```javascript
-// 패널 열기
 openHelpPanel('제목 텍스트', '<p>내용 HTML</p>');
-
-// 패널 닫기 (X 버튼·backdrop 클릭 시 자동 닫힘)
 closeHelpPanel();
 ```
 
-**구현 위치**: `admin/index.html`
 - HTML: `#help-panel`, `#help-panel-backdrop` (전역, body 직하위)
-- CSS: `#help-panel`, `#help-panel.open` (transform 슬라이드)
-- JS: `openHelpPanel()`, `closeHelpPanel()`
-
-**사용 규칙**:
-- 도움말·가이드 용도는 항상 이 패널 사용 (새 창·alert 금지)
-- 오른쪽 미리보기 패널(`.preview-side-panel`)과 구분: 도움말은 왼쪽, 미리보기는 오른쪽
 - 트리거 버튼: `?` 텍스트, `prev-btn` 스타일, 해당 기능 헤더 `actions` 영역에 배치
-- 내용 HTML에서 사용 가능한 스타일: `<h3>`, `<p>`, `<ul>`, `<code>`, `.badge`, `.badge.black`
 
 #### 오른쪽 미리보기 패널 (Right Preview Panel)
 
 ```css
-/* 기존 클래스 재사용 */
-.preview-side-panel   /* 패널 컨테이너 */
-.preview-side-panel-header  /* 헤더 (크기조절 버튼 포함) */
+.preview-side-panel        /* 패널 컨테이너 */
+.preview-side-panel-header /* 헤더 (크기조절 버튼 포함) */
 ```
-`setPreviewSize(±30)` 로 크기 조절. 프로젝트·스테이지·블록 편집 화면에서 사용 중.
+`setPreviewSize(±30)` 로 크기 조절. 도움말은 왼쪽, 미리보기는 오른쪽.
 
 ---
 
@@ -567,550 +605,67 @@ closeHelpPanel();
 
 ### 개발 현황
 
-**완료 ✅**
-- admin CMS 패널: 프로젝트 생성·편집, 스테이지 관리, 블록 에디터 (텍스트/이미지/혼합/임베드)
-- 블록 에디터: 포맷바(크기·정렬·컬러 드롭다운), 배경색, 마진, 복제
-- **admin 미리보기 패널 토글**: "미리보기" 버튼으로 열기/닫기, 모바일 모달 방식
-- p/ 플레이어: 프로젝트 렌더링, 사용자 인증, 스테이지 탐색
-- Apps Script 배포 완료 (GAS_URL 등록)
-- **CTA 아이콘 크기 조정** (admin에서 24~200px 슬라이더, CSS var(--cta-icon-size))
-- **CTA 미설정 시 네모 박스 제거**: ctaIconUrl 없으면 텍스트만, 진행화면 사이드메뉴 버튼 ☰ 폴백 (color:#000)
-- **사이드바 position:fixed**: 모바일 주소바 대응, transform:translateX(calc(-50% - 100vw)) 완전 숨김
-- **로그인 사용자 인사 문구 시스템**: greetingText + {{변수명}} 치환, 홈화면·사이드바·복귀버튼에 표시
-  - admin 인증 탭에 greetingText 입력 + 변수 삽입 버튼 (클릭 → 커서 위치에 {{key}} 삽입)
-- **폼 블록 빌더** (레거시, type:'form' 하위 호환 유지)
-- **폼 렌더링 + 제출** (플레이어): Firestore + GAS Google Sheets 저장
-- **응답 관리 모달**: 응답 목록 보기 + CSV 다운로드 + Google Sheet 연결/생성
-- **블록 체크 진행률 시스템**: checkable 블록 체크 → stageProgress 저장 → 홈화면 진행률 바
-- **이미지 카드 디자인**: 카드 헤더 바, 상태 뱃지, 진행률 바
-- **tools/꾸미기 도구** (`tools/booth/index.html`): Canvas 기반 이미지 합성, lmp-context 연동
-- **tools/계산기·가이드** (`tools/guide/index.html`): 조건부 계산식 엔진, admin 빌더
-- **admin 도구 탭**: 도구 목록 → 도구별 설정 화면 (꾸미기 도구 구성, 계산기 빌더)
-- **전역 도움말 패널** (`#help-panel`): openHelpPanel() / closeHelpPanel()
-- **✅ 도구 블록 신설 + 폼 도구화**:
-  - `tools/form/index.html` 신규 생성: cms_form_configs 기반 폼 도구 iframe
-  - `type:'tool'` 블록: 블록 편집 "도구" 탭 → 폼/꾸미기/계산기 선택 → 인스턴스 선택
-  - lmp-tool-complete 신호: 도구 완료 시 플레이어가 autoCheckBlock으로 자동 체크
-  - admin 도구 탭에 폼 생성기 추가: 폼 목록·생성·편집·필드 빌더·응답 보기
-  - lmp-context에 projectId + userId 추가, p/+block-test-demo+gmbf-poc 동기화
-- **✅ 슬라이드형 도구 블록 스크롤 지원**: tool/embed 슬라이드 아이템에 overflow-y:auto 동적 적용
-- **✅ noResubmit Firestore 기반 중복 방지**: `cms_users_{projectId}/{userId}.formSubmitted_{formId}` 필드로 영구 저장
-- **✅ 도구 블록 완료 조건 관리자 설정**: `completeTrigger` 필드 — `tool-signal`(기본) / `open`(열면 완료) / `manual`(수동 체크만)
-- **✅ 블록 텍스트 편집기 기능 확장** (이번 세션):
-  - 체크 완료 텍스트 색상 커스터마이징 (`checkTextColor`)
-  - 슬라이드형 세로정렬 + 긴 텍스트 스크롤 동시 지원 (flex:0 1 auto, min-height:0)
-  - 텍스트 배경색(하이라이트) 지정 (`execCommand('backColor')`)
-  - 이미지 링크 (이미지형 전체 / 혼합형 이미지만), 텍스트 인라인 링크
-  - 선택 없이 커서만 있어도 포맷 미리 적용 (pending span 방식)
-- **✅ 이미지 배치 설정** (이번 세션): 이미지형·혼합형 블록에 배치 방법 선택 추가
-  - 원본비율 / 크롭채움(`cover`) / 비율유지(`contain`) / 늘려채움(`fill`)
-  - 높이(px) 입력 + 9방향 기준점 그리드 (크롭채움·비율유지 시)
-  - Firestore 필드: `imageFit`, `imagePosition`, `imageHeight`
-- **✅ 오버레이형 텍스트 세로 정렬** (이번 세션): 상/중/하단 선택 → `overlayTextVAlign` 필드
-  - 오버레이 섀도우: 위치 무관 균일 `rgba(0,0,0,.4)` 오버레이로 통일
-- **✅ 일정 잡기 도구** (`tools/schedule/index.html`) 신규 구현 (이번 세션)
-  - Google Calendar 연동 (GAS 경유), 타임존 지원, 슬롯 계산, 예약 Firestore 저장
-  - GAS에 `getCalendars`, `getCalendarEvents`, `createCalendarEvent` 액션 추가
-- **✅ 슬라이드 재진입 겹침 버그 수정** (이번 세션): `track.style.transform='translateX(0)'`
-- **✅ 혼합형 오버레이 전체화면 높이** (이번 세션): `imageHeight:'full'` → `height:100svh`
-  - 슬라이드형에서도 전체화면 적용 (fullH일 때 data-valign 생략)
+#### 완료 ✅
 
-**미확인/이슈 🔶**
-- GAS `bulkAppend` 코드: `apps-script/Code.gs`에 추가됐으나 **GAS 편집기에서 재배포 필요**
-  → 방법: script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
-- 일정 잡기 도구(`tools/schedule/index.html`): GAS 재배포 후 캘린더 연동 end-to-end 테스트 필요
+**핵심 플랫폼**
+- admin CMS 패널: 프로젝트 생성·편집, 스테이지 관리, 블록 에디터 (텍스트/이미지/혼합/임베드/도구)
+- 블록 에디터: 포맷바, 배경색, 마진, 복제, 이미지 배치 설정(fit/position/height), 오버레이 세로정렬
+- p/ 플레이어: 프로젝트 렌더링, 사용자 인증, 스테이지 탐색, 블록 체크 진행률
+- 브라우저 뒤로가기/앞으로가기 SPA 히스토리 네비게이션 (admin + p/ 3파일)
+- 전역 도움말 패널 (`#help-panel`): `openHelpPanel()` / `closeHelpPanel()`
 
-**완료 ✅ (이번 세션 추가)**
-- **브라우저 뒤로가기/앞으로가기 SPA 히스토리 네비게이션** (admin + p/ + block-test-demo + gmbf-poc)
-  - `history.pushState` 적용: 프로젝트 열기 / 스테이지 편집기 / 블록 편집 모달 / 스테이지 화면(플레이어)
-  - `popstate` 핸들러: `e.state.v` 기반 양방향(뒤로/앞으로) 화면 복원
-  - `_navRestore` 플래그 + `.finally()` 체인으로 비동기 복원 중 `pushState` 중복 방지
-  - **핵심 버그 수정**: `switchInnerTab`의 `replaceState(null,...)` 호출이 history state를 덮어쓰는 문제 → `!_navRestore` 조건 추가로 해결
-  - 저장 안 된 변경 있을 때 back 시 확인 프롬프트 유지
-  - 이미지 설정 모바일 1열 반응형, 블랙 텍스트 컬러 버그, 블록 중복 생성 버그, 배경색 세로 높이 버그, GIF 애니메이션 지원, 오버레이 2열 레이아웃 등 이전 세션 수정사항 포함
-- **✅ 문구 생성기 도구** (`api/generate-copy.js` + `tools/copy-gen/index.html`) 기능 대폭 확장:
-  - AI 모델: Gemini → Anthropic Claude (claude-haiku-4-5-20251001), `ANTHROPIC_API_KEY` 환경변수
-  - 스타일 옵션 확장: 용도(purpose), 타겟독자(target), 어미(speech_level 6종) 추가
-  - 어미 자동 숨김: 슬로건 형식 선택 시 말투·격식·어미 자동 비활성화
-  - 참고문구 역할 토글: 스타일참고(분위기·톤만) / 유사하게작성(구조·표현 방식 참고)
-  - 다양성 지시: 프롬프트에 "구조·시작 방식·표현 접근법이 서로 달라야 함" 규칙 추가
-  - 중복선택 지원: 관리자가 항목별 "여러 개 선택 가능" + 최대 선택 수 설정
-  - 검정 버튼 텍스트 색상: lmp-context `prepBg`(홈배경색)으로 자동 적용 (`--cg-on-black` CSS 변수)
-  - 사용자당 최대 생성 횟수 제한: admin 설정 → Firestore `cms_copy_gen_usages/{configId}__{userId}` 추적 → 잔여 횟수 UI 표시
-  - 장문 생성 JSON 잘림 수정: max_tokens 동적 계산 (`count × max(maxChars,150) × 3`, 최대 8192)
-  - AI 배경정보 필드 (관리자 전용): 화자·역할 설명(`speakerDesc`) + 배경/컨텍스트(`aiContext`) → Claude 시스템 프롬프트에 포함
-- **✅ 폼 도구 텍스트 필드 글자 수 제한** (`admin/index.html` + `tools/form/index.html`):
-  - admin 폼 필드 편집 모달: string/textarea 타입에 최소/최대 글자 수 입력 추가
-  - 도구 폼: maxChars → maxlength 속성으로 초과 입력 원천 차단
-  - 도구 폼: 실시간 글자 수 카운터 표시 ("현재 / 최대자" 또는 "현재자 (최소 N자)")
-  - 도구 폼: 제출 시 minChars 미달이면 오류 메시지 + 제출 거부
-- **✅ lmp-context에 prepBg 추가** (p/ + block-test-demo + gmbf-poc 동기화):
-  - `--prep-bg`는 keyColors 중 랜덤 선택값이므로 keyColors[0]과 다를 수 있음
-  - `_lmpContext()`에 `prepBg` 필드 추가 → 도구에서 정확한 홈배경색 수신
-- **✅ 유튜브 뮤직 재생목록 도구** (`tools/youtube-playlist/index.html`) 구현 완료:
-  - YouTube Data API v3 기반 인앱 검색 (음악 카테고리)
-  - 검색 결과 목록 (썸네일·제목·채널명), 선택 영상 미리 듣기 (iframe)
-  - 선택 목록 구성 후 일괄 제출, 누적 제출 가능
-  - Firestore 저장: `cms_youtube_submissions/{projectId}/songs/{docId}`
-  - admin 도구 탭 연동: 제출 목록 조회 + CSV 내보내기 + URL 복사
-  - 단일 도구(single) 분류: toolType `'youtube-playlist'`, toolConfig 불필요
-  - p/index.html + admin 블록 에디터 도구 탭에 연결 완료
+**인증·사용자**
+- 로그인 사용자 인사 문구: `greetingText` + `{{변수명}}` 치환
+- '필요 시 로그인' 모드 (`authMode:'lazy'`): 비로그인 둘러보기 + 동작 시점 로그인
+- 사이드바 로그아웃 버튼
+- 등록 CTA 별도 표시 (`selfRegCtaSeparate`)
+- 로그인 트래킹: `lastLoginAt` + `loginCount`
 
-**미확인/이슈 🔶**
-- GAS `bulkAppend` 코드: `apps-script/Code.gs`에 추가됐으나 **GAS 편집기에서 재배포 필요**
-  → 방법: script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
-- 일정 잡기 도구(`tools/schedule/index.html`): GAS 재배포 후 캘린더 연동 end-to-end 테스트 필요
+**게시·공개 관리**
+- 프로젝트 단위 게시/비공개 (`published`) + 미리보기 토큰 URL
+- 스테이지 3단계 게시 상태: `published` / `disabled` / `hidden`
+- 관리자 프리뷰 모드 (`?admin=TOKEN`): 비공개·숨김·비활성 스테이지 진입 가능, 빨간 배너 표시
+- SNS/카카오 공유 미리보기 (OG 메타태그): 배포 시 자동 주입
 
-**완료 ✅ (이번 세션 추가)**
-- **✅ 폼 응답 테이블·사용자 테이블 컬럼 드래그 조정**: 너비 드래그 리사이즈, 프로젝트/폼별 Firestore 저장, 더블클릭 초기화
-  - 사용자 테이블: `cms_projects/{id}.userColumnWidths`
-  - 폼 응답 테이블(레거시): `cms_projects/{id}.formRespColWidths.{formId}`
-  - 폼 도구 응답 테이블: `cms_form_configs/{id}.columnWidths`
-  - 모든 정보성 테이블: 헤더 sticky + 왼쪽 식별 컬럼 sticky
-- **✅ 스테이지 3단계 게시 상태**: `publishStatus` — 'published'(게시) / 'disabled'(비활성화·회색+클릭불가) / 'hidden'(완전숨김)
-  - admin 스테이지 목록에 3버튼 그룹, player 3파일 동기화
-  - 저장 버그 수정: `_autoSaveStage`·`saveStageContent` → `updatedStages`에 `publishStatus` 포함
-- **✅ 블록 편집 미리보기 체크 기능 표시**: `_gBlockCore` + `_adminCheckEl` + `gBlockHtml` 래퍼 구조로 재설계
-- **✅ 체크 위치 기본값 → 하단 중앙**: `bottom-right` → `bottom-center` (admin/index.html 전체)
-- **✅ Firestore 보안 규칙 수정 (Firebase Console)**: `cms_form_configs` 쓰기 권한 추가
-  - 원인: 두 번째 관리자 계정(`itsbeybusiness@gmail.com`)은 catch-all 규칙(`baekeun0@gmail.com` 전용) 미적용
-  - 추가된 규칙: `cms_form_configs/{document=**}` write, `cms_youtube_submissions/{document=**}` write, `cms_copy_gen_usages/{document=**}` write
-- **✅ 폼 응답 관리 인라인 통합**: 폼 편집 화면 하단에 응답 목록·시트 관리 통합 (별도 모달 제거)
-  - 목록의 "📋 응답" 버튼 → 편집 화면으로 이동 (응답 포함 자동 로드)
-  - 구글 시트 연결/해제/새 시트 생성 편집 화면에서 직접 처리
-- **✅ 도구 블록 전체화면 높이 옵션**: 자동/전체화면(100svh)/직접입력 버튼 그룹
-  - admin 블록 에디터 + p/block-test-demo/gmbf-poc 플레이어 동기화
-- **✅ 폼 필드 폰트 크기 조정**: 제목 13→15px, 설명 12→10px
-  - tools/form/index.html + p/block-test-demo/gmbf-poc 모두 적용
-- **✅ SNS/카카오 공유 미리보기 (OG 메타태그)**: 프로젝트 기본 정보에 제목·설명·이미지 필드 추가
-  - 배포 시 `<!-- OG_META -->` 플레이스홀더에 자동 주입 (저장만으로는 반영 안 됨, 배포 필요)
-  - `<title>` 태그도 OG 제목으로 자동 교체
-- **✅ 게시/비공개 스테이징**:
-  - 프로젝트 단위: "게시 상태" 토글 + 미리보기 토큰 URL (`?preview=TOKEN`)
-  - 스테이지 단위: 스테이지 목록 우하단 "✓ 게시됨 / 🔒 비공개" 버튼
-  - `published === false` → 사용자에게 "🔒 준비 중이에요" 화면
-  - `previewToken` Firestore 저장, 저장 시 없으면 자동 생성 (8자 랜덤)
-  - player (p/block-test-demo/gmbf-poc) 모두 동기화
-- **✅ 로그인 트래킹**: 로그인 성공 시 `lastLoginAt` + `loginCount` Firestore 업데이트
-  - admin 사용자 목록에 "최근 로그인" · "횟수" 컬럼 추가
-- **✅ 관리자 프리뷰 모드** (`?admin=TOKEN` URL 파라미터):
-  - Firestore `cms_admin_settings/github.adminPreviewToken` 저장 (admin 로그인 시 자동 생성, `adm_` prefix + 랜덤 10자)
-  - 관리자 패널 프로젝트 편집 화면 "게시 상태" 섹션에 빨간 테두리의 "🛠 관리자 미리보기 URL" 박스 추가 (복사 버튼)
-  - 플레이어에 토큰 파라미터로 접근하면:
-    - `published===false` 프로젝트도 "준비 중" 화면 건너뛰고 정상 표시
-    - `publishStatus==='hidden'` 스테이지 목록에 노출 (점선 빨간 테두리 + "숨김" 뱃지)
-    - `publishStatus==='disabled'` 스테이지 클릭 가능 (회색 처리 유지 + "비활성" 뱃지)
-    - `authEnabled` 프로젝트도 인증 모달 건너뛰고 바로 진입
-  - 화면 상단에 "🛠 관리자 미리보기 모드 · 비활성·숨김 스테이지 진입 가능" 빨간 배너 고정 표시
-  - p/index.html + block-test-demo + gmbf-poc 동기화 완료
+**도구 시스템**
+- `type:'tool'` 블록: 도구 탭 → 종류 선택 → 인스턴스 선택 → iframe 렌더링
+- lmp-tool-complete 신호 → autoCheckBlock → 진행률 자동 저장
+- 도구 완료 조건 설정 (`completeTrigger`)
+- 도구 블록 전체화면 높이 옵션 (`height:'full'`)
+- noResubmit Firestore 기반 중복 방지
 
-**완료 ✅ (이번 세션 추가)**
-- **✅ 결제 도구 (토스페이먼츠)** 신규 추가:
-  - `tools/payment/index.html` 신규: 토스페이먼츠 v2 결제위젯 + `api/confirm-payment.js` 호출 (서버 검증)
-  - 인스턴스 컬렉션: `cms_payment_configs/{configId}` (title, productName, amount, description, tier, successMessage)
-  - 결제 기록: `cms_payment_records/{paymentKey}` (서버 검증 통과한 결제만 기록)
-  - 사용자 doc(`cms_users_{projectId}/{userId}`)에 `paidConfigs.{configId}` + `paidTiers[]` 누적 기록 (추후 권한 분기용)
-  - admin 도구 탭에 결제 인스턴스 관리 화면(목록·편집·결제 내역 인라인 표시)
-  - 블록 에디터 "도구" 탭에 결제 버튼 추가 (선택형 도구)
-  - 환경변수: `TOSS_SECRET_KEY` (Vercel)
-  - admin 설정: `cms_admin_settings/payment.tossClientKey`에 클라이언트 키 저장
-  - lmp-tool-complete 발송 → 진행률 자동 체크 연동
-  - 이미 결제한 사용자가 다시 열면 "이미 결제 완료" 화면 + 자동 완료 신호
-  - p/index.html + block-test-demo + gmbf-poc 동기화 완료
-  - **🔶 권한 분기(잠금 게이트) 로직은 다음 단계** — 사용 예시 받은 후 블록·스테이지·프로젝트 단위 중 선택해 구현 예정
-- **✅ '필요 시 로그인' 모드**: 인증 프로젝트에서 비로그인 둘러보기 + 동작 시점 로그인 요청
-  - admin 인증 탭에 모드 선택(일반/필요 시 로그인) 추가, Firestore 필드 `authMode`
-  - player: `AUTH_MODE` 변수 + `requireAuthOr()` + `_pendingAuthAction` 시스템
-  - 진행률 체크 시도 / 도구 블록 진입 시 비로그인이면 로그인 모달 표시 → 성공 후 원래 동작 재개
-  - 도구 블록은 비로그인 시 🔒 잠금 카드로 표시
-  - 인증 모달 상단에 보류된 동작의 이유 안내문 표시
-- **✅ 사이드바 로그아웃**: 인증 프로젝트 사이드바 하단에 "로그아웃" 버튼 추가
-  - 클릭 시 `sessionStorage.userSession` 삭제 → 페이지 새로고침 → 인증 모달 재표시
-  - 관리자 프리뷰 모드(`IS_ADMIN_PREVIEW`)이거나 `AUTH_ENABLED=false`이면 버튼 숨김
-  - `#menu-footer` div + `logout()` 함수, p/index.html + block-test-demo + gmbf-poc 동기화
-- **✅ 등록 CTA 별도 표시**: admin 인증 탭 "사용자 직접 등록" 하위에 "홈화면에 등록 CTA 별도 표시" 토글 추가
-  - ON이면 홈화면 로그인 CTA 옆에 등록하기 CTA 버튼 별도 표시 (동일 규격: 아이콘+텍스트)
-  - 등록 CTA 전용 아이콘 URL 입력 + 직접 업로드 + 텍스트 설정 가능
-  - 클릭 시 등록 모달 직접 오픈 (인증 모달 건너뜀)
-  - Firestore 필드: `selfRegCtaSeparate`, `selfRegCtaIconUrl`, `selfRegCtaSepText`
-  - p/index.html + block-test-demo + gmbf-poc 동기화
-- **✅ 테이블 열 고정 범위 선택**: 사용자 테이블·폼 응답 테이블·도구 응답 테이블에 열 고정 칩 바 추가
-  - 테이블 상단에 칩 버튼 (없음 / 첫 번째 열 이름 / 두 번째 열 이름 / ...) 표시
-  - 선택 시 해당 열까지 `position:sticky` 고정, 마지막 고정 열 오른쪽에 box-shadow
-  - 설정 localStorage 저장: `fc_user_{projId}`, `fc_resp_{projId}_{formId}`, `fc_tf_{configId}`
-  - `_frozenChipBar()`, `_colWidthDefaultPx()`, `setUserFrozen()`, `setRespFrozen()`, `setTfFrozen()` 구현
+**개별 도구**
+- 꾸미기 도구 (`tools/booth/`): Canvas 기반 이미지 합성, 배경 선택(무료/업로드), 비율 유지, 메타바
+- 폼 도구 (`tools/form/`): cms_form_configs 기반, 글자 수 제한(min/max), 응답 관리 인라인 통합
+- 계산기·가이드 (`tools/guide/`): 조건부 계산식 엔진
+- 일정 잡기 (`tools/schedule/`): Google Calendar 연동 (GAS), 타임존, 슬롯 계산, Firestore 저장
+- 결제 (`tools/payment/`): 토스페이먼츠 v2, 서버 검증 (`api/confirm-payment.js`), `paidTiers` 누적
+- 문구 생성기 (`tools/copy-gen/`): Claude API (Haiku), 스타일 옵션, 사용 횟수 제한, RTE 변수 지원
+- 유튜브 뮤직 재생목록 (`tools/youtube-playlist/`): YouTube API v3 검색, 선택·제출
 
-**진행 예정 🔲**
-- GAS 재배포 후 시트 생성 + 백필 end-to-end 테스트
-- 도구 블록 end-to-end 테스트 (폼 생성 → 블록 연결 → 플레이어 제출 → 진행률 반영)
-- 일정 잡기 도구 end-to-end 테스트 (GAS 재배포 후)
-- 관리자 프리뷰 모드 end-to-end 테스트 (admin에서 URL 복사 → 시크릿창 접속 → 비공개·비활성·숨김 스테이지 진입 확인)
-
-**다음 세션 시작점**
-- 🔲 **모든 도구 안내문구 통합 작업** (자세한 계획은 아래 "📐 다음 세션 작업: 도구 텍스트 필드 통합" 참고)
-- 🔲 관리자 프리뷰 모드 실제 테스트 + 기존 배포 프로젝트 재배포 (admin 패널에서 "저장 + 배포")
-- 🔲 일정 잡기 도구 end-to-end 테스트 (GAS 재배포 후)
-- PAT: 만료 시 재발급 필요 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
+**admin UI**
+- 도구 탭: 폼 목록·편집·응답 관리 / 꾸미기 도구 구성 / 계산기 빌더 / 결제 인스턴스 / 문구생성 설정 / 유튜브 제출 목록
+- 테이블 컬럼 드래그 리사이즈 + 열 고정 범위 선택 (사용자·폼응답·도구응답 테이블)
+- admin RTE 헬퍼: 도구 설명·완료메시지 필드에 서식 지원 + `{{변수}}` 삽입 버튼
+- 도구 플레이어(form, schedule, youtube-playlist, payment)에 `applyVars()` 적용
 
 ---
 
-### 📐 다음 세션 작업: 도구 텍스트 필드 통합 (안내문구·완료메시지 변수+에디터)
+#### 미완료 / 이슈 🔶
 
-#### 배경
-사용자 요청: 모든 도구의 "설명·안내문구·완료메시지" 같은 텍스트 필드에 공통으로 다음 두 가지를 적용한다.
-
-1. **변수값 적용**: `{{key}}` 문법으로 사용자 필드 변수 삽입 가능. 필드 옆에 "변수 사용 가능" 안내 + 변수 삽입 버튼.
-2. **일반적인 텍스트 편집기 기능**: 제목 같은 짧은 텍스트 제외, 긴 텍스트 필드(설명·완료메시지 등)는 굵게/기울임/링크/줄바꿈 등의 서식 지원.
-
-기존 폼·꾸미기·계산기 도구들에 모두 소급 적용하고, 앞으로 만들 도구도 동일 규칙 따른다.
-
-#### 영향 범위 — 도구별 필드 인벤토리
-
-| 도구 | 필드 ID | 현재 형태 | 분류 | 작업 |
-|------|---------|-----------|------|------|
-| 폼 (`form-mgr`) | `tf-title` | input | 짧음 | 변수 hint만 |
-| 폼 | `tf-desc` | textarea | 긴 텍스트 | RTE + 변수 hint |
-| 폼 | `tf-submit-text` | input | 짧음 | 변수 hint만 |
-| 폼 | `tf-submit-msg` | textarea | 긴 텍스트 | RTE + 변수 hint |
-| 유튜브 (`youtube-playlist`) | `yt-plc-title` | input | 짧음 | 변수 hint만 (기존 안내 있음) |
-| 유튜브 | `yt-plc-desc` | textarea | 긴 텍스트 | RTE + 변수 hint |
-| 유튜브 | `yt-plc-submit-text` | input | 짧음 | 변수 hint만 |
-| 유튜브 | `yt-plc-done-title` | input | 짧음 | 변수 hint만 |
-| 유튜브 | `yt-plc-done-sub` | textarea | 긴 텍스트 | RTE + 변수 hint (기존 `{count}` 지원 유지) |
-| 결제 (`payment`) | `py-title` | input | 짧음 | 변수 hint만 |
-| 결제 | `py-desc` | textarea | 긴 텍스트 | RTE + 변수 hint |
-| 결제 | `py-success` | textarea | 긴 텍스트 | RTE + 변수 hint |
-| 일정 (`schedule`) | `sc-title` | input (scInsertVar 버튼 있음) | 짧음 | 변수 버튼 → 신규 패턴으로 통일 |
-| 일정 | `sc-desc` | textarea (scInsertVar 있음) | 긴 텍스트 | RTE + 변수 hint |
-| 일정 | `sc-confirm-msg` | textarea (scInsertVar 있음) | 긴 텍스트 | RTE + 변수 hint |
-| 문구생성 (`copy-gen`) | `cg-desc` | input | 짧음? | 확인 후 결정 |
-| 꾸미기 (`deco`) | (booth name 정도?) | - | - | 도구 구조 확인 필요 |
-| 계산기 (`guide`) | (`gbForm.title` 등) | - | - | 도구 구조 확인 필요 |
-
-#### 구현 전략
-
-##### 1. 재사용 가능한 RTE 컴포넌트 (admin/index.html)
-
-```javascript
-// 헬퍼 함수
-function rteCreate(id, opts={}){ /* contenteditable div + 툴바 */ }
-function rteGet(id){ return document.getElementById(id).innerHTML; }
-function rteSet(id, html){ document.getElementById(id).innerHTML = html||''; }
-function rteInsertVar(id, key){ /* 커서 위치에 {{key}} 삽입 */ }
-```
-
-툴바 최소 기능 (일반 텍스트 편집기 기준):
-- 굵게 (Bold) — `document.execCommand('bold')`
-- 기울임 (Italic) — `document.execCommand('italic')`
-- 밑줄 (Underline) — `document.execCommand('underline')`
-- 링크 (Link) — `document.execCommand('createLink', false, url)`
-- 변수 삽입 (`{x}` 버튼) → 사용 가능한 변수 목록을 dropdown으로 보여주고 클릭 시 삽입
-
-기존 admin 블록 텍스트 편집기(`ced-text`, `ced-mixed`)와 디자인 톤 통일. 단, 도구 필드용은 더 컴팩트한 툴바로.
-
-##### 2. 변수 hint 메시지
-
-```html
-<div class="var-hint" style="font-size:11px;color:rgba(0,0,0,.5);margin-top:4px;">
-  💡 변수 사용 가능: 인증 필드 키를 <code>{{key}}</code>로 삽입
-</div>
-```
-
-짧은 input 필드 옆에 표시. 긴 텍스트 RTE 툴바에는 `{x}` 버튼으로 통합.
-
-##### 3. 사용 가능한 변수 목록 동적 수집
-
-각 도구가 속한 프로젝트의 인증 필드(authFields)를 알아야 한다. 하지만 도구는 프로젝트와 독립적으로 관리됨(여러 프로젝트에서 같은 도구를 쓸 수 있음). 따라서:
-- 사용자가 직접 키 이름 입력 (현재 `scInsertVar`의 prompt 방식과 유사) — 가장 단순
-- 또는 도구 편집 시 "이 도구를 사용 중인 프로젝트의 변수" 목록을 추출 — 복잡
-
-→ **단순한 방식 선택**: 변수 삽입 버튼 클릭 시 텍스트 입력 prompt + 자주 쓰는 변수 chip (`{{name}}`, `{{phone}}` 등) 표시.
-
-##### 4. 플레이어 측 (tools/*/index.html) 변경
-
-각 도구 플레이어:
-- `applyVars(str)` 함수가 모두 존재해야 함 (없으면 추가)
-- `lmp-context` 핸들러에서 `userFields` 저장
-- 긴 텍스트 필드는 `innerHTML = applyVars(html)` (textContent 아님)
-- 짧은 텍스트 필드는 `textContent = applyVars(text)` 유지 가능
-
-레거시 데이터 호환:
-- 기존 평문 텍스트(줄바꿈 `\n` 포함)는 RTE에 로드해도 무방하지만 줄바꿈이 사라짐
-- 해결: admin에서 RTE 초기 로드 시 `\n` → `<br>` 자동 변환 (한 번만)
-- 플레이어 렌더링 시에도 호환 위해 `white-space:pre-wrap` 적용
-
-##### 5. 저장 형식
-
-- Firestore 필드는 그대로 사용 (`desc`, `submitMsg`, `successMessage` 등 string)
-- 다만 내용이 HTML이 될 수 있음
-- 기존 평문 데이터는 그대로 보존, 사용자가 한 번 저장하면 HTML로 업데이트됨
-
-#### 작업 순서 (다음 세션)
-
-1. admin/index.html에 재사용 RTE 헬퍼 함수 추가
-2. 폼 도구 부터 적용 (가장 표준적) — `tf-desc`, `tf-submit-msg`
-3. 폼 도구 플레이어(tools/form/) HTML 렌더링 + applyVars
-4. 유튜브 재생목록 도구 적용
-5. 결제 도구 적용
-6. 일정 잡기 도구 적용 (기존 scInsertVar 제거 후 통합)
-7. 문구생성·꾸미기·계산기 — 필드 구조 확인 후 적용
-8. 모든 도구에서 변수 hint UI 일관성 확인
-9. e2e 테스트: 변수 치환 + 서식 표시
-
-#### ⚠️ 주의사항
-
-- 기존 데이터 손실 없도록 모든 변경은 backward compatible
-- 도구 플레이어 3개 파일 동기화 룰: 도구 플레이어는 별도 파일이므로 영향 없음. 단 `p/index.html` + `block-test-demo/` + `gmbf-poc/`는 도구 블록 렌더링에 변경이 있으면 동기화 필요 (이번 작업은 도구 내부만 바꾸므로 동기화 불필요할 가능성 큼)
-
-#### 📐 ✅ 완료된 구현: 유튜브 뮤직 재생목록 도구
-
-> 구현 완료. 참고용으로 보존.
-
-- **파일**: `tools/youtube-playlist/index.html` (단일 도구, 인스턴스 선택 없음)
-- **도구 분류**: 단일 도구 (toolType:`'youtube-playlist'`, toolConfig 불필요)
-- **admin 블록 에디터**: 도구 탭 `'유튜브 뮤직'` 버튼으로 연결, `SINGLE_TOOL_TYPES` 배열에 포함
+- **GAS 재배포 필요** (bulkAppend + Calendar 액션 코드는 추가됐으나 GAS 편집기에서 "새 버전" 배포 안 됨)
+  → script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
+- **일정 잡기 도구 end-to-end 테스트**: GAS 재배포 후 실제 캘린더 연동 확인 필요
+- **결제 후 권한 분기(잠금 게이트)**: `paidTiers` 데이터는 저장되나 블록/스테이지/프로젝트 잠금 로직 미구현 — 사용 예시 확인 후 단위 결정
 
 ---
 
-### 📐 ✅ 완료된 구현: 도구 블록 신설 + 폼 도구화
+#### 다음 세션 시작점 🔲
 
-> 이 섹션은 구현 완료됐습니다 (2026-05-07 세션). 참고용으로 보존합니다.
-
-#### 배경 및 목적
-- 현재 `type:'form'` 블록을 제거하고 새 `type:'tool'` 도구 블록으로 통합
-- 폼 관리(필드 빌더, 응답 관리)를 admin 도구 탭으로 이동
-- 도구 블록 완료(lmp-tool-complete) → 진행률 자동 카운트 연동
-
-#### 1. 도구 분류 체계 (앞으로 모든 신규 도구에 적용)
-
-| 분류 | 설명 | 현재 해당 도구 |
-|------|------|--------------|
-| **단일 도구(single)** | 인스턴스 선택 없이 도구 종류만 선택하면 바로 연결 | (현재 없음) |
-| **선택 도구(multi)** | 도구 종류 선택 후 → 생성된 인스턴스 목록에서 하나 선택 | 폼, 꾸미기 도구, 계산기·가이드 |
-
-- admin에서 새 도구를 등록할 때 이 분류를 명시해서 블록 편집 UI가 자동으로 맞춰지게 구현
-
-#### 2. 신규 블록 타입: `type:'tool'`
-
-```javascript
-// Firestore stage_content blocks[] 안의 도구 블록 구조
-{
-  id: uid(),
-  type: 'tool',
-  toolType: 'form' | 'booth' | 'guide',   // 도구 종류
-  toolConfig: {
-    formId: 'xxx',    // form 선택 시: cms_form_configs의 문서 ID
-    boothId: 'xxx',   // booth 선택 시: game_configs/booth booths[] 중 선택한 ID
-    guideId: 'xxx',   // guide 선택 시: game_configs/guide/forms의 문서 ID
-  },
-  height: 0,          // iframe 높이 px (0=자동 → min-height:60vh)
-  order: number,
-  bgColor: '',
-  marginV: 0,
-  marginH: 0,
-  // checkable 필드는 도구 블록에서 무시 (lmp-tool-complete로 대체)
-}
-```
-
-#### 3. 도구별 iframe URL 규칙
-
-| toolType | URL | 비고 |
-|----------|-----|------|
-| `form` | `/tools/form/?id={toolConfig.formId}` | 신규 파일 생성 필요 |
-| `booth` | `/tools/booth/?id={toolConfig.boothId}` | 기존 파일에 id 파라미터 추가 |
-| `guide` | `/tools/guide/?id={toolConfig.guideId}` | 기존 파일에 id 파라미터 수신 확인 |
-
-#### 4. postMessage 프로토콜 확장
-
-**플레이어 → 도구 (기존 lmp-context에 projectId 추가)**
-```javascript
-f.contentWindow.postMessage({
-  type: 'lmp-context',
-  projectId: PROJECT_ID,   // ← 추가 (플레이어 전역변수 PROJECT_ID 사용)
-  boothType: user?.boothType || '',
-  keyColors: KEY_COLORS,
-  userFields: user || {},
-}, '*');
-```
-- PROJECT_ID가 현재 플레이어에 없다면 `loadProjectSettings()` 에서 `let PROJECT_ID = ''` 글로벌 변수로 추가하고 프로젝트 로드 시 설정
-
-**도구 → 플레이어 (완료 신호)**
-```javascript
-// 각 도구에서 완료 시점에 발송
-window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
-```
-
-**완료 시점 기준**
-| 도구 | 완료 시점 | 코드 위치 |
-|------|----------|----------|
-| 폼 | 폼 제출 성공 후 | `submitForm()` 성공 분기 |
-| 꾸미기 도구 | "완성" 버튼 클릭 (export 모달 열릴 때) | `openExport()` 함수 첫 줄 |
-| 계산기·가이드 | 결과 화면 렌더링 시 | `showResult()` 함수 첫 줄 |
-
-#### 5. 플레이어 변경 (p/index.html + block-test-demo/ + gmbf-poc/ 동기화 필수)
-
-**checkableCount 계산 수정**
-```javascript
-// 기존 (admin/index.html과 p/index.html 두 곳 모두 수정)
-const actualCnt = blocks.filter(b => b.checkable || b.type === 'form').length;
-// 변경
-const actualCnt = blocks.filter(b => b.checkable || b.type === 'form' || b.type === 'tool').length;
-```
-
-**블록 렌더링에 type:'tool' 추가**
-```javascript
-// blockHtml() 함수 안, type:'embed' 처리 다음에 추가
-if(b.type === 'tool') {
-  const toolUrls = {
-    form:  `/tools/form/?id=${b.toolConfig?.formId||''}`,
-    booth: `/tools/booth/?id=${b.toolConfig?.boothId||''}`,
-    guide: `/tools/guide/?id=${b.toolConfig?.guideId||''}`,
-  };
-  const src = toolUrls[b.toolType] || '';
-  const h = b.height || 0;
-  const heightCss = h ? `height:${h}px` : `min-height:60vh`;
-  return `<iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}"></iframe>`;
-}
-```
-
-**lmp-tool-complete 수신 처리 (window.addEventListener('message') 핸들러에 추가)**
-```javascript
-// 기존 lmp-ready 처리 핸들러와 별개로 또는 같은 핸들러 안에서 분기
-if(e.data?.type === 'lmp-tool-complete') {
-  document.querySelectorAll('iframe[data-tool-block]').forEach(f => {
-    try {
-      if(f.contentWindow === e.source) {
-        autoCheckBlock(f.getAttribute('data-tool-block'));
-      }
-    } catch(_) {}
-  });
-  return;
-}
-```
-
-**autoCheckBlock() 함수 신규 추가**
-```javascript
-function autoCheckBlock(blockId) {
-  if(!blockId) return;
-  const stageId = curStageId;
-  if(!userProgress[stageId]) userProgress[stageId] = new Set();
-  if(userProgress[stageId].has(blockId)) return; // 이미 완료
-  userProgress[stageId].add(blockId);
-  refreshStageProgress();
-  if(!AUTH_ENABLED || !USER_DOC_ID) return;
-  const u = JSON.parse(sessionStorage.getItem('userSession') || '{}');
-  if(!u.stageProgress) u.stageProgress = {};
-  u.stageProgress[stageId] = [...userProgress[stageId]];
-  sessionStorage.setItem('userSession', JSON.stringify(u));
-  db.collection(AUTH_COLLECTION).doc(USER_DOC_ID).update({
-    ['stageProgress.' + stageId]: firebase.firestore.FieldValue.arrayUnion(blockId)
-  }).catch(console.error);
-}
-```
-
-**하위 호환**: `type:'form'` 블록은 기존 inline 렌더링 그대로 유지 (코드 삭제 금지)
-
-#### 6. 신규 파일: tools/form/index.html
-
-- URL 파라미터: `?id={formId}`
-- Firestore에서 `cms_form_configs/{formId}` 읽어 폼 렌더링
-- 스타일: `body { background: transparent }` + 검정(#000) 테두리, lmp-btn 스타일 (부스 도구 방식)
-- lmp-context 수신: projectId, userFields 저장 → 제출 시 포함
-- 제출 저장: `cms_form_responses/{formId}/responses/` 에 `{ submittedAt, projectId, userId, ...fieldValues }`
-- GAS 연동: `formConfig.sheetId` 있으면 기존 submitForm 방식과 동일하게 GAS_URL POST
-- 재제출 방지: `noResubmit=true`면 sessionStorage `form_done_{formId}` 키 확인
-- 제출 성공 시: `window.parent.postMessage({ type: 'lmp-tool-complete' }, '*')` 발송 후 완료 화면 표시
-- 완료 화면: formConfig.submitMsg (HTML) 렌더링
-
-#### 7. 기존 도구 파일 수정
-
-**tools/booth/index.html**
-- `openExport()` 함수 맨 앞에 추가:
-  ```javascript
-  window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
-  ```
-- URL 파라미터 `?id={boothId}` 수신 기능 추가 (현재 boothId 개념 미구현 → 추후)
-  - 우선은 무시해도 됨, 도구 블록에서 booth 선택 시 boothId 없이도 동작하게
-
-**tools/guide/index.html**
-- `showResult()` 함수 (결과 화면 렌더링) 맨 앞에 추가:
-  ```javascript
-  window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
-  ```
-- URL 파라미터 `?id={guideId}` 수신: 이미 `vs.formId`로 구현됐는지 확인 후 없으면 추가
-
-#### 8. admin/index.html 변경
-
-##### 8-1. 도구 탭에 폼 관리 섹션 추가
-
-도구 탭 안에 "폼" 항목 추가 (꾸미기 도구, 계산기·가이드와 같은 레벨):
-- 폼 목록: `cms_form_configs` 전체 조회, 폼 이름·필드수 표시
-- "새 폼 만들기" 버튼 → 폼 이름 입력 → Firestore에 빈 폼 문서 생성 → 편집 화면으로 이동
-- 폼 편집 화면:
-  - 폼 이름(title) 입력
-  - 필드 빌더 (기존 `#blk-form` 안의 필드 추가/편집/삭제 UI를 여기로 이동)
-  - 제출 버튼 텍스트, 완료 메시지, 재제출 방지, Google Sheet 연결/생성
-  - 응답 보기 (기존 form-resp-modal 기능)
-- 기존 `openFieldModal()`, `saveField()`, `removeField()` 등 폼 블록 전용 함수들을 도구 탭 폼 편집 맥락으로 이동/재활용
-
-##### 8-2. 블록 편집에 "도구" 탭 추가
-
-블록 타입 탭 버튼에 "도구" 추가:
-```html
-<button class="blk-tab" id="btab-tool" onclick="switchBlkTab('tool')">도구</button>
-```
-
-도구 탭 패널 (`#blk-tool`) 구조:
-1. **도구 종류 선택** (라디오 버튼 또는 버튼 그룹):
-   - 폼 / 꾸미기 도구 / 계산기·가이드
-2. **인스턴스 선택 드롭다운** (선택한 도구 종류에 따라 동적 로드):
-   - 폼: `cms_form_configs` 목록 + "도구 탭에서 새 폼 만들기" 링크
-   - 꾸미기 도구: `game_configs/booth` booths[] 목록
-   - 계산기·가이드: `game_configs/guide/forms` 목록
-3. **높이 설정**: px 입력 (0=자동)
-
-##### 8-3. 기존 폼 블록 탭 제거
-
-- `btab-form` 탭 버튼 제거
-- `#blk-form` 패널 제거 (단, 필드 빌더 UI 코드는 도구 탭 폼 편집으로 이전)
-- `form-field-modal` (`#form-field-modal`) 유지 (도구 탭 폼 편집에서 재사용)
-- `form-resp-modal` (`#form-resp-modal`) 유지 (도구 탭으로 이전)
-- `checkableCount` 저장 로직: `b.type==='form'` 조건 유지 (하위 호환)
-
-##### 8-4. 블록 목록 렌더링 수정
-
-```javascript
-// 블록 타입 표시 레이블
-const tl = b.type==='text' ? '텍스트'
-         : b.type==='image' ? '이미지'
-         : b.type==='mixed' ? '혼합'
-         : b.type==='embed' ? '임베드'
-         : b.type==='tool'  ? '도구'
-         : b.type==='form'  ? '폼(구)' : '';  // 레거시 폼 블록 식별
-
-// 도구 블록 서브 라벨
-const subLbl = b.type==='tool'
-  ? `${b.toolType} · ${b.toolConfig?.formId || b.toolConfig?.boothId || b.toolConfig?.guideId || ''}`
-  : b.type==='form' ? (b.formFields?.length ? `필드 ${b.formFields.length}개` : '(필드 없음)') : '';
-```
-
-#### 9. vercel.json 추가
-
-```json
-{ "source": "/tools/form/:path*", "destination": "/tools/form/index.html" }
-```
-기존 `/tools/:path*` 라우팅과 충돌 여부 확인 후 추가 (tools/form이 더 구체적이므로 앞에 배치)
-
-#### 10. 작업 순서 (권장)
-
-1. `tools/form/index.html` 신규 생성
-2. `tools/booth/index.html` — `openExport()` 에 lmp-tool-complete 추가
-3. `tools/guide/index.html` — `showResult()` 에 lmp-tool-complete 추가
-4. `p/index.html` — tool 블록 렌더링 + autoCheckBlock + lmp-tool-complete 수신 + projectId in context
-5. `admin/index.html` — 도구 탭 폼 섹션 추가 + 블록 편집 도구 탭 추가 + 폼 블록 탭 제거
-6. `block-test-demo/index.html`, `gmbf-poc/index.html` — p/와 동기화
-7. `vercel.json` — /tools/form/ 라우팅 추가
-8. CLAUDE.md 갱신 (이 섹션을 완료 항목으로 이동)
+- **꾸미기 도구(`tools/booth/`) UX 개선**: 배경 선택 모달 추가 개선 또는 신규 요청
+- GAS 재배포 후 시트·캘린더 end-to-end 테스트
+- 관리자 프리뷰 모드 실제 테스트 (시크릿창에서 비공개·숨김 스테이지 진입 확인)
+- PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 
 ---
 
