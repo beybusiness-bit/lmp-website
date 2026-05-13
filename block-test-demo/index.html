@@ -1104,8 +1104,8 @@ function blockHtml(b){
     return b.linkUrl?`<a href="${b.linkUrl}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit;">${inner}</a>`:inner;
   }
   if(b.type==='image'){
-    const fit=b.imageFit||'natural', pos=b.imagePosition||'center', ih=b.imageHeight||260;
-    const iS=fit==='natural'?'width:100%;display:block;':`width:100%;height:${ih}px;object-fit:${fit};object-position:${pos};display:block;`;
+    const fit=b.imageFit||'natural', pos=b.imagePosition||'center', ih=b.imageHeight||0;
+    const iS=(fit==='natural'||!ih)?'width:100%;display:block;':`width:100%;height:${ih}px;object-fit:${fit};object-position:${pos};display:block;`;
     const imgTag=`<img src="${b.imageUrl||''}" alt="" loading="lazy" style="${iS}">`;
     const imgWrap=`<div class="g-block-image" style="${mS}${bgS}">${imgTag}</div>`;
     return b.linkUrl?`<a href="${b.linkUrl}" target="_blank" rel="noopener" style="display:block;">${imgWrap}</a>`:imgWrap;
@@ -1114,10 +1114,10 @@ function blockHtml(b){
     const html=applyVars(b.textContent||'');
     const mfit=b.imageFit||'cover', mpos=b.imagePosition||'center';
     const _mihFull=b.imageHeight==='full';
-    const mih=_mihFull?'100svh':(b.imageHeight||260);
-    const mihCss=_mihFull?`height:100svh;`:`height:${mih}px;`;
-    const spS=mfit==='natural'?`width:100%;display:block;max-height:${_mihFull?'100svh':`${mih}px`};object-fit:contain;object-position:${mpos};`:`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;`;
-    const ovS=mfit==='natural'?'width:100%;display:block;':`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;`;
+    const mih=_mihFull?'100svh':(b.imageHeight||0);
+    const mihCss=_mihFull?`height:100svh;`:mih?`height:${mih}px;`:'';
+    const spS=(mfit==='natural'||!mih)?`width:100%;display:block;`:`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;`;
+    const ovS=(mfit==='natural'||!mih)?'width:100%;display:block;':`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;`;
     if(b.mixedLayout==='split'){
       const imgEl=b.imageLinkUrl
         ?`<a href="${b.imageLinkUrl}" target="_blank" rel="noopener" style="display:block;"><img src="${b.imageUrl||''}" alt="" loading="lazy" style="${spS}"></a>`

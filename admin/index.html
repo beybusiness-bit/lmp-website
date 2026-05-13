@@ -1485,8 +1485,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <button class="img-fit-btn" data-ctx="img" data-fit="fill" onpointerdown="epd(event)" onclick="setImgFit('fill')">늘려채움</button>
             </div>
             <div id="img-height-row" style="display:none;">
-              <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:3px;">높이 <span style="font-weight:400;">(px, 비워두면 260)</span></div>
-              <input class="fi-sm" id="img-height-val" type="number" min="60" max="1200" placeholder="260" style="width:80px;margin-bottom:0;" oninput="scheduleBmPreview()">
+              <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:3px;">높이 <span style="font-weight:400;">(px, 비워두면 원본 비율)</span></div>
+              <input class="fi-sm" id="img-height-val" type="number" min="60" max="1200" placeholder="자동" style="width:80px;margin-bottom:0;" oninput="scheduleBmPreview()">
             </div>
           </div>
           <div>
@@ -1630,9 +1630,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <button class="img-fit-btn" data-ctx="mixed" data-fit="fill" onpointerdown="epd(event)" onclick="setMixedImgFit('fill')">늘려채움</button>
             </div>
             <div id="mixed-height-row" style="display:none;margin-bottom:8px;">
-              <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:3px;">높이 <span style="font-weight:400;">(px, 비워두면 260)</span></div>
+              <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:3px;">높이 <span style="font-weight:400;">(px, 비워두면 원본 비율)</span></div>
               <div style="display:flex;align-items:center;gap:6px;">
-                <input class="fi-sm" id="mixed-height-val" type="number" min="60" max="1200" placeholder="260" style="width:80px;margin-bottom:0;" oninput="curMixedHeightFull=false;document.getElementById('mixed-height-full-btn').classList.remove('on');scheduleBmPreview()">
+                <input class="fi-sm" id="mixed-height-val" type="number" min="60" max="1200" placeholder="자동" style="width:80px;margin-bottom:0;" oninput="curMixedHeightFull=false;document.getElementById('mixed-height-full-btn').classList.remove('on');scheduleBmPreview()">
                 <button class="img-fit-btn" id="mixed-height-full-btn" onpointerdown="epd(event)" onclick="setMixedHeightFull()" style="white-space:nowrap;">전체화면</button>
               </div>
             </div>
@@ -4878,7 +4878,20 @@ function focalSetPos(e,ctx){
   updateFocalDot(ctx,pos);
   scheduleBmPreview();
 }
-function setMixedLayout(l){curMixedLayout=l;document.getElementById('ml-overlay').classList.toggle('on',l==='overlay');document.getElementById('ml-split').classList.toggle('on',l==='split');const ovRow=document.getElementById('overlay-valign-row');if(ovRow)ovRow.style.display=l==='overlay'?'':'none';const shRow=document.getElementById('overlay-shadow-row');if(shRow)shRow.style.display=l==='overlay'?'':'none';scheduleBmPreview();}
+function setMixedLayout(l){
+  curMixedLayout=l;
+  document.getElementById('ml-overlay').classList.toggle('on',l==='overlay');
+  document.getElementById('ml-split').classList.toggle('on',l==='split');
+  const ovRow=document.getElementById('overlay-valign-row');if(ovRow)ovRow.style.display=l==='overlay'?'':'none';
+  const shRow=document.getElementById('overlay-shadow-row');if(shRow)shRow.style.display=l==='overlay'?'':'none';
+  // 분리형(split)은 전체화면 불가 — 이미지가 전체를 차지하면 아래 텍스트가 가려짐
+  const fullBtn=document.getElementById('mixed-height-full-btn');
+  if(fullBtn){
+    fullBtn.style.display=l==='split'?'none':'';
+    if(l==='split'&&curMixedHeightFull){ curMixedHeightFull=false; fullBtn.classList.remove('on'); scheduleBmPreview(); }
+  }
+  scheduleBmPreview();
+}
 function setOverlayVAlign(v){curOverlayVAlign=v;['top','center','bottom'].forEach(k=>document.getElementById('ova-'+k)?.classList.toggle('on',k===v));scheduleBmPreview();}
 function toggleEmbedHeightAuto(checked){document.getElementById('embed-height-wrap').style.display=checked?'none':'';}
 
@@ -5382,17 +5395,17 @@ function _gBlockCore(b,S){
   const mS=(mv||mh)?`margin:${mv}px ${mh}px;`:'';
   if(b.type==='text') return `<div style="${mS}${bgS}${pad};font-size:${Math.round(13*S)}px;line-height:1.6;word-break:break-word;overflow:hidden;box-sizing:border-box;width:calc(100% - ${mh*2}px);${txS}">${b.textContent||''}</div>`;
   if(b.type==='image'){
-    const fit=b.imageFit||'natural', pos=b.imagePosition||'center', ih=Math.round((b.imageHeight||260)*S);
-    const imgS=fit==='natural'?'width:100%;display:block;':`width:100%;height:${ih}px;object-fit:${fit};object-position:${pos};display:block;`;
+    const fit=b.imageFit||'natural', pos=b.imagePosition||'center', ih=b.imageHeight?Math.round(b.imageHeight*S):0;
+    const imgS=(fit==='natural'||!ih)?'width:100%;display:block;':`width:100%;height:${ih}px;object-fit:${fit};object-position:${pos};display:block;`;
     return `<div style="${mS}${bgS}"><img src="${b.imageUrl||''}" style="${imgS}" alt=""></div>`;
   }
   if(b.type==='mixed'){
     const mfit=b.imageFit||'cover', mpos=b.imagePosition||'center';
-    const _rawMih=b.imageHeight==='full'?null:(b.imageHeight||260);
-    const mih=_rawMih?Math.round(_rawMih*S):Math.round(260*S);
-    const mihCss=b.imageHeight==='full'?'min-height:200px;':`height:${mih}px;`;
+    const _rawMih=b.imageHeight==='full'?null:(b.imageHeight||0);
+    const mih=_rawMih?Math.round(_rawMih*S):0;
+    const mihCss=b.imageHeight==='full'?'min-height:200px;':mih?`height:${mih}px;`:'';
     if(b.mixedLayout==='split'){
-      const spS=mfit==='natural'?`width:100%;display:block;max-height:${mih}px;object-fit:contain;object-position:${mpos};margin-bottom:${Math.round(6*S)}px;`:`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;margin-bottom:${Math.round(6*S)}px;`;
+      const spS=(mfit==='natural'||!mih)?`width:100%;display:block;margin-bottom:${Math.round(6*S)}px;`:`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;margin-bottom:${Math.round(6*S)}px;`;
       return `<div style="${mS}${bgS}${pad}"><img src="${b.imageUrl||''}" style="${spS}" alt=""><div style="${txS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div></div>`;
     }
     const ovS=mfit==='natural'?'width:100%;display:block;':`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;`;
