@@ -125,7 +125,20 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 #auto-bg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px 16px;overflow-y:auto;}
 .auto-bg-thumb{aspect-ratio:4/5;overflow:hidden;cursor:pointer;border:2px solid transparent;position:relative;background:#f0f0f0;}
 .auto-bg-thumb:hover{border-color:#000;}
-/* ── 배경 설명 바 ── */
+/* ── 도형 선택 모달 ── */
+#shape-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-end;justify-content:center;}
+#shape-modal.on{display:flex;}
+#shape-modal-inner{background:#fff;border-top:2px solid #000;padding:0;width:100%;max-width:480px;max-height:60vh;display:flex;flex-direction:column;overflow:hidden;}
+#shape-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0;padding:8px;overflow-y:auto;}
+.shape-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 4px;border:none;background:transparent;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;border-radius:4px;}
+.shape-btn:hover,.shape-btn:active{background:rgba(0,0,0,.07);}
+.shape-btn svg{width:44px;height:44px;}
+.shape-btn span{font-size:10px;font-weight:700;color:#000;letter-spacing:-.2px;}
+/* ── 도형 패널 ── */
+#panel-shape{flex-direction:column;gap:10px;display:none;}
+.shape-color-btn{width:26px;height:26px;border:2px solid rgba(0,0,0,.25);cursor:pointer;padding:0;flex-shrink:0;}
+.shape-none-btn{padding:4px 10px;border:2px solid rgba(0,0,0,.3);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#000;}
+.shape-none-btn.active{background:#000;color:#fff;border-color:#000;}
 #bg-desc-bar{display:none;width:100%;max-width:480px;padding:10px 16px;font-size:13px;line-height:1.6;background:rgba(0,0,0,.05);border-top:1.5px solid rgba(0,0,0,.12);color:#000;white-space:pre-wrap;word-break:break-word;flex-shrink:0;}
 .auto-bg-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 </style>
@@ -143,6 +156,17 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 
 <div id="loading"><p>불러오는 중…</p></div>
 
+<!-- 도형 선택 모달 -->
+<div id="shape-modal">
+  <div id="shape-modal-inner">
+    <div class="bg-modal-header">
+      <span>도형 추가</span>
+      <button onclick="closeShapeModal()">✕</button>
+    </div>
+    <div id="shape-grid"></div>
+  </div>
+</div>
+
 <!-- 자동 배경 선택 (여러 장일 때) -->
 <div id="auto-bg-select">
   <div id="auto-bg-inner">
@@ -158,6 +182,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   <button class="lmp-btn" id="btn-bg" onclick="openBgModal()">배경</button>
   <div class="tool-sep"></div>
   <button class="lmp-btn" id="btn-img" onclick="triggerImageUpload()">이미지 추가</button>
+  <button class="lmp-btn" id="btn-shape" onclick="openShapeModal()">도형</button>
   <button class="lmp-btn" id="btn-draw" onclick="toggleDrawMode()">그리기</button>
   <div class="tool-sep"></div>
   <button class="lmp-btn" id="btn-export" onclick="openExport()" style="background:#000;color:var(--lmp-block-bg);">완성</button>
@@ -202,6 +227,24 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
       <button class="frame-btn" data-frame="frame-squirt" onclick="setFrame(this,'frame-squirt')">⬡</button>
     </div>
     <div class="panel-row" style="justify-content:flex-end;">
+      <button class="lmp-btn" onclick="deleteSelectedItem()">삭제</button>
+      <button class="lmp-btn" onclick="deselectAll()" style="background:#000;color:var(--lmp-block-bg);">완료</button>
+    </div>
+  </div>
+  <!-- 도형 선택 상태 -->
+  <div id="panel-shape">
+    <div class="panel-row">
+      <span class="panel-label">채우기</span>
+      <input type="color" class="shape-color-btn" id="shape-fill-color" value="#ff6b6b" oninput="updateShapeProp('fillColor',this.value)">
+      <button class="shape-none-btn" id="shape-fill-none" onclick="toggleShapeFillNone()">없음</button>
+      <span class="panel-label" style="margin-left:10px;">테두리</span>
+      <input type="color" class="shape-color-btn" id="shape-stroke-color" value="#000000" oninput="updateShapeProp('strokeColor',this.value)">
+      <input type="range" id="shape-stroke-w" min="0" max="24" value="3" oninput="updateShapeProp('strokeWidth',+this.value);document.getElementById('shape-sw-val').textContent=this.value" style="flex:1;min-width:50px;">
+      <span id="shape-sw-val" style="font-size:11px;font-weight:700;min-width:18px;">3</span>
+    </div>
+    <div class="panel-row">
+      <span class="panel-label">크기</span>
+      <input type="range" id="shape-size-range" min="20" max="400" value="120" oninput="onShapeSizeChange(this.value)">
       <button class="lmp-btn" onclick="deleteSelectedItem()">삭제</button>
       <button class="lmp-btn" onclick="deselectAll()" style="background:#000;color:var(--lmp-block-bg);">완료</button>
     </div>
@@ -558,6 +601,142 @@ function addImageItem(imgEl, src) {
   selectItemById(item.id);
 }
 
+// ══════════════════════════════════════════════
+// 도형 시스템
+// ══════════════════════════════════════════════
+
+const SHAPE_DEFS = [
+  { key:'circle',    label:'원',      path:`<ellipse cx="50" cy="50" rx="46" ry="46"/>` },
+  { key:'rect',      label:'사각형',  path:`<rect x="3" y="3" width="94" height="94"/>` },
+  { key:'triangle',  label:'삼각형',  path:`<polygon points="50,3 97,97 3,97"/>` },
+  { key:'diamond',   label:'마름모',  path:`<polygon points="50,3 97,50 50,97 3,50"/>` },
+  { key:'heart',     label:'하트',    path:`<path d="M50,85 C50,85 5,60 5,32 C5,15 16,5 30,5 C38,5 44,10 50,18 C56,10 62,5 70,5 C84,5 95,15 95,32 C95,60 50,85 50,85 Z"/>` },
+  { key:'star',      label:'별',      path:`<polygon points="50,3 59,30 87,35 67,55 73,83 50,68 27,83 33,55 13,35 41,30"/>` },
+  { key:'trapezoid', label:'사다리꼴', path:`<polygon points="20,3 80,3 97,97 3,97"/>` },
+  { key:'pentagon',  label:'오각형',  path:`<polygon points="50,3 94,35 77,93 23,93 6,35"/>` },
+  { key:'hexagon',   label:'육각형',  path:`<polygon points="97,50 74,90 26,90 3,50 26,10 74,10"/>` },
+  { key:'arrow',     label:'화살표',  path:`<polygon points="5,35 65,35 65,10 95,50 65,90 65,65 5,65"/>` },
+  { key:'speech',    label:'말풍선',  path:`<path d="M10,5 Q5,5 5,10 L5,65 Q5,70 10,70 L40,70 L50,90 L60,70 L90,70 Q95,70 95,65 L95,10 Q95,5 90,5 Z"/>` },
+  { key:'ring',      label:'도넛',    path:`<path fill-rule="evenodd" d="M50,3 A47,47 0 0,1 50,97 A47,47 0 0,1 50,3 Z M50,27 A23,23 0 0,0 50,73 A23,23 0 0,0 50,27 Z"/>` },
+];
+
+function getShapeSvgContent(key) {
+  return SHAPE_DEFS.find(d=>d.key===key)?.path || '';
+}
+
+function shapeSvgEl(key, fillColor='#ff6b6b', strokeColor='#000', strokeWidth=3) {
+  const fc = fillColor==='none' ? 'none' : fillColor;
+  const sw = strokeWidth > 0 ? strokeWidth : 0;
+  const sc = sw > 0 ? strokeColor : 'none';
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;" preserveAspectRatio="xMidYMid meet">
+    <g fill="${fc}" stroke="${sc}" stroke-width="${sw}" stroke-linejoin="round">
+      ${getShapeSvgContent(key)}
+    </g>
+  </svg>`;
+}
+
+function openShapeModal() {
+  const grid = document.getElementById('shape-grid');
+  grid.innerHTML = SHAPE_DEFS.map(d => `
+    <button class="shape-btn" onclick="addShape('${d.key}');closeShapeModal()">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <g fill="#ff6b6b" stroke="#000" stroke-width="4" stroke-linejoin="round">${d.path}</g>
+      </svg>
+      <span>${d.label}</span>
+    </button>`).join('');
+  document.getElementById('shape-modal').classList.add('on');
+}
+function closeShapeModal() { document.getElementById('shape-modal').classList.remove('on'); }
+
+function addShape(shapeKey) {
+  const size = Math.min(canvasW, canvasH) * 0.35;
+  const item = {
+    id: Date.now(), type:'shape', shape: shapeKey,
+    x: canvasW/2 - size/2, y: canvasH/2 - size/2,
+    w: size, h: size, rot: 0,
+    fillColor: '#ff6b6b', strokeColor: '#000000', strokeWidth: 4,
+  };
+  items.push(item);
+  renderItems();
+  selectItemById(item.id);
+}
+
+function updateShapeProp(prop, val) {
+  if(!selectedItem || selectedItem.type!=='shape') return;
+  selectedItem[prop] = val;
+  const el = itemsLayer.querySelector(`[data-id="${selectedItem.id}"]`);
+  if(el) el.querySelector('svg')?.replaceWith(
+    Object.assign(document.createElement('div'), { innerHTML: shapeSvgEl(selectedItem.shape, selectedItem.fillColor, selectedItem.strokeColor, selectedItem.strokeWidth) }).firstChild
+  );
+}
+
+function toggleShapeFillNone() {
+  if(!selectedItem || selectedItem.type!=='shape') return;
+  const btn = document.getElementById('shape-fill-none');
+  if(selectedItem.fillColor === 'none') {
+    selectedItem.fillColor = document.getElementById('shape-fill-color').value || '#ff6b6b';
+    btn.classList.remove('active');
+  } else {
+    selectedItem.fillColor = 'none';
+    btn.classList.add('active');
+  }
+  updateShapeProp('fillColor', selectedItem.fillColor);
+}
+
+function onShapeSizeChange(val) {
+  if(!selectedItem || selectedItem.type!=='shape') return;
+  selectedItem.w = +val;
+  selectedItem.h = +val;
+  const el = itemsLayer.querySelector(`[data-id="${selectedItem.id}"]`);
+  if(el) { el.style.width = val+'px'; el.style.height = val+'px'; }
+}
+
+// Canvas2D 도형 그리기 (내보내기용)
+function drawShapeToCtx(ctx, shape, w, h, fillColor, strokeColor, strokeWidth) {
+  const hw=w/2, hh=h/2, sw=strokeWidth;
+  ctx.beginPath();
+  const p = (points) => {
+    const pts = points.trim().split(/\s+/).map(p=>p.split(',').map(Number));
+    ctx.moveTo(pts[0][0]/100*w - hw, pts[0][1]/100*h - hh);
+    pts.slice(1).forEach(([x,y]) => ctx.lineTo(x/100*w - hw, y/100*h - hh));
+    ctx.closePath();
+  };
+  switch(shape) {
+    case 'circle':   ctx.ellipse(0,0,hw-sw/2,hh-sw/2,0,0,Math.PI*2); break;
+    case 'rect':     ctx.rect(-hw+sw/2,-hh+sw/2,w-sw,h-sw); break;
+    case 'triangle': p('50,3 97,97 3,97'); break;
+    case 'diamond':  p('50,3 97,50 50,97 3,50'); break;
+    case 'heart': {
+      const mx=hw, my=hh;
+      ctx.moveTo(0, my*0.7);
+      ctx.bezierCurveTo(-mx*0.9, my*0.2, -mx*0.9, -my*0.55, -mx*0.4, -my*0.55);
+      ctx.bezierCurveTo(-mx*0.1, -my*0.55, 0, -my*0.28, 0, -my*0.28);
+      ctx.bezierCurveTo(0, -my*0.28, mx*0.1, -my*0.55, mx*0.4, -my*0.55);
+      ctx.bezierCurveTo(mx*0.9, -my*0.55, mx*0.9, my*0.2, 0, my*0.7);
+      ctx.closePath();
+    } break;
+    case 'star':     p('50,3 59,30 87,35 67,55 73,83 50,68 27,83 33,55 13,35 41,30'); break;
+    case 'trapezoid':p('20,3 80,3 97,97 3,97'); break;
+    case 'pentagon': p('50,3 94,35 77,93 23,93 6,35'); break;
+    case 'hexagon':  p('97,50 74,90 26,90 3,50 26,10 74,10'); break;
+    case 'arrow':    p('5,35 65,35 65,10 95,50 65,90 65,65 5,65'); break;
+    case 'speech':
+      ctx.moveTo(-hw*0.8,-hh); ctx.quadraticCurveTo(-hw,-hh,-hw,-hh*0.7);
+      ctx.lineTo(-hw,-hh*0.3); ctx.quadraticCurveTo(-hw,hh*0.4,-hw*0.7,hh*0.4);
+      ctx.lineTo(-hw*0.1,hh*0.4); ctx.lineTo(0,hh); ctx.lineTo(hw*0.1,hh*0.4);
+      ctx.lineTo(hw*0.7,hh*0.4); ctx.quadraticCurveTo(hw,hh*0.4,hw,-hh*0.3);
+      ctx.lineTo(hw,-hh*0.7); ctx.quadraticCurveTo(hw,-hh,hw*0.8,-hh);
+      ctx.closePath(); break;
+    case 'ring':
+      ctx.ellipse(0,0,hw-sw/2,hh-sw/2,0,0,Math.PI*2);
+      ctx.ellipse(0,0,hw*0.48,hh*0.48,0,0,Math.PI*2,true);
+      break;
+    default: ctx.rect(-hw,-hh,w,h);
+  }
+  if(fillColor && fillColor!=='none') { ctx.fillStyle=fillColor; ctx.fill('evenodd'); }
+  if(sw>0 && strokeColor) { ctx.strokeStyle=strokeColor; ctx.lineWidth=sw; ctx.lineJoin='round'; ctx.stroke(); }
+}
+
 // ── 아이템 렌더링 ──
 function renderItems() {
   itemsLayer.innerHTML = '';
@@ -568,6 +747,10 @@ function renderItems() {
     el.dataset.id = item.id;
     el.style.cssText = `left:${item.x}px;top:${item.y}px;width:${item.w}px;height:${item.h}px;transform:rotate(${item.rot||0}deg);`;
 
+    // 도형 아이템
+    if(item.type === 'shape') {
+      el.innerHTML = shapeSvgEl(item.shape, item.fillColor, item.strokeColor, item.strokeWidth);
+    } else {
     // 프레임 설정
     const frameClass = item.frame || '';
     const needsInner = ['frame-triangle','frame-heart','frame-star','frame-squirt'].includes(frameClass);
@@ -578,6 +761,7 @@ function renderItems() {
     } else {
       el.innerHTML = `<img src="${item.src}" style="width:100%;height:100%;object-fit:${objFit};display:block;">`;
       if(frameClass) el.classList.add(frameClass);
+    }
     }
 
     // 핸들
@@ -701,19 +885,29 @@ canvasWrap.addEventListener('pointerdown', e => {
 
 function updatePanelForSelection() {
   const pDefault = document.getElementById('panel-default');
-  const pImage = document.getElementById('panel-image');
-  const pDraw = document.getElementById('panel-draw');
+  const pImage   = document.getElementById('panel-image');
+  const pShape   = document.getElementById('panel-shape');
+  const pDraw    = document.getElementById('panel-draw');
+  const hide = el => el.style.display='none';
+  [pDefault,pImage,pShape,pDraw].forEach(hide);
   if(drawMode) {
-    pDefault.style.display='none'; pImage.style.display='none'; pDraw.style.display='flex';
+    pDraw.style.display='flex';
+  } else if(selectedItem?.type === 'shape') {
+    pShape.style.display='flex';
+    document.getElementById('shape-size-range').value = selectedItem.w;
+    document.getElementById('shape-fill-color').value = selectedItem.fillColor==='none'?'#ff6b6b':selectedItem.fillColor;
+    document.getElementById('shape-fill-none').classList.toggle('active', selectedItem.fillColor==='none');
+    document.getElementById('shape-stroke-color').value = selectedItem.strokeColor||'#000000';
+    document.getElementById('shape-stroke-w').value = selectedItem.strokeWidth||3;
+    document.getElementById('shape-sw-val').textContent = selectedItem.strokeWidth||3;
   } else if(selectedItem) {
-    pDefault.style.display='none'; pImage.style.display='flex'; pDraw.style.display='none';
+    pImage.style.display='flex';
     document.getElementById('img-size-range').value = selectedItem.w;
-    // 현재 프레임 버튼 active 표시
     document.querySelectorAll('.frame-btn').forEach(b=>{
       b.classList.toggle('active', b.dataset.frame===(selectedItem.frame||''));
     });
   } else {
-    pDefault.style.display='flex'; pImage.style.display='none'; pDraw.style.display='none';
+    pDefault.style.display='flex';
   }
 }
 
@@ -923,12 +1117,19 @@ async function openExport() {
 }
 
 async function drawItemOnCanvas(ctx, item, scale=1) {
-  const img = await loadImageCORS(item.src);
-  if(!img) return;
   ctx.save();
   const sw = item.w * scale, sh = item.h * scale;
   ctx.translate((item.x + item.w/2) * scale, (item.y + item.h/2) * scale);
   ctx.rotate((item.rot||0) * Math.PI/180);
+
+  if(item.type === 'shape') {
+    drawShapeToCtx(ctx, item.shape, sw, sh, item.fillColor, item.strokeColor, (item.strokeWidth||0)*scale);
+    ctx.restore();
+    return;
+  }
+
+  const img = await loadImageCORS(item.src);
+  if(!img) { ctx.restore(); return; }
 
   // 프레임 클립
   applyFrameClip(ctx, item.frame, sw, sh);
