@@ -167,7 +167,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 #desc-card-content{font-size:13px;line-height:1.65;color:#000;white-space:pre-wrap;word-break:break-word;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;}
 #desc-card-collapse{align-self:stretch;padding:10px 12px;background:#000;color:#fff;border:2px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.2px;flex-shrink:0;}
 #desc-card-collapse:hover{background:transparent;color:#000;}
-#desc-icon{display:none;position:absolute;top:10px;right:10px;width:30px;height:30px;border:2px solid #000;background:#fff;color:#000;border-radius:50%;font-size:14px;cursor:pointer;z-index:60;align-items:center;justify-content:center;font-family:inherit;line-height:1;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+#desc-icon{display:none;position:absolute;top:10px;right:10px;width:30px;height:30px;border:2px solid #000;background:#fff;color:#000;font-size:14px;cursor:pointer;z-index:60;align-items:center;justify-content:center;font-family:inherit;line-height:1;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.15);}
 #desc-icon.on{display:flex;}
 #desc-icon:hover{background:#000;color:#fff;}
 .auto-bg-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -729,31 +729,26 @@ function selectBgByUrl(url, label='', silent=false, refPx=0) {
   currentRefPx = refPx;
   currentBgLabel = label||'';
   showBgDesc('');
-  function onSuccess(img) {
-    bgImage = img; bgImage._src = url;
-    document.getElementById('no-bg-msg').style.display = 'none';
-    canvasWrap.style.aspectRatio = `${img.naturalWidth}/${img.naturalHeight}`;
-    requestAnimationFrame(() => {
-      resizeCanvases();
-      drawBg();
-      updateMetaBar();
-    });
-    if(!silent) closeBgModal();
+  function doLoad(withCors) {
+    const img = new Image();
+    if(withCors) img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      // Safari는 CORS 실패 시 onerror 대신 naturalWidth=0으로 onload를 호출하는 경우가 있음
+      if(img.naturalWidth === 0 && withCors) { doLoad(false); return; }
+      bgImage = img; bgImage._src = url;
+      document.getElementById('no-bg-msg').style.display = 'none';
+      canvasWrap.style.aspectRatio = `${img.naturalWidth}/${img.naturalHeight}`;
+      requestAnimationFrame(() => {
+        resizeCanvases();
+        drawBg();
+        updateMetaBar();
+      });
+      if(!silent) closeBgModal();
+    };
+    img.onerror = () => { if(withCors) doLoad(false); };
+    img.src = url;
   }
-  // CORS로 먼저 시도 (canvas toDataURL 내보내기용)
-  const img1 = new Image();
-  img1.crossOrigin = 'anonymous';
-  img1.onload = () => onSuccess(img1);
-  img1.onerror = () => {
-    // CORS 실패 시 캐시버스터를 붙여 비-CORS로 재시도
-    // (브라우저 CORS 캐시 오염 방지)
-    const img2 = new Image();
-    const sep = url.includes('?') ? '&' : '?';
-    img2.onload = () => onSuccess(img2);
-    img2.onerror = () => {}; // URL 자체가 잘못된 경우 — 무음 처리
-    img2.src = url + sep + '_t=' + Date.now();
-  };
-  img1.src = url;
+  doLoad(true);
 }
 
 function drawBg() {
