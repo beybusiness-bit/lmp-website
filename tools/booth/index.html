@@ -177,6 +177,23 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   </div>
 </div>
 
+<!-- 기본 이미지 선택 모달 -->
+<div id="preset-img-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:flex-end;justify-content:center;">
+  <div style="background:#fff;width:100%;max-width:480px;max-height:70vh;display:flex;flex-direction:column;border-radius:16px 16px 0 0;overflow:hidden;">
+    <div class="bg-modal-header" style="border-bottom:1.5px solid rgba(0,0,0,.08);">
+      <span style="font-weight:700;">이미지 추가</span>
+      <button onclick="closePresetModal()" style="border:none;background:none;font-size:18px;cursor:pointer;padding:4px;">✕</button>
+    </div>
+    <div style="overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;">
+      <div id="preset-img-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
+      <label style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;border:2px dashed rgba(0,0,0,.2);cursor:pointer;font-size:13px;font-weight:700;color:rgba(0,0,0,.55);border-radius:4px;">
+        📁 기기에서 직접 추가
+        <input type="file" accept="image/*" style="display:none;" onchange="onImageFileSelected(event);closePresetModal()">
+      </label>
+    </div>
+  </div>
+</div>
+
 <!-- 상단 툴바 -->
 <div id="toolbar">
   <button class="lmp-btn" id="btn-bg" onclick="openBgModal()">배경</button>
@@ -573,9 +590,61 @@ function openBgModal() { document.getElementById('bg-modal').classList.add('on')
 function closeBgModal() { document.getElementById('bg-modal').classList.remove('on'); }
 
 // ── 이미지 추가 ──
+function getCurrentPresetImages() {
+  const match = backgrounds.find(b => b.type === userBoothType);
+  return match?.presetImages || [];
+}
+
 function triggerImageUpload() {
   if(drawMode) cancelDrawMode();
-  document.getElementById('img-file-input').click();
+  const presets = getCurrentPresetImages();
+  if(presets.length) {
+    openPresetModal();
+  } else {
+    document.getElementById('img-file-input').click();
+  }
+}
+
+function openPresetModal() {
+  const presets = getCurrentPresetImages();
+  const grid = document.getElementById('preset-img-grid');
+  grid.innerHTML = presets.map((p, i) => `
+    <div onclick="addPresetImage(${i})" style="cursor:pointer;position:relative;border:1.5px solid rgba(0,0,0,.12);overflow:hidden;">
+      <img src="${p.url}" loading="lazy" crossorigin="anonymous" style="width:100%;aspect-ratio:1/1;object-fit:cover;display:block;" onerror="this.style.opacity='.3'">
+      ${p.name ? `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:700;padding:3px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>` : ''}
+      ${p.lockSize ? `<div style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.65);color:#fff;font-size:9px;font-weight:700;padding:2px 4px;border-radius:3px;">🔒</div>` : ''}
+    </div>`).join('');
+  document.getElementById('preset-img-modal').style.display = 'flex';
+}
+
+function closePresetModal() {
+  document.getElementById('preset-img-modal').style.display = 'none';
+}
+
+function addPresetImage(presetIdx) {
+  closePresetModal();
+  const presets = getCurrentPresetImages();
+  const p = presets[presetIdx];
+  if(!p) return;
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    const naturalRatio = (img.naturalHeight / img.naturalWidth) || 1;
+    const targetW = p.lockSize ? (p.fixedSize || 120) : Math.min(canvasW * 0.4, 150);
+    const targetH = targetW * naturalRatio;
+    const x = canvasW/2 - targetW/2;
+    const y = canvasH/2 - targetH/2;
+    const item = {
+      id: Date.now(), type:'image', src: p.url,
+      x, y, w: targetW, h: targetH, rot:0, frame:'', naturalRatio,
+      _sizeFixed: p.lockSize || false,
+    };
+    items.push(item);
+    renderItems();
+    selectItemById(item.id);
+  };
+  img.onerror = () => { img.crossOrigin = undefined; img.src = p.url; };
+  img.src = p.url;
 }
 
 function onImageFileSelected(e) {
@@ -766,11 +835,11 @@ function renderItems() {
     }
     }
 
-    // 핸들
+    // 핸들 (크기 고정 아이템은 resize 핸들 숨김)
     el.innerHTML += `
       <div class="item-handles">
         <div class="handle rot" data-action="rot"></div>
-        <div class="handle br" data-action="resize"></div>
+        ${item._sizeFixed ? '' : '<div class="handle br" data-action="resize"></div>'}
       </div>
       <button class="item-del" onclick="deleteItemById(${item.id})">✕</button>`;
 
@@ -904,7 +973,11 @@ function updatePanelForSelection() {
     document.getElementById('shape-sw-val').textContent = selectedItem.strokeWidth||3;
   } else if(selectedItem) {
     pImage.style.display='flex';
-    document.getElementById('img-size-range').value = selectedItem.w;
+    const sizeRange = document.getElementById('img-size-range');
+    const sizeRow = sizeRange.closest('.panel-row');
+    sizeRange.value = Math.round(selectedItem.w);
+    sizeRange.disabled = selectedItem._sizeFixed || false;
+    if(sizeRow) sizeRow.style.opacity = selectedItem._sizeFixed ? '0.4' : '';
     document.querySelectorAll('.frame-btn').forEach(b=>{
       b.classList.toggle('active', b.dataset.frame===(selectedItem.frame||''));
     });
@@ -914,7 +987,7 @@ function updatePanelForSelection() {
 }
 
 function onItemSizeChange(val) {
-  if(!selectedItem) return;
+  if(!selectedItem || selectedItem._sizeFixed) return;
   const ratio = selectedItem.h / selectedItem.w;
   selectedItem.w = +val;
   selectedItem.h = +val * ratio;

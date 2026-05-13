@@ -7239,6 +7239,20 @@ function renderBoothBgList(bgs) {
         <button class="booth-img-del" onclick="deleteBoothBgImage(${i},${j})" title="이미지 삭제">✕</button>
         <input style="width:72px;margin-top:3px;border:1.5px solid rgba(0,0,0,.2);padding:3px 4px;font-size:10px;font-family:inherit;outline:none;background:#fff;" placeholder="이름" value="${(names[j]||'').replace(/"/g,'&quot;')}" oninput="decoState.curConfig.backgrounds[${i}].urlNames=decoState.curConfig.backgrounds[${i}].urlNames||[];decoState.curConfig.backgrounds[${i}].urlNames[${j}]=this.value">
       </div>`).join('');
+    const presets = b.presetImages || [];
+    const presetHtml = presets.map((p, j) => `
+      <div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06);">
+        <img src="${p.url}" onerror="this.style.opacity='.3'" style="width:52px;height:65px;object-fit:cover;border:1.5px solid rgba(0,0,0,.15);flex-shrink:0;background:#f0f0f0;">
+        <div style="flex:1;display:flex;flex-direction:column;gap:5px;min-width:0;">
+          <input class="fi" placeholder="이름 (선택사항)" value="${(p.name||'').replace(/"/g,'&quot;')}" style="font-size:11px;padding:4px 6px;" oninput="decoState.curConfig.backgrounds[${i}].presetImages[${j}].name=this.value">
+          <label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;">
+            <input type="checkbox" ${p.lockSize?'checked':''} onchange="decoState.curConfig.backgrounds[${i}].presetImages[${j}].lockSize=this.checked;renderBoothBgList(decoState.curConfig.backgrounds)">
+            크기 고정
+          </label>
+          ${p.lockSize ? `<div style="display:flex;align-items:center;gap:4px;"><input type="number" class="fi" value="${p.fixedSize||120}" min="20" max="600" style="width:60px;font-size:11px;padding:3px 6px;" oninput="decoState.curConfig.backgrounds[${i}].presetImages[${j}].fixedSize=+this.value"><span style="font-size:10px;color:rgba(0,0,0,.45);">px 고정</span></div>` : ''}
+        </div>
+        <button class="del-btn" style="margin:0;font-size:10px;padding:3px 7px;flex-shrink:0;" onclick="deleteBoothPresetImg(${i},${j})">삭제</button>
+      </div>`).join('');
     const desc = (b.description||'').replace(/`/g,'\\`').replace(/\$/g,'\\$');
     return `<div class="booth-bg-item" data-idx="${i}">
       <div class="booth-bg-type">
@@ -7252,6 +7266,16 @@ function renderBoothBgList(bgs) {
       <div style="margin-top:10px;">
         <div style="font-size:11px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:3px;">설명 <span style="font-weight:400;">(배경 선택 후 편집 화면 상단에 표시)</span></div>
         <textarea class="fi" rows="2" style="font-size:12px;line-height:1.5;resize:vertical;margin-bottom:0;" placeholder="이 배경을 선택한 사용자에게 보여줄 안내 문구 (선택사항)" oninput="decoState.curConfig.backgrounds[${i}].description=this.value">${b.description||''}</textarea>
+      </div>
+      <div style="margin-top:12px;">
+        <div style="font-size:11px;font-weight:700;color:rgba(0,0,0,.5);margin-bottom:4px;">기본 이미지 <span style="font-weight:400;">(사용자가 "이미지 추가" 탭 시 선택 가능한 소스)</span></div>
+        <div style="background:rgba(0,0,0,.03);border:1.5px solid rgba(0,0,0,.1);padding:8px 10px;">
+          ${presetHtml || '<div style="font-size:11px;color:rgba(0,0,0,.35);padding:4px 0;">등록된 기본 이미지 없음</div>'}
+          <label style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:5px 10px;border:1.5px dashed rgba(0,0,0,.25);font-size:11px;font-weight:700;cursor:pointer;color:rgba(0,0,0,.55);">
+            ＋ 기본 이미지 추가
+            <input type="file" accept="image/*" style="display:none;" onchange="uploadBoothPresetImg(event,${i})">
+          </label>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -7365,6 +7389,33 @@ function deleteBoothBgImage(typeIdx, imgIdx) {
   bgs[typeIdx].urls = urls;
   delete bgs[typeIdx].url;
   if(bgs[typeIdx].urlNames) bgs[typeIdx].urlNames.splice(imgIdx, 1);
+  renderBoothBgList(bgs);
+}
+
+async function uploadBoothPresetImg(e, bgIdx) {
+  const file = e.target.files[0];
+  if(!file) return;
+  const label = e.target.closest('label');
+  if(label) label.textContent = '업로드 중…';
+  try {
+    const compressed = await compressImage(file, { maxWidth: 800, quality: 0.85 });
+    const ref = storage.ref('game_configs/booth_presets/' + Date.now() + '.webp');
+    await ref.put(compressed, { contentType: 'image/webp' });
+    const url = await ref.getDownloadURL();
+    const bgs = decoState.curConfig.backgrounds;
+    if(!bgs[bgIdx].presetImages) bgs[bgIdx].presetImages = [];
+    bgs[bgIdx].presetImages.push({ url, name: '', lockSize: false, fixedSize: 120 });
+    renderBoothBgList(bgs);
+  } catch(err) {
+    renderBoothBgList(decoState.curConfig.backgrounds);
+    alert('업로드 실패: ' + err.message);
+  }
+}
+
+function deleteBoothPresetImg(bgIdx, imgIdx) {
+  if(!confirm('이 기본 이미지를 삭제할까요?')) return;
+  const bgs = decoState.curConfig.backgrounds;
+  if(bgs[bgIdx].presetImages) bgs[bgIdx].presetImages.splice(imgIdx, 1);
   renderBoothBgList(bgs);
 }
 
