@@ -384,6 +384,7 @@ let bgImage = null;
 let backgrounds = []; // [{type, label, urls:[]}]
 let fieldKey = 'boothType'; // config에서 로드
 let currentRefPx = 0; // 출력 이미지(1080px 기준) 픽셀 수 = 10cm; 0이면 표시 안 함
+let commonPresetImages = []; // 모든 사용자 공통 기본 이미지
 let items = [];       // 데코 아이템 목록
 let selectedItem = null;
 let drawMode = false;
@@ -458,6 +459,7 @@ async function loadBackgrounds() {
     if(doc.exists) {
       const data = doc.data();
       backgrounds = data.backgrounds || [];
+      commonPresetImages = data.commonPresetImages || [];
       fieldKey = data.fieldKey || 'boothType';
       if(data.name) {
         document.getElementById('page-title').textContent = data.name;
@@ -596,7 +598,8 @@ function closeBgModal() { document.getElementById('bg-modal').classList.remove('
 // ── 이미지 추가 ──
 function getCurrentPresetImages() {
   const match = backgrounds.find(b => b.type === userBoothType);
-  return match?.presetImages || [];
+  const bgSpecific = match?.presetImages || [];
+  return [...commonPresetImages, ...bgSpecific];
 }
 
 function triggerImageUpload() {
