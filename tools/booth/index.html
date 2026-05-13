@@ -34,10 +34,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 /* ── 캔버스 영역 (실제 비율 유지용 컨테이너) ── */
 #canvas-area{position:relative;flex:1;min-height:0;width:100%;max-width:480px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
 #canvas-wrap{position:relative;overflow:hidden;background:rgba(0,0,0,.04);touch-action:none;}
-#bg-canvas,#draw-canvas,#items-layer{position:absolute;top:0;left:0;width:100%;height:100%;}
+#bg-canvas,#draw-canvas,#items-layer,#cursor-canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
 #bg-canvas{z-index:1;}
 #items-layer{z-index:2;pointer-events:none;}
 #draw-canvas{z-index:3;}
+#cursor-canvas{z-index:4;pointer-events:none;}
 #items-layer.interactive{pointer-events:auto;}
 
 /* ── 데코 아이템 ── */
@@ -258,6 +259,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     <canvas id="bg-canvas"></canvas>
     <div id="items-layer"></div>
     <canvas id="draw-canvas"></canvas>
+    <canvas id="cursor-canvas"></canvas>
   </div>
 </div>
 
@@ -459,6 +461,8 @@ const bgCanvas = document.getElementById('bg-canvas');
 const bgCtx = bgCanvas.getContext('2d');
 const drawCanvas = document.getElementById('draw-canvas');
 const drawCtx = drawCanvas.getContext('2d');
+const cursorCanvas = document.getElementById('cursor-canvas');
+const cursorCtx = cursorCanvas.getContext('2d');
 const itemsLayer = document.getElementById('items-layer');
 const canvasWrap = document.getElementById('canvas-wrap');
 const canvasArea = document.getElementById('canvas-area');
@@ -508,7 +512,7 @@ function resizeCanvases() {
   canvasWrap.style.width = w + 'px';
   canvasWrap.style.height = h + 'px';
   canvasW = w; canvasH = h;
-  [bgCanvas, drawCanvas].forEach(c => { c.width = canvasW; c.height = canvasH; });
+  [bgCanvas, drawCanvas, cursorCanvas].forEach(c => { c.width = canvasW; c.height = canvasH; });
   if(bgImage) drawBg();
 }
 
@@ -1261,6 +1265,7 @@ function enterDrawMode() {
 
 function cancelDrawMode() {
   drawMode = false;
+  clearCursorDot();
   drawCtx.clearRect(0,0,canvasW,canvasH);
   document.getElementById('btn-draw').style.background='';
   document.getElementById('btn-draw').style.color='';
@@ -1320,6 +1325,10 @@ function finishDrawing() {
   selectItemById(item.id);
 }
 
+function clearCursorDot() {
+  cursorCtx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height);
+}
+
 function setupDrawEvents() {
   drawCanvas.style.pointerEvents = 'none';
   function getPos(e) {
@@ -1328,22 +1337,33 @@ function setupDrawEvents() {
     return [(t.clientX - rect.left) * (canvasW / rect.width),
             (t.clientY - rect.top)  * (canvasH / rect.height)];
   }
+  function paintCursorDot(x, y) {
+    cursorCtx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height);
+    cursorCtx.beginPath();
+    cursorCtx.arc(x, y, Math.max(1, drawSize / 2), 0, Math.PI * 2);
+    cursorCtx.fillStyle = drawColor;
+    cursorCtx.globalAlpha = 0.75;
+    cursorCtx.fill();
+    cursorCtx.globalAlpha = 1;
+  }
   function startStroke(e) {
     if(!drawMode) return;
     e.preventDefault();
     isDrawing = true;
     [lastX, lastY] = getPos(e);
-    // 스트로크 시작 전 스냅샷 저장
     strokeHistory.push(drawCtx.getImageData(0,0,canvasW,canvasH));
     drawCtx.beginPath();
     drawCtx.arc(lastX, lastY, drawSize/2, 0, Math.PI*2);
     drawCtx.fillStyle = drawColor;
     drawCtx.fill();
+    paintCursorDot(lastX, lastY);
   }
   function drawStroke(e) {
-    if(!drawMode || !isDrawing) return;
+    if(!drawMode) return;
     e.preventDefault();
     const [x,y] = getPos(e);
+    paintCursorDot(x, y);
+    if(!isDrawing) return;
     drawCtx.beginPath();
     drawCtx.moveTo(lastX, lastY);
     drawCtx.lineTo(x, y);
@@ -1358,6 +1378,7 @@ function setupDrawEvents() {
   drawCanvas.addEventListener('pointerdown', startStroke);
   drawCanvas.addEventListener('pointermove', drawStroke);
   drawCanvas.addEventListener('pointerup', endStroke);
+  drawCanvas.addEventListener('pointerleave', clearCursorDot);
   drawCanvas.addEventListener('touchstart', startStroke, {passive:false});
   drawCanvas.addEventListener('touchmove', drawStroke, {passive:false});
   drawCanvas.addEventListener('touchend', endStroke);
