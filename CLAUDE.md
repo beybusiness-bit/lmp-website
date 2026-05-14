@@ -186,12 +186,16 @@ Firebase Storage 이미지는 CORS 설정에 따라 `crossorigin="anonymous"` �
   ```
   시스템이 자동으로 만든 `claude/...` feature 브랜치 위에 있을 것이다. **이 브랜치에 머무른다.** main으로 checkout하지 않는다.
 
-- **⬇️ origin/main 최신 상태 파악 (현재 작업 베이스 확인용):**
+- **⬇️ origin/main 최신 상태로 자동 동기화:**
   ```bash
   git fetch origin main
   git log HEAD..origin/main --oneline
   ```
-  결과가 있으면 → main이 feature 브랜치보다 앞서 있다는 뜻 → 사용자에게 알리고 feature 브랜치를 rebase 또는 새 feature 브랜치 시작 여부 확인.
+  결과가 있으면 → main이 feature 브랜치보다 앞서 있다는 뜻 → **세션 시작 시점엔 아직 작업이 없으므로 묻지 않고 자동으로 리셋:**
+  ```bash
+  git reset --hard origin/main
+  ```
+  이렇게 하면 이전 세션 머지된 내용이 현재 feature 브랜치에 반영되고, 유실되는 작업은 없다 (새 세션에서 아직 아무것도 안 했으므로).
 
 - **⚠️ 절대 시도 금지:**
   - `git checkout main` 후 작업 (다시 feature로 복귀 못 할 수 있음)
