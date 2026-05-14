@@ -478,7 +478,7 @@ cms_copy_gen_usages/{configId}__{userId}
 
 #### Firestore 보안 규칙 (현재 적용된 것 기준)
 ```
-match /cms_form_responses/{document=**} { allow write: if true; allow read: if request.auth != null; }
+match /cms_form_responses/{document=**} { allow write: if true; allow read: if true; }
 match /{col}/{doc} { allow read, write: if col.matches('cms_users_.*'); }
 match /cms_form_configs/{document=**} { allow write: if true; }
 match /cms_youtube_submissions/{document=**} { allow write: if true; }
@@ -635,8 +635,8 @@ closeHelpPanel();
 - noResubmit Firestore 기반 중복 방지
 
 **개별 도구**
-- 꾸미기 도구 (`tools/booth/`): Canvas 기반 이미지 합성, 배경 선택(무료/업로드), 비율 유지, 메타바
-- 폼 도구 (`tools/form/`): cms_form_configs 기반, 글자 수 제한(min/max), 응답 관리 인라인 통합
+- 꾸미기 도구 (`tools/booth/`): Canvas 기반 이미지 합성, 배경 선택(무료/업로드), 비율 유지, 메타바, ResizeObserver 기반 캔버스 크기 감지, no-CORS-first 이미지 로딩
+- 폼 도구 (`tools/form/`): cms_form_configs 기반, 글자 수 제한(min/max), 응답 관리 인라인 통합, 달력 위젯(single/range/multi), 파일 업로드 썸네일 뷰(72×72), 제출 내역 확인 및 수정 기능, 업로드 카운터 표시
 - 계산기·가이드 (`tools/guide/`): 조건부 계산식 엔진
 - 일정 잡기 (`tools/schedule/`): Google Calendar 연동 (GAS), 타임존, 슬롯 계산, Firestore 저장
 - 결제 (`tools/payment/`): 토스페이먼츠 v2, 서버 검증 (`api/confirm-payment.js`), `paidTiers` 누적
@@ -653,18 +653,22 @@ closeHelpPanel();
 
 #### 미완료 / 이슈 🔶
 
-- **GAS 재배포 필요** (bulkAppend + Calendar 액션 코드는 추가됐으나 GAS 편집기에서 "새 버전" 배포 안 됨)
+- **GAS 재배포 필요** (updateFormRow + bulkAppend + Calendar 액션 코드는 추가됐으나 GAS 편집기에서 "새 버전" 배포 안 됨)
   → script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
 - **일정 잡기 도구 end-to-end 테스트**: GAS 재배포 후 실제 캘린더 연동 확인 필요
 - **결제 후 권한 분기(잠금 게이트)**: `paidTiers` 데이터는 저장되나 블록/스테이지/프로젝트 잠금 로직 미구현 — 사용 예시 확인 후 단위 결정
+
+#### Firestore 보안 규칙 (이번 세션에서 변경됨)
+```
+match /cms_form_responses/{document=**} { allow write: if true; allow read: if true; }
+```
+→ 제출 내역 조회를 위해 read를 `if true`로 변경 (이미 Firebase Console에서 적용 완료)
 
 ---
 
 #### 다음 세션 시작점 🔲
 
-- **꾸미기 도구(`tools/booth/`) UX 개선**: 배경 선택 모달 추가 개선 또는 신규 요청
-- GAS 재배포 후 시트·캘린더 end-to-end 테스트
-- 관리자 프리뷰 모드 실제 테스트 (시크릿창에서 비공개·숨김 스테이지 진입 확인)
+- 사용자가 직접 지정할 예정
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 
 ---
