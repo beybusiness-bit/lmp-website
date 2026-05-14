@@ -8,9 +8,16 @@ export default async function handler(req, res) {
     ? 'https://standard.testpayup.co.kr'
     : 'https://standard.payup.co.kr';
 
-  // PC: form POST body  /  모바일: returnUrl GET 쿼리
-  const body  = (req.method === 'POST' && req.body) ? req.body : {};
+  // PC: form POST body (application/x-www-form-urlencoded)
+  // 모바일: returnUrl GET 쿼리
   const query = req.query || {};
+
+  // Vercel이 form body를 자동 파싱하지 않을 수 있으므로 직접 파싱
+  let body = req.body || {};
+  if (req.method === 'POST' && typeof body === 'string') {
+    body = Object.fromEntries(new URLSearchParams(body));
+  }
+  // body가 이미 객체여도 그대로 사용
 
   const transactionId = body.transactionId || query.transactionId || '';
   const orderNumber   = body.orderNumber   || query.orderNumber   || '';
