@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>제3회 GMBF</title>
+<meta property="og:title" content="제3회 GMBF">
+<meta property="og:description" content="">
+<meta property="og:image" content="">
+<meta property="og:url" content="https://lazymaxpotential.kr/gmbf-03/">
+<meta property="og:type" content="website">
+<meta name="description" content="">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html{height:100%;}
+body{background:var(--body-bg,var(--c));transition:background-color 1s ease;display:flex;justify-content:center;min-height:100vh;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;}
+#app{width:100%;max-width:430px;min-height:100vh;position:relative;overflow:hidden;}
+:root{--c:#00CE6B;--prep-bg:#FFF100;--fill-color:#F95548;--menu-bg:#0BC6FF;}
+.btn{display:block;width:100%;background:transparent;border:2px solid #000;border-radius:0;color:#000;font-size:15px;font-weight:700;padding:12px 0;cursor:pointer;font-family:inherit;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s;}
+.btn:hover,.btn:active{background:#000;color:var(--btn-ctx,#fff);}
+.inp{width:100%;background:transparent!important;border:none;border-bottom:2px solid #000;color:#000;font-size:17px;font-weight:600;padding:8px 0;outline:none;font-family:inherit;letter-spacing:1px;-webkit-appearance:none;appearance:none;border-radius:0;box-shadow:none!important;}
+.inp::placeholder{color:rgba(0,0,0,.35);font-weight:400;letter-spacing:0;}
+.inp:focus{background:transparent!important;outline:none;box-shadow:none!important;}
+.inp:-webkit-autofill{-webkit-box-shadow:0 0 0 1000px transparent inset!important;}
+/* slides */
+.slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;}
+.slide.on{opacity:1;}
+.slide::after{content:'';position:absolute;inset:0;background:var(--slide-overlay,rgba(0,0,0,.38));}
+/* ── SEPARATE layout: main content ── */
+#main-content{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:80px 32px 100px;}
+.top-group{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;}
+.bottom-group{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.edition-text{font-size:18px;font-weight:900;color:var(--c);letter-spacing:-.3px;transition:color 1s ease;margin-bottom:-14px;}
+.logo-wrap{width:76%;}
+.logo-mask{width:100%;height:auto;object-fit:contain;display:block;}
+.logo-fallback{font-size:20px;font-weight:900;color:var(--c);text-align:center;line-height:1.3;transition:color 1s ease;display:none;white-space:pre-line;}
+.dday-num{font-size:32px;font-weight:300;color:var(--c);line-height:1;letter-spacing:-1px;transition:color 1s ease;text-align:center;}
+.visitor-line{font-size:21px;font-weight:400;color:var(--c);line-height:1;letter-spacing:-.5px;transition:color 1s ease;text-align:center;}
+.basket-btn{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.basket-btn:active{opacity:.75;transform:scale(.97);}
+.basket-mask{width:var(--cta-icon-size,72px);height:var(--cta-icon-size,72px);background-color:var(--c);-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;transition:background-color 1s ease;}
+.basket-text{font-size:18px;font-weight:900;color:var(--c);letter-spacing:-.3px;transition:color 1s ease;}
+/* ── MERGED layout ── */
+#merged-content{display:none;position:relative;z-index:10;min-height:100vh;flex-direction:column;}
+#merged-topbar{flex-shrink:0;display:flex;align-items:center;padding:14px 20px;border-bottom:2px solid rgba(255,255,255,.3);background:rgba(0,0,0,.25);backdrop-filter:blur(4px);}
+#merged-topbar .topbar-left{cursor:pointer;-webkit-tap-highlight-color:transparent;}
+#merged-topbar .topbar-center{flex:1;text-align:center;font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px;}
+#merged-stage-wrap{flex:1;overflow-y:auto;padding:20px 16px 60px;-webkit-overflow-scrolling:touch;}
+#merged-edition{font-size:14px;font-weight:800;color:rgba(255,255,255,.8);margin-bottom:6px;letter-spacing:-.2px;}
+#merged-dday{font-size:28px;font-weight:300;color:#fff;margin-bottom:20px;letter-spacing:-1px;}
+/* return btn */
+#return-btn{display:none;position:absolute;bottom:100px;right:24px;z-index:30;width:44px;height:44px;align-items:center;justify-content:center;font-size:20px;color:#000;font-weight:900;cursor:pointer;-webkit-tap-highlight-color:transparent;border:2px solid #000;transition:opacity .2s;}
+#return-btn:active{opacity:.65;}
+/* error */
+#error-screen{display:none;position:absolute;inset:0;z-index:200;background:#fff;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:40px;}
+#error-screen.on{display:flex;}
+.error-msg{font-size:18px;font-weight:800;color:#000;text-align:center;letter-spacing:-.5px;}
+.error-sub{font-size:14px;color:rgba(0,0,0,.5);text-align:center;}
+/* fullscreen panels */
+.fullscreen{position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:430px;transform:translateX(-50%) translateY(100%);transition:transform .5s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column;overflow:hidden;}
+.fullscreen.open{transform:translateX(-50%) translateY(0);}
+#prep-screen{z-index:50;background:var(--prep-bg);}
+#guide-screen{z-index:60;background:var(--prep-bg,#fff);transition:none;}
+/* topbar */
+.topbar{flex-shrink:0;display:flex;align-items:center;padding:14px 20px;border-bottom:2px solid #000;}
+#prep-topbar{background:var(--prep-bg);}
+#guide-topbar{background:var(--prep-bg,#fff);}
+.topbar-left{display:flex;align-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;}
+.basket-icon-wrap{width:32px;height:32px;position:relative;}
+.basket-layer{position:absolute;inset:0;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;}
+.basket-layer-black{background:#000;}
+.topbar-center{flex:1;text-align:center;font-size:15px;font-weight:800;color:#000;letter-spacing:-.3px;}
+.topbar-right{font-size:22px;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;line-height:1;padding:4px;}
+.topbar-back{font-size:22px;font-weight:900;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;padding:4px;line-height:1;}
+.screen-body{flex:1;overflow-y:auto;padding:24px 20px 48px;-webkit-overflow-scrolling:touch;}
+/* stage cards */
+.stage-card{border:2px solid #000;background:transparent;margin-bottom:16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s;}
+.stage-card:active{opacity:.65;}
+.stage-card.merged{border-color:rgba(255,255,255,.7);background:rgba(0,0,0,.25);}
+.stage-card-body{display:flex;align-items:center;gap:14px;padding:18px 16px 14px;}
+.status-dot{width:42px;height:42px;border-radius:50%;background:#000;color:var(--prep-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;text-align:center;line-height:1.3;}
+.status-dot.merged{background:rgba(255,255,255,.9);color:#000;}
+.stage-title{font-size:15px;font-weight:800;color:#000;letter-spacing:-.3px;line-height:1.35;}
+.stage-title.merged{color:#fff;}
+.stage-pbar{height:15px;background:transparent;display:flex;align-items:center;}
+.stage-pbar-fill{height:100%;background:#000;display:flex;align-items:center;justify-content:flex-end;flex-shrink:0;}
+.stage-pbar-fill.merged{background:rgba(255,255,255,.7);}
+.stage-pct-out{font-size:10px;font-weight:800;color:#000;margin-left:4px;white-space:nowrap;}
+.stage-pct-out.merged{color:rgba(255,255,255,.85);}
+/* stage tag (bookmark) */
+.stage-tag{position:absolute;top:0;right:14px;font-size:10px;font-weight:800;line-height:1.2;letter-spacing:-.3px;z-index:5;pointer-events:none;white-space:nowrap;min-width:28px;text-align:center;}
+.stage-tag.bookmark{padding:5px 8px 12px;clip-path:polygon(0 0,100% 0,100% 76%,50% 100%,0 76%);}
+.stage-tag.rect{padding:4px 8px 6px;border-radius:0 0 5px 5px;}
+/* side menu */
+#side-menu{position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:430px;background:var(--menu-bg);transform:translateX(calc(-50% - 100vw));transition:transform .35s cubic-bezier(.32,.72,0,1);z-index:80;display:flex;flex-direction:column;}
+#side-menu.open{transform:translateX(-50%);}
+.menu-header{flex-shrink:0;display:flex;justify-content:flex-end;padding:16px 20px;border-bottom:1px solid rgba(0,0,0,.12);}
+.menu-close{font-size:24px;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:4px 4px 4px 16px;line-height:1;}
+#menu-list{flex:1;overflow-y:auto;padding:8px 28px 24px;}
+.menu-item{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid rgba(0,0,0,.18);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s;}
+.menu-item:last-child{border-bottom:none;}
+.menu-item:active{opacity:.6;}
+#menu-footer{flex-shrink:0;display:none;padding:14px 28px 28px;border-top:1px solid rgba(0,0,0,.18);}
+#menu-logout{display:inline-block;font-size:13px;font-weight:600;color:rgba(0,0,0,.55);cursor:pointer;-webkit-tap-highlight-color:transparent;padding:6px 0;letter-spacing:-.2px;}
+#menu-logout:active{opacity:.55;}
+.menu-dot{width:36px;height:36px;border-radius:50%;background:#000;color:var(--menu-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;text-align:center;line-height:1.3;}
+/* user greeting */
+#menu-greeting{display:none;padding:14px 20px 12px;border-bottom:1px solid rgba(0,0,0,.12);font-size:13px;font-weight:700;line-height:1.65;letter-spacing:-.2px;color:var(--menu-bg);background:#000;word-break:keep-all;}
+#prep-greeting{display:none;padding:10px 20px 20px;font-size:16px;font-weight:700;line-height:1.65;letter-spacing:-.2px;color:#000;word-break:keep-all;text-align:center;}
+#merged-greeting{display:none;padding:0 0 14px;font-size:13px;font-weight:700;line-height:1.65;letter-spacing:-.2px;color:rgba(255,255,255,.85);word-break:keep-all;}
+#return-greeting{display:none;position:absolute;bottom:calc(100px + 44px + 10px);right:24px;z-index:29;text-align:right;font-size:12px;font-weight:700;line-height:1.5;color:var(--c);max-width:220px;word-break:keep-all;}
+.menu-title{font-size:16px;font-weight:800;color:#000;letter-spacing:-.3px;}
+/* guide viewer */
+.guide-scroll-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.guide-scroll-body:has(.g-tool-full-wrap){overflow:hidden;}
+#guide-scroll-blocks:has(.g-tool-full-wrap){height:100%;}
+.g-tool-full-wrap{height:100%!important;}
+.g-tool-full-wrap iframe{height:100%!important;}
+.guide-slide-body{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.guide-slide-track{flex:1;display:flex;overflow:hidden;transition:transform .4s cubic-bezier(.32,.72,0,1);align-items:stretch;}
+.guide-slide-item{flex-shrink:0;overflow-y:hidden;height:100%;display:flex;flex-direction:column;justify-content:center;}
+.guide-dots{flex-shrink:0;display:flex;justify-content:center;align-items:center;gap:8px;padding:10px 0;background:var(--prep-bg,#fff);border-top:1.5px solid rgba(0,0,0,.08);}
+.guide-dot{width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,.2);transition:background .2s;cursor:pointer;}
+.guide-dot.on{background:var(--guide-pager,#000);}
+.g-block-text{padding:24px 20px;}
+.g-block-text-inner{font-size:15px;line-height:1.7;color:#000;white-space:pre-wrap;word-break:break-word;}
+.g-block-image img{width:100%;display:block;}
+.g-block-mixed-overlay{position:relative;}
+.g-block-mixed-overlay img{width:100%;display:block;}
+.g-overlay-text{position:absolute;inset:0;display:flex;align-items:flex-end;background:rgba(0,0,0,.4);padding:20px;overflow:hidden;}
+.g-overlay-text-inner{color:#fff;font-size:15px;line-height:1.6;overflow-y:auto;white-space:pre-wrap;word-break:break-word;width:100%;}
+.g-block-mixed-split{display:flex;flex-direction:column;}
+.g-split-img img{width:100%;display:block;}
+.g-split-text{padding:16px 20px;font-size:15px;line-height:1.6;white-space:pre-wrap;word-break:break-word;}
+.guide-empty{padding:60px 20px;text-align:center;color:rgba(0,0,0,.4);font-size:14px;}
+.g-block-embed{width:100%;}
+/* modal */
+.modal-ov{display:none;position:fixed;inset:0;z-index:300;justify-content:center;align-items:center;background:rgba(0,0,0,.42);}
+.modal-ov.on{display:flex;}
+.modal-box{width:82%;max-width:340px;padding:36px 28px 28px;color:#000;font-family:inherit;}
+.modal-ttl{font-size:20px;font-weight:900;color:#000;margin-bottom:10px;line-height:1.3;letter-spacing:-.5px;}
+.modal-desc{font-size:14px;color:rgba(0,0,0,.7);margin-bottom:24px;line-height:1.6;}
+.modal-err{font-size:13px;color:rgba(0,0,0,.7);margin-bottom:14px;min-height:16px;}
+.modal-btns{display:flex;gap:10px;}
+.modal-btn{flex:1;padding:12px 0;background:transparent;border:2px solid #000;color:#000;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s;}
+.modal-btn:hover,.modal-btn:active{background:#000;color:var(--modal-bg,#fff);}
+/* merged hamburger icon */
+#merged-menu-icon{font-size:22px;font-weight:900;color:#fff;}
+/* merged layout + no bg image → dark text */
+.no-bg-img #merged-menu-icon{color:#000;}
+.no-bg-img #merged-topbar{background:transparent!important;border-bottom-color:rgba(0,0,0,.15)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;}
+.no-bg-img #merged-topbar .topbar-center{color:#000!important;}
+.no-bg-img #merged-edition{color:rgba(0,0,0,.65)!important;}
+.no-bg-img #merged-dday{color:#000!important;}
+.no-bg-img .stage-card.merged{border-color:#000!important;background:transparent!important;}
+.no-bg-img .stage-title.merged{color:var(--prep-bg)!important;}
+.no-bg-img .status-dot.merged{background:var(--prep-bg)!important;color:#000!important;}
+.no-bg-img .stage-pbar-fill.merged{background:#000!important;}
+/* slide full-height image/overlay */
+.guide-slide-item .g-block-image,.guide-slide-item .g-block-mixed-overlay{flex:1;min-height:0;}
+.guide-slide-item .g-block-image img,.guide-slide-item .g-block-mixed-overlay img{width:100%;height:100%!important;object-fit:cover;object-position:center;}
+/* 스크롤형: 텍스트 높이 제한 없이 자연스럽게 흐름 */
+.guide-scroll-body .g-block-text-inner{overflow-y:visible;}
+.guide-scroll-body .g-split-text{overflow-y:visible;}
+/* 슬라이드형: 텍스트 블록이 슬라이드 전체 높이를 채우고 내부 스크롤 */
+.guide-slide-item .g-block-text{flex:1;display:flex;flex-direction:column;min-height:0;}
+.guide-slide-item .g-block-text .g-block-text-inner{flex:1;overflow-y:auto;}
+/* 슬라이드형 분리형: 이미지 고정, 텍스트가 남은 공간 채우고 스크롤 */
+.guide-slide-item .g-block-mixed-split{flex:1;display:flex;flex-direction:column;min-height:0;}
+.guide-slide-item .g-block-mixed-split .g-split-img{flex-shrink:0;}
+.guide-slide-item .g-block-mixed-split .g-split-text{flex:1;overflow-y:auto;}
+/* 세로 정렬: 직계 자식은 자연 높이, 이미지/고정 블록은 0 0 auto */
+.guide-slide-item[data-valign] > *{flex:0 0 auto!important;}
+.guide-slide-item[data-valign] .g-block-image img,
+.guide-slide-item[data-valign] .g-block-mixed-overlay img{height:auto!important;max-height:100%;}
+.guide-slide-item[data-valign] .g-block-image,
+.guide-slide-item[data-valign] .g-block-mixed-overlay{flex:0 0 auto!important;}
+/* 텍스트 블록: 컨테이너 높이까지 줄어들 수 있게 해서 내부 스크롤 허용 */
+.guide-slide-item[data-valign] .g-block-text{flex:0 1 auto!important;max-height:100%;min-height:0;display:flex;flex-direction:column;}
+.guide-slide-item[data-valign] .g-block-text .g-block-text-inner{flex:1;min-height:0;overflow-y:auto;}
+.guide-slide-item[data-valign] .g-block-mixed-split{flex:0 1 auto!important;max-height:100%;min-height:0;}
+.guide-slide-item[data-valign] .g-block-mixed-split .g-split-text{flex:1;min-height:0;overflow-y:auto;}
+.guide-slide-item[data-valign] .blk-check-outer{flex:0 1 auto!important;max-height:100%;min-height:0;display:flex;flex-direction:column;}
+/* 텍스트 콘텐츠 내 인라인 링크 */
+.g-block-text-inner a,.g-split-text a,.g-overlay-text-inner a{color:inherit;text-decoration:underline;cursor:pointer;}
+/* 필드 설명 내 서식 오버라이드 */
+.ff-desc *{font-size:inherit!important;color:inherit!important;}
+.ff-desc a{color:inherit;text-decoration:underline;cursor:pointer;}
+/* 도구 링크 모달 — bottom sheet 스타일 */
+#tool-link-overlay{display:none;position:fixed;inset:0;z-index:399;background:rgba(0,0,0,.5);}
+#tool-link-overlay.on{display:block;}
+#tool-link-modal{display:none;position:fixed;top:56px;bottom:0;left:50%;width:100%;max-width:430px;transform:translateX(-50%);z-index:400;flex-direction:column;background:var(--prep-bg,#fff);border-radius:16px 16px 0 0;box-shadow:0 -6px 32px rgba(0,0,0,.22);overflow:hidden;}
+#tool-link-modal.on{display:flex;}
+#tool-link-handle{display:flex;justify-content:center;padding:10px 0 6px;flex-shrink:0;}
+#tool-link-handle-pill{width:36px;height:4px;background:rgba(0,0,0,.18);border-radius:2px;}
+#tool-link-modal-bar{flex-shrink:0;display:flex;align-items:center;padding:10px 20px 12px;border-bottom:2px solid #000;background:var(--prep-bg,#fff);}
+#tool-link-modal-bar button{background:transparent;border:none;font-size:22px;font-weight:900;cursor:pointer;padding:0 12px 0 0;font-family:inherit;line-height:1;color:#000;-webkit-tap-highlight-color:transparent;}
+#tool-link-modal-title{flex:1;font-size:15px;font-weight:800;color:#000;letter-spacing:-.3px;}
+#tool-link-iframe{flex:1;border:none;width:100%;}
+/* form block */
+.g-block-form{padding:24px 20px;}
+.ff-wrap{margin-bottom:22px;}
+.ff-label{display:block;font-size:15px;font-weight:900;margin-bottom:6px;letter-spacing:-.2px;}
+.ff-desc{font-size:10px;color:rgba(0,0,0,.5);margin-bottom:8px;line-height:1.6;}
+.ff-inp{width:100%;background:transparent;border:none;border-bottom:2px solid #000;font-size:16px;font-weight:600;padding:9px 0;outline:none;font-family:inherit;color:#000;box-sizing:border-box;}
+.ff-inp::placeholder{color:rgba(0,0,0,.3);font-weight:400;}
+.ff-textarea{width:100%;border:2px solid #000;font-size:15px;font-weight:500;padding:12px;outline:none;font-family:inherit;color:#000;resize:vertical;min-height:100px;background:transparent;box-sizing:border-box;line-height:1.6;}
+.ff-textarea::placeholder{color:rgba(0,0,0,.3);font-weight:400;}
+.ff-sel{width:100%;border:2px solid #000;font-size:15px;font-weight:600;padding:11px 10px;outline:none;font-family:inherit;color:#000;background:#fff;appearance:none;-webkit-appearance:none;box-sizing:border-box;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23000' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+.ff-sel-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+.ff-sel-btn{padding:10px 16px;background:transparent;border:2px solid #000;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;color:#000;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s;letter-spacing:-.2px;}
+.ff-sel-btn.on{background:#000;color:#fff;}
+.ff-err{font-size:13px;font-weight:700;color:#c00;margin-top:10px;min-height:18px;}
+.form-submit-btn{width:100%;padding:16px 0;background:#000;border:2px solid #000;color:#fff;font-size:16px;font-weight:900;cursor:pointer;font-family:inherit;margin-top:20px;-webkit-tap-highlight-color:transparent;letter-spacing:-.3px;}
+.form-submit-btn:disabled{opacity:.5;}
+.form-done-screen{padding:32px 20px;text-align:center;}
+.ff-form-title{font-size:20px;font-weight:900;letter-spacing:-.5px;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #000;}
+/* block check */
+.blk-check-outer{position:relative;}
+.blk-check-wrap{padding:10px 20px 4px;display:flex;justify-content:flex-end;}
+.blk-check-wrap.align-left{justify-content:flex-start;}
+.blk-check-wrap.align-center{justify-content:center;}
+.blk-check-wrap.blk-check-mid{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);z-index:3;padding:0 20px;pointer-events:auto;}
+.blk-check-btn{padding:8px 18px;background:transparent;border:2px solid var(--chk-color,#000);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--chk-color,#000);-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s,border-color .15s;letter-spacing:-.2px;}
+.blk-check-btn.on{background:var(--chk-color,#000);color:var(--chk-text-color,var(--prep-bg));border-color:var(--chk-color,#000);}
+.blk-check-box{width:26px;height:26px;border:2.5px solid var(--chk-color,#000);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;-webkit-tap-highlight-color:transparent;transition:border-color .15s,background .15s,color .15s;}
+.blk-check-box.on{background:var(--chk-color,#000);border-color:var(--chk-color,#000);color:var(--chk-text-color,var(--prep-bg));}
+.stage-pct-txt{font-size:10px;font-weight:800;color:var(--prep-bg,#fff);padding-right:4px;white-space:nowrap;}
+.stage-pbar-fill.merged .stage-pct-txt{color:#000;}
+</style>
+</head>
+<body>
+<!-- SVG 필터: 로고 이미지를 키컬러로 tinting (CORS 불필요, feColorMatrix 방식) -->
+<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+  <defs>
+    <filter id="logo-colorize" color-interpolation-filters="sRGB">
+      <feColorMatrix id="logo-matrix" type="matrix"
+        values="0 0 0 0 0  0 0 0 0 0.808  0 0 0 0 0.42  0 0 0 1 0"/>
+    </filter>
+  </defs>
+</svg>
+<div id="app">
+  <!-- background slides (동적으로 추가됨) -->
+  <div id="slides-container"></div>
+
+  <!-- 사이드 메뉴 (separate / merged 공용) -->
+  <div id="side-menu">
+    <div class="menu-header"><div class="menu-close" onclick="closeMenu()">✕</div></div>
+    <div id="menu-greeting"></div>
+    <div id="menu-list"></div>
+    <div id="menu-footer"><span id="menu-logout" onclick="logout()">로그아웃</span></div>
+  </div>
+
+  <!-- SEPARATE layout main -->
+  <div id="main-content">
+    <div class="top-group">
+      <div class="edition-text" id="edition-text"></div>
+      <div class="logo-wrap">
+        <img class="logo-mask" id="logo-mask" src="" alt="" style="display:none;filter:url(#logo-colorize);">
+        <div class="logo-fallback" id="logo-fallback" style="display:none;">준비 포털</div>
+      </div>
+      <div class="dday-num" id="dday-num"></div>
+      <div class="visitor-line" id="visitor-line"></div>
+    </div>
+    <div id="cta-area" style="display:flex;align-items:flex-end;justify-content:center;gap:40px;">
+      <div class="bottom-group basket-btn" onclick="onCtaClick()">
+        <div class="basket-mask" id="cta-icon"></div>
+        <div class="basket-text" id="cta-text">준비하기</div>
+      </div>
+      <div class="bottom-group basket-btn" id="reg-cta-btn" onclick="openRegModal()" style="display:none;">
+        <div class="basket-mask" id="reg-cta-icon"></div>
+        <div class="basket-text" id="reg-cta-text">등록하기</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MERGED layout main -->
+  <div id="merged-content">
+    <div id="merged-topbar">
+      <div class="topbar-left" onclick="toggleMenu()">
+        <div id="merged-menu-icon">☰</div>
+      </div>
+      <div class="topbar-center" id="merged-title">준비</div>
+      <div style="width:30px;"></div>
+    </div>
+    <div id="merged-stage-wrap">
+      <div id="merged-edition"></div>
+      <div id="merged-dday"></div>
+      <div id="merged-greeting"></div>
+      <div id="merged-stage-list"></div>
+    </div>
+  </div>
+
+  <div id="return-btn" onclick="reopenPrep()">↑</div>
+  <div id="return-greeting"></div>
+
+  <div id="error-screen">
+    <div class="error-msg" id="error-msg">프로젝트를 찾을 수 없어요.</div>
+    <div class="error-sub" id="error-sub">URL을 확인해주세요.</div>
+  </div>
+  <div id="coming-soon-screen" style="display:none;position:absolute;inset:0;z-index:200;background:#fff;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:40px;gap:16px;">
+    <div style="font-size:40px;">🔒</div>
+    <div style="font-size:20px;font-weight:800;letter-spacing:-.3px;">준비 중이에요</div>
+    <div style="font-size:14px;color:rgba(0,0,0,.45);line-height:1.7;">곧 공개될 예정이에요.<br>조금만 기다려주세요.</div>
+  </div>
+
+  <!-- Prep screen (separate layout only) -->
+  <div id="prep-screen" class="fullscreen">
+    <div id="prep-topbar" class="topbar">
+      <div class="topbar-left" onclick="toggleMenu()">
+        <div class="basket-icon-wrap" id="prep-cta-wrap">
+          <div class="basket-layer basket-layer-black" id="prep-cta-icon"></div>
+        </div>
+        <span id="prep-menu-fallback" style="display:none;font-size:26px;font-weight:900;line-height:1;color:#000;padding:2px 0;">☰</span>
+      </div>
+      <div class="topbar-center" id="topbar-title">준비</div>
+      <div class="topbar-right" onclick="closePrep()">↓</div>
+    </div>
+    <div class="screen-body"><div id="prep-greeting"></div><div id="stage-list"></div></div>
+  </div>
+
+  <!-- Guide viewer -->
+  <div id="guide-screen" class="fullscreen">
+    <div id="guide-topbar" class="topbar">
+      <div class="topbar-back" onclick="closeGuide()">←</div>
+      <div class="topbar-center" id="guide-title-bar">안내</div>
+      <div style="width:30px;"></div>
+    </div>
+    <div id="guide-scroll-body" class="guide-scroll-body" style="display:none;">
+      <div id="guide-scroll-blocks"></div>
+    </div>
+    <div id="guide-slide-body" class="guide-slide-body" style="display:none;">
+      <div id="guide-slide-track" class="guide-slide-track"></div>
+      <div id="guide-dots" class="guide-dots"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Auth modal -->
+<div class="modal-ov" id="auth-modal" onclick="ovClick(event,'auth-modal')">
+  <div class="modal-box" id="auth-box">
+    <div class="modal-ttl" id="auth-title">인증이 필요해요</div>
+    <div class="modal-desc" id="auth-desc">인증 코드를 입력해주세요.</div>
+    <div id="auth-reason" style="display:none;font-size:12px;font-weight:700;background:rgba(0,0,0,.08);padding:10px 12px;margin-bottom:14px;line-height:1.5;border-left:3px solid currentColor;"></div>
+    <input class="inp" id="auth-key-input" placeholder="" style="margin-bottom:20px;" onkeydown="if(event.key==='Enter')confirmAuth()">
+    <div class="modal-err" id="auth-err"></div>
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="closeModal('auth-modal')">취소</button>
+      <button class="modal-btn" id="auth-ok" onclick="confirmAuth()">확인</button>
+    </div>
+    <div id="auth-reg-wrap" style="display:none;text-align:center;margin-top:14px;">
+      <button id="auth-reg-btn" onclick="openRegModal()" style="background:transparent;border:none;font-size:13px;font-weight:700;text-decoration:underline;cursor:pointer;font-family:inherit;color:inherit;opacity:.7;">등록하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-ov" id="reg-modal" onclick="ovClick(event,'reg-modal')">
+  <div class="modal-box" id="reg-box" style="max-height:80vh;overflow-y:auto;">
+    <div class="modal-ttl">등록하기</div>
+    <div class="modal-desc" id="reg-desc" style="margin-bottom:16px;">정보를 입력하고 등록해주세요.</div>
+    <div id="reg-fields"></div>
+    <div class="modal-err" id="reg-err"></div>
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="closeModal('reg-modal')">취소</button>
+      <button class="modal-btn" id="reg-ok" onclick="submitRegistration()">등록</button>
+    </div>
+  </div>
+</div>
+
+<!-- 도구 링크 모달 (bottom sheet) -->
+<div id="tool-link-overlay" onclick="closeToolLinkModal()"></div>
+<div id="tool-link-modal">
+  <div id="tool-link-handle"><div id="tool-link-handle-pill"></div></div>
+  <div id="tool-link-modal-bar">
+    <button onclick="closeToolLinkModal()">←</button>
+    <div id="tool-link-modal-title">도구</div>
+  </div>
+  <iframe id="tool-link-iframe" src="" allowfullscreen></iframe>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
+  authDomain:"beyhome-admin.firebaseapp.com",
+  projectId:"beyhome-admin",
+  storageBucket:"beyhome-admin.firebasestorage.app",
+  messagingSenderId:"849320781553",
+  appId:"1:849320781553:web:9d844044e85995c0aa2b50"
+});
+const db = firebase.firestore();
+
+/* ── URL에서 프로젝트 ID ── */
+const PROJECT_ID = 'gmbf-03';
+const ADMIN_PARAM = new URLSearchParams(location.search).get('admin') || '';
+let IS_ADMIN_PREVIEW = false;
+const COLORS     = ['#00CE6B','#FFF100','#F95548','#0BC6FF','#FFFFFF'];
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1weS1u1eML_R8nKpMXSP6U-IDGDsazUg-duw/exec';
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+const formBlockData = {};
+let USER_DOC_ID = '';
+let userProgress = {}; // {stageId: Set<blockId>}
+let curStageIdx = -1;
+let curStageId = '';
+const KEY_COLORS = ['#00CE6B','#FFF100','#F95548','#0BC6FF'];
+
+/* project settings */
+let LAYOUT_TYPE    = 'separate';
+let DDAY_ENABLED   = false;
+let DDAY_DATE      = '';
+let AUTH_ENABLED   = false;
+let AUTH_MODE      = 'immediate';
+let AUTH_COLLECTION = '';
+let AUTH_FIELDS    = [];
+let AUTH_KEY_FIELD = '';
+let SELF_REG_ENABLED = false;
+let SELF_REG_CTA   = '등록하기';
+let SELF_REG_SUCCESS_MSG = '';
+let SELF_REG_CTA_SEPARATE = false;
+let SELF_REG_CTA_ICON_URL = '';
+let SELF_REG_CTA_SEP_TEXT = '등록하기';
+let GREETING_TEXT  = '';
+let STAGES         = [];
+let _navRestore    = false;
+let STATS          = [];   // [{id, label, collection, countType, unit, enabled}]
+let ELEMENT_ORDER  = ['edition','logo','dday','stats'];
+
+/* slideshow */
+let bgImages   = [];   // [{url, holdTime, transitionTime}]
+let slideIdx   = 0;
+let colorIdx   = -1;
+let slideTimer = null;
+let kcTimer    = null;
+let kcIdx      = -1;
+let KEY_COLORS_DATA = []; // [{color, holdTime, transitionTime}]
+let prepBg     = KEY_COLORS[0];
+
+/* ── Util ── */
+function setCss(k,v){
+  document.documentElement.style.setProperty(k,v);
+  if(k==='--c') updateLogoFilter(v,1000);
+}
+let _logoFilterTween=null;
+function updateLogoFilter(hex,dur){
+  if(!hex||hex[0]!=='#'||hex.length<7) return;
+  const m=document.getElementById('logo-matrix');
+  if(!m) return;
+  const r1=parseInt(hex.slice(1,3),16)/255;
+  const g1=parseInt(hex.slice(3,5),16)/255;
+  const b1=parseInt(hex.slice(5,7),16)/255;
+  if(!dur){m.setAttribute('values',`0 0 0 0 ${r1}  0 0 0 0 ${g1}  0 0 0 0 ${b1}  0 0 0 1 0`);return;}
+  const cur=(m.getAttribute('values')||'').split(/\s+/);
+  const r0=parseFloat(cur[4])||0, g0=parseFloat(cur[9])||0, b0=parseFloat(cur[14])||0;
+  if(_logoFilterTween) cancelAnimationFrame(_logoFilterTween);
+  const start=performance.now();
+  function step(now){
+    const t=Math.min((now-start)/dur,1);
+    const e=t<0.5?2*t*t:-1+(4-2*t)*t;
+    const r=r0+(r1-r0)*e, g=g0+(g1-g0)*e, b=b0+(b1-b0)*e;
+    m.setAttribute('values',`0 0 0 0 ${r}  0 0 0 0 ${g}  0 0 0 0 ${b}  0 0 0 1 0`);
+    if(t<1) _logoFilterTween=requestAnimationFrame(step);
+  }
+  _logoFilterTween=requestAnimationFrame(step);
+}
+function pickOther(ex,pool){ const a=pool.filter(c=>c!==ex); return a[Math.floor(Math.random()*a.length)]; }
+function calcDDay(d){
+  const t=new Date(); t.setHours(0,0,0,0);
+  const n=Math.ceil((new Date(d+'T00:00:00')-t)/86400000);
+  return n>0?'D-'+n:n===0?'D-Day':'D+'+Math.abs(n);
+}
+function setMaskUrl(selector,url){
+  document.querySelectorAll(selector).forEach(el=>{
+    if(el.id==='logo-mask'||el.classList.contains('logo-mask')){
+      el.src=url;
+    } else {
+      el.style.webkitMaskImage=`url("${url}")`;
+      el.style.maskImage=`url("${url}")`;
+    }
+  });
+}
+function showError(msg,sub){
+  document.getElementById('error-msg').textContent=msg||'오류가 발생했어요.';
+  document.getElementById('error-sub').textContent=sub||'';
+  document.getElementById('error-screen').classList.add('on');
+}
+function closeModal(id){ document.getElementById(id).classList.remove('on'); }
+function ovClick(e,id){ if(e.target.id===id) closeModal(id); }
+
+/* ── 프로젝트 로드 ── */
+async function checkAdminPreview(){
+  if(!ADMIN_PARAM) return;
+  try{
+    const d=await db.collection('cms_admin_settings').doc('github').get();
+    const stored=d.exists?(d.data().adminPreviewToken||''):'';
+    if(stored && ADMIN_PARAM===stored){
+      IS_ADMIN_PREVIEW=true;
+      showAdminPreviewBanner();
+    }
+  }catch(e){ console.error('[adminPreview]',e); }
+}
+function showAdminPreviewBanner(){
+  if(document.getElementById('admin-preview-banner')) return;
+  const b=document.createElement('div');
+  b.id='admin-preview-banner';
+  b.style.cssText='position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:9999;background:#f95548;color:#fff;font-size:11px;font-weight:700;text-align:center;padding:5px 8px;letter-spacing:.3px;box-shadow:0 2px 6px rgba(0,0,0,.2);';
+  b.textContent='🛠 관리자 미리보기 모드 · 비활성·숨김 스테이지 진입 가능';
+  document.body.appendChild(b);
+}
+async function loadProjectSettings(){
+  if(!PROJECT_ID){ showError('프로젝트 ID가 없어요.','URL에 ?id=프로젝트ID 형식으로 접근해주세요.'); return; }
+  await checkAdminPreview();
+  try{
+    const doc=await db.collection('cms_projects').doc(PROJECT_ID).get();
+    if(!doc.exists){ showError('프로젝트를 찾을 수 없어요.','관리자에게 문의해주세요.'); return; }
+    applySettings(doc.data());
+  }catch(e){ showError('연결에 실패했어요.','잠시 후 다시 시도해주세요.'); }
+}
+function applySettings(d){
+  // 게시 상태 확인 (published===false → 준비중, 미설정=true)
+  const previewParam = new URLSearchParams(location.search).get('preview');
+  const isPreview = d.previewToken && previewParam === d.previewToken;
+  if(d.published === false && !isPreview && !IS_ADMIN_PREVIEW){
+    const el = document.getElementById('coming-soon-screen');
+    if(el){ el.style.display='flex'; }
+    return;
+  }
+
+  LAYOUT_TYPE     = d.layoutType     || 'separate';
+  DDAY_ENABLED    = d.ddayEnabled    || false;
+  DDAY_DATE       = d.ddayDate       || '';
+  AUTH_ENABLED    = d.authEnabled    || false;
+  AUTH_MODE       = (d.authMode === 'on-demand') ? 'on-demand' : 'immediate';
+  AUTH_COLLECTION = 'cms_users_' + PROJECT_ID;
+  AUTH_FIELDS     = d.authFields     || [{key:'name',label:'이름',type:'string',required:true}];
+  AUTH_KEY_FIELD  = d.authKeyField   || (AUTH_FIELDS[0]?.key||'name');
+  SELF_REG_ENABLED = d.selfRegEnabled || false;
+  SELF_REG_CTA    = d.selfRegCta     || '등록하기';
+  SELF_REG_SUCCESS_MSG = d.selfRegSuccessMsg || '';
+  SELF_REG_CTA_SEPARATE = d.selfRegCtaSeparate || false;
+  SELF_REG_CTA_ICON_URL = d.selfRegCtaIconUrl || '';
+  SELF_REG_CTA_SEP_TEXT = d.selfRegCtaSepText || '등록하기';
+  GREETING_TEXT   = d.greetingText   || '';
+  console.log('[Greeting] GREETING_TEXT loaded:', GREETING_TEXT);
+  STAGES = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0))
+    .filter(s=>{ const st=s.publishStatus||(s.published===false?'hidden':'published'); return isPreview||IS_ADMIN_PREVIEW||st!=='hidden'; })
+    .map(s=>({
+      id:s.id||'',title:s.title||'',
+      trackProgress:!!s.trackProgress,checkableCount:s.checkableCount||0,
+      displayType:s.displayType||'text',stageImageUrl:s.stageImageUrl||'',
+      publishStatus:s.publishStatus||(s.published===false?'hidden':'published'),
+      tagEnabled:!!s.tagEnabled,tagText:s.tagText||'',tagBgColor:s.tagBgColor||'',tagTextColor:s.tagTextColor||'',tagShape:s.tagShape||'bookmark',
+    }));
+  STATS = (d.stats||[]).filter(s=>s.enabled);
+  ELEMENT_ORDER = d.elementOrder || ['edition','logo','dday','stats'];
+  if(d.keyColors && d.keyColors.length>=2){
+    KEY_COLORS_DATA = d.keyColors.map(k=>typeof k==='string'?{color:k,holdTime:8,transitionTime:2}:k);
+    KEY_COLORS.length=0; KEY_COLORS_DATA.forEach(k=>KEY_COLORS.push(k.color));
+    setCss('--c',KEY_COLORS[0]);
+  } else {
+    KEY_COLORS_DATA = KEY_COLORS.map(c=>({color:c,holdTime:8,transitionTime:2}));
+  }
+  setCss('--body-bg', KEY_COLORS[0]);
+  /* pick --prep-bg randomly at session start, persist until refresh */
+  const savedPrepBg = sessionStorage.getItem('prepBgColor');
+  prepBg = (savedPrepBg && KEY_COLORS.includes(savedPrepBg)) ? savedPrepBg : KEY_COLORS[Math.floor(Math.random()*KEY_COLORS.length)];
+  sessionStorage.setItem('prepBgColor', prepBg);
+  setCss('--prep-bg', prepBg);
+  /* pager active dot: key color that differs from pager bar bg (--prep-bg) */
+  setCss('--guide-pager', pickOther(prepBg, KEY_COLORS)||KEY_COLORS[0]||'#000');
+
+  /* title */
+  if(d.name) document.title = d.name;
+
+  /* project title in merged topbar */
+  if(d.name) document.getElementById('merged-title').textContent = d.name;
+  if(d.name) document.getElementById('topbar-title').textContent = d.name;
+
+  /* CTA */
+  if(d.ctaIconUrl){
+    setMaskUrl('#cta-icon',d.ctaIconUrl);
+    setMaskUrl('#prep-cta-icon',d.ctaIconUrl);
+  } else {
+    document.getElementById('cta-icon').style.display = 'none';
+    document.getElementById('prep-cta-wrap').style.display = 'none';
+    document.getElementById('prep-menu-fallback').style.display = 'block';
+  }
+  if(d.ctaIconSize) setCss('--cta-icon-size',(d.ctaIconSize)+'px');
+  if(d.ctaText) document.getElementById('cta-text').textContent=d.ctaText;
+
+  /* 등록 CTA 별도 표시 */
+  const regCtaBtn=document.getElementById('reg-cta-btn');
+  if(regCtaBtn){
+    const showReg=AUTH_ENABLED&&SELF_REG_ENABLED&&SELF_REG_CTA_SEPARATE;
+    regCtaBtn.style.display=showReg?'flex':'none';
+    if(showReg){
+      const regIcon=document.getElementById('reg-cta-icon');
+      if(SELF_REG_CTA_ICON_URL&&regIcon){ setMaskUrl('#reg-cta-icon',SELF_REG_CTA_ICON_URL); regIcon.style.display=''; }
+      else if(regIcon){ regIcon.style.display='none'; }
+      const regTxt=document.getElementById('reg-cta-text');
+      if(regTxt) regTxt.textContent=SELF_REG_CTA_SEP_TEXT;
+    }
+  }
+
+  /* auth modal text */
+  if(d.authTitle) document.getElementById('auth-title').textContent=d.authTitle;
+  if(d.authDesc)  document.getElementById('auth-desc').textContent=d.authDesc;
+  const keyField = AUTH_FIELDS.find(f=>f.key===AUTH_KEY_FIELD);
+  if(keyField) document.getElementById('auth-key-input').placeholder=keyField.label;
+
+  /* bg images */
+  const rawBgs = d.bgImages||[];
+  bgImages = rawBgs.map(b=>typeof b==='string'?{url:b,holdTime:10,transitionTime:2}:b);
+  const _ovOp=d.bgOverlayOpacity??0.38;const _ovCl=d.bgOverlayColor||'#000000';const _ovR=parseInt(_ovCl.slice(1,3),16)||0,_ovG=parseInt(_ovCl.slice(3,5),16)||0,_ovB=parseInt(_ovCl.slice(5,7),16)||0;document.documentElement.style.setProperty('--slide-overlay',`rgba(${_ovR},${_ovG},${_ovB},${_ovOp})`);
+  initSlides();
+
+  /* element order: rebuild top-group in order */
+  renderTopGroup(d);
+
+  /* layout */
+  if(LAYOUT_TYPE==='merged'){
+    document.getElementById('main-content').style.display='none';
+    document.getElementById('merged-content').style.display='flex';
+    /* merged: show edition+dday in merged-stage-wrap */
+    document.getElementById('merged-edition').textContent = d.editionText||'';
+    if(DDAY_ENABLED && DDAY_DATE) document.getElementById('merged-dday').textContent = calcDDay(DDAY_DATE);
+    renderMergedStages();
+  } else {
+    renderSeparateStages();
+  }
+
+  /* load real-time counters */
+  if(STATS.length) loadStats();
+}
+
+function renderTopGroup(d){
+  const tg = document.getElementById('main-content')?.querySelector('.top-group');
+  if(!tg) return;
+  tg.innerHTML = '';
+  ELEMENT_ORDER.forEach(key => {
+    if(key==='edition'){
+      const el=document.createElement('div');
+      el.className='edition-text'; el.id='edition-text';
+      el.textContent=d.editionText||'';
+      tg.appendChild(el);
+    } else if(key==='logo'){
+      const wrap=document.createElement('div');
+      wrap.className='logo-wrap';
+      if(d.logoImgW){
+        const pct=d.logoImgW;
+        wrap.style.width=`calc(${pct}% + ${(pct/100*64).toFixed(1)}px)`;
+      }
+      wrap.innerHTML=`<img class="logo-mask" id="logo-mask" src="" alt="" style="display:none;filter:url(#logo-colorize);">
+        <div class="logo-fallback" id="logo-fallback" style="display:none;">준비 포털</div>`;
+      tg.appendChild(wrap);
+      if(d.logoType==='text'&&d.logoText){
+        document.getElementById('logo-mask').style.display='none';
+        const fb=document.getElementById('logo-fallback');
+        fb.textContent=d.logoText;
+        fb.style.fontSize=(d.logoTextSize||'20')+'px';
+        fb.style.textAlign=d.logoTextAlign||'center';
+        fb.style.display='block';
+      } else if(d.logoImageUrl){
+        setMaskUrl('#logo-mask',d.logoImageUrl);
+        document.getElementById('logo-mask').style.display='';
+        document.getElementById('logo-fallback').style.display='none';
+      }
+    } else if(key==='dday'){
+      const el=document.createElement('div');
+      el.className='dday-num'; el.id='dday-num';
+      if(DDAY_ENABLED && DDAY_DATE) el.textContent=calcDDay(DDAY_DATE);
+      tg.appendChild(el);
+    } else if(key==='stats'){
+      const el=document.createElement('div');
+      el.className='visitor-line'; el.id='visitor-line';
+      tg.appendChild(el);
+    }
+  });
+}
+
+async function loadStats(){
+  const vl = document.getElementById('visitor-line');
+  if(!vl||!STATS.length) return;
+  try {
+    const parts = await Promise.all(STATS.map(async s => {
+      const snap = await db.collection(s.collection).get();
+      return `${s.label} ${snap.size}${s.unit||''}`;
+    }));
+    vl.textContent = parts.join(' · ');
+  } catch(e) { /* silently fail */ }
+}
+
+/* ── Slideshow ── */
+function initSlides(){
+  const container=document.getElementById('slides-container');
+  container.innerHTML='';
+  if(!bgImages.length){
+    document.getElementById('app').classList.add('no-bg-img');
+    initColorCycle();
+    return;
+  }
+  document.getElementById('app').classList.remove('no-bg-img');
+  bgImages.forEach((bg,i)=>{
+    const div=document.createElement('div');
+    div.className='slide'+(i===0?' on':'');
+    div.style.backgroundImage='url('+bg.url+')';
+    div.style.transition='opacity '+(bg.transitionTime||2)+'s ease-in-out';
+    container.appendChild(div);
+  });
+  slideIdx=0;
+  scheduleNextSlide();
+}
+function nextColor(){ let i; do{i=Math.floor(Math.random()*COLORS.length);}while(i===colorIdx); colorIdx=i; return COLORS[i]; }
+function scheduleNextSlide(){
+  if(slideTimer) clearTimeout(slideTimer);
+  const cur=bgImages[slideIdx];
+  const hold=(cur?.holdTime||10)*1000;
+  slideTimer=setTimeout(()=>{ advanceSlide(); scheduleNextSlide(); }, hold);
+}
+function advanceSlide(){
+  if(!bgImages.length) return;
+  const slides=document.querySelectorAll('.slide');
+  if(!slides.length) return;
+  slides[slideIdx].classList.remove('on');
+  slideIdx=(slideIdx+1)%bgImages.length;
+  const next=slides[slideIdx];
+  if(next){
+    const trans=(bgImages[slideIdx]?.transitionTime||2)+'s';
+    next.style.transition='opacity '+trans+' ease-in-out';
+    next.classList.add('on');
+  }
+  const newColor=nextColor();
+  setCss('--c',newColor);
+  setCss('--body-bg',newColor);
+}
+function initColorCycle(){
+  if(kcTimer) clearTimeout(kcTimer);
+  kcIdx=-1;
+  advanceKc();
+}
+function advanceKc(){
+  if(!KEY_COLORS_DATA.length) return;
+  kcIdx=(kcIdx+1)%KEY_COLORS_DATA.length;
+  const kc=KEY_COLORS_DATA[kcIdx];
+  setCss('--body-bg',kc.color);
+  setCss('--c',pickOther(kc.color,KEY_COLORS)||KEY_COLORS[(kcIdx+1)%KEY_COLORS.length]);
+  scheduleNextKc();
+}
+function scheduleNextKc(){
+  if(kcTimer) clearTimeout(kcTimer);
+  const kc=KEY_COLORS_DATA[kcIdx];
+  const hold=(kc?.holdTime||8)*1000;
+  kcTimer=setTimeout(advanceKc,hold);
+}
+
+/* ── Progress bar HTML builder ── */
+function buildPbarHtml(pct,opts){
+  opts=opts||{};
+  if(pct===0) return '';
+  const isMerged=opts.merged||false;
+  const isImage=opts.image||false;
+  const extraStyle=isImage?'position:absolute;bottom:0;left:0;right:0;z-index:1;':'';
+  const fillCls='stage-pbar-fill'+(isMerged?' merged':'');
+  const outCls='stage-pct-out'+((isMerged||isImage)?' merged':'');
+  const label=pct+'%';
+  const pbarOpen=`<div class="stage-pbar"${extraStyle?` style="${extraStyle}"`:''}>`;
+  if(pct<10){
+    return `${pbarOpen}<div class="${fillCls}" style="width:${pct}%;height:100%;"></div><span class="${outCls}">${label}</span></div>`;
+  }
+  return `${pbarOpen}<div class="${fillCls}" style="width:${pct}%;"><span class="stage-pct-txt">${label}</span></div></div>`;
+}
+
+/* ── SEPARATE layout ── */
+function renderSeparateStages(){
+  const el=document.getElementById('stage-list');
+  if(!STAGES.length){ el.innerHTML='<div style="padding:40px 20px;text-align:center;color:rgba(0,0,0,.4);font-size:14px;">준비된 단계가 없어요.</div>'; return; }
+  el.innerHTML=STAGES.map((s,i)=>{
+    const isDisabled=s.publishStatus==='disabled';
+    const isHidden=s.publishStatus==='hidden';
+    const canClick=!isDisabled||IS_ADMIN_PREVIEW;
+    const disabledStyle=isDisabled?(IS_ADMIN_PREVIEW?'opacity:0.55;filter:grayscale(.6);':'opacity:0.4;filter:grayscale(1);pointer-events:none;'):'';
+    const hiddenStyle=isHidden&&IS_ADMIN_PREVIEW?'outline:2px dashed #f95548;outline-offset:-2px;':'';
+    const clickAttr=canClick?` onclick="goToStage(${i})"`:'';
+    const adminBadge=IS_ADMIN_PREVIEW&&(isDisabled||isHidden)?`<div style="position:absolute;top:6px;right:6px;background:#f95548;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;z-index:3;letter-spacing:.2px;">${isHidden?'숨김':'비활성'}</div>`:'';
+    const hasTag=s.tagEnabled&&s.tagText;
+    const needsRel=(IS_ADMIN_PREVIEW&&(isDisabled||isHidden))||hasTag?'position:relative;':'';
+    const tagHtml=hasTag?`<div class="stage-tag ${s.tagShape||'bookmark'}" style="background:${s.tagBgColor==='home'?'var(--prep-bg)':(s.tagBgColor||'#000000')};color:${s.tagTextColor==='home'?'var(--prep-bg)':(s.tagTextColor||'#ffffff')};">${esc(s.tagText)}</div>`:'';
+    const pct=calcPct(s);
+    const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
+    const dotHtml=s.trackProgress?`<div class="status-dot">${statusTxt}</div>`:'';
+    if(s.displayType==='image' && s.stageImageUrl){
+      const imgDotHtml=s.trackProgress?`<div class="status-dot" style="background:var(--prep-bg);color:#000;flex-shrink:0;">${statusTxt}</div>`:'';
+      const imgPbarHtml=s.trackProgress?buildPbarHtml(pct,{image:true}):'';
+      return `<div class="stage-card"${clickAttr} style="overflow:hidden;position:relative;${disabledStyle}${hiddenStyle}">
+        ${adminBadge}${tagHtml}
+        <img src="${s.stageImageUrl}" style="width:100%;height:auto;display:block;">
+        <div style="position:absolute;top:0;left:0;right:0;background:#000;display:flex;align-items:center;gap:14px;padding:18px 16px 14px;z-index:1;">${imgDotHtml}<div class="stage-title" style="color:var(--prep-bg);">${s.title}</div></div>
+        ${imgPbarHtml}
+      </div>`;
+    }
+    const pbarHtml=s.trackProgress?buildPbarHtml(pct):'';
+    return `<div class="stage-card"${clickAttr} style="${needsRel}${disabledStyle}${hiddenStyle}">
+      ${adminBadge}${tagHtml}
+      <div class="stage-card-body">${dotHtml}<div class="stage-title">${s.title}</div></div>
+      ${pbarHtml}
+    </div>`;
+  }).join('');
+}
+
+/* ── MERGED layout ── */
+function renderMergedStages(){
+  const el=document.getElementById('merged-stage-list');
+  if(!STAGES.length){ el.innerHTML='<div style="padding:40px 20px;text-align:center;color:rgba(255,255,255,.6);font-size:14px;">준비된 단계가 없어요.</div>'; return; }
+  el.innerHTML=STAGES.map((s,i)=>{
+    const isDisabled=s.publishStatus==='disabled';
+    const isHidden=s.publishStatus==='hidden';
+    const canClick=!isDisabled||IS_ADMIN_PREVIEW;
+    const disabledStyle=isDisabled?(IS_ADMIN_PREVIEW?'opacity:0.55;filter:grayscale(.6);':'opacity:0.4;filter:grayscale(1);pointer-events:none;'):'';
+    const hiddenStyle=isHidden&&IS_ADMIN_PREVIEW?'outline:2px dashed #f95548;outline-offset:-2px;':'';
+    const clickAttr=canClick?` onclick="goToStage(${i})"`:'';
+    const adminBadge=IS_ADMIN_PREVIEW&&(isDisabled||isHidden)?`<div style="position:absolute;top:6px;right:6px;background:#f95548;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;z-index:3;letter-spacing:.2px;">${isHidden?'숨김':'비활성'}</div>`:'';
+    const hasTag=s.tagEnabled&&s.tagText;
+    const needsRel=(IS_ADMIN_PREVIEW&&(isDisabled||isHidden))||hasTag?'position:relative;':'';
+    const tagHtml=hasTag?`<div class="stage-tag ${s.tagShape||'bookmark'}" style="background:${s.tagBgColor==='home'?'var(--prep-bg)':(s.tagBgColor||'#000000')};color:${s.tagTextColor==='home'?'var(--prep-bg)':(s.tagTextColor||'#ffffff')};">${esc(s.tagText)}</div>`:'';
+    const pct=calcPct(s);
+    const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
+    if(s.displayType==='image' && s.stageImageUrl){
+      const imgDotHtml=s.trackProgress?`<div class="status-dot merged" style="background:var(--prep-bg);color:#000;flex-shrink:0;">${statusTxt}</div>`:'';
+      const imgPbarHtml=s.trackProgress?buildPbarHtml(pct,{merged:true,image:true}):'';
+      return `<div class="stage-card merged"${clickAttr} style="overflow:hidden;position:relative;border-color:rgba(255,255,255,.7);${disabledStyle}${hiddenStyle}">
+        ${adminBadge}${tagHtml}
+        <img src="${s.stageImageUrl}" style="width:100%;height:auto;display:block;">
+        <div style="position:absolute;top:0;left:0;right:0;background:#000;display:flex;align-items:center;gap:14px;padding:18px 16px 14px;z-index:1;">${imgDotHtml}<div class="stage-title merged" style="color:var(--prep-bg);">${s.title}</div></div>
+        ${imgPbarHtml}
+      </div>`;
+    }
+    const dotHtml=s.trackProgress?`<div class="status-dot merged">${statusTxt}</div>`:'';
+    const pbarHtml=s.trackProgress?buildPbarHtml(pct,{merged:true}):'';
+    return `<div class="stage-card merged"${clickAttr} style="${needsRel}${disabledStyle}${hiddenStyle}">
+      ${adminBadge}${tagHtml}
+      <div class="stage-card-body">${dotHtml}<div class="stage-title merged">${s.title}</div></div>
+      ${pbarHtml}
+    </div>`;
+  }).join('');
+}
+
+/* ── CTA ── */
+function onCtaClick(){
+  if(document.getElementById('error-screen').classList.contains('on')) return;
+  if(AUTH_ENABLED && !IS_ADMIN_PREVIEW){
+    const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+    if(saved.project===PROJECT_ID) reopenPrep();
+    else if(AUTH_MODE==='on-demand') openPrep();
+    else openAuthModal();
+  } else openPrep();
+}
+
+/* ── Pending auth action (on-demand mode) ── */
+let _pendingAuthAction = null;
+let _pendingAuthReason = '';
+function requireAuthOr(action, reason){
+  if(!AUTH_ENABLED || IS_ADMIN_PREVIEW){ action(); return; }
+  if(USER_DOC_ID){ action(); return; }
+  const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  if(saved.project===PROJECT_ID && saved._docId){ USER_DOC_ID=saved._docId; action(); return; }
+  _pendingAuthAction = action;
+  _pendingAuthReason = reason || '이 기능을 사용하려면 로그인이 필요해요.';
+  openAuthModal(true);
+}
+
+/* ── Auth ── */
+function openAuthModal(showReason){
+  const c=pickOther(COLORS[colorIdx]||'',KEY_COLORS);
+  const box=document.getElementById('auth-box');
+  box.style.background=c; box.style.setProperty('--modal-bg',c);
+  document.getElementById('auth-key-input').value='';
+  document.getElementById('auth-err').textContent='';
+  document.getElementById('auth-ok').textContent='확인';
+  document.getElementById('auth-ok').disabled=false;
+  const reasonEl=document.getElementById('auth-reason');
+  if(reasonEl){
+    if(showReason && _pendingAuthReason){
+      reasonEl.textContent=_pendingAuthReason;
+      reasonEl.style.display='block';
+    } else {
+      reasonEl.style.display='none';
+    }
+  }
+  const regWrap=document.getElementById('auth-reg-wrap');
+  regWrap.style.display=SELF_REG_ENABLED?'':'none';
+  if(SELF_REG_ENABLED) document.getElementById('auth-reg-btn').textContent=SELF_REG_CTA;
+  document.getElementById('auth-modal').classList.add('on');
+  setTimeout(()=>document.getElementById('auth-key-input').focus(),200);
+}
+function openRegModal(){
+  closeModal('auth-modal');
+  const c=pickOther(COLORS[colorIdx]||'',KEY_COLORS);
+  const box=document.getElementById('reg-box');
+  box.style.background=c; box.style.setProperty('--modal-bg',c);
+  document.getElementById('reg-err').textContent='';
+  document.getElementById('reg-ok').textContent='등록';
+  document.getElementById('reg-ok').disabled=false;
+  const fieldsHtml=AUTH_FIELDS.map(f=>`
+    <div style="margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:700;margin-bottom:4px;">${f.label}${f.required?'<span style="color:red;margin-left:2px;">*</span>':''}</div>
+      <input class="inp" data-reg-key="${f.key}" data-reg-type="${f.type||'string'}" placeholder="${f.label}" style="margin-bottom:0;">
+    </div>`).join('');
+  document.getElementById('reg-fields').innerHTML=fieldsHtml;
+  document.getElementById('reg-modal').classList.add('on');
+  setTimeout(()=>{ const first=document.querySelector('#reg-fields input'); if(first) first.focus(); },200);
+}
+async function submitRegistration(){
+  const inputs=[...document.querySelectorAll('#reg-fields input[data-reg-key]')];
+  const data={};
+  for(const inp of inputs){
+    const key=inp.dataset.regKey;
+    const type=inp.dataset.regType;
+    const val=inp.value.trim();
+    if(!val){ const f=AUTH_FIELDS.find(f=>f.key===key); if(f?.required){ document.getElementById('reg-err').textContent=`'${f.label}'을(를) 입력해주세요.`; inp.focus(); return; } }
+    data[key]=type==='number'?(parseFloat(val)||0):val;
+  }
+  const btn=document.getElementById('reg-ok');
+  btn.textContent='등록 중…'; btn.disabled=true;
+  try{
+    const keyVal=data[AUTH_KEY_FIELD];
+    const dup=await db.collection(AUTH_COLLECTION).where(AUTH_KEY_FIELD,'==',keyVal).limit(1).get();
+    if(!dup.empty){
+      const existing=dup.docs[0].data();
+      const keyField=AUTH_FIELDS.find(f=>f.key===AUTH_KEY_FIELD);
+      const nameField=AUTH_FIELDS.find(f=>f.required&&f.key!==AUTH_KEY_FIELD)||AUTH_FIELDS[0];
+      const detail=`<b>${keyField?.label||AUTH_KEY_FIELD}</b> ${existing[AUTH_KEY_FIELD]??'—'} / <b>${nameField?.label||'이름'}</b> ${existing[nameField?.key]??'—'}`;
+      document.getElementById('reg-err').innerHTML=`이미 등록된 정보예요.<br><span style="font-size:11px;opacity:.75;">${detail}</span>`;
+      btn.textContent='등록'; btn.disabled=false; return;
+    }
+    const sessionId=_newSessionId();
+    const deviceId=_getDeviceId();
+    const ref=await db.collection(AUTH_COLLECTION).add({
+      ...data,
+      activeSession:{ id:sessionId, deviceId, deviceInfo:_getDeviceInfo(),
+        startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        lastSeenAt: firebase.firestore.FieldValue.serverTimestamp() },
+      lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(),
+      loginCount: 1
+    });
+    USER_DOC_ID=ref.id;
+    sessionStorage.setItem('userSession',JSON.stringify({...data,project:PROJECT_ID,_docId:USER_DOC_ID,_sessionId:sessionId}));
+    _startSessionHeartbeat(USER_DOC_ID);
+    loadUserProgress(data);
+    applyGreeting(data);
+    const _regMsg=(SELF_REG_SUCCESS_MSG||'등록 완료!').replace(/\{\{(\w+)\}\}/g,(_,k)=>data[k]??`{{${k}}}`);
+    document.getElementById('reg-box').innerHTML=`<div style="text-align:center;padding:24px 0;"><div style="font-size:28px;margin-bottom:12px;">✅</div><div style="font-size:16px;font-weight:900;margin-bottom:8px;white-space:pre-wrap;">${_regMsg}</div><div style="font-size:13px;opacity:.7;">잠시 후 입장합니다…</div></div>`;
+    setTimeout(()=>{
+      closeModal('reg-modal');
+      if(_pendingAuthAction){
+        const fn=_pendingAuthAction; _pendingAuthAction=null; _pendingAuthReason='';
+        renderMenu(); refreshStageProgress();
+        try{ fn(); }catch(_){}
+        return;
+      }
+      if(LAYOUT_TYPE==='merged') renderMergedStages(); else openPrep();
+    }, 1800);
+  }catch(e){ document.getElementById('reg-err').textContent='등록 실패. 다시 시도해주세요.'; btn.textContent='등록'; btn.disabled=false; }
+}
+/* ── Single-session (active session) helpers ── */
+const SESSION_HEARTBEAT_MS = 3*60*1000;   // 3분마다 하트비트
+const SESSION_STALE_MS    = 10*60*1000;   // 10분 미활동 시 만료 처리
+function _getDeviceId(){
+  let id=''; try{ id=localStorage.getItem('lmp_device_id')||''; }catch(_){}
+  if(!id){ id='dev_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-6);
+    try{ localStorage.setItem('lmp_device_id',id); }catch(_){} }
+  return id;
+}
+function _newSessionId(){ return 'sess_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-6); }
+function _getDeviceInfo(){
+  const ua=navigator.userAgent||''; let b='브라우저';
+  if(/SamsungBrowser/.test(ua)) b='Samsung Internet';
+  else if(/EdgiOS|Edg\//.test(ua)) b='Edge';
+  else if(/FxiOS|Firefox/.test(ua)) b='Firefox';
+  else if(/CriOS|Chrome/.test(ua)) b='Chrome';
+  else if(/Safari/.test(ua)) b='Safari';
+  let o='';
+  if(/iPhone/.test(ua)) o='iPhone';
+  else if(/iPad/.test(ua)) o='iPad';
+  else if(/Android/.test(ua)) o='Android';
+  else if(/Mac/.test(ua)) o='Mac';
+  else if(/Windows/.test(ua)) o='Windows';
+  return o?`${b} (${o})`:b;
+}
+let _sessionHeartbeat=null;
+function _startSessionHeartbeat(docId){
+  _stopSessionHeartbeat();
+  if(!docId) return;
+  _sessionHeartbeat=setInterval(()=>{
+    db.collection(AUTH_COLLECTION).doc(docId).update({
+      'activeSession.lastSeenAt': firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(()=>{});
+  }, SESSION_HEARTBEAT_MS);
+}
+function _stopSessionHeartbeat(){ if(_sessionHeartbeat){ clearInterval(_sessionHeartbeat); _sessionHeartbeat=null; } }
+function _checkSessionConflict(userData){
+  const a=userData.activeSession;
+  if(!a?.id) return '';
+  const myDev=_getDeviceId();
+  if(a.deviceId && a.deviceId===myDev) return ''; // 같은 기기는 허용
+  const lastMs=a.lastSeenAt?.toMillis?.()||a.lastSeenAt?.seconds*1000||a.startedAt?.toMillis?.()||a.startedAt?.seconds*1000||0;
+  if(!lastMs) return ''; // 시각 불명 → 통과
+  const elapsed=Date.now()-lastMs;
+  if(elapsed>SESSION_STALE_MS) return ''; // 만료
+  const dev=a.deviceInfo||'알 수 없는 기기';
+  const mins=Math.floor(elapsed/60000);
+  const ago=mins<1?'방금':`${mins}분 전`;
+  return `<b>이미 다른 기기에서 로그인되어 있어요.</b><br>`
+    +`<span style="font-size:11px;opacity:.75;display:block;margin-top:6px;line-height:1.55;">`
+    +`접속 기기: <b>${dev}</b><br>마지막 활동: ${ago}<br>`
+    +`먼저 그 기기에서 로그아웃 후 다시 시도해 주세요.<br>(10분 이상 미활동 시 자동 해제)</span>`;
+}
+async function confirmAuth(){
+  const val=document.getElementById('auth-key-input').value.trim();
+  if(!val){ document.getElementById('auth-err').textContent='값을 입력해주세요.'; return; }
+  const btn=document.getElementById('auth-ok');
+  const errEl=document.getElementById('auth-err');
+  errEl.textContent='';
+  btn.textContent='확인 중…'; btn.disabled=true;
+  try{
+    const keyField=AUTH_FIELDS.find(f=>f.key===AUTH_KEY_FIELD);
+    const queryVal=keyField?.type==='number'?(parseFloat(val)||0):val;
+    const snap=await db.collection(AUTH_COLLECTION).where(AUTH_KEY_FIELD,'==',queryVal).limit(1).get();
+    btn.textContent='확인'; btn.disabled=false;
+    if(snap.empty){ errEl.textContent='인증 정보를 찾을 수 없어요.'; return; }
+    const u=snap.docs[0].data();
+    const docId=snap.docs[0].id;
+    // 단일-세션 검사: 다른 기기 활성 세션이 있으면 차단
+    const blockHtml=_checkSessionConflict(u);
+    if(blockHtml){ errEl.innerHTML=blockHtml; return; }
+    USER_DOC_ID=docId;
+    const sessionId=_newSessionId();
+    const deviceId=_getDeviceId();
+    const {activeSession:_omit, ...uClean}=u;
+    sessionStorage.setItem('userSession',JSON.stringify({...uClean,project:PROJECT_ID,_docId:USER_DOC_ID,_sessionId:sessionId}));
+    db.collection(AUTH_COLLECTION).doc(USER_DOC_ID).update({
+      activeSession:{ id:sessionId, deviceId, deviceInfo:_getDeviceInfo(),
+        startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        lastSeenAt: firebase.firestore.FieldValue.serverTimestamp() },
+      lastLoginAt: firebase.firestore.FieldValue.serverTimestamp(),
+      loginCount: firebase.firestore.FieldValue.increment(1)
+    }).catch(()=>{});
+    _startSessionHeartbeat(USER_DOC_ID);
+    loadUserProgress(u);
+    applyGreeting(u);
+    closeModal('auth-modal');
+    // 보류된 동작이 있으면 실행 (필요 시 로그인 모드)
+    if(_pendingAuthAction){
+      const fn=_pendingAuthAction; _pendingAuthAction=null; _pendingAuthReason='';
+      renderMenu(); refreshStageProgress();
+      try{ fn(); }catch(_){}
+      return;
+    }
+    if(LAYOUT_TYPE==='merged') renderMergedStages();
+    else openPrep();
+  }catch(e){ btn.textContent='확인'; btn.disabled=false; errEl.textContent='연결 실패. 다시 시도해주세요.'; }
+}
+
+/* ── Prep screen (separate) ── */
+function openPrep(){
+  prepBg=KEY_COLORS[Math.floor(Math.random()*KEY_COLORS.length)];
+  sessionStorage.setItem('prepBgColor',prepBg);
+  setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
+  renderSeparateStages();
+  document.getElementById('prep-screen').classList.add('open');
+  hideReturnBtn();
+  history.replaceState(null,'','#prep');
+}
+function reopenPrep(){
+  setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
+  document.getElementById('prep-screen').classList.add('open'); hideReturnBtn();
+  history.replaceState(null,'','#prep');
+}
+function closePrep(){
+  document.getElementById('prep-screen').classList.remove('open'); closeMenu();
+  history.replaceState(null,'','#');
+  if(sessionStorage.getItem('userSession')) showReturnBtn();
+}
+function showReturnBtn(){
+  const b=document.getElementById('return-btn'); b.style.display='flex'; b.style.background=prepBg;
+}
+function hideReturnBtn(){
+  document.getElementById('return-btn').style.display='none';
+  document.getElementById('return-greeting').style.display='none';
+}
+function applyGreeting(userRecord){
+  console.log('[Greeting] applyGreeting called. GREETING_TEXT=', GREETING_TEXT, 'userRecord=', userRecord);
+  if(!GREETING_TEXT||!userRecord){ console.log('[Greeting] early return: GREETING_TEXT empty or no userRecord'); return; }
+  const text=GREETING_TEXT.replace(/\{\{([^}]+)\}\}/g,(_,k)=>String(userRecord[k.trim()]??''));
+  console.log('[Greeting] resolved text:', text);
+  ['prep-greeting','menu-greeting','merged-greeting'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.textContent=text; el.style.display='block'; console.log('[Greeting] set #'+id+' display:block'); }
+    else { console.log('[Greeting] element #'+id+' not found'); }
+  });
+}
+
+/* ── Side menu (both layouts) ── */
+function renderMenu(){
+  const target=LAYOUT_TYPE==='merged'?'merged-side':'side';
+  setCss('--menu-bg',pickOther(prepBg,KEY_COLORS));
+  document.getElementById('menu-list').innerHTML=STAGES.map((s,i)=>{
+    const isDisabled=s.publishStatus==='disabled';
+    const isHidden=s.publishStatus==='hidden';
+    const canClick=!isDisabled||IS_ADMIN_PREVIEW;
+    const dimStyle=isDisabled?(IS_ADMIN_PREVIEW?'opacity:.55;':'opacity:.4;pointer-events:none;'):'';
+    const adminTag=IS_ADMIN_PREVIEW&&(isDisabled||isHidden)?`<span style="background:#f95548;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:6px;">${isHidden?'숨김':'비활성'}</span>`:'';
+    const pct=calcPct(s);
+    const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
+    const dotHtml=s.trackProgress?`<div class="menu-dot">${statusTxt}</div>`:'';
+    const click=canClick?` onclick="goToStage(${i});closeMenu();"`:'';
+    return `<div class="menu-item"${click} style="${dimStyle}">${dotHtml}<div class="menu-title">${s.title}${adminTag}</div></div>`;
+  }).join('');
+  const footer=document.getElementById('menu-footer');
+  if(footer){
+    const loggedIn=!!USER_DOC_ID||(JSON.parse(sessionStorage.getItem('userSession')||'{}').project===PROJECT_ID);
+    footer.style.display=(AUTH_ENABLED&&!IS_ADMIN_PREVIEW&&loggedIn)?'block':'none';
+  }
+}
+function logout(){
+  if(!confirm('로그아웃 하시겠어요?')) return;
+  _stopSessionHeartbeat();
+  const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  if(saved._docId){
+    db.collection(AUTH_COLLECTION).doc(saved._docId).update({
+      activeSession: firebase.firestore.FieldValue.delete()
+    }).catch(()=>{});
+  }
+  try{ sessionStorage.removeItem('userSession'); }catch(_){}
+  location.reload();
+}
+/* 페이지 닫힘 시 최선 노력으로 세션 해제 */
+window.addEventListener('beforeunload', () => {
+  if(!AUTH_ENABLED) return;
+  const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  if(saved._docId && saved.project===PROJECT_ID && saved._sessionId){
+    try{
+      db.collection(AUTH_COLLECTION).doc(saved._docId).update({
+        activeSession: firebase.firestore.FieldValue.delete()
+      });
+    }catch(_){}
+  }
+});
+function toggleMenu(){
+  const m=document.getElementById('side-menu');
+  if(m.classList.contains('open')) closeMenu();
+  else{ renderMenu(); m.classList.add('open'); }
+}
+function closeMenu(){ document.getElementById('side-menu').classList.remove('open'); }
+
+/* ── Stage navigation ── */
+function goToStage(i){
+  const stage=STAGES[i];
+  if(!stage) return;
+  curStageIdx=i; curStageId=stage.id;
+  if(LAYOUT_TYPE!=='merged') document.getElementById('topbar-title').textContent=stage.title;
+  closeMenu();
+  openStageContent(stage);
+}
+
+/* ── Guide viewer ── */
+let gSlideIdx=0,gSlideTotal=0,gTouchX=0;
+async function openStageContent(stage){
+  document.getElementById('guide-title-bar').textContent=stage.title||'안내';
+  document.getElementById('guide-scroll-body').style.display='none';
+  document.getElementById('guide-slide-body').style.display='none';
+  document.getElementById('guide-screen').classList.add('open');
+  if (!_navRestore) history.pushState({stageId:stage.id},'','#stage/'+stage.id);
+  try{
+    const doc=await db.collection('cms_projects').doc(PROJECT_ID)
+      .collection('stage_content').doc(stage.id).get();
+    if(!doc.exists){ showGuideEmpty('안내 내용이 아직 준비되지 않았어요.'); return; }
+    const g=doc.data();
+    const blocks=(g.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
+    /* checkableCount 보정: Firestore 스테이지 데이터가 stale할 수 있으므로 실제 블록 기준으로 갱신 */
+    const actualCnt=blocks.filter(b=>b.checkable||b.type==='form'||b.type==='tool').length;
+    if(STAGES[curStageIdx]) STAGES[curStageIdx].checkableCount=actualCnt;
+    if(g.displayType==='slide') renderGuideSlide(blocks);
+    else renderGuideScroll(blocks);
+  }catch(e){ console.error('stage_content load error:',e); showGuideEmpty('불러오기에 실패했어요.'+(e.code?'\n('+e.code+')':'')); }
+}
+function closeGuide(){
+  history.back();
+}
+window.addEventListener('popstate', function(e) {
+  const guide = document.getElementById('guide-screen');
+  if (e.state && e.state.stageId) {
+    /* 앞으로가기: 스테이지 화면 재진입 */
+    if (guide && !guide.classList.contains('open')) {
+      const stage = STAGES.find(s => s.id === e.state.stageId);
+      if (stage) { _navRestore=true; openStageContent(stage).finally(()=>{ _navRestore=false; }); }
+    }
+  } else {
+    /* 뒤로가기: 스테이지 화면 닫기 */
+    if (guide && guide.classList.contains('open')) guide.classList.remove('open');
+  }
+});
+function showGuideEmpty(msg){ document.getElementById('guide-scroll-blocks').innerHTML='<div class="guide-empty">'+msg+'</div>'; document.getElementById('guide-scroll-body').style.display='block'; }
+/* 변수 치환: {{key}} → 로그인 사용자 값 */
+function applyVars(html){
+  try{
+    const u=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+    let h=html.replace(/\{\{(\w+)\}\}/g,(_,k)=>u[k]??'');
+    h=h.replace(/<a([^>]*?)>/gi,(m,attrs)=>/target=/i.test(attrs)?m:`<a${attrs} target="_blank" rel="noopener">`);
+    return h;
+  }catch(e){return html;}
+}
+function blockHtml(b){
+  const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
+  const txS=b.txtColor?`color:${b.txtColor};`:'';
+  const mS=(b.marginV||b.marginH)?`margin:${b.marginV||0}px ${b.marginH||0}px;`:'';
+  if(b.type==='text'){
+    const html=applyVars(b.textContent||'');
+    const inner=`<div class="g-block-text" style="${mS}${bgS}"><div class="g-block-text-inner" style="${txS}">${html}</div></div>`;
+    return b.linkUrl?`<a href="${b.linkUrl}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit;">${inner}</a>`:inner;
+  }
+  if(b.type==='image'){
+    const fit=b.imageFit||'natural', pos=b.imagePosition||'center', ih=b.imageHeight||0;
+    const iS=(fit==='natural'||!ih)?'width:100%;display:block;':`width:100%;height:${ih}px;object-fit:${fit};object-position:${pos};display:block;`;
+    const imgTag=`<img src="${b.imageUrl||''}" alt="" loading="lazy" style="${iS}">`;
+    const imgWrap=`<div class="g-block-image" style="${mS}${bgS}">${imgTag}</div>`;
+    return b.linkUrl?`<a href="${b.linkUrl}" target="_blank" rel="noopener" style="display:block;">${imgWrap}</a>`:imgWrap;
+  }
+  if(b.type==='mixed'){
+    const html=applyVars(b.textContent||'');
+    const mfit=b.imageFit||'cover', mpos=b.imagePosition||'center';
+    const _mihFull=b.imageHeight==='full';
+    const mih=_mihFull?'100svh':(b.imageHeight||0);
+    const mihCss=_mihFull?`height:100svh;`:mih?`height:${mih}px;`:'';
+    const spS=(mfit==='natural'||!mih)?`width:100%;display:block;`:`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;`;
+    const ovS=(mfit==='natural'||!mih)?'width:100%;display:block;':`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;`;
+    if(b.mixedLayout==='split'){
+      const imgEl=b.imageLinkUrl
+        ?`<a href="${b.imageLinkUrl}" target="_blank" rel="noopener" style="display:block;"><img src="${b.imageUrl||''}" alt="" loading="lazy" style="${spS}"></a>`
+        :`<img src="${b.imageUrl||''}" alt="" loading="lazy" style="${spS}">`;
+      return `<div class="g-block-mixed-split" style="${mS}${bgS}"><div class="g-split-img">${imgEl}</div><div class="g-split-text" style="${txS}">${html}</div></div>`;
+    }
+    const imgEl=b.imageLinkUrl
+      ?`<a href="${b.imageLinkUrl}" target="_blank" rel="noopener" style="display:block;${_mihFull?'height:100%;':''}"><img src="${b.imageUrl||''}" alt="" loading="lazy" style="${ovS}"></a>`
+      :`<img src="${b.imageUrl||''}" alt="" loading="lazy" style="${ovS}">`;
+    const _ova=b.overlayTextVAlign||'bottom';
+    const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};
+    const _sha=b.overlayShadow??0.4;const _shclr=b.overlayColor||'#000000';const _shR=parseInt(_shclr.slice(1,3),16)||0,_shG=parseInt(_shclr.slice(3,5),16)||0,_shB=parseInt(_shclr.slice(5,7),16)||0;
+    const _ovTextStyle=`align-items:${_aiMap[_ova]||'flex-end'};background:rgba(${_shR},${_shG},${_shB},${_sha});`;
+    return `<div class="g-block-mixed-overlay" style="${mS}${bgS}">${imgEl}<div class="g-overlay-text" style="${_ovTextStyle}"><div class="g-overlay-text-inner" style="${txS}">${html}</div></div></div>`;
+  }
+  if(b.type==='embed' && b.embedUrl){
+    const _eh=b.embedHeight===0?'100%':(b.embedHeight||500);
+    const _eStyle=b.embedHeight===0?'min-height:60vh;height:100%;':'';
+    return `<div class="g-block-embed" style="${mS}${bgS}${b.embedHeight===0?'min-height:60vh;':''}"><iframe src="${b.embedUrl}" width="100%" height="${_eh}" frameborder="0" allowfullscreen style="display:block;border:none;${_eStyle}" data-block-bg="${b.bgColor||''}"></iframe></div>`;
+  }
+  if(b.type==='tool'){
+    const toolUrls={
+      form:`/tools/form/?id=${b.toolConfig?.formId||''}`,
+      booth:`/tools/booth/?id=${b.toolConfig?.boothId||''}`,
+      guide:`/tools/guide/?id=${b.toolConfig?.guideId||''}`,
+      'youtube-playlist':`/tools/youtube-playlist/?id=${b.toolConfig?.youtubePlaylistId||''}`,
+      schedule:`/tools/schedule/?id=${b.toolConfig?.scheduleId||''}`,
+      'copy-gen':`/tools/copy-gen/?id=${b.toolConfig?.copyGenId||''}`,
+      payment:`/tools/payment/?id=${b.toolConfig?.paymentId||''}`,
+    };
+    const src=toolUrls[b.toolType]||'';
+    const h=b.height;
+    const isFull=h==='full';
+    const isPx=!isFull&&h&&h>0;
+    const heightCss=isFull?'height:100%':(isPx?`height:${h}px`:'min-height:60vh');
+    const wrapH=isFull?'':(isPx?'':`min-height:60vh;`);
+    const trigger=b.completeTrigger||'tool-signal';
+    const onloadAttr=trigger==='open'?` onload="if(this.src&&this.src!=='about:blank')autoCheckBlock('${b.id}')"`:'';
+    // 필요 시 로그인 모드 + 비로그인 → 잠금 오버레이 (iframe은 렌더링하지 않음)
+    const needsLogin=AUTH_ENABLED && AUTH_MODE==='on-demand' && !USER_DOC_ID && !IS_ADMIN_PREVIEW
+                     && !(JSON.parse(sessionStorage.getItem('userSession')||'{}').project===PROJECT_ID);
+    if(needsLogin){
+      return `<div class="g-block-embed g-tool-locked" style="${mS}${bgS}${wrapH}min-height:160px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1.5px dashed rgba(0,0,0,.25);background:rgba(0,0,0,.04);" onclick="requireAuthOr(()=>location.reload(),'이 도구를 사용하려면 로그인이 필요해요.')">
+        <div style="text-align:center;padding:24px 16px;">
+          <div style="font-size:28px;margin-bottom:8px;">🔒</div>
+          <div style="font-size:13px;font-weight:800;margin-bottom:4px;">로그인 후 사용 가능</div>
+          <div style="font-size:11px;opacity:.6;line-height:1.5;">탭해서 로그인하기</div>
+        </div>
+      </div>`;
+    }
+    const wrapCls=isFull?'g-block-embed g-tool-full-wrap':'g-block-embed';
+    return `<div class="${wrapCls}" style="${mS}${bgS}${wrapH}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}" data-block-bg="${b.bgColor||''}" data-complete-trigger="${trigger}"${onloadAttr}></iframe></div>`;
+  }
+  if(b.type==='spacer'){
+    const h=b.spacerHeight||40;
+    return `<div style="height:${h}px;${bgS}${mS}"></div>`;
+  }
+  if(b.type==='divider'){
+    const color=b.dividerColor||'#000000';
+    const thickness=b.dividerThickness||1;
+    const style=b.dividerStyle||'solid';
+    const divMargin=b.dividerFullWidth?`margin:${b.marginV||0}px 0;`:`${mS}`;
+    return `<div style="${divMargin}${bgS}"><hr style="border:none;border-top:${thickness}px ${style} ${color};margin:0;"></div>`;
+  }
+  if(b.type==='form' && b.formId){
+    formBlockData[b.formId]={formFields:b.formFields||[],formConfig:b.formConfig||{},blockId:b.id};
+    const config=b.formConfig||{};
+    /* 중복제출 불허 + 인증사용자 + 이미 제출한 경우 → 완료 화면으로 고정 */
+    const noResubmit=!config.allowDuplicates&&AUTH_ENABLED&&USER_DOC_ID&&(userProgress[curStageId]||new Set()).has(b.id);
+    const doneHtml=`${config.postSubmitImage?`<img src="${config.postSubmitImage}" style="width:100%;display:block;margin-bottom:16px;" loading="lazy">`:''}<div>${config.postSubmitHtml||'제출되었어요!'}</div>`;
+    const titleHtml=config.formTitle?`<div class="ff-form-title">${config.formTitle}</div>`:'';
+    const fieldsHtml=(b.formFields||[]).map(f=>renderFormField(f)).join('');
+    return `<div class="g-block-form" style="${mS}${bgS}">
+      <div id="form-body-${b.formId}"${noResubmit?' style="display:none;"':''}>${titleHtml}${fieldsHtml}<div class="ff-err" id="form-err-${b.formId}"></div><button class="form-submit-btn" onclick="submitForm('${b.formId}')">${config.submitBtnText||'제출하기'}</button></div>
+      <div id="form-done-${b.formId}" class="form-done-screen"${noResubmit?'':' style="display:none;"'}>${doneHtml}</div>
+    </div>`;
+  }
+  return '';
+}
+function attachCheck(h,b){
+  if(!b.checkable) return h;
+  const pos=b.checkPosition||'bottom-right';
+  const vPos=pos.split('-')[0];
+  const checked=(AUTH_ENABLED&&USER_DOC_ID)?(userProgress[curStageId]||new Set()).has(b.id):false;
+  const checkEl=renderCheckEl(b,checked,pos);
+  if(vPos==='middle') return `<div class="blk-check-outer">${h}${checkEl}</div>`;
+  if(vPos==='top') return checkEl+h;
+  return h+checkEl;
+}
+// ── 임베드 iframe에 사용자 컨텍스트 전달 ──
+function _effectivePageBg(){
+  const cs=getComputedStyle(document.documentElement);
+  return (cs.getPropertyValue('--prep-bg')||cs.getPropertyValue('--body-bg')||cs.getPropertyValue('--c')||'').trim();
+}
+function _lmpContext(iframeEl){
+  let bb = iframeEl ? (iframeEl.getAttribute('data-block-bg')||'') : '';
+  const _session = JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  return {
+    type:'lmp-context',
+    projectId: typeof PROJECT_ID!=='undefined' ? PROJECT_ID : '',
+    userId: typeof USER_DOC_ID!=='undefined' ? USER_DOC_ID : '',
+    boothType: _session.boothType||_session.type||'',
+    keyColors: typeof KEY_COLORS!=='undefined' ? KEY_COLORS : [],
+    prepBg: typeof prepBg!=='undefined' ? prepBg : '',
+    userFields: _session,
+    blockBg: bb
+  };
+}
+function _sendContextToEmbeds(){
+  setTimeout(()=>{
+    document.querySelectorAll('iframe').forEach(f=>{
+      try{ f.contentWindow.postMessage(_lmpContext(f),'*'); }catch(e){}
+    });
+  },300);
+}
+// lmp-ready 수신 시 즉시 전송
+// lmp-tool-complete 수신 시 autoCheckBlock 처리
+window.addEventListener('message',e=>{
+  if(e.data?.type==='lmp-ready'&&e.source){
+    let sourceIframe=null;
+    document.querySelectorAll('iframe').forEach(f=>{ if(f.contentWindow===e.source) sourceIframe=f; });
+    try{ e.source.postMessage(_lmpContext(sourceIframe),'*'); }catch(er){}
+    return;
+  }
+  if(e.data?.type==='lmp-resize' && typeof e.data.height==='number'){
+    document.querySelectorAll('iframe').forEach(f=>{
+      try{ if(f.contentWindow===e.source && !f.closest('.g-tool-full-wrap')) f.style.height=e.data.height+'px'; }catch(_){}
+    });
+    return;
+  }
+  if(e.data?.type==='lmp-tool-complete'){
+    document.querySelectorAll('iframe[data-tool-block]').forEach(f=>{
+      try{
+        if(f.contentWindow===e.source&&f.getAttribute('data-complete-trigger')!=='manual')
+          autoCheckBlock(f.getAttribute('data-tool-block'));
+      }catch(_){}
+    });
+    return;
+  }
+});
+// 텍스트 링크에서 /tools/ URL 클릭 시 모달로 열기
+document.addEventListener('click',e=>{
+  const a=e.target.closest('a[href]');
+  if(!a) return;
+  const href=a.getAttribute('href');
+  if(href&&href.startsWith('/tools/')){
+    e.preventDefault();
+    openToolLinkModal(href);
+  }
+});
+function openToolLinkModal(url){
+  const modal=document.getElementById('tool-link-modal');
+  const iframe=document.getElementById('tool-link-iframe');
+  const ov=document.getElementById('tool-link-overlay');
+  if(!modal||!iframe) return;
+  iframe.src=url;
+  modal.classList.add('on');
+  if(ov) ov.classList.add('on');
+}
+function closeToolLinkModal(){
+  const modal=document.getElementById('tool-link-modal');
+  const iframe=document.getElementById('tool-link-iframe');
+  const ov=document.getElementById('tool-link-overlay');
+  if(!modal||!iframe) return;
+  modal.classList.remove('on');
+  if(ov) ov.classList.remove('on');
+  setTimeout(()=>{ iframe.src='about:blank'; },400);
+}
+function renderGuideScroll(blocks){
+  document.getElementById('guide-scroll-blocks').innerHTML=blocks.map(b=>{
+    const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
+    const mS=(b.marginV||b.marginH)?`margin:${b.marginV||0}px ${b.marginH||0}px;`:'';
+    const bStripped={...b,bgColor:'',marginV:0,marginH:0};
+    const inner=attachCheck(blockHtml(bStripped),b);
+    return (bgS||mS)?`<div style="${bgS}${mS}">${inner}</div>`:inner;
+  }).join('');
+  document.getElementById('guide-scroll-body').style.display='block';
+  _sendContextToEmbeds();
+}
+function renderGuideSlide(blocks){
+  gSlideIdx=0; gSlideTotal=blocks.length;
+  const track=document.getElementById('guide-slide-track');
+  const N=blocks.length||1;
+  track.innerHTML=blocks.map(b=>{
+    const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
+    const mS=(b.marginV||b.marginH)?`padding:${b.marginV||0}px ${b.marginH||0}px;`:'';
+    const bStripped={...b,bgColor:'',marginV:0,marginH:0};
+    const inner=attachCheck(blockHtml(bStripped),b);
+    const scrollable=(b.type==='tool'||b.type==='embed');
+    const fullH=b.imageHeight==='full';
+    const vaMap={top:'flex-start',center:'center',bottom:'flex-end'};
+    const va=scrollable||fullH?'':(b.verticalAlign||'');
+    const jc=scrollable||fullH?'flex-start':(vaMap[b.verticalAlign]||'center');
+    const scrollS=scrollable?'overflow-y:auto;':'';
+    return `<div class="guide-slide-item"${va?` data-valign="${va}"`:''}  style="width:${100/N}%;justify-content:${jc};${bgS}${mS}${scrollS}">${inner}</div>`;
+  }).join('');
+  track.style.width=(N*100)+'%';
+  track.style.transform='translateX(0)';
+  updateDots(); document.getElementById('guide-slide-body').style.display='flex';
+  _sendContextToEmbeds();
+  const sb=document.getElementById('guide-slide-body');
+  sb.ontouchstart=e=>{ gTouchX=e.touches[0].clientX; };
+  sb.ontouchend  =e=>{ const dx=e.changedTouches[0].clientX-gTouchX; if(Math.abs(dx)>40) goSlide(gSlideIdx+(dx<0?1:-1)); };
+  let mStartX=0,mDragging=false;
+  sb.onmousedown =e=>{ mDragging=true; mStartX=e.clientX; };
+  sb.onmousemove =e=>{ if(mDragging) e.preventDefault(); };
+  sb.onmouseup   =e=>{ if(!mDragging) return; mDragging=false; const dx=e.clientX-mStartX; if(Math.abs(dx)>40) goSlide(gSlideIdx+(dx<0?1:-1)); };
+  sb.onmouseleave=()=>{ mDragging=false; };
+}
+function updateDots(){
+  const prev=gSlideIdx>0, next=gSlideIdx<gSlideTotal-1;
+  const aS='font-size:20px;font-weight:900;cursor:pointer;padding:0 10px;user-select:none;-webkit-tap-highlight-color:transparent;';
+  const dots=Array.from({length:gSlideTotal},(_,i)=>`<div class="guide-dot${i===gSlideIdx?' on':''}" onclick="goSlide(${i})"></div>`).join('');
+  document.getElementById('guide-dots').innerHTML=
+    `<span onclick="goSlide(${gSlideIdx-1})" style="${aS}opacity:${prev?1:.2};">‹</span>${dots}<span onclick="goSlide(${gSlideIdx+1})" style="${aS}opacity:${next?1:.2};">›</span>`;
+}
+function goSlide(i){ gSlideIdx=Math.max(0,Math.min(i,gSlideTotal-1)); document.getElementById('guide-slide-track').style.transform='translateX('+(-gSlideIdx*(100/gSlideTotal))+'%)'; updateDots(); }
+
+/* ── Checkable block render helper ── */
+function renderCheckEl(b,checked,pos){
+  const before=b.checkBeforeText||'';
+  const after=b.checkAfterText||'';
+  const useBox=!before&&!after;
+  const p=pos||b.checkPosition||'bottom-right';
+  const parts=p.split('-');
+  const vPos=parts[0];
+  const hPos=parts.slice(1).join('-');
+  const alignCls=hPos==='left'?' align-left':hPos==='center'?' align-center':'';
+  const midCls=vPos==='middle'?' blk-check-mid':'';
+  const wrapCls=`blk-check-wrap${alignCls}${midCls}`;
+  const _cs=(b.checkColor?`--chk-color:${b.checkColor};`:'')+( b.checkTextColor?`--chk-text-color:${b.checkTextColor};`:'');
+  const colorStyle=_cs?` style="${_cs}"`:'  ';
+  if(useBox){
+    return `<div class="${wrapCls}"${colorStyle}><div id="chk-${b.id}" class="blk-check-box${checked?' on':''}" onclick="toggleBlockCheck('${b.id}')" data-before="" data-after="">${checked?'✓':''}</div></div>`;
+  }
+  const txt=checked?(after||'✓ 확인 완료'):(before||'확인하기');
+  return `<div class="${wrapCls}"${colorStyle}><button id="chk-${b.id}" class="blk-check-btn${checked?' on':''}" onclick="toggleBlockCheck('${b.id}')" data-before="${before.replace(/"/g,'&quot;')}" data-after="${after.replace(/"/g,'&quot;')}">${txt}</button></div>`;
+}
+function updateCheckEl(id,checked){
+  const el=document.getElementById('chk-'+id);
+  if(!el) return;
+  const before=el.dataset.before||'';
+  const after=el.dataset.after||'';
+  const useBox=!before&&!after;
+  if(useBox){el.classList.toggle('on',checked);el.textContent=checked?'✓':'';}
+  else{el.classList.toggle('on',checked);el.textContent=checked?(after||'✓ 확인 완료'):(before||'확인하기');}
+}
+
+/* ── Block check & progress ── */
+function loadUserProgress(userData){
+  const u=userData||JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  if(u._docId) USER_DOC_ID=u._docId;
+  const prog=u.stageProgress||{};
+  userProgress={};
+  Object.keys(prog).forEach(sid=>{ userProgress[sid]=new Set(Array.isArray(prog[sid])?prog[sid]:[]); });
+}
+function calcPct(stage){
+  if(!stage.trackProgress||!stage.checkableCount) return 0;
+  const checked=(userProgress[stage.id]||new Set()).size;
+  return Math.min(100,Math.round(checked/stage.checkableCount*100));
+}
+function refreshStageProgress(){
+  if(curStageIdx<0) return;
+  const s=STAGES[curStageIdx];
+  if(!s||!s.trackProgress) return;
+  const pct=calcPct(s);
+  const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
+  const listId=LAYOUT_TYPE==='merged'?'merged-stage-list':'stage-list';
+  const cards=document.querySelectorAll('#'+listId+' .stage-card');
+  const card=cards[curStageIdx];
+  if(!card) return;
+  const dot=card.querySelector('.status-dot');
+  if(dot) dot.textContent=statusTxt;
+  /* pbar 요소 통째로 교체 (0%↔비0% 전환, 텍스트 안/밖 전환 모두 처리) */
+  const existingPbar=card.querySelector('.stage-pbar');
+  if(existingPbar) existingPbar.remove();
+  const isMerged=LAYOUT_TYPE==='merged';
+  const isImage=!!card.querySelector('img');
+  const html=buildPbarHtml(pct,{merged:isMerged,image:isImage});
+  if(html) card.insertAdjacentHTML('beforeend',html);
+}
+async function toggleBlockCheck(blockId){
+  // 필요 시 로그인 모드: 비로그인 사용자는 로그인 요청 후 재시도
+  if(AUTH_ENABLED && AUTH_MODE==='on-demand' && !USER_DOC_ID && !IS_ADMIN_PREVIEW){
+    requireAuthOr(()=>toggleBlockCheck(blockId), '진행률을 체크하려면 로그인이 필요해요.');
+    return;
+  }
+  const stageId=curStageId;
+  if(!userProgress[stageId]) userProgress[stageId]=new Set();
+  const prog=userProgress[stageId];
+  const wasChecked=prog.has(blockId);
+  if(wasChecked) prog.delete(blockId); else prog.add(blockId);
+  updateCheckEl(blockId,!wasChecked);
+  refreshStageProgress();
+  if(!AUTH_ENABLED||!USER_DOC_ID) return;
+  const u=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  if(!u.stageProgress) u.stageProgress={};
+  u.stageProgress[stageId]=[...prog];
+  sessionStorage.setItem('userSession',JSON.stringify(u));
+  try{
+    await db.collection(AUTH_COLLECTION).doc(USER_DOC_ID).update({
+      ['stageProgress.'+stageId]:wasChecked
+        ?firebase.firestore.FieldValue.arrayRemove(blockId)
+        :firebase.firestore.FieldValue.arrayUnion(blockId)
+    });
+  }catch(e){
+    console.error('[toggleBlockCheck]',e);
+    if(wasChecked) prog.add(blockId); else prog.delete(blockId);
+    updateCheckEl(blockId,wasChecked);
+    refreshStageProgress();
+  }
+}
+
+/* ── Tool block: 완료 자동 체크 ── */
+function autoCheckBlock(blockId){
+  if(!blockId) return;
+  const stageId=curStageId;
+  if(!userProgress[stageId]) userProgress[stageId]=new Set();
+  if(userProgress[stageId].has(blockId)) return;
+  userProgress[stageId].add(blockId);
+  refreshStageProgress();
+  if(!AUTH_ENABLED||!USER_DOC_ID) return;
+  const u=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  if(!u.stageProgress) u.stageProgress={};
+  u.stageProgress[stageId]=[...userProgress[stageId]];
+  sessionStorage.setItem('userSession',JSON.stringify(u));
+  db.collection(AUTH_COLLECTION).doc(USER_DOC_ID).update({
+    ['stageProgress.'+stageId]:firebase.firestore.FieldValue.arrayUnion(blockId)
+  }).catch(console.error);
+}
+
+/* ── Form block ── */
+function renderFormField(f){
+  const req=f.required?'<span style="color:#c00;">*</span>':'';
+  const desc=f.description?`<div class="ff-desc">${f.description}</div>`:'';
+  if(f.type==='string')
+    return `<div class="ff-wrap"><label class="ff-label">${f.label}${req}</label>${desc}<input class="ff-inp" id="ff-${f.key}" type="text" placeholder="${f.placeholder||''}"></div>`;
+  if(f.type==='textarea')
+    return `<div class="ff-wrap"><label class="ff-label">${f.label}${req}</label>${desc}<textarea class="ff-textarea" id="ff-${f.key}" placeholder="${f.placeholder||''}"></textarea></div>`;
+  if(f.type==='number')
+    return `<div class="ff-wrap"><label class="ff-label">${f.label}${req}</label>${desc}<input class="ff-inp" id="ff-${f.key}" type="number" placeholder="${f.placeholder||''}"></div>`;
+  if(f.type==='select'&&f.selectMode==='dropdown'){
+    const opts=(f.options||[]).map(o=>`<option value="${o}">${o}</option>`).join('');
+    const otherOpt=f.allowOther?`<option value="__other__">기타</option>`:'';
+    const otherInp=f.allowOther?`<input class="ff-inp" id="ff-${f.key}-other" placeholder="기타 입력" style="display:none;margin-top:6px;">`:'' ;
+    return `<div class="ff-wrap"><label class="ff-label">${f.label}${req}</label>${desc}<select class="ff-sel" id="ff-${f.key}" onchange="onSelChange('${f.key}',${!!f.allowOther})"><option value="">선택해주세요</option>${opts}${otherOpt}</select>${otherInp}</div>`;
+  }
+  if(f.type==='select'&&f.selectMode==='buttons'){
+    const max=f.maxSelect||99;
+    const btns=(f.options||[]).map(o=>`<button type="button" class="ff-sel-btn" data-value="${o}" onclick="toggleSelBtn(this,'${f.key}',${max})">${o}</button>`).join('');
+    const otherBtn=f.allowOther?`<button type="button" class="ff-sel-btn" data-value="__other__" onclick="toggleSelBtn(this,'${f.key}',${max})">기타</button>`:'';
+    const otherInp=f.allowOther?`<input class="ff-inp" id="ff-${f.key}-other" placeholder="기타 입력" style="display:none;margin-top:6px;">`:'' ;
+    return `<div class="ff-wrap"><label class="ff-label">${f.label}${req}</label>${desc}<div class="ff-sel-btns" id="ff-${f.key}">${btns}${otherBtn}</div>${otherInp}</div>`;
+  }
+  return '';
+}
+function onSelChange(key,allowOther){
+  const sel=document.getElementById('ff-'+key);
+  const oth=document.getElementById('ff-'+key+'-other');
+  if(oth) oth.style.display=(sel&&sel.value==='__other__')?'':'none';
+}
+function toggleSelBtn(btn,key,maxSelect){
+  const container=document.getElementById('ff-'+key);
+  if(!container) return;
+  const isOn=btn.classList.contains('on');
+  const selected=container.querySelectorAll('.ff-sel-btn.on');
+  if(!isOn&&selected.length>=maxSelect) selected[0].classList.remove('on');
+  btn.classList.toggle('on');
+  const oth=document.getElementById('ff-'+key+'-other');
+  if(oth){ const ob=container.querySelector('[data-value="__other__"]'); oth.style.display=ob?.classList.contains('on')?'':'none'; }
+}
+async function submitForm(formId){
+  const data=formBlockData[formId]; if(!data) return;
+  const {formFields,formConfig}=data;
+  const result={};
+  const errEl=document.getElementById('form-err-'+formId); if(errEl) errEl.textContent='';
+  for(const f of formFields){
+    let val;
+    if(f.type==='select'&&f.selectMode==='buttons'){
+      const c=document.getElementById('ff-'+f.key);
+      const sel=[...c.querySelectorAll('.ff-sel-btn.on')].map(b=>b.dataset.value==='__other__'?(document.getElementById('ff-'+f.key+'-other')?.value.trim()||'기타'):b.dataset.value);
+      if(f.required&&(!sel.length||(f.minSelect&&sel.length<f.minSelect))){ if(errEl) errEl.textContent=f.label+'을(를) 선택해주세요.'; return; }
+      val=sel.length===1?sel[0]:sel;
+    } else if(f.type==='select'){
+      const s=document.getElementById('ff-'+f.key); val=s?s.value:'';
+      if(val==='__other__'){ const oi=document.getElementById('ff-'+f.key+'-other'); val=oi?.value.trim()||'기타'; }
+      if(f.required&&!val){ if(errEl) errEl.textContent=f.label+'을(를) 선택해주세요.'; return; }
+    } else {
+      const inp=document.getElementById('ff-'+f.key); val=inp?inp.value.trim():'';
+      if(f.type==='number'){
+        if(val!==''&&isNaN(Number(val))){ if(errEl) errEl.textContent=f.label+'에 숫자만 입력할 수 있어요.'; inp&&inp.focus(); return; }
+        val=val===''?null:Number(val);
+      }
+      if(f.required&&(val===''||val===null||val===undefined)){ if(errEl) errEl.textContent=f.label+'을(를) 입력해주세요.'; return; }
+    }
+    result[f.key]=val;
+  }
+  const btn=document.querySelector(`#form-body-${formId} .form-submit-btn`);
+  if(btn){btn.disabled=true;btn.textContent='제출 중…';}
+  try{
+    const user=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+    const docData={...result,submittedAt:firebase.firestore.FieldValue.serverTimestamp()};
+    if(AUTH_ENABLED){
+      if(user[AUTH_KEY_FIELD]) docData._user=user[AUTH_KEY_FIELD];
+      AUTH_FIELDS.forEach(f=>{if(user[f.key]!==undefined) docData['_auth_'+f.key]=user[f.key];});
+    }
+    await db.collection('cms_form_responses').doc(formId).collection('responses').add(docData);
+    document.getElementById('form-body-'+formId).style.display='none';
+    document.getElementById('form-done-'+formId).style.display='';
+    /* 폼 제출 = 블록 체크로 자동 처리 */
+    const _bid=formBlockData[formId]?.blockId;
+    if(_bid&&!(userProgress[curStageId]||new Set()).has(_bid)) await toggleBlockCheck(_bid);
+    if(formConfig.sheetId){
+      try{
+        const ts=new Date().toLocaleString('ko');
+        const authHeaders=AUTH_ENABLED?AUTH_FIELDS.map(f=>f.label):[];
+        const authVals=AUTH_ENABLED?AUTH_FIELDS.map(f=>String(user[f.key]??'')):[];
+        const headers=['제출일시',...authHeaders,...formFields.map(f=>f.label)];
+        const vals=formFields.map(f=>{const v=result[f.key];return Array.isArray(v)?v.join(', '):(v??'');});
+        await fetch(GAS_URL,{method:'POST',
+          body:JSON.stringify({action:'submitForm',sheetId:formConfig.sheetId,sheetTab:formConfig.sheetTab||'응답',headers,row:[ts,...authVals,...vals]})});
+      }catch(e){}
+    }
+  }catch(e){
+    console.error('[submitForm]',e);
+    if(btn){btn.disabled=false;btn.textContent=formConfig.submitBtnText||'제출하기';}
+    const msg=e?.code==='permission-denied'?'저장 권한이 없어요. 관리자에게 문의해주세요.':'제출에 실패했어요. 다시 시도해주세요.';
+    if(errEl) errEl.textContent=msg;
+  }
+}
+
+/* ── Init ── */
+async function init(){
+  setCss('--c',nextColor());
+  await loadProjectSettings();
+  loadUserProgress();
+  const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  const loggedIn=saved.project===PROJECT_ID;
+  /* 페이지 새로고침/재진입 시 하트비트 재개 (USER_DOC_ID는 loadUserProgress에서 복원됨) */
+  if(loggedIn && AUTH_ENABLED && USER_DOC_ID && !IS_ADMIN_PREVIEW){
+    _startSessionHeartbeat(USER_DOC_ID);
+  }
+  /* merged + auth: show modal immediately (skip auth in admin preview) */
+  if(LAYOUT_TYPE==='merged'&&AUTH_ENABLED){
+    if(IS_ADMIN_PREVIEW){
+      renderMergedStages(); await restoreFromHash(saved);
+    } else if(!loggedIn) openAuthModal();
+    else { applyGreeting(saved); renderMergedStages(); await restoreFromHash(saved); }
+  }
+  /* separate: restore session */
+  if(LAYOUT_TYPE==='separate'){
+    if(loggedIn){
+      prepBg=sessionStorage.getItem('prepBgColor')||KEY_COLORS[0];
+      applyGreeting(saved);
+      await restoreFromHash(saved);
+    }
+  }
+}
+async function restoreFromHash(saved){
+  const parts=location.hash.replace('#','').split('/');
+  if(parts[0]==='stage'&&parts[1]){
+    const stage=STAGES.find(s=>s.id===parts[1]);
+    if(stage){
+      curStageIdx=STAGES.findIndex(s=>s.id===stage.id);
+      curStageId=stage.id;
+      if(LAYOUT_TYPE==='separate'){
+        prepBg=sessionStorage.getItem('prepBgColor')||KEY_COLORS[0];
+        setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
+        renderSeparateStages();
+        document.getElementById('prep-screen').classList.add('open');
+      }
+      _navRestore=true;
+      await openStageContent(stage);
+      _navRestore=false;
+    }
+  } else if(parts[0]==='prep'&&LAYOUT_TYPE==='separate'){
+    prepBg=sessionStorage.getItem('prepBgColor')||KEY_COLORS[0];
+    setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
+    renderSeparateStages();
+    document.getElementById('prep-screen').classList.add('open');
+    hideReturnBtn();
+  } else if(saved&&saved.project===PROJECT_ID){
+    showReturnBtn();
+  }
+}
+window.addEventListener('load',init);
+</script>
+</body>
+</html>
