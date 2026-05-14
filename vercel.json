@@ -1,4 +1,5 @@
 {
+  "buildCommand": "node scripts/sync-projects.js",
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
@@ -24,13 +25,13 @@
       ]
     },
     {
-      "source": "/(admin|p|gmbf-poc|block-test-demo|gmbf)/(.*)",
+      "source": "/(admin|p|gmbf-poc|block-test-demo|gmbf-03|gmbf)/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, must-revalidate" }
       ]
     },
     {
-      "source": "/(admin|p|gmbf-poc|block-test-demo|gmbf)",
+      "source": "/(admin|p|gmbf-poc|block-test-demo|gmbf-03|gmbf)",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, must-revalidate" }
       ]
