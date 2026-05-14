@@ -125,6 +125,39 @@ function doPost(e) {
       return json({ success: true });
     }
 
+    if (action === 'saveFilesToDrive') {
+      const folderName = data.folderName || '폼_파일모음';
+      const files = data.files || [];
+      try {
+        var folder;
+        var folderIter = DriveApp.getFoldersByName(folderName);
+        if (folderIter.hasNext()) {
+          folder = folderIter.next();
+        } else {
+          folder = DriveApp.createFolder(folderName);
+          SHARED_EDITORS.forEach(function(email) {
+            try { folder.addEditor(email); } catch(_) {}
+          });
+        }
+        var savedCount = 0;
+        files.forEach(function(f) {
+          try {
+            var response = UrlFetchApp.fetch(f.url, {muteHttpExceptions: true});
+            if (response.getResponseCode() !== 200) return;
+            var blob = response.getBlob();
+            var contentType = blob.getContentType() || 'application/octet-stream';
+            var ext = contentType.split('/').pop().replace('jpeg','jpg');
+            blob.setName(f.fileName + '.' + ext);
+            folder.createFile(blob);
+            savedCount++;
+          } catch(err) {}
+        });
+        return json({ success: true, savedCount: savedCount, folderUrl: folder.getUrl() });
+      } catch(err) {
+        return json({ success: false, error: err.message });
+      }
+    }
+
     if (action === 'createCalendarEvent') {
       const calId = data.calendarId;
       const cal   = calId ? CalendarApp.getCalendarById(calId) : CalendarApp.getDefaultCalendar();
