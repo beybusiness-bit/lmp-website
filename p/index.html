@@ -699,6 +699,8 @@ function initSlides(){
     const div=document.createElement('div');
     div.className='slide'+(i===0?' on':'');
     div.style.backgroundImage='url('+bg.url+')';
+    div.style.backgroundSize=bg.fit==='natural'?'auto':bg.fit==='fill'?'100% 100%':bg.fit==='contain'?'contain':'cover';
+    div.style.backgroundPosition=bg.position||'50% 50%';
     div.style.transition='opacity '+(bg.transitionTime||2)+'s ease-in-out';
     container.appendChild(div);
   });

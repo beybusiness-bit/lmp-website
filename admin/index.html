@@ -2484,14 +2484,21 @@ function renderBgImages() {
     el.innerHTML = '<div style="font-size:12px;color:rgba(0,0,0,.4);padding:8px 0;margin-bottom:6px;">이미지 없음 — 배경색으로 표시됩니다</div>';
     return;
   }
-  el.innerHTML = curBgImages.map((bg, i) => `
+  el.innerHTML = curBgImages.map((bg, i) => {
+    const fit = bg.fit || 'cover';
+    const pos = bg.position || '50% 50%';
+    const posParts = pos.split(' ');
+    const posX = posParts[0] || '50%';
+    const posY = posParts[1] || '50%';
+    const showFocal = fit === 'cover' || fit === 'contain';
+    return `
     <div class="bg-item">
       <div class="bg-item-top">
         <img class="bg-thumb" id="bgt-${i}" src="${bg.url||''}" onerror="this.style.opacity=0" style="opacity:${bg.url?1:0};">
         <div class="bg-right">
           <div class="bg-url-row">
             <input class="bg-url-inp" value="${(bg.url||'').replace(/"/g,'&quot;')}" placeholder="이미지 URL 또는 업로드"
-              oninput="curBgImages[${i}].url=this.value;updateBgThumb(${i},this.value)">
+              oninput="curBgImages[${i}].url=this.value;updateBgThumb(${i},this.value);document.getElementById('bg-focal-thumb-${i}')&&(document.getElementById('bg-focal-thumb-${i}').src=this.value||'');">
             <button class="bg-up-btn" onclick="openBgUpload(${i})">📁 업로드</button>
           </div>
           <div class="bg-timing">
@@ -2513,10 +2520,30 @@ function renderBgImages() {
           <button class="rm-btn2" onclick="removeBg(${i})">✕</button>
         </div>
       </div>
-    </div>`).join('');
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.08);display:flex;gap:10px;align-items:flex-start;">
+        <div style="flex:1;">
+          <div style="font-size:9px;font-weight:700;color:rgba(0,0,0,.4);margin-bottom:4px;">배치 방법</div>
+          <div style="display:flex;gap:3px;flex-wrap:wrap;">
+            <button class="img-fit-btn ${fit==='cover'?'on':''}" data-bgi="${i}" data-bgf="cover" onclick="setBgFit(${i},'cover')">크롭채움</button>
+            <button class="img-fit-btn ${fit==='contain'?'on':''}" data-bgi="${i}" data-bgf="contain" onclick="setBgFit(${i},'contain')">비율유지</button>
+            <button class="img-fit-btn ${fit==='fill'?'on':''}" data-bgi="${i}" data-bgf="fill" onclick="setBgFit(${i},'fill')">늘려채움</button>
+            <button class="img-fit-btn ${fit==='natural'?'on':''}" data-bgi="${i}" data-bgf="natural" onclick="setBgFit(${i},'natural')">원본비율</button>
+          </div>
+        </div>
+        <div style="flex-shrink:0;">
+          <div style="font-size:9px;font-weight:700;color:rgba(0,0,0,.4);margin-bottom:4px;">초점 <span style="font-weight:400;">(드래그)</span></div>
+          <div id="bg-focal-wrap-${i}" style="position:relative;overflow:hidden;cursor:crosshair;touch-action:none;border:1.5px solid rgba(0,0,0,.25);border-radius:4px;user-select:none;width:48px;height:76px;${showFocal?'':'opacity:0.35;pointer-events:none;'}"
+               onpointerdown="bgFocalDown(event,${i})" onpointermove="bgFocalMove(event,${i})" onpointerup="_focalDragging=false">
+            <img id="bg-focal-thumb-${i}" src="${bg.url||''}" alt="" style="width:100%;height:100%;object-fit:cover;object-position:${pos};display:block;pointer-events:none;">
+            <div id="bg-focal-dot-${i}" style="position:absolute;width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1.5px #000,0 2px 6px rgba(0,0,0,.6);transform:translate(-50%,-50%);pointer-events:none;left:${posX};top:${posY};"></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 function addBgImage() {
-  curBgImages.push({url:'', holdTime:10, transitionTime:2});
+  curBgImages.push({url:'', holdTime:10, transitionTime:2, fit:'cover', position:'50% 50%'});
   renderBgImages(); schedulePreviewUpdate();
 }
 function removeBg(i) { curBgImages.splice(i,1); renderBgImages(); schedulePreviewUpdate(); }
@@ -2525,6 +2552,29 @@ function moveBg(i,d) {
   if(j<0||j>=curBgImages.length) return;
   [curBgImages[i],curBgImages[j]]=[curBgImages[j],curBgImages[i]];
   renderBgImages(); schedulePreviewUpdate();
+}
+function setBgFit(i, fit) {
+  curBgImages[i].fit = fit;
+  const showFocal = fit === 'cover' || fit === 'contain';
+  const wrap = document.getElementById('bg-focal-wrap-' + i);
+  if (wrap) { wrap.style.opacity = showFocal ? '1' : '0.35'; wrap.style.pointerEvents = showFocal ? '' : 'none'; }
+  document.querySelectorAll(`.img-fit-btn[data-bgi="${i}"]`).forEach(b => b.classList.toggle('on', b.dataset.bgf === fit));
+  schedulePreviewUpdate();
+}
+function bgFocalDown(e, i) { _focalDragging = true; e.currentTarget.setPointerCapture(e.pointerId); bgFocalSetPos(e, i); }
+function bgFocalMove(e, i) { if (!_focalDragging) return; bgFocalSetPos(e, i); }
+function bgFocalSetPos(e, i) {
+  const wrap = e.currentTarget;
+  const rect = wrap.getBoundingClientRect();
+  const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+  const pos = Math.round(x * 100) + '% ' + Math.round(y * 100) + '%';
+  curBgImages[i].position = pos;
+  const dot = document.getElementById('bg-focal-dot-' + i);
+  const thumb = document.getElementById('bg-focal-thumb-' + i);
+  if (dot) { dot.style.left = Math.round(x * 100) + '%'; dot.style.top = Math.round(y * 100) + '%'; }
+  if (thumb) thumb.style.objectPosition = pos;
+  schedulePreviewUpdate();
 }
 function updateBgThumb(i, url) {
   const img = document.getElementById('bgt-'+i);
@@ -5685,6 +5735,8 @@ function renderPreview() {
   const firstBg = curBgImages[0];
   const hasBg   = firstBg && firstBg.url;
   bg.style.backgroundImage = hasBg ? `url("${firstBg.url}")` : '';
+  bg.style.backgroundSize = hasBg ? (firstBg.fit==='natural'?'auto':firstBg.fit==='fill'?'100% 100%':firstBg.fit==='contain'?'contain':'cover') : '';
+  bg.style.backgroundPosition = hasBg ? (firstBg.position || '50% 50%') : '';
   const bgColor1 = curKeyColors[0]?.color || '#00CE6B';
   const bgColor2 = curKeyColors.find(k=>k.color!==bgColor1)?.color || curKeyColors[1]?.color || '#FFF100';
   bg.style.backgroundColor = hasBg ? '' : bgColor1;
