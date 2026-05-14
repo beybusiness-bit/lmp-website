@@ -407,9 +407,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div class="inner-panel" id="ip-design">
           <div class="sect-head ip-first-sect">키컬러</div>
           <div class="ed-sect">
-            <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:10px;line-height:1.6;">배경색·텍스트·아이콘 색상으로 사용됩니다. 배경 슬라이드 전환 시 순서대로 순환합니다. <b>최소 2개 필요</b></div>
+            <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:10px;line-height:1.6;">배경색·아이콘 색상으로 사용됩니다. 배경 슬라이드 전환 시 순서대로 순환합니다. <b>최소 2개 필요</b></div>
             <div id="key-color-list"></div>
             <button class="add-btn" style="margin-top:8px;" onclick="addKeyColor()">+ 색상 추가</button>
+          </div>
+          <div class="sect-head">텍스트 색상 모드</div>
+          <div class="ed-sect">
+            <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;line-height:1.6;">디데이·카운터·문구·CTA 텍스트 등 메인 화면 텍스트의 색상을 키컬러와 함께 순환할지, 고정 컬러로 유지할지 선택합니다.</div>
+            <div class="toggle-row" style="margin-bottom:8px;">
+              <button class="tgl-btn on" id="text-cm-kc" onclick="setTextColorMode('keycolor')">키컬러 순환</button>
+              <button class="tgl-btn" id="text-cm-fixed" onclick="setTextColorMode('fixed')">고정 색상</button>
+            </div>
+            <div id="text-fixed-color-wrap" style="display:none;">
+              <div class="ed-lbl">고정 색상 선택</div>
+              <input type="color" id="p-text-fixed-color" value="#000000" onchange="curTextFixedColor=this.value;schedulePreviewUpdate();" style="width:100%;height:40px;border:1.5px solid rgba(0,0,0,.2);cursor:pointer;padding:2px 4px;box-sizing:border-box;">
+            </div>
           </div>
           <div class="sect-head">화면 구성</div>
           <div class="ed-sect">
@@ -438,8 +450,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div id="logo-img-sec">
               <input class="fi-sm" id="p-logo-url" placeholder="로고 이미지 URL (투명 PNG 권장)">
               <button class="bg-up-btn" onclick="document.getElementById('logo-file-inp').click()" style="margin-top:4px;">📁 업로드</button>
-              <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:4px;">⚠️ 배경이 투명한 PNG만 업로드하세요 — 색상 자동 적용됩니다</div>
+              <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:4px;" id="logo-cm-hint">⚠️ 배경이 투명한 PNG만 업로드하세요 — 색상 자동 적용됩니다</div>
               <input type="file" id="logo-file-inp" accept="image/png" style="display:none;" onchange="uploadSingleImage(event,'p-logo-url','cms_projects/logo',true)">
+              <div style="margin-top:8px;">
+                <div class="ed-lbl">로고 색상 모드</div>
+                <div class="toggle-row" style="margin-bottom:0;">
+                  <button class="tgl-btn on" id="logo-cm-kc" onclick="setLogoColorMode('keycolor')">키컬러 자동</button>
+                  <button class="tgl-btn" id="logo-cm-orig" onclick="setLogoColorMode('original')">원본 유지</button>
+                </div>
+              </div>
               <div style="margin-top:8px;">
                 <div class="ed-lbl">너비 (%)</div>
                 <input class="fi-sm" type="number" id="p-logo-img-w" value="76" min="10" max="100" step="5" placeholder="76" style="margin-bottom:0;" oninput="curLogoImgW=Math.min(100,+this.value||76);schedulePreviewUpdate()">
@@ -469,8 +488,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl">아이콘 <span style="font-weight:400;opacity:.55;">(투명 PNG)</span></div>
               <input class="fi-sm" id="p-cta-icon" placeholder="https://… 또는 업로드 후 자동 입력" oninput="schedulePreviewUpdate()">
               <button class="bg-up-btn" onclick="document.getElementById('cta-icon-file-inp').click()" style="margin-top:4px;">📁 업로드</button>
-              <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:4px;">⚠️ 배경이 투명한 PNG만 — 업로드 후 키컬러로 자동 색상 적용</div>
+              <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:4px;">⚠️ 키컬러 자동 모드: 투명 PNG 권장 · 원본 유지 모드: 컬러 PNG도 가능</div>
               <input type="file" id="cta-icon-file-inp" accept="image/png" style="display:none;" onchange="uploadIconAsDataUrl(event,'p-cta-icon')">
+              <div style="margin-top:8px;">
+                <div class="ed-lbl">아이콘 색상 모드</div>
+                <div class="toggle-row" style="margin-bottom:0;">
+                  <button class="tgl-btn on" id="cta-cm-kc" onclick="setCtaIconColorMode('keycolor')">키컬러 자동</button>
+                  <button class="tgl-btn" id="cta-cm-orig" onclick="setCtaIconColorMode('original')">원본 유지</button>
+                </div>
+              </div>
             </div>
             <div class="ed-sect">
               <div class="ed-lbl">아이콘 크기 <span style="font-weight:400;opacity:.55;">(px, 기본 72)</span></div>
@@ -563,8 +589,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                     <div class="ed-lbl">등록 CTA 아이콘 <span style="font-weight:400;opacity:.55;">(선택 — 투명 PNG, 비워두면 텍스트만)</span></div>
                     <input class="fi" id="p-self-reg-cta-icon-url" placeholder="https://... 이미지 URL">
                     <button class="bg-up-btn" onclick="document.getElementById('self-reg-cta-icon-file-inp').click()" style="margin-top:4px;">📁 업로드</button>
-                    <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:4px;">⚠️ 배경이 투명한 PNG만 — 키컬러가 자동 적용됩니다</div>
+                    <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:4px;">⚠️ 키컬러 자동 모드: 투명 PNG 권장 · 원본 유지 모드: 컬러 PNG도 가능</div>
                     <input type="file" id="self-reg-cta-icon-file-inp" accept="image/png" style="display:none;" onchange="uploadIconAsDataUrl(event,'p-self-reg-cta-icon-url')">
+                    <div style="margin-top:8px;">
+                      <div class="ed-lbl">아이콘 색상 모드</div>
+                      <div class="toggle-row" style="margin-bottom:0;">
+                        <button class="tgl-btn on" id="reg-cm-kc" onclick="setRegIconColorMode('keycolor')">키컬러 자동</button>
+                        <button class="tgl-btn" id="reg-cm-orig" onclick="setRegIconColorMode('original')">원본 유지</button>
+                      </div>
+                    </div>
                     <div class="ed-lbl" style="margin-top:10px;">등록 CTA 텍스트</div>
                     <input class="fi" id="p-self-reg-cta-sep-text" placeholder="예: 등록하기" value="등록하기">
                   </div>
@@ -2268,6 +2301,11 @@ let _projDirtyLock = true; // editProject 로딩 중 false positive 방지
 let _navRestore = false;  // popstate 복원 중 pushState 억제 플래그
 let curLogoType = 'image';
 let curLayoutType = 'separate';
+let curLogoColorMode = 'keycolor';     // 'keycolor' | 'original'
+let curCtaIconColorMode = 'keycolor';  // 'keycolor' | 'original'
+let curRegIconColorMode = 'keycolor';  // 'keycolor' | 'original'
+let curTextColorMode = 'keycolor';     // 'keycolor' | 'fixed'
+let curTextFixedColor = '#000000';
 let curBgImages = [];          // [{url, holdTime, transitionTime}]
 let curBgOverlayOpacity = 0.38;
 let curBgOverlayColor = '#000000';
@@ -2401,6 +2439,39 @@ function setLogoType(t) {
   document.getElementById('logo-t-txt').classList.toggle('on', t==='text');
   document.getElementById('logo-img-sec').style.display = t==='image' ? '' : 'none';
   document.getElementById('logo-txt-sec').style.display = t==='text'  ? '' : 'none';
+  schedulePreviewUpdate();
+}
+
+/* ── Color mode helpers ── */
+function setLogoColorMode(m) {
+  curLogoColorMode = m;
+  document.getElementById('logo-cm-kc').classList.toggle('on', m==='keycolor');
+  document.getElementById('logo-cm-orig').classList.toggle('on', m==='original');
+  const hint = document.getElementById('logo-cm-hint');
+  if(hint) hint.textContent = m==='original'
+    ? '원본 색상 유지 — 컬러 PNG도 표시됩니다'
+    : '⚠️ 배경이 투명한 PNG만 업로드하세요 — 키컬러로 자동 색상 변환됩니다';
+  schedulePreviewUpdate();
+}
+function setCtaIconColorMode(m) {
+  curCtaIconColorMode = m;
+  document.getElementById('cta-cm-kc').classList.toggle('on', m==='keycolor');
+  document.getElementById('cta-cm-orig').classList.toggle('on', m==='original');
+  schedulePreviewUpdate();
+}
+function setRegIconColorMode(m) {
+  curRegIconColorMode = m;
+  const kc = document.getElementById('reg-cm-kc');
+  const orig = document.getElementById('reg-cm-orig');
+  if(kc) kc.classList.toggle('on', m==='keycolor');
+  if(orig) orig.classList.toggle('on', m==='original');
+  schedulePreviewUpdate();
+}
+function setTextColorMode(m) {
+  curTextColorMode = m;
+  document.getElementById('text-cm-kc').classList.toggle('on', m==='keycolor');
+  document.getElementById('text-cm-fixed').classList.toggle('on', m==='fixed');
+  document.getElementById('text-fixed-color-wrap').style.display = m==='fixed' ? '' : 'none';
   schedulePreviewUpdate();
 }
 
@@ -3608,8 +3679,12 @@ function startNewProject() {
   document.getElementById('proj-del').style.display = 'none';
   const urlPrev = document.getElementById('p-url-preview');
   urlPrev.textContent = ''; urlPrev.href = '#'; urlPrev.style.display = 'none';
+  curLogoColorMode='keycolor'; curCtaIconColorMode='keycolor'; curRegIconColorMode='keycolor';
+  curTextColorMode='keycolor'; curTextFixedColor='#000000';
   setLogoAlign('center');
   setLogoType('image'); setLayoutType('separate'); setDday(false); setAuth(false);
+  setLogoColorMode('keycolor'); setCtaIconColorMode('keycolor'); setTextColorMode('keycolor');
+  const tcEl2=document.getElementById('p-text-fixed-color'); if(tcEl2) tcEl2.value='#000000';
   renderKeyColorList(); renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList();
   switchInnerTab('basic'); showProjView('edit');
   if (!_navRestore) history.pushState({v:'proj'}, '', '#edit/new/basic');
@@ -3661,6 +3736,17 @@ async function editProject(id) {
     document.getElementById('p-cta-icon').value      = d.ctaIconUrl||'';
     document.getElementById('p-cta-icon-size').value = d.ctaIconSize||72;
     document.getElementById('p-cta-text').value       = d.ctaText||'';
+    curLogoColorMode = d.logoColorMode || 'keycolor';
+    curCtaIconColorMode = d.ctaIconColorMode || 'keycolor';
+    curRegIconColorMode = d.regIconColorMode || 'keycolor';
+    curTextColorMode = d.textColorMode || 'keycolor';
+    curTextFixedColor = d.textFixedColor || '#000000';
+    setLogoColorMode(curLogoColorMode);
+    setCtaIconColorMode(curCtaIconColorMode);
+    setRegIconColorMode(curRegIconColorMode);
+    setTextColorMode(curTextColorMode);
+    const tcEl = document.getElementById('p-text-fixed-color');
+    if(tcEl) tcEl.value = curTextFixedColor;
     document.getElementById('p-dday-date').value  = d.ddayDate||'';
     curAuthCollection = 'cms_users_' + id;
     document.getElementById('p-auth-col').value = curAuthCollection;
@@ -3746,6 +3832,11 @@ async function saveProject(deploy=true, e=null) {
     ctaIconUrl:   document.getElementById('p-cta-icon').value.trim(),
     ctaIconSize:  parseInt(document.getElementById('p-cta-icon-size').value)||72,
     ctaText:      document.getElementById('p-cta-text').value.trim(),
+    logoColorMode:    curLogoColorMode,
+    ctaIconColorMode: curCtaIconColorMode,
+    regIconColorMode: curRegIconColorMode,
+    textColorMode:    curTextColorMode,
+    textFixedColor:   curTextFixedColor,
     ddayEnabled:  curDdayEnabled,
     ddayDate:     document.getElementById('p-dday-date').value.trim(),
     authEnabled:  curAuthEnabled,
@@ -5911,7 +6002,9 @@ function renderPreview() {
   bg.style.backgroundColor = hasBg ? '' : bgColor1;
   overlay.style.display    = hasBg ? '' : 'none';
   if(hasBg){const _ovcl=firstBg.overlayColor||curBgOverlayColor||'#000000';const _ovop=firstBg.overlayOpacity??curBgOverlayOpacity??0.38;const _r=parseInt(_ovcl.slice(1,3),16)||0,_g=parseInt(_ovcl.slice(3,5),16)||0,_b=parseInt(_ovcl.slice(5,7),16)||0;overlay.style.background=`rgba(${_r},${_g},${_b},${_ovop})`;}
-  const tc = hasBg ? bgColor1 : bgColor2;
+  const iconTc = hasBg ? bgColor1 : bgColor2;
+  const textTc = curTextColorMode === 'fixed' ? curTextFixedColor : iconTc;
+  const tc = iconTc; // 하위 호환 — merged 레이아웃에서 사용
 
   /* prev-dday는 더 이상 사용 안 함 — D-day를 content 흐름 안에 렌더링 */
   if (ddayEl) ddayEl.style.display = 'none';
@@ -5941,31 +6034,35 @@ function renderPreview() {
     /* curElementOrder 순서대로 렌더링 (플레이어와 동일) */
     const order = curElementOrder.length ? curElementOrder : ['edition','logo','dday','stats'];
     let topHtml = '';
-    const mat = hexToColorMatrix(tc);
+    const mat = hexToColorMatrix(iconTc);
     topHtml += `<svg style="position:absolute;width:0;height:0;overflow:hidden"><defs><filter id="prev-logo-f" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${mat}"/></filter></defs></svg>`;
     order.forEach(key => {
       if (key === 'edition' && edition) {
-        topHtml += `<div style="font-size:18px;font-weight:900;color:${tc};margin-bottom:-14px;letter-spacing:-.3px;">${edition}</div>`;
+        topHtml += `<div style="font-size:18px;font-weight:900;color:${textTc};margin-bottom:-14px;letter-spacing:-.3px;">${edition}</div>`;
       } else if (key === 'logo') {
         if (curLogoType==='image' && logoUrl) {
-          topHtml += `<div style="width:${curLogoImgW}%;"><img src="${logoUrl}" style="width:100%;height:auto;object-fit:contain;filter:url(#prev-logo-f);display:block;"></div>`;
+          const logoFilter = curLogoColorMode==='original' ? 'none' : 'url(#prev-logo-f)';
+          topHtml += `<div style="width:${curLogoImgW}%;"><img src="${logoUrl}" style="width:100%;height:auto;object-fit:contain;filter:${logoFilter};display:block;"></div>`;
         } else if (curLogoType==='text' && logoTxt) {
-          topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:${tc};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
+          topHtml += `<div style="font-size:${logoSz}px;font-weight:900;color:${textTc};text-align:${curLogoTextAlign};line-height:1.2;word-break:keep-all;width:100%;">${logoTxt}</div>`;
         } else {
-          topHtml += `<div style="font-size:20px;font-weight:900;color:${tc};">준비 포털</div>`;
+          topHtml += `<div style="font-size:20px;font-weight:900;color:${textTc};">준비 포털</div>`;
         }
       } else if (key === 'dday' && ddayTxt) {
-        topHtml += `<div style="font-size:32px;font-weight:300;color:${tc};line-height:1;letter-spacing:-1px;text-align:center;">${ddayTxt}</div>`;
+        topHtml += `<div style="font-size:32px;font-weight:300;color:${textTc};line-height:1;letter-spacing:-1px;text-align:center;">${ddayTxt}</div>`;
       } else if (key === 'stats' && curStats && curStats.some(s=>s.enabled)) {
         const labels = curStats.filter(s=>s.enabled).map(s=>`${s.label} …${s.unit||''}`).join(' · ');
-        topHtml += `<div style="font-size:21px;font-weight:400;color:${tc};letter-spacing:-.5px;">${labels}</div>`;
+        topHtml += `<div style="font-size:21px;font-weight:400;color:${textTc};letter-spacing:-.5px;">${labels}</div>`;
       }
     });
     /* CTA */
     let botHtml = '';
     if (ctaIcon || ctaTxt) {
-      const icoDiv = ctaIcon ? `<div style="width:${ctaIconSize}px;height:${ctaIconSize}px;background-color:${tc};-webkit-mask-image:url('${ctaIcon}');mask-image:url('${ctaIcon}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>` : '';
-      const txtDiv = ctaTxt ? `<div style="font-size:18px;font-weight:900;color:${tc};letter-spacing:-.3px;">${ctaTxt}</div>` : '';
+      const icoDiv = ctaIcon ? (curCtaIconColorMode==='original'
+        ? `<div style="width:${ctaIconSize}px;height:${ctaIconSize}px;background-image:url('${ctaIcon}');background-size:contain;background-repeat:no-repeat;background-position:center;"></div>`
+        : `<div style="width:${ctaIconSize}px;height:${ctaIconSize}px;background-color:${iconTc};-webkit-mask-image:url('${ctaIcon}');mask-image:url('${ctaIcon}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"></div>`)
+        : '';
+      const txtDiv = ctaTxt ? `<div style="font-size:18px;font-weight:900;color:${textTc};letter-spacing:-.3px;">${ctaTxt}</div>` : '';
       botHtml = `<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">${icoDiv}${txtDiv}</div>`;
     }
     content.style.justifyContent = 'space-between';
