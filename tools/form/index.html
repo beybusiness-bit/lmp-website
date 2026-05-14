@@ -85,6 +85,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .cal-day.cal-sun{color:#e00;}
 .cal-day.cal-sat{color:#00c;}
 .cal-info{padding:8px 12px;font-size:12px;text-align:center;border-top:1px solid rgba(0,0,0,.08);min-height:34px;display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.55);}
+
+/* 제출 내역 / 수정 모드 */
+.edit-mode-banner{background:rgba(0,0,0,.06);border-left:3px solid #000;padding:10px 12px;font-size:12px;font-weight:700;margin-bottom:16px;line-height:1.5;}
+#history-link{text-align:center;margin-top:14px;}
+#history-link button{background:none;border:none;font-size:13px;color:rgba(0,0,0,.5);text-decoration:underline;cursor:pointer;font-family:inherit;padding:4px 0;}
+#history-link button:hover{color:#000;}
+#history-screen{display:none;}
+#history-screen.on{display:block;}
+.hist-back{background:none;border:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;padding:0 0 16px;color:rgba(0,0,0,.6);display:block;}
+.hist-item{border:1.5px solid rgba(0,0,0,.15);padding:16px;margin-bottom:12px;}
+.hist-ts{font-size:11px;color:rgba(0,0,0,.45);margin-bottom:10px;font-weight:600;}
+.hist-field{margin-bottom:5px;font-size:13px;line-height:1.6;}
+.hist-field-lbl{font-weight:700;}
+.hist-edit-btn{display:block;width:100%;padding:10px 14px;background:transparent;border:1.5px solid #000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:12px;text-align:center;transition:background .15s,color .15s;}
+.hist-edit-btn:hover,.hist-edit-btn:active{background:#000;color:#fff;}
 </style>
 </head>
 <body>
@@ -92,14 +107,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 <div id="err-screen"></div>
 <div id="app" style="display:none;">
   <div id="form-screen">
+    <div class="edit-mode-banner" id="edit-mode-banner" style="display:none;">✏️ 수정 모드 — 이전 제출 내역을 수정하고 있어요</div>
     <div class="form-title" id="form-title"></div>
     <div class="form-desc" id="form-desc" style="display:none;"></div>
     <div id="form-fields"></div>
     <div class="ff-err" id="form-err"></div>
     <button class="lmp-btn" id="submit-btn" onclick="submitForm()">제출하기</button>
+    <div id="history-link" style="display:none;">
+      <button onclick="showHistory()">이전 제출 내역 확인</button>
+    </div>
   </div>
   <div id="done-screen">
     <div id="done-msg"></div>
+    <div id="done-history-link" style="display:none;margin-top:16px;text-align:center;">
+      <button onclick="showHistory()" style="background:none;border:none;font-size:13px;color:rgba(0,0,0,.5);text-decoration:underline;cursor:pointer;font-family:inherit;padding:4px 0;">제출 내역 확인</button>
+    </div>
+  </div>
+  <div id="history-screen">
+    <button class="hist-back" onclick="backFromHistory()">← 뒤로</button>
+    <div style="font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-.3px;">제출 내역</div>
+    <div id="history-list"></div>
   </div>
 </div>
 
@@ -127,6 +154,9 @@ let ctxProjectId = '';
 let ctxUserId = '';
 let ctxUserFields = {};
 let ctxReceived = false;
+let editingResponseId = null;
+let _prevScreen = 'form';
+const _histCache = {};
 let resolveCtx;
 const ctxPromise = new Promise(res => { resolveCtx = res; });
 
@@ -333,12 +363,13 @@ function applyVars(str) {
   });
 }
 
-function showDone(html) {
+function showDone(html, showHistLink) {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('app').style.display = '';
   document.getElementById('form-screen').classList.add('off');
   document.getElementById('done-msg').innerHTML = applyVars(html) || '제출이 완료됐어요!';
   document.getElementById('done-screen').classList.add('on');
+  if (showHistLink) document.getElementById('done-history-link').style.display = '';
 }
 
 async function checkAlreadySubmitted() {
@@ -371,7 +402,7 @@ async function init() {
     if (formConfig.noResubmit) {
       const alreadyDone = await checkAlreadySubmitted();
       if (alreadyDone) {
-        showDone(formConfig.submitMsg || '이미 제출하셨습니다.');
+        showDone(formConfig.submitMsg || '이미 제출하셨습니다.', !!ctxUserId);
         window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
         return;
       }
@@ -394,6 +425,15 @@ async function init() {
 
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = '';
+
+    // 이전 제출 내역 있으면 링크 표시 (중복 제출 허용 폼에서만)
+    if (!formConfig.noResubmit && ctxUserId) {
+      try {
+        const prevSnap = await db.collection('cms_form_responses').doc(FORM_ID).collection('responses')
+          .where('_userId', '==', ctxUserId).limit(1).get();
+        if (!prevSnap.empty) document.getElementById('history-link').style.display = '';
+      } catch(e) {}
+    }
   } catch(e) {
     console.error('[form init]', e);
     showErr('폼 로드에 실패했어요. 다시 시도해주세요.');
@@ -496,43 +536,167 @@ async function submitForm() {
       if (btn) btn.textContent = '제출 중…';
     }
 
-    const docData = {
-      ...result,
-      submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      projectId: ctxProjectId || '',
-    };
-    if (ctxUserId) docData._userId = ctxUserId;
-    if (ctxUserFields && Object.keys(ctxUserFields).length) docData._userFields = ctxUserFields;
+    const ts = new Date().toLocaleString('ko-KR');
+    const headers = ['제출일시', ...fields.map(f => f.label), '_응답ID'];
+    const vals = fields.map(f => { const v = result[f.key || f.id]; return Array.isArray(v) ? v.join(', ') : (v ?? ''); });
+    let responseId;
 
-    await db.collection('cms_form_responses').doc(FORM_ID).collection('responses').add(docData);
+    if (editingResponseId) {
+      // 수정 모드: 기존 응답 업데이트
+      const updateData = {
+        ...result,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        projectId: ctxProjectId || '',
+      };
+      if (ctxUserFields && Object.keys(ctxUserFields).length) updateData._userFields = ctxUserFields;
+      await db.collection('cms_form_responses').doc(FORM_ID).collection('responses').doc(editingResponseId).update(updateData);
+      responseId = editingResponseId;
 
-    // 인증 프로젝트에서 noResubmit이면 사용자 doc에 제출 완료 기록
-    if (formConfig.noResubmit && ctxProjectId && ctxUserId) {
-      const subKey = 'formSubmitted_' + FORM_ID;
-      db.collection('cms_users_' + ctxProjectId).doc(ctxUserId)
-        .update({ [subKey]: true }).catch(() => {});
+      if (formConfig.sheetId) {
+        try {
+          await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'updateFormRow', sheetId: formConfig.sheetId, sheetTab: formConfig.sheetTab || '응답', responseId, headers, row: [ts, ...vals, responseId] })
+          });
+        } catch(e) {}
+      }
+      const wasEditing = editingResponseId;
+      editingResponseId = null;
+      document.getElementById('edit-mode-banner').style.display = 'none';
+      showDone('수정이 완료됐어요!', !!ctxUserId);
+    } else {
+      // 신규 제출
+      const docData = {
+        ...result,
+        submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        projectId: ctxProjectId || '',
+      };
+      if (ctxUserId) docData._userId = ctxUserId;
+      if (ctxUserFields && Object.keys(ctxUserFields).length) docData._userFields = ctxUserFields;
+      const docRef = await db.collection('cms_form_responses').doc(FORM_ID).collection('responses').add(docData);
+      responseId = docRef.id;
+
+      // 인증 프로젝트에서 noResubmit이면 사용자 doc에 제출 완료 기록
+      if (formConfig.noResubmit && ctxProjectId && ctxUserId) {
+        const subKey = 'formSubmitted_' + FORM_ID;
+        db.collection('cms_users_' + ctxProjectId).doc(ctxUserId)
+          .update({ [subKey]: true }).catch(() => {});
+      }
+
+      if (formConfig.sheetId) {
+        try {
+          await fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'submitForm', sheetId: formConfig.sheetId, sheetTab: formConfig.sheetTab || '응답', headers, row: [ts, ...vals, responseId] })
+          });
+        } catch(e) {}
+      }
+
+      // noResubmit 아닌 경우 이전 제출 내역 링크 표시
+      if (!formConfig.noResubmit && ctxUserId) {
+        document.getElementById('history-link').style.display = '';
+      }
+
+      window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+      showDone(formConfig.submitMsg || '제출이 완료됐어요!', !!ctxUserId);
     }
-
-    if (formConfig.sheetId) {
-      try {
-        const ts = new Date().toLocaleString('ko');
-        const headers = ['제출일시', ...fields.map(f => f.label)];
-        const vals = fields.map(f => { const v = result[f.key || f.id]; return Array.isArray(v) ? v.join(', ') : (v ?? ''); });
-        await fetch(GAS_URL, {
-          method: 'POST',
-          body: JSON.stringify({ action: 'submitForm', sheetId: formConfig.sheetId, sheetTab: formConfig.sheetTab || '응답', headers, row: [ts, ...vals] })
-        });
-      } catch(e) {}
-    }
-
-    window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
-    showDone(formConfig.submitMsg || '제출이 완료됐어요!');
   } catch(e) {
     console.error('[submitForm]', e);
-    if (btn) { btn.disabled = false; btn.textContent = formConfig.submitBtnText || '제출하기'; }
-    const msg = e?.code === 'permission-denied' ? '저장 권한이 없어요. 관리자에게 문의해주세요.' : '제출에 실패했어요. 다시 시도해주세요.';
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = editingResponseId ? '수정 완료' : applyVars(formConfig.submitBtnText || '제출하기');
+    }
+    const msg = e?.code === 'permission-denied' ? '저장 권한이 없어요. 관리자에게 문의해주세요.' : (editingResponseId ? '수정에 실패했어요. 다시 시도해주세요.' : '제출에 실패했어요. 다시 시도해주세요.');
     errEl.textContent = msg;
   }
+}
+
+async function showHistory() {
+  if (!ctxUserId) return;
+  _prevScreen = document.getElementById('done-screen').classList.contains('on') ? 'done' : 'form';
+  document.getElementById('form-screen').classList.add('off');
+  document.getElementById('done-screen').classList.remove('on');
+  document.getElementById('history-screen').classList.add('on');
+  document.getElementById('history-list').innerHTML = '<div style="text-align:center;padding:24px 0;font-size:13px;color:rgba(0,0,0,.5);">불러오는 중…</div>';
+  try {
+    const snap = await db.collection('cms_form_responses').doc(FORM_ID).collection('responses')
+      .where('_userId', '==', ctxUserId).get();
+    if (snap.empty) {
+      document.getElementById('history-list').innerHTML = '<div style="text-align:center;padding:24px 0;font-size:13px;color:rgba(0,0,0,.5);">제출 내역이 없어요.</div>';
+      return;
+    }
+    const fields = (formConfig.fields || []).sort((a, b) => (a.order || 0) - (b.order || 0));
+    const docs = snap.docs.slice().sort((a, b) => (b.data().submittedAt?.toMillis?.() || 0) - (a.data().submittedAt?.toMillis?.() || 0));
+    docs.forEach(doc => {
+      const d = doc.data();
+      _histCache[doc.id] = Object.fromEntries(fields.map(f => [f.key || f.id, d[f.key || f.id] ?? '']));
+    });
+    document.getElementById('history-list').innerHTML = docs.map(doc => {
+      const d = doc.data();
+      const ts = d.submittedAt?.toDate?.()?.toLocaleString('ko-KR') || d.updatedAt?.toDate?.()?.toLocaleString('ko-KR') || '';
+      const label = d.updatedAt ? '수정일' : '제출일';
+      const fieldsHtml = fields.map(f => {
+        const key = f.key || f.id;
+        const val = d[key];
+        if (val == null || val === '') return '';
+        return `<div class="hist-field"><span class="hist-field-lbl">${esc(f.label)}: </span>${esc(Array.isArray(val) ? val.join(', ') : String(val))}</div>`;
+      }).join('');
+      return `<div class="hist-item">
+        <div class="hist-ts">${ts ? label + ': ' + ts : ''}</div>
+        ${fieldsHtml}
+        <button class="hist-edit-btn" onclick="editFromHistory('${doc.id}')">이 내역으로 수정하기</button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    console.error('[history]', e);
+    document.getElementById('history-list').innerHTML = '<div style="text-align:center;padding:24px 0;font-size:13px;color:#c00;">불러오기 실패. 다시 시도해주세요.</div>';
+  }
+}
+
+function backFromHistory() {
+  document.getElementById('history-screen').classList.remove('on');
+  if (_prevScreen === 'done') {
+    document.getElementById('done-screen').classList.add('on');
+  } else {
+    document.getElementById('form-screen').classList.remove('off');
+  }
+}
+
+function editFromHistory(responseId) {
+  const data = _histCache[responseId] || {};
+  editingResponseId = responseId;
+  document.getElementById('history-screen').classList.remove('on');
+  document.getElementById('done-screen').classList.remove('on');
+  document.getElementById('form-screen').classList.remove('off');
+  document.getElementById('edit-mode-banner').style.display = '';
+  const fields = (formConfig.fields || []).sort((a, b) => (a.order || 0) - (b.order || 0));
+  fields.forEach(f => {
+    const fid = f.key || f.id;
+    const val = data[fid];
+    if (val == null) return;
+    if (f.type === 'select' && f.selectMode === 'buttons') {
+      const vals = Array.isArray(val) ? val : [val];
+      document.getElementById('ff-' + fid)?.querySelectorAll('.ff-sel-btn').forEach(b => {
+        b.classList.toggle('on', vals.includes(b.dataset.value));
+      });
+    } else {
+      const el = document.getElementById('ff-' + fid);
+      if (el && el.tagName !== 'DIV') el.value = val;
+    }
+  });
+  document.getElementById('submit-btn').textContent = '수정 완료';
+  document.getElementById('history-link').style.display = '';
+  document.getElementById('history-link').querySelector('button').textContent = '수정 취소';
+  document.getElementById('history-link').querySelector('button').onclick = cancelEdit;
+}
+
+function cancelEdit() {
+  editingResponseId = null;
+  document.getElementById('edit-mode-banner').style.display = 'none';
+  document.getElementById('submit-btn').textContent = applyVars(formConfig.submitBtnText || '제출하기');
+  const histBtn = document.getElementById('history-link').querySelector('button');
+  histBtn.textContent = '이전 제출 내역 확인';
+  histBtn.onclick = showHistory;
 }
 
 window.parent.postMessage({ type: 'lmp-ready' }, '*');

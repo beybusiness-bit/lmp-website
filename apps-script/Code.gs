@@ -158,6 +158,28 @@ function doPost(e) {
       }
     }
 
+    if (action === 'updateFormRow') {
+      const sheetId   = data.sheetId;
+      const sheetTab  = data.sheetTab || '응답';
+      const responseId = data.responseId;
+      const row       = data.row || [];
+      if (!sheetId || !responseId) return json({ success: false, error: 'sheetId 또는 responseId 없음' });
+      const ss    = SpreadsheetApp.openById(sheetId);
+      const sheet = ss.getSheetByName(sheetTab) || ss.getActiveSheet();
+      const lastRow = sheet.getLastRow();
+      const lastCol = sheet.getLastColumn();
+      // _응답ID가 저장된 마지막 열에서 responseId 검색
+      for (var r = 2; r <= lastRow; r++) {
+        if (sheet.getRange(r, lastCol).getValue() === responseId) {
+          sheet.getRange(r, 1, 1, row.length).setValues([row]);
+          return json({ success: true, updated: true });
+        }
+      }
+      // 못 찾으면 새 행 추가
+      sheet.appendRow(row);
+      return json({ success: true, updated: false });
+    }
+
     if (action === 'createCalendarEvent') {
       const calId = data.calendarId;
       const cal   = calId ? CalendarApp.getCalendarById(calId) : CalendarApp.getDefaultCalendar();
