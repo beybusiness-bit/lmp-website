@@ -473,8 +473,14 @@ async function submitForm() {
     } else if (f.type === 'file') {
       const inp = document.getElementById('ff-' + fid);
       const files = inp ? Array.from(inp.files) : [];
-      if (f.required && !files.length) { errEl.textContent = f.label + ' 파일을 선택해주세요.'; return; }
-      val = files.length ? files : null;
+      if (files.length) {
+        val = files; // 새 파일 선택됨
+      } else if (editingResponseId && (_histCache[editingResponseId]||{})[fid]) {
+        val = (_histCache[editingResponseId])[fid]; // 수정 모드: 기존 파일 유지 (URL 문자열)
+      } else {
+        if (f.required) { errEl.textContent = f.label + ' 파일을 선택해주세요.'; return; }
+        val = null;
+      }
     } else {
       const inp = document.getElementById('ff-' + fid);
       val = inp ? inp.value.trim() : '';
@@ -501,8 +507,8 @@ async function submitForm() {
   if (btn) { btn.disabled = true; btn.textContent = '제출 중…'; }
 
   try {
-    // 파일 필드 Storage 업로드 (있는 경우)
-    const fileFields = fields.filter(f => f.type === 'file' && Array.isArray(result[f.key || f.id]));
+    // 파일 필드 Storage 업로드 (새 파일 객체인 경우만)
+    const fileFields = fields.filter(f => f.type === 'file' && Array.isArray(result[f.key || f.id]) && result[f.key || f.id][0] instanceof File);
     if (fileFields.length) {
       if (btn) btn.textContent = '파일 업로드 중…';
       const uploadTimestamp = Date.now();
@@ -611,6 +617,24 @@ async function submitForm() {
   }
 }
 
+const _IMG_EXTS = new Set(['jpg','jpeg','png','gif','webp','heic','heif','bmp','svg']);
+function _renderFileVal(val) {
+  const urls = Array.isArray(val) ? val : (val ? [val] : []);
+  return urls.map(url => {
+    if (typeof url !== 'string') return '';
+    let filename = '';
+    try {
+      const pathPart = url.split('/o/')[1];
+      if (pathPart) filename = decodeURIComponent(pathPart.split('?')[0]).split('/').pop();
+    } catch(e) {}
+    const ext = (filename.split('.').pop() || '').toLowerCase();
+    if (_IMG_EXTS.has(ext)) {
+      return `<img src="${esc(url)}" style="width:56px;height:56px;object-fit:cover;border:1px solid rgba(0,0,0,.15);border-radius:4px;display:inline-block;margin:2px 2px 2px 0;vertical-align:top;">`;
+    }
+    return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid rgba(0,0,0,.2);border-radius:4px;font-size:11px;margin:2px 2px 2px 0;">📄 ${esc(filename || url.slice(0,30)+'…')}</span>`;
+  }).join('');
+}
+
 async function showHistory() {
   if (!ctxUserId) return;
   _prevScreen = document.getElementById('done-screen').classList.contains('on') ? 'done' : 'form';
@@ -642,12 +666,18 @@ async function showHistory() {
         const key = f.key || f.id;
         const val = d[key];
         if (val == null || val === '') return '';
-        return `<div class="hist-field"><span class="hist-field-lbl">${esc(f.label)}: </span>${esc(Array.isArray(val) ? val.join(', ') : String(val))}</div>`;
+        let valHtml;
+        if (f.type === 'file') {
+          valHtml = _renderFileVal(val);
+        } else {
+          valHtml = esc(Array.isArray(val) ? val.join(', ') : String(val));
+        }
+        return `<div class="hist-field"><span class="hist-field-lbl">${esc(f.label)}: </span>${valHtml}</div>`;
       }).join('');
       return `<div class="hist-item">
         <div class="hist-ts">${ts ? label + ': ' + ts : ''}</div>
         ${fieldsHtml}
-        <button class="hist-edit-btn" onclick="editFromHistory('${doc.id}')">이 내역으로 수정하기</button>
+        <button class="hist-edit-btn" onclick="editFromHistory('${doc.id}')">이 제출 내용 수정하기</button>
       </div>`;
     }).join('');
   } catch(e) {
@@ -672,11 +702,27 @@ function editFromHistory(responseId) {
   document.getElementById('done-screen').classList.remove('on');
   document.getElementById('form-screen').classList.remove('off');
   document.getElementById('edit-mode-banner').style.display = '';
+
+  // noResubmit 폼은 init()에서 폼 필드를 렌더링하지 않으므로 여기서 렌더링
+  const fieldsContainer = document.getElementById('form-fields');
   const fields = (formConfig.fields || []).sort((a, b) => (a.order || 0) - (b.order || 0));
+  if (!fieldsContainer.children.length) {
+    fieldsContainer.innerHTML = fields.map(renderField).join('');
+    const titleEl = document.getElementById('form-title');
+    titleEl.textContent = applyVars(formConfig.title || '');
+    titleEl.style.marginBottom = formConfig.desc ? '6px' : '24px';
+    if (formConfig.desc) {
+      const descEl = document.getElementById('form-desc');
+      descEl.innerHTML = applyVars(formConfig.desc);
+      descEl.style.display = '';
+    }
+  }
+
+  // 이전 값 채우기 (파일 필드 제외한 일반 필드)
   fields.forEach(f => {
     const fid = f.key || f.id;
     const val = data[fid];
-    if (val == null) return;
+    if (val == null || f.type === 'file') return;
     if (f.type === 'select' && f.selectMode === 'buttons') {
       const vals = Array.isArray(val) ? val : [val];
       document.getElementById('ff-' + fid)?.querySelectorAll('.ff-sel-btn').forEach(b => {
@@ -687,7 +733,12 @@ function editFromHistory(responseId) {
       if (el && el.tagName !== 'DIV') el.value = val;
     }
   });
-  document.getElementById('submit-btn').textContent = '수정 완료';
+
+  // 버튼 활성화 (이전 제출 성공으로 disabled 됐을 수 있음)
+  const submitBtn = document.getElementById('submit-btn');
+  submitBtn.disabled = false;
+  submitBtn.textContent = '수정 완료';
+
   document.getElementById('history-link').style.display = '';
   document.getElementById('history-link').querySelector('button').textContent = '수정 취소';
   document.getElementById('history-link').querySelector('button').onclick = cancelEdit;
