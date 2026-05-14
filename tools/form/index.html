@@ -421,6 +421,10 @@ async function init() {
     if (formConfig.noResubmit && !ctxReceived) {
       await Promise.race([ctxPromise, new Promise(res => setTimeout(res, 600))]);
     }
+    // noResubmit=false도 이전 제출 내역 링크를 위해 context 대기 (최대 300ms)
+    if (!formConfig.noResubmit && !ctxReceived) {
+      await Promise.race([ctxPromise, new Promise(res => setTimeout(res, 300))]);
+    }
 
     if (formConfig.noResubmit) {
       const alreadyDone = await checkAlreadySubmitted();
@@ -532,7 +536,9 @@ async function submitForm() {
     // 파일 필드 Storage 업로드 (새 파일 객체인 경우만)
     const fileFields = fields.filter(f => f.type === 'file' && Array.isArray(result[f.key || f.id]) && result[f.key || f.id].length && result[f.key || f.id][0] instanceof File);
     if (fileFields.length) {
-      if (btn) btn.textContent = '파일 업로드 중…';
+      const totalFiles = fileFields.reduce((s, f) => s + result[f.key || f.id].length, 0);
+      let totalDone = 0;
+      if (btn) btn.textContent = `파일 업로드 중… (0 / ${totalFiles})`;
       const uploadTimestamp = Date.now();
       for (const f of fileFields) {
         const fid = f.key || f.id;
@@ -549,7 +555,9 @@ async function submitForm() {
           return new Promise((resolve, reject) => {
             task.on('state_changed', null, reject, async () => {
               doneCount++;
+              totalDone++;
               if (progressBar) progressBar.style.width = Math.round(doneCount / files.length * 100) + '%';
+              if (btn) btn.textContent = `파일 업로드 중… (${totalDone} / ${totalFiles})`;
               try { resolve(await ref.getDownloadURL()); } catch(e) { reject(e); }
             });
           });
@@ -589,7 +597,6 @@ async function submitForm() {
           });
         } catch(e) {}
       }
-      const wasEditing = editingResponseId;
       editingResponseId = null;
       document.getElementById('edit-mode-banner').style.display = 'none';
       showDone('수정이 완료됐어요!', !!ctxUserId);
@@ -780,10 +787,15 @@ function cancelEdit() {
     }
   });
   document.getElementById('edit-mode-banner').style.display = 'none';
-  document.getElementById('submit-btn').textContent = applyVars(formConfig.submitBtnText || '제출하기');
+  const submitBtn = document.getElementById('submit-btn');
+  submitBtn.textContent = applyVars(formConfig.submitBtnText || '제출하기');
+  submitBtn.disabled = false;
   const histBtn = document.getElementById('history-link').querySelector('button');
   histBtn.textContent = '이전 제출 내역 확인';
   histBtn.onclick = showHistory;
+  // 수정 취소 시 히스토리 화면으로 복귀 (빈 폼 노출 방지)
+  document.getElementById('form-screen').classList.add('off');
+  document.getElementById('history-screen').classList.add('on');
 }
 
 window.parent.postMessage({ type: 'lmp-ready' }, '*');
