@@ -315,8 +315,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">프로젝트 편집</span>
           <div style="flex:1;"></div>
           <button class="prev-btn" onclick="togglePreviewPanel('proj-preview-panel')" id="proj-pv-btn" style="font-size:12px;">미리보기</button>
-          <button class="save-btn" onclick="saveProject(false)">저장</button>
-          <button class="save-btn" onclick="saveProject(true)" id="deploy-btn">배포</button>
+          <button class="save-btn" id="save-btn" onclick="saveProject(false,event)">저장</button>
+          <button class="save-btn" onclick="saveProject(true,event)" id="deploy-btn">배포</button>
           <button class="del-btn" id="proj-del" onclick="deleteProject()" style="display:none;">삭제</button>
         </div>
         <div class="proj-layout">
@@ -696,7 +696,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               </select>
               <button class="prev-btn" onclick="scLoadCalendars()">불러오기</button>
             </div>
-            <button class="save-btn" style="width:100%;" onclick="scSaveCalendar()">캘린더 저장</button>
+            <button class="save-btn" style="width:100%;" onclick="scSaveCalendar(event)">캘린더 저장</button>
             <div id="sc-cal-saved" style="font-size:11px;color:rgba(0,0,0,.4);margin-top:6px;"></div>
           </div>
           <button class="save-btn" onclick="scCreate()" style="width:100%;margin-bottom:16px;">+ 새 일정 만들기</button>
@@ -707,7 +707,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div id="sc-edit-screen" style="display:none;flex-direction:column;overflow:hidden;">
           <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;align-items:center;gap:10px;">
             <button class="mbtn-cancel" style="flex:0 0 auto;" onclick="scShowList()">← 목록</button>
-            <button class="save-btn" style="flex:1;" onclick="scSave()">저장</button>
+            <button class="save-btn" style="flex:1;" onclick="scSave(event)">저장</button>
             <button class="prev-btn" onclick="openToolPreview('/tools/schedule/?id='+scCurId)" style="font-size:12px;flex-shrink:0;">미리보기</button>
           </div>
           <div style="padding:16px;overflow-y:auto;flex:1;">
@@ -863,7 +863,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div id="yt-edit-screen" style="display:none;flex-direction:column;overflow:hidden;">
           <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;align-items:center;gap:10px;">
             <button class="mbtn-cancel" style="flex:0 0 auto;" onclick="ytPlaylistBackToList()">← 목록</button>
-            <button class="save-btn" style="flex:1;" onclick="ytPlaylistSave()">저장</button>
+            <button class="save-btn" style="flex:1;" onclick="ytPlaylistSave(event)">저장</button>
             <button class="prev-btn" onclick="openToolPreview('/tools/youtube-playlist/?id='+ytCurId)" style="font-size:12px;flex-shrink:0;">미리보기</button>
           </div>
           <div style="padding:16px;overflow-y:auto;flex:1;">
@@ -951,7 +951,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div id="tf-edit-screen" style="display:none;flex-direction:column;overflow:hidden;">
           <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;align-items:center;gap:10px;">
             <button class="mbtn-cancel" style="flex:0 0 auto;" onclick="toolFormMgrList()">← 목록</button>
-            <button class="save-btn" style="flex:1;" onclick="toolFormSave()">저장</button>
+            <button class="save-btn" style="flex:1;" onclick="toolFormSave(event)">저장</button>
             <button class="prev-btn" onclick="openToolPreview('/tools/form/?id='+tfCurDocId)" style="font-size:12px;flex-shrink:0;">미리보기</button>
           </div>
           <div style="padding:16px;overflow-y:auto;flex:1;">
@@ -1177,7 +1177,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div id="cg-edit-screen" style="display:none;flex-direction:column;overflow:hidden;">
           <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;align-items:center;gap:8px;">
             <button class="mbtn-cancel" style="flex:0 0 auto;" onclick="cgShowList()">← 목록</button>
-            <button class="save-btn" style="flex:1;" onclick="cgSave()">저장</button>
+            <button class="save-btn" style="flex:1;" onclick="cgSave(event)">저장</button>
             <button class="prev-btn" onclick="openToolPreview('/tools/copy-gen/?id='+cgCurDocId)" style="font-size:11px;padding:6px 10px;">미리보기</button>
             <button class="prev-btn" onclick="cgViewResults()" style="font-size:11px;padding:6px 10px;">결과 보기</button>
             <button class="prev-btn" onclick="cgDelete()" style="font-size:11px;padding:6px 10px;color:#c00;border-color:#c00;">삭제</button>
@@ -1273,7 +1273,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 테스트 모드 사용 (테스트 서버 · 실제 결제 안 됨)
               </label>
             </div>
-            <button class="save-btn" onclick="pySaveSettings()" style="width:100%;font-size:12px;padding:8px 0;">설정 저장</button>
+            <button class="save-btn" onclick="pySaveSettings(event)" style="width:100%;font-size:12px;padding:8px 0;">설정 저장</button>
             <div style="font-size:10px;color:rgba(0,0,0,.45);line-height:1.55;margin-top:8px;">
               📌 <b>API 키(apiKey)</b>는 Vercel 환경변수 <code>PAYUP_API_KEY</code>에 설정해주세요.<br>
               📌 가맹점 ID도 Vercel 환경변수 <code>PAYUP_MERCHANT_ID</code>에 동일하게 입력해주세요.<br>
@@ -1287,7 +1287,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div id="py-edit-screen" style="display:none;flex-direction:column;overflow:hidden;">
           <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;align-items:center;gap:8px;">
             <button class="mbtn-cancel" style="flex:0 0 auto;" onclick="pyShowList()">← 목록</button>
-            <button class="save-btn" style="flex:1;" onclick="pySave()">저장</button>
+            <button class="save-btn" style="flex:1;" onclick="pySave(event)">저장</button>
             <button class="prev-btn" onclick="openToolPreview('/tools/payment/?id='+pyCurDocId)" style="font-size:11px;padding:6px 10px;">미리보기</button>
             <button class="prev-btn" onclick="pyViewRecords()" style="font-size:11px;padding:6px 10px;">결제 내역</button>
             <button class="prev-btn" onclick="pyDelete()" style="font-size:11px;padding:6px 10px;color:#c00;border-color:#c00;">삭제</button>
@@ -1385,7 +1385,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <div style="flex:1;"></div>
     <button class="prev-btn" onclick="togglePreviewPanel('guide-preview-panel')" id="guide-pv-btn" style="font-size:12px;">미리보기</button>
     <button class="prev-btn" onclick="openCopyModal()" style="margin-right:4px;">복제</button>
-    <button class="save-btn" onclick="saveStageContent()">저장</button>
+    <button class="save-btn" onclick="saveStageContent(event)">저장</button>
   </div>
   <div class="stage-layout">
     <div id="sco-body">
@@ -2119,6 +2119,13 @@ function switchInnerTab(t) {
 
 /* ── Util ── */
 function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
+function _btnFlash(btn, label='저장됨 ✓', ms=1500) {
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = label;
+  btn.style.background = '#1a7a4a'; btn.style.borderColor = '#1a7a4a';
+  setTimeout(() => { btn.disabled = false; btn.textContent = orig; btn.style.background = ''; btn.style.borderColor = ''; }, ms);
+}
 function epd(e) { e.preventDefault(); }
 function closeModal(id) { document.getElementById(id).classList.remove('on'); }
 
@@ -3490,11 +3497,12 @@ function copyPreviewUrl(){
   if(!urlEl?.value) return;
   navigator.clipboard.writeText(urlEl.value).then(()=>alert('미리보기 URL이 복사됐어요!'));
 }
-async function saveProject(deploy=true) {
+async function saveProject(deploy=true, e=null) {
   const id   = document.getElementById('p-id').value.trim();
   const name = document.getElementById('p-name').value.trim();
   if (!id)   { alert('슬러그(ID)를 입력해주세요.'); return; }
   if (!name) { alert('프로젝트 이름을 입력해주세요.'); return; }
+  const _btn = e?.currentTarget;
 
   const authCol = 'cms_users_' + id;
 
@@ -3555,11 +3563,9 @@ async function saveProject(deploy=true) {
     loadProjects();
     if (deploy) {
       const deployed = await deployProjectPage(id);
-      alert(deployed
-        ? '저장 + 배포 완료!\n\nlazymaxpotential.kr/'+id+'\n\n(GitHub Pages 반영 ~1분)'
-        : '저장 완료. GitHub 토큰 없어 배포 건너뜀.\n\n토큰 설정 후 배포 버튼을 누르면 자동 배포돼요.');
+      _btnFlash(_btn, deployed ? '배포됨 ✓' : '저장됨 ✓');
     } else {
-      alert('저장 완료!');
+      _btnFlash(_btn, '저장됨 ✓');
     }
   } catch(e) { alert('저장 실패: '+e.message); }
 }
@@ -3913,8 +3919,9 @@ async function _autoSaveStage() {
     stageDirty = false;
   } catch(e) { /* silent auto-save failure */ }
 }
-async function saveStageContent() {
+async function saveStageContent(e=null) {
   if (curEditingStageIdx === null || !curProjId) { alert('저장할 수 없어요.'); return; }
+  const _btn = e?.currentTarget;
   const stage = curStages[curEditingStageIdx];
   try {
     await db.collection('cms_projects').doc(curProjId)
@@ -3937,7 +3944,7 @@ async function saveStageContent() {
     await db.collection('cms_projects').doc(curProjId).update({stages: updatedStages});
     stageDirty = false;
     renderStageList();
-    alert('저장했어요!');
+    _btnFlash(_btn, '저장됨 ✓');
   } catch(e) { alert('저장 실패: '+e.message); }
 }
 function insertVar(key) {
@@ -4854,8 +4861,7 @@ function saveBlock(){
   stageDirty=true;
   renderBlockList();scheduleGuidePreviewUpdate();
   _autoSaveStage();
-  const _sb=document.querySelector('.bm-top .save-btn');
-  if(_sb){const _orig=_sb.textContent;_sb.textContent='저장됨 ✓';_sb.style.background='#1a7a4a';_sb.style.borderColor='#1a7a4a';setTimeout(()=>{_sb.textContent=_orig;_sb.style.background='';_sb.style.borderColor='';},1200);}
+  _btnFlash(document.querySelector('.bm-top .save-btn'), '저장됨 ✓', 1200);
 }
 function switchBlkTab(t){
   curBlkType=t;
@@ -5969,14 +5975,15 @@ async function scLoadCalendars() {
   } catch(e) { sel.innerHTML = '<option value="">불러오기 실패: ' + e.message + '</option>'; }
 }
 
-async function scSaveCalendar() {
+async function scSaveCalendar(e=null) {
+  const _btn = e?.currentTarget;
   const sel = document.getElementById('sc-cal-sel');
   const id = sel.value;
   const name = sel.options[sel.selectedIndex]?.text || id;
   if(!id) { alert('캘린더를 선택해주세요.'); return; }
   try {
     await db.collection('cms_admin_settings').doc('google_calendar').set({ calendarId:id, calendarName:name }, { merge:true });
-    document.getElementById('sc-cal-saved').textContent = '저장됨: ' + name;
+    _btnFlash(_btn, '저장됨 ✓');
   } catch(e) { alert('저장 실패: ' + e.message); }
 }
 
@@ -6168,8 +6175,9 @@ function scRenderFieldList() {
 function mvScField(i,d){const j=i+d;if(j<0||j>=scFields.length)return;[scFields[i],scFields[j]]=[scFields[j],scFields[i]];scRenderFieldList();}
 function rmScField(i){if(!confirm('이 필드를 삭제할까요?'))return;scFields.splice(i,1);scRenderFieldList();}
 
-async function scSave() {
+async function scSave(e=null) {
   if(!scCurId) return;
+  const _btn = e?.currentTarget;
   const title = document.getElementById('sc-title').value.trim();
   if(!title) { alert('일정 제목을 입력해주세요.'); return; }
   const availableHours = scAvailHours.filter(r=>r.enabled).map(r=>({day:r.day,start:r.start,end:r.end}));
@@ -6194,7 +6202,7 @@ async function scSave() {
   };
   try {
     await db.collection('cms_schedule_configs').doc(scCurId).update(data);
-    alert('저장됐어요!');
+    _btnFlash(_btn, '저장됨 ✓');
   } catch(e) { alert('저장 실패: ' + e.message); }
 }
 
@@ -6349,12 +6357,11 @@ function ytPlaylistBackToList() {
   ytLoadPlaylists();
 }
 
-async function ytPlaylistSave() {
+async function ytPlaylistSave(e=null) {
   if (!ytCurId) return;
-  const btn = event.target;
+  const _btn = e?.currentTarget;
   const title = document.getElementById('yt-plc-title').value.trim();
   if (!title) { alert('재생목록 이름을 입력해주세요.'); return; }
-  btn.disabled = true; btn.textContent = '저장 중…';
   try {
     await db.collection('cms_youtube_playlists').doc(ytCurId).set({
       title,
@@ -6364,11 +6371,9 @@ async function ytPlaylistSave() {
       doneSub:       rteGet('yt-plc-done-sub') || '{count}곡을 신청해 주셔서 감사해요.',
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
-    btn.textContent = '저장됨 ✓';
-    setTimeout(() => { btn.disabled = false; btn.textContent = '저장'; }, 1500);
+    _btnFlash(_btn, '저장됨 ✓');
   } catch(e) {
     console.error('[ytPlaylistSave]', e);
-    btn.disabled = false; btn.textContent = '저장';
     alert('저장 실패: ' + e.message);
   }
 }
@@ -6552,8 +6557,9 @@ function toolFormOpenFieldModal(idx, insertAt){
   curFormFields=tfFields;
   openFormFieldModal(idx, insertAt);
 }
-async function toolFormSave(){
+async function toolFormSave(e=null){
   if(!tfCurDocId) return;
+  const _btn=e?.currentTarget;
   const title=document.getElementById('tf-title')?.value.trim()||'';
   const desc=rteGet('tf-desc');
   const submitBtnText=document.getElementById('tf-submit-text')?.value.trim()||'제출하기';
@@ -6569,7 +6575,7 @@ async function toolFormSave(){
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     tfRespFields=tfFields;
-    alert('저장됐어요!');
+    _btnFlash(_btn,'저장됨 ✓');
   }catch(e){alert('저장 실패: '+e.message);}
 }
 function toolFormViewResponses(){
@@ -7961,8 +7967,9 @@ function cgSetRefRole(role){
   const desc=document.getElementById('cg-ref-role-desc');
   if(desc) desc.textContent=role==='style'?'분위기·톤만 참고하고 내용은 새로 작성':'구조와 표현 방식을 참고 문구와 유사하게 작성';
 }
-async function cgSave(){
+async function cgSave(e=null){
   if(!cgCurDocId) return;
+  const _btn=e?.currentTarget;
   const title=document.getElementById('cg-title')?.value.trim()||'';
   if(!title){ alert('제목을 입력해주세요.'); return; }
   const styleOptions=PREDEFINED_STYLE_OPTIONS.map(s=>({
@@ -7983,7 +7990,7 @@ async function cgSave(){
       fields:cgFields, styleOptions, outputConfig, references:cgRefs, referenceRole:cgReferenceRole,
       updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
     });
-    alert('저장됐어요!');
+    _btnFlash(_btn,'저장됨 ✓');
   }catch(e){ alert('저장 실패: '+e.message); }
 }
 async function cgDelete(){
@@ -8109,12 +8116,13 @@ async function pyLoadSettings(){
     if(chk) chk.checked = test;
   }catch(e){ console.error('[pyLoadSettings]',e); }
 }
-async function pySaveSettings(){
+async function pySaveSettings(e=null){
+  const _btn=e?.currentTarget;
   const mid  = (document.getElementById('py-merchant-id')?.value || '').trim();
   const test = !!(document.getElementById('py-test-mode')?.checked);
   try{
     await db.collection('cms_admin_settings').doc('payment').set({ payupMerchantId: mid, payupTestMode: test, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
-    alert('페이업 설정을 저장했어요.');
+    _btnFlash(_btn,'저장됨 ✓');
   }catch(e){ alert('저장 실패: '+e.message); }
 }
 
@@ -8181,8 +8189,9 @@ function pyShowList(){
   pyLoadList();
 }
 
-async function pySave(){
+async function pySave(e=null){
   if(!pyCurDocId) return;
+  const _btn=e?.currentTarget;
   const amount = parseInt(document.getElementById('py-amount').value) || 0;
   if(amount < 100){ alert('금액은 100원 이상이어야 해요.'); return; }
   const tier = (document.getElementById('py-tier').value || '').trim();
@@ -8197,7 +8206,7 @@ async function pySave(){
       successMessage: rteGet('py-success'),
       updatedAt:      firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge:true });
-    alert('저장했어요.');
+    _btnFlash(_btn,'저장됨 ✓');
   }catch(e){ alert('저장 실패: '+e.message); }
 }
 
