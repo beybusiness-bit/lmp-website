@@ -904,6 +904,7 @@ function openRegModal(){
   const fieldsHtml=AUTH_FIELDS.map(f=>{
     const req=f.required?'<span style="color:red;margin-left:2px;">*</span>':'';
     const lbl=`<div style="font-size:12px;font-weight:700;margin-bottom:4px;">${f.label}${req}</div>`;
+    const desc=f.description?`<div style="font-size:11px;opacity:.6;margin-bottom:6px;">${f.description}</div>`:'';
     let inp='';
     const t=f.type||'string';
     if(t==='textarea'){
@@ -919,13 +920,15 @@ function openRegModal(){
       }
     } else if(t==='date'){
       const dateType=f.dateMode==='datetime'?'datetime-local':'date';
-      inp=`<input class="inp" type="${dateType}" data-reg-key="${f.key}" data-reg-type="${t}" style="margin-bottom:0;">`;
+      const minAttr=f.dateMin?` min="${f.dateMin}"`:'';
+      const maxAttr=f.dateMax?` max="${f.dateMax}"`:'';
+      inp=`<input class="inp" type="${dateType}" data-reg-key="${f.key}" data-reg-type="${t}" style="margin-bottom:0;"${minAttr}${maxAttr}>`;
     } else if(t==='number'){
       inp=`<input class="inp" type="number" data-reg-key="${f.key}" data-reg-type="${t}" placeholder="${f.label}" style="margin-bottom:0;">`;
     } else {
       inp=`<input class="inp" data-reg-key="${f.key}" data-reg-type="${t}" placeholder="${f.label}" style="margin-bottom:0;">`;
     }
-    return `<div style="margin-bottom:12px;">${lbl}${inp}</div>`;
+    return `<div style="margin-bottom:12px;">${lbl}${desc}${inp}</div>`;
   }).join('');
   document.getElementById('reg-fields').innerHTML=fieldsHtml;
   document.getElementById('reg-modal').classList.add('on');
