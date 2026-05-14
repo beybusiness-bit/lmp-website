@@ -392,7 +392,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           </div>
           <div class="sect-head">실시간 카운터</div>
           <div class="ed-sect">
-            <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;line-height:1.6;">Firestore 컬렉션 문서 수를 실시간으로 집계해 메인 화면에 표시합니다.<br>예: "방문신청 42명"</div>
+            <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;line-height:1.6;">메인 화면에 실시간 숫자를 표시합니다.<br>예: "방문신청 42명" · 유형을 선택해 이 프로젝트 사용자 수도 집계할 수 있어요.</div>
             <div id="stats-list"></div>
             <button class="add-btn" style="margin-top:8px;" onclick="addStat()">+ 카운터 추가</button>
           </div>
@@ -566,7 +566,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <button class="tgl-btn" id="self-reg-sw" style="flex:unset;padding:6px 16px;" onclick="toggleSelfReg()">OFF</button>
               </div>
               <div id="self-reg-opts" style="display:none;">
-                <div class="ed-lbl">인증 모달의 등록하기 버튼 텍스트</div>
+                <div class="ed-lbl">등록 모달 제목 <span style="font-weight:400;opacity:.55;">(기본: 등록하기)</span></div>
+                <input class="fi" id="p-self-reg-modal-title" placeholder="예: 등록하기" value="등록하기">
+                <div class="ed-lbl" style="margin-top:10px;">등록 모달 안내 문구 <span style="font-weight:400;opacity:.55;">(기본: 정보를 입력하고 등록해주세요.)</span></div>
+                <input class="fi" id="p-self-reg-modal-desc" placeholder="예: 정보를 입력하고 등록해주세요.">
+                <div class="ed-lbl" style="margin-top:10px;">인증 모달의 등록하기 버튼 텍스트</div>
                 <input class="fi" id="p-self-reg-cta" placeholder="예: 등록하기" value="등록하기">
                 <div class="ed-lbl" style="margin-top:10px;">등록 완료 메시지 <span style="font-weight:400;opacity:.55;">(등록 성공 시 표시)</span></div>
                 <input class="fi" id="p-self-reg-success" placeholder="예: {{이름}}님, 등록이 완료되었어요!">
@@ -2541,7 +2545,10 @@ const ELEM_LABELS = {edition:'문구',logo:'로고',dday:'D-Day',stats:'카운�
 function renderStatList() {
   const el = document.getElementById('stats-list');
   if (!curStats.length) { el.innerHTML = '<div class="empty-msg" style="padding:8px 0;">카운터 없음</div>'; return; }
-  el.innerHTML = curStats.map((s,i) => `
+  el.innerHTML = curStats.map((s,i) => {
+    const ct = s.countType || 'count';
+    const isCustom = ct === 'count';
+    return `
     <div class="bg-item" style="margin-bottom:8px;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
         <div class="switch${s.enabled?' on':''}" onclick="curStats[${i}].enabled=!curStats[${i}].enabled;renderStatList();schedulePreviewUpdate();" style="flex-shrink:0;"></div>
@@ -2549,13 +2556,21 @@ function renderStatList() {
           oninput="curStats[${i}].label=this.value;schedulePreviewUpdate();">
         <button class="rm-btn2" onclick="removeStat(${i})">✕</button>
       </div>
+      <div style="margin-bottom:6px;">
+        <select class="fi-sm" style="margin-bottom:0;width:100%;" onchange="curStats[${i}].countType=this.value;renderStatList();">
+          <option value="count"${ct==='count'?' selected':''}>커스텀 컬렉션 문서 수</option>
+          <option value="project-users-total"${ct==='project-users-total'?' selected':''}>프로젝트 사용자 누적 (전체)</option>
+          <option value="project-users-today"${ct==='project-users-today'?' selected':''}>프로젝트 사용자 오늘 (당일 접속)</option>
+        </select>
+      </div>
       <div style="display:flex;gap:6px;">
-        <input class="fi-sm" style="flex:2;margin-bottom:0;" placeholder="Firestore 컬렉션 (예: visit_requests)" value="${(s.collection||'').replace(/"/g,'&quot;')}"
-          oninput="curStats[${i}].collection=this.value;">
+        ${isCustom ? `<input class="fi-sm" style="flex:2;margin-bottom:0;" placeholder="Firestore 컬렉션 (예: visit_requests)" value="${(s.collection||'').replace(/"/g,'&quot;')}"
+          oninput="curStats[${i}].collection=this.value;">` : `<div style="flex:2;font-size:11px;color:rgba(0,0,0,.45);line-height:1.4;padding:4px 0;">cms_users_{프로젝트ID}에서 자동 집계</div>`}
         <input class="fi-sm" style="flex:1;margin-bottom:0;width:70px;" placeholder="단위 (예: 명)" value="${(s.unit||'').replace(/"/g,'&quot;')}"
           oninput="curStats[${i}].unit=this.value;schedulePreviewUpdate();">
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function addStat() {
   curStats.push({id:uid(),label:'',collection:'',countType:'count',unit:'명',enabled:true});
@@ -3683,7 +3698,7 @@ function startNewProject() {
   projDirty=false; _projDirtyLock=true;
   curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}]; customColWidths={}; curRespColWidths={};
   curAuthKeyField='name'; curUsers=[]; curAuthCollection=''; curLogoTextSize='24'; curLogoTextAlign='center'; curLogoImgW=76;
-  setSelfReg(false); document.getElementById('p-self-reg-cta').value='등록하기'; document.getElementById('p-self-reg-success').value='';
+  setSelfReg(false); document.getElementById('p-self-reg-modal-title').value=''; document.getElementById('p-self-reg-modal-desc').value=''; document.getElementById('p-self-reg-cta').value='등록하기'; document.getElementById('p-self-reg-success').value='';
   setSelfRegCtaSep(false); document.getElementById('p-self-reg-cta-icon-url').value=''; document.getElementById('p-self-reg-cta-sep-text').value='등록하기';
   curStats=[]; curElementOrder=['edition','logo','dday','stats'];
   curKeyColors=[];
@@ -3772,6 +3787,8 @@ async function editProject(id) {
     updateAuthColDisplay();
     document.getElementById('p-auth-title').value   = d.authTitle||'';
     document.getElementById('p-auth-desc').value    = d.authDesc||'';
+    document.getElementById('p-self-reg-modal-title').value = d.selfRegModalTitle||'';
+    document.getElementById('p-self-reg-modal-desc').value = d.selfRegModalDesc||'';
     document.getElementById('p-self-reg-cta').value = d.selfRegCta||'등록하기';
     document.getElementById('p-self-reg-success').value = d.selfRegSuccessMsg||'';
     setSelfReg(d.selfRegEnabled||false);
@@ -3865,6 +3882,8 @@ async function saveProject(deploy=true, e=null) {
     authTitle:    document.getElementById('p-auth-title').value.trim(),
     authDesc:     document.getElementById('p-auth-desc').value.trim(),
     selfRegEnabled: curSelfRegEnabled,
+    selfRegModalTitle: document.getElementById('p-self-reg-modal-title').value.trim(),
+    selfRegModalDesc: document.getElementById('p-self-reg-modal-desc').value.trim(),
     selfRegCta:   document.getElementById('p-self-reg-cta').value.trim()||'등록하기',
     selfRegSuccessMsg: document.getElementById('p-self-reg-success').value.trim(),
     selfRegCtaSeparate: curSelfRegCtaSepEnabled,

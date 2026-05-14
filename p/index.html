@@ -375,7 +375,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 
 <div class="modal-ov" id="reg-modal" onclick="ovClick(event,'reg-modal')">
   <div class="modal-box" id="reg-box" style="max-height:80vh;overflow-y:auto;">
-    <div class="modal-ttl">등록하기</div>
+    <div class="modal-ttl" id="reg-title">등록하기</div>
     <div class="modal-desc" id="reg-desc" style="margin-bottom:16px;">정보를 입력하고 등록해주세요.</div>
     <div id="reg-fields"></div>
     <div class="modal-err" id="reg-err"></div>
@@ -594,6 +594,10 @@ function applySettings(d){
   SELF_REG_CTA_SEPARATE = d.selfRegCtaSeparate || false;
   SELF_REG_CTA_ICON_URL = d.selfRegCtaIconUrl || '';
   SELF_REG_CTA_SEP_TEXT = d.selfRegCtaSepText || '등록하기';
+  const regTitleEl = document.getElementById('reg-title');
+  const regDescEl  = document.getElementById('reg-desc');
+  if(regTitleEl) regTitleEl.textContent = d.selfRegModalTitle || '등록하기';
+  if(regDescEl)  regDescEl.textContent  = d.selfRegModalDesc  || '정보를 입력하고 등록해주세요.';
   GREETING_TEXT   = d.greetingText   || '';
   console.log('[Greeting] GREETING_TEXT loaded:', GREETING_TEXT);
   STAGES = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0))
@@ -736,9 +740,22 @@ async function loadStats(){
   const vl = document.getElementById('visitor-line');
   if(!vl||!STATS.length) return;
   try {
+    const todayMidnight = new Date(); todayMidnight.setHours(0,0,0,0);
     const parts = await Promise.all(STATS.map(async s => {
-      const snap = await db.collection(s.collection).get();
-      return `${s.label} ${snap.size}${s.unit||''}`;
+      const ct = s.countType || 'count';
+      let count = 0;
+      if(ct === 'project-users-total'){
+        const snap = await db.collection('cms_users_'+PROJECT_ID).get();
+        count = snap.size;
+      } else if(ct === 'project-users-today'){
+        const snap = await db.collection('cms_users_'+PROJECT_ID)
+          .where('lastLoginAt','>=',todayMidnight).get();
+        count = snap.size;
+      } else {
+        const snap = await db.collection(s.collection).get();
+        count = snap.size;
+      }
+      return `${s.label} ${count}${s.unit||''}`;
     }));
     vl.textContent = parts.join(' · ');
   } catch(e) { /* silently fail */ }
