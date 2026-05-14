@@ -1830,10 +1830,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <div class="ed-lbl">필드 키 (내부 식별자 · 영문·숫자·_)</div>
       <input class="fi-sm" id="fm-key" placeholder="예: phone" style="margin-bottom:14px;">
       <div class="ed-lbl">타입</div>
-      <select class="fi-sm" id="fm-type" style="cursor:pointer;margin-bottom:14px;">
-        <option value="string">문자열 (string)</option>
-        <option value="number">숫자 (number)</option>
+      <select class="fi-sm" id="fm-type" style="cursor:pointer;margin-bottom:14px;" onchange="onFmTypeChange()">
+        <option value="string">짧은 텍스트</option>
+        <option value="textarea">긴 텍스트</option>
+        <option value="number">숫자</option>
+        <option value="select">선택지</option>
+        <option value="date">날짜 선택</option>
       </select>
+      <div id="fm-options-wrap" style="display:none;margin-bottom:14px;">
+        <div class="ed-lbl" style="margin-bottom:4px;">선택지 목록 (줄바꿈으로 구분)</div>
+        <textarea id="fm-options" style="width:100%;height:80px;border:1.5px solid #000;padding:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none;" placeholder="옵션1&#10;옵션2&#10;옵션3"></textarea>
+        <div class="ed-lbl" style="margin-top:8px;margin-bottom:6px;">선택 방식</div>
+        <div class="toggle-row" style="margin-bottom:0;">
+          <button class="tgl-btn on" id="fm-sel-dropdown" onclick="setFmSelectMode('dropdown')">드롭다운</button>
+          <button class="tgl-btn" id="fm-sel-buttons" onclick="setFmSelectMode('buttons')">버튼 선택</button>
+        </div>
+      </div>
+      <div id="fm-date-wrap" style="display:none;margin-bottom:14px;">
+        <div class="ed-lbl" style="margin-bottom:6px;">날짜 형식</div>
+        <div class="toggle-row">
+          <button class="tgl-btn on" id="fm-date-date" onclick="setFmDateMode('date')">날짜만</button>
+          <button class="tgl-btn" id="fm-date-datetime" onclick="setFmDateMode('datetime')">날짜+시간</button>
+        </div>
+      </div>
       <div class="switch-row">
         <div class="switch" id="fm-req-sw" onclick="toggleFmReq()"></div>
         <span class="switch-lbl">필수 입력 항목</span>
@@ -2823,9 +2842,26 @@ function removeField(i) {
 }
 
 /* Field modal */
+let fmSelectMode = 'dropdown';
+let fmDateMode = 'date';
 function toggleFmReq() {
   fmReqOn = !fmReqOn;
   document.getElementById('fm-req-sw').classList.toggle('on', fmReqOn);
+}
+function onFmTypeChange() {
+  const t = document.getElementById('fm-type').value;
+  document.getElementById('fm-options-wrap').style.display = t==='select' ? '' : 'none';
+  document.getElementById('fm-date-wrap').style.display = t==='date' ? '' : 'none';
+}
+function setFmSelectMode(m) {
+  fmSelectMode = m;
+  document.getElementById('fm-sel-dropdown').classList.toggle('on', m==='dropdown');
+  document.getElementById('fm-sel-buttons').classList.toggle('on', m==='buttons');
+}
+function setFmDateMode(m) {
+  fmDateMode = m;
+  document.getElementById('fm-date-date').classList.toggle('on', m==='date');
+  document.getElementById('fm-date-datetime').classList.toggle('on', m==='datetime');
 }
 function openFieldModal(idx) {
   curEditingFieldIdx = idx;
@@ -2834,9 +2870,15 @@ function openFieldModal(idx) {
   document.getElementById('fm-label').value = f.label||'';
   document.getElementById('fm-key').value   = f.key||'';
   document.getElementById('fm-type').value  = f.type||'string';
+  document.getElementById('fm-options').value = (f.options||[]).join('\n');
+  fmSelectMode = f.selectMode||'dropdown';
+  fmDateMode   = f.dateMode||'date';
+  setFmSelectMode(fmSelectMode);
+  setFmDateMode(fmDateMode);
+  onFmTypeChange();
   fmReqOn = f.required||false;
   document.getElementById('fm-req-sw').classList.toggle('on', fmReqOn);
-  document.getElementById('fm-label').disabled = idx===0;
+  document.getElementById('fm-label').disabled = false;
   document.getElementById('fm-key').disabled   = idx===0;
   document.getElementById('field-modal').classList.add('on');
 }
@@ -2845,12 +2887,18 @@ function saveField() {
   const key   = document.getElementById('fm-key').value.trim().replace(/[^a-zA-Z0-9_]/g,'');
   const type  = document.getElementById('fm-type').value;
   if (!label || !key) { alert('이름과 키를 입력해주세요.'); return; }
+  const extra = {};
+  if (type==='select') {
+    extra.options = document.getElementById('fm-options').value.split('\n').map(o=>o.trim()).filter(Boolean);
+    extra.selectMode = fmSelectMode;
+  }
+  if (type==='date') extra.dateMode = fmDateMode;
   if (curEditingFieldIdx === null) {
     if (curAuthFields.find(f=>f.key===key)) { alert('이미 같은 키가 있어요.'); return; }
-    curAuthFields.push({key, label, type, required:fmReqOn});
+    curAuthFields.push({key, label, type, required:fmReqOn, ...extra});
     if (curAuthFields.length === 1) curAuthKeyField = key;
   } else {
-    curAuthFields[curEditingFieldIdx] = {...curAuthFields[curEditingFieldIdx], label, type, required:fmReqOn};
+    curAuthFields[curEditingFieldIdx] = {...curAuthFields[curEditingFieldIdx], label, type, required:fmReqOn, ...extra};
   }
   closeModal('field-modal');
   renderAuthFields();
@@ -6813,8 +6861,11 @@ function _getTfRespCols(){
   const fields=tfRespFields||[];
   const tsCol={key:'_ts',label:'제출일시',type:'timestamp',val:r=>r.submittedAt?.seconds?new Date(r.submittedAt.seconds*1000).toLocaleString('ko'):''};
   // 모든 응답의 _userFields 키를 수집 → 키마다 별도 컬럼 (순서 일관성 보장)
+  // 시스템 키 및 내부 추적 키는 제외
+  const _ufSysKeys=new Set(['lastLoginAt','loginCount','stageProgress','type','project','boothType','paidTiers','paidConfigs','updatedAt','createdAt','activeSession','activeSessionId']);
+  const _isUfUserKey=k=>!_ufSysKeys.has(k)&&!k.startsWith('formSubmitted_')&&!k.startsWith('_');
   const ufKeySet=new Set();
-  tfRespData.forEach(r=>{if(r._userFields) Object.keys(r._userFields).forEach(k=>ufKeySet.add(k));});
+  tfRespData.forEach(r=>{if(r._userFields) Object.keys(r._userFields).filter(_isUfUserKey).forEach(k=>ufKeySet.add(k));});
   const userCols=Array.from(ufKeySet).map(k=>({key:'_uf_'+k,label:k,type:'_user',val:r=>{const v=(r._userFields||{})[k];return v!=null?String(v):'';}}))
   const formCols=fields.map(f=>({key:f.key,label:f.label,type:f.type,isFile:f.type==='file',val:r=>{const v=r[f.key];return Array.isArray(v)?v.join(', '):String(v??'');}}));
   return [tsCol,...userCols,...formCols];
