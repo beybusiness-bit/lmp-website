@@ -6812,7 +6812,10 @@ async function ytLoadSubmissions() {
     document.getElementById('yt-sub-count').textContent = `(총 ${ytSubmissions.length}곡)`;
     listEl.innerHTML = ytSubmissions.map(v => {
       const ts = v.submittedAt?.toDate ? v.submittedAt.toDate().toLocaleString('ko') : '';
-      const userLabel = v.userFields ? Object.values(v.userFields).filter(Boolean).slice(0,2).join(' · ') : (v.userId || '');
+      const _uf = v.userFields || {};
+      const userLabel = curAuthFields.length
+        ? curAuthFields.map(f => _uf[f.key]).filter(v => v != null && v !== '').join(' · ')
+        : Object.values(_uf).filter(Boolean).join(' · ') || v.userId || '';
       const projLabel = v.projectId || '';
       return `<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.08);align-items:center;">
         <img src="${escHtml(v.thumbnailUrl||'')}" style="width:60px;height:40px;object-fit:cover;border:1px solid rgba(0,0,0,.1);flex-shrink:0;background:#f0f0f0;" onerror="this.style.display='none'">
@@ -6832,14 +6835,18 @@ async function ytLoadSubmissions() {
 
 function ytExportCSV() {
   if (!ytSubmissions.length) { alert('제출된 곡이 없어요.'); return; }
-  const headers = ['제목', '채널', '유튜브 URL', '제출일시', '프로젝트', '사용자ID', '사용자정보'];
+  const userFieldHeaders = curAuthFields.length ? curAuthFields.map(f => f.label) : ['사용자정보'];
+  const headers = ['제목', '채널', '유튜브 URL', '제출일시', '프로젝트', '사용자ID', ...userFieldHeaders];
   const rows = ytSubmissions.map(v => {
     const ts = v.submittedAt?.toDate ? v.submittedAt.toDate().toLocaleString('ko') : '';
-    const userInfo = v.userFields ? Object.entries(v.userFields).map(([k,val])=>`${k}:${val}`).join(' / ') : '';
+    const _uf = v.userFields || {};
+    const userCols = curAuthFields.length
+      ? curAuthFields.map(f => _uf[f.key] != null ? String(_uf[f.key]) : '')
+      : [Object.entries(_uf).map(([k,val])=>`${k}:${val}`).join(' / ')];
     return [
       v.title||'', v.channelTitle||'',
       v.videoId ? `https://youtu.be/${v.videoId}` : '',
-      ts, v.projectId||'', v.userId||'', userInfo
+      ts, v.projectId||'', v.userId||'', ...userCols
     ].map(c => `"${String(c).replace(/"/g,'""')}"`).join(',');
   });
   const csv = '﻿' + [headers.join(','), ...rows].join('\n');
