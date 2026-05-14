@@ -1,5 +1,6 @@
 {
   "buildCommand": "node scripts/sync-projects.js",
+  "outputDirectory": ".",
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
