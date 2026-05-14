@@ -152,15 +152,23 @@ function renderField(f) {
   if (type === 'file') {
     const accept = esc(f.accept || '');
     const acceptAttr = accept ? ` accept="${accept}"` : '';
+    const maxFiles = f.maxFiles ? parseInt(f.maxFiles) : 0;
+    const maxTotalMB = f.maxTotalMB ? parseFloat(f.maxTotalMB) : 0;
+    const limitNote = [
+      `파일당 최대 ${MAX_FILE_MB}MB`,
+      maxFiles ? `최대 ${maxFiles}개` : '',
+      maxTotalMB ? `전체 ${maxTotalMB}MB 이내` : '',
+      '여러 파일 선택 가능'
+    ].filter(Boolean).join(' · ');
     return `<div class="ff-wrap">
       <label class="ff-label">${esc(f.label)}${req}</label>${desc}
       <label class="ff-file-label" id="ff-${fid}-label">
         📎 파일 선택
-        <input type="file" id="ff-${fid}"${acceptAttr} multiple onchange="onFileChange('${fid}')">
+        <input type="file" id="ff-${fid}"${acceptAttr} multiple onchange="onFileChange('${fid}',${maxFiles},${maxTotalMB})">
       </label>
       <div class="ff-file-name" id="ff-${fid}-name"></div>
       <div class="ff-file-progress" id="ff-${fid}-progress"><div class="ff-file-progress-bar" id="ff-${fid}-bar"></div></div>
-      <div class="ff-file-size-note">파일당 최대 ${MAX_FILE_MB}MB · 여러 파일 선택 가능</div>
+      <div class="ff-file-size-note">${limitNote}</div>
     </div>`;
   }
   if (type === 'select') {
@@ -222,7 +230,7 @@ function showErr(msg) {
   el.classList.add('on');
 }
 
-function onFileChange(fid) {
+function onFileChange(fid, maxFiles=0, maxTotalMB=0) {
   const inp = document.getElementById('ff-' + fid);
   const nameEl = document.getElementById('ff-' + fid + '-name');
   if (!inp || !inp.files.length) { if (nameEl) nameEl.innerHTML = ''; return; }
@@ -233,6 +241,21 @@ function onFileChange(fid) {
     inp.value = '';
     if (nameEl) nameEl.innerHTML = '';
     return;
+  }
+  if (maxFiles && files.length > maxFiles) {
+    alert(`파일은 최대 ${maxFiles}개까지 선택할 수 있어요. (현재 ${files.length}개)`);
+    inp.value = '';
+    if (nameEl) nameEl.innerHTML = '';
+    return;
+  }
+  if (maxTotalMB) {
+    const totalMB = files.reduce((s, f) => s + f.size, 0) / 1024 / 1024;
+    if (totalMB > maxTotalMB) {
+      alert(`전체 파일 용량이 너무 커요. ${maxTotalMB}MB 이내로 선택해주세요. (현재 ${totalMB.toFixed(1)}MB)`);
+      inp.value = '';
+      if (nameEl) nameEl.innerHTML = '';
+      return;
+    }
   }
   const rows = files.map((f, i) => {
     const sizeTxt = f.size < 1024*1024 ? `${Math.round(f.size/1024)}KB` : `${(f.size/1024/1024).toFixed(1)}MB`;
@@ -415,26 +438,25 @@ async function submitForm() {
         const progressBar = document.getElementById('ff-' + fid + '-bar');
         const progressWrap = document.getElementById('ff-' + fid + '-progress');
         if (progressWrap) progressWrap.style.display = '';
-        const urls = [];
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
+        let doneCount = 0;
+        const uploadPromises = files.map((file, i) => {
           const safeName = file.name.replace(/[^a-zA-Z0-9가-힣._-]/g, '_');
           const path = `form_uploads/${FORM_ID}/${uploadTimestamp}_${i > 0 ? i + '_' : ''}${safeName}`;
           const ref = storage.ref(path);
           const task = ref.put(file);
-          const url = await new Promise((resolve, reject) => {
-            task.on('state_changed',
-              snap => {
-                const base = i / files.length;
-                const pct = Math.round((base + snap.bytesTransferred / snap.totalBytes / files.length) * 100);
-                if (progressBar) progressBar.style.width = pct + '%';
-              },
-              reject,
-              async () => resolve(await ref.getDownloadURL())
-            );
+          return new Promise((resolve, reject) => {
+            task.on('state_changed', null, reject, async () => {
+              doneCount++;
+              if (progressBar) progressBar.style.width = Math.round(doneCount / files.length * 100) + '%';
+              try { resolve(await ref.getDownloadURL()); } catch(e) { reject(e); }
+            });
           });
-          urls.push(url);
-        }
+        });
+        const results = await Promise.allSettled(uploadPromises);
+        const urls = results.filter(r => r.status === 'fulfilled').map(r => r.value);
+        const failCount = results.filter(r => r.status === 'rejected').length;
+        if (failCount > 0 && urls.length === 0) throw new Error(`파일 업로드에 실패했어요. (${failCount}개)`);
+        if (failCount > 0) console.warn(`파일 ${failCount}개 업로드 실패 (${urls.length}개는 성공)`);
         result[fid] = urls.length === 1 ? urls[0] : urls;
       }
       if (btn) btn.textContent = '제출 중…';
