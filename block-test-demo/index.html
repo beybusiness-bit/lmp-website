@@ -713,6 +713,26 @@ async function loadStats(){
         const snap = await db.collection('cms_users_'+PROJECT_ID)
           .where('lastLoginAt','>=',todayMidnight).get();
         count = snap.size;
+      } else if(ct === 'ext-project'){
+        const pid = s.extProjectId || PROJECT_ID;
+        const metric = s.extMetric || 'users-total';
+        if(metric === 'users-total'){
+          const snap = await db.collection('cms_users_'+pid).get();
+          count = snap.size;
+        } else if(metric === 'users-today'){
+          const snap = await db.collection('cms_users_'+pid)
+            .where('lastLoginAt','>=',todayMidnight).get();
+          count = snap.size;
+        } else if(metric === 'users-weekly'){
+          const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate()-7); weekAgo.setHours(0,0,0,0);
+          const snap = await db.collection('cms_users_'+pid)
+            .where('lastLoginAt','>=',weekAgo).get();
+          count = snap.size;
+        } else if(metric === 'block-complete' && s.extStageId && s.extBlockId){
+          const snap = await db.collection('cms_users_'+pid)
+            .where('stageProgress.'+s.extStageId,'array-contains',s.extBlockId).get();
+          count = snap.size;
+        }
       } else {
         const snap = await db.collection(s.collection).get();
         count = snap.size;
