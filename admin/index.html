@@ -6812,14 +6812,12 @@ function dlAllTfRespFiles() {
 function _getTfRespCols(){
   const fields=tfRespFields||[];
   const tsCol={key:'_ts',label:'제출일시',type:'timestamp',val:r=>r.submittedAt?.seconds?new Date(r.submittedAt.seconds*1000).toLocaleString('ko'):''};
-  // 인증 프로젝트에서 제출된 응답에는 _userFields가 있음 → 사용자 컬럼 자동 추가
-  const hasUserInfo = tfRespData.some(r => r._userFields && Object.keys(r._userFields||{}).length);
-  const userCol = hasUserInfo ? [{key:'_user',label:'사용자',type:'_user',val:r=>{
-    const uf=r._userFields||{};
-    return Object.values(uf).filter(v=>v!=null&&v!=='').slice(0,2).join(' · ');
-  }}] : [];
+  // 모든 응답의 _userFields 키를 수집 → 키마다 별도 컬럼 (순서 일관성 보장)
+  const ufKeySet=new Set();
+  tfRespData.forEach(r=>{if(r._userFields) Object.keys(r._userFields).forEach(k=>ufKeySet.add(k));});
+  const userCols=Array.from(ufKeySet).map(k=>({key:'_uf_'+k,label:k,type:'_user',val:r=>{const v=(r._userFields||{})[k];return v!=null?String(v):'';}}))
   const formCols=fields.map(f=>({key:f.key,label:f.label,type:f.type,isFile:f.type==='file',val:r=>{const v=r[f.key];return Array.isArray(v)?v.join(', '):String(v??'');}}));
-  return [tsCol,...userCol,...formCols];
+  return [tsCol,...userCols,...formCols];
 }
 
 async function saveTfFilesToDrive(){
