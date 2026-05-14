@@ -171,6 +171,12 @@ function renderField(f) {
       <div class="ff-file-size-note">${limitNote}</div>
     </div>`;
   }
+  if (type === 'date') {
+    const inputType = f.dateMode==='datetime' ? 'datetime-local' : 'date';
+    const minAttr = f.dateMin ? ` min="${f.dateMin}"` : '';
+    const maxAttr = f.dateMax ? ` max="${f.dateMax}"` : '';
+    return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<input class="ff-inp" id="ff-${fid}" type="${inputType}"${minAttr}${maxAttr}></div>`;
+  }
   if (type === 'select') {
     const mode = f.selectMode || 'dropdown';
     const opts = f.options || [];
