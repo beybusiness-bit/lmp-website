@@ -2313,7 +2313,10 @@ let curAuthFields = [];        // [{key, label, type, required}]
 let curAuthKeyField = '';
 let curStages = [];
 let curKeyColors = [{color:'#00CE6B',holdTime:8,transitionTime:2},{color:'#FFF100',holdTime:8,transitionTime:2},{color:'#F95548',holdTime:8,transitionTime:2},{color:'#0BC6FF',holdTime:8,transitionTime:2}];
-let curStats = [];             // [{id, label, collection, countType, unit, enabled}]
+let curStats = [];             // [{id, label, collection, countType, unit, enabled, extProjectId, extMetric, extStageId, extBlockId}]
+let _statProjCache = undefined; // undefined=미로드, null=로딩중, [{id,name}]=완료
+let _statStageCache = {};       // {pid: undefined|null|[{id,title}]}
+let _statBlockCache = {};       // {'pid__sid': undefined|null|[{id,label}]}
 let curElementOrder = ['edition','logo','dday','stats']; // order of main screen elements
 let curUsers = [];
 let curAuthCollection = '';
@@ -2542,12 +2545,121 @@ function removeKeyColor(i) {
 
 /* ── Stats (realtime counters) ── */
 const ELEM_LABELS = {edition:'문구',logo:'로고',dday:'D-Day',stats:'카운터'};
+
+async function _statLoadProjects() {
+  if (_statProjCache !== undefined) return;
+  _statProjCache = null; // 로딩중 마크
+  try {
+    const snap = await db.collection('cms_projects').orderBy('name').get();
+    _statProjCache = snap.docs.map(d => ({id: d.id, name: d.data().name || d.id}));
+  } catch(e) { _statProjCache = []; }
+  renderStatList();
+}
+async function _statLoadStages(pid) {
+  if (_statStageCache[pid] !== undefined) return;
+  _statStageCache[pid] = null;
+  try {
+    const doc = await db.collection('cms_projects').doc(pid).get();
+    const stages = (doc.data()?.stages || []).slice().sort((a,b)=>(a.order||0)-(b.order||0));
+    _statStageCache[pid] = stages.map(s => ({id: s.id, title: s.title || s.id}));
+  } catch(e) { _statStageCache[pid] = []; }
+  renderStatList();
+}
+async function _statLoadBlocks(pid, sid) {
+  const key = pid + '__' + sid;
+  if (_statBlockCache[key] !== undefined) return;
+  _statBlockCache[key] = null;
+  try {
+    const doc = await db.collection('cms_projects').doc(pid).collection('stage_content').doc(sid).get();
+    const blocks = (doc.data()?.blocks || []);
+    _statBlockCache[key] = blocks.map((b,idx) => {
+      const raw = (b.textContent||'').replace(/<[^>]+>/g,'').trim().substring(0,30);
+      const label = raw || (b.type==='image'?'이미지 블록':b.type==='tool'?`도구 (${b.toolType||''})`:`${b.type||'?'} 블록`);
+      return {id: b.id, label: `#${idx+1} ${label}`};
+    });
+  } catch(e) { _statBlockCache[key] = []; }
+  renderStatList();
+}
+function statSetProject(i, pid) {
+  curStats[i].extProjectId = pid; curStats[i].extStageId = ''; curStats[i].extBlockId = '';
+  if (pid && curStats[i].extMetric === 'block-complete') _statLoadStages(pid);
+  renderStatList();
+}
+function statSetMetric(i, metric) {
+  curStats[i].extMetric = metric;
+  const pid = curStats[i].extProjectId;
+  if (metric === 'block-complete' && pid) _statLoadStages(pid);
+  renderStatList();
+}
+function statSetStage(i, sid) {
+  curStats[i].extStageId = sid; curStats[i].extBlockId = '';
+  const pid = curStats[i].extProjectId;
+  if (pid && sid) _statLoadBlocks(pid, sid);
+  renderStatList();
+}
+function statSetBlock(i, blockId) { curStats[i].extBlockId = blockId; renderStatList(); }
+
 function renderStatList() {
   const el = document.getElementById('stats-list');
   if (!curStats.length) { el.innerHTML = '<div class="empty-msg" style="padding:8px 0;">카운터 없음</div>'; return; }
   el.innerHTML = curStats.map((s,i) => {
     const ct = s.countType || 'count';
     const isCustom = ct === 'count';
+    const isExt = ct === 'ext-project';
+
+    // 다른 프로젝트 지표 섹션
+    let extHtml = '';
+    if (isExt) {
+      if (_statProjCache === undefined) _statLoadProjects();
+      const pid = s.extProjectId || '';
+      const metric = s.extMetric || 'users-total';
+      const sid = s.extStageId || '';
+      const bid = s.extBlockId || '';
+      const needsStage = metric === 'block-complete';
+
+      const projOpts = _statProjCache == null
+        ? '<option value="">불러오는 중…</option>'
+        : ['<option value="">프로젝트 선택…</option>',
+           ...(_statProjCache||[]).map(p=>`<option value="${p.id}"${p.id===pid?' selected':''}>${escHtml(p.name)}</option>`)
+          ].join('');
+
+      const metricOpts = [
+        ['users-total','사용자 누적 (전체 등록)'],
+        ['users-today','당일 방문자 수 (오늘 접속)'],
+        ['users-weekly','최근 7일 방문자 수'],
+        ['block-complete','특정 블록 완료 사용자 수'],
+      ].map(([v,l])=>`<option value="${v}"${metric===v?' selected':''}>${l}</option>`).join('');
+
+      let stageHtml = '', blockHtml = '';
+      if (needsStage && pid) {
+        const stages = _statStageCache[pid];
+        if (stages === undefined) _statLoadStages(pid);
+        const stageOpts = (stages == null)
+          ? '<option value="">불러오는 중…</option>'
+          : ['<option value="">스테이지 선택…</option>',
+             ...(stages||[]).map(st=>`<option value="${st.id}"${st.id===sid?' selected':''}>${escHtml(st.title)}</option>`)
+            ].join('');
+        stageHtml = `<div style="margin-bottom:5px;"><div style="font-size:10px;color:rgba(0,0,0,.4);margin-bottom:2px;">스테이지</div><select class="fi-sm" style="margin-bottom:0;width:100%;" onchange="statSetStage(${i},this.value)">${stageOpts}</select></div>`;
+
+        if (sid) {
+          const key = pid+'__'+sid;
+          const blocks = _statBlockCache[key];
+          if (blocks === undefined) _statLoadBlocks(pid, sid);
+          const blockOpts = (blocks == null)
+            ? '<option value="">불러오는 중…</option>'
+            : ['<option value="">블록 선택…</option>',
+               ...(blocks||[]).map(bl=>`<option value="${bl.id}"${bl.id===bid?' selected':''}>${escHtml(bl.label)}</option>`)
+              ].join('');
+          blockHtml = `<div style="margin-bottom:5px;"><div style="font-size:10px;color:rgba(0,0,0,.4);margin-bottom:2px;">블록</div><select class="fi-sm" style="margin-bottom:0;width:100%;" onchange="statSetBlock(${i},this.value)">${blockOpts}</select></div>`;
+        }
+      }
+
+      extHtml = `
+        <div style="margin-bottom:5px;"><div style="font-size:10px;color:rgba(0,0,0,.4);margin-bottom:2px;">프로젝트</div><select class="fi-sm" style="margin-bottom:0;width:100%;" onchange="statSetProject(${i},this.value)">${projOpts}</select></div>
+        <div style="margin-bottom:5px;"><div style="font-size:10px;color:rgba(0,0,0,.4);margin-bottom:2px;">집계 항목</div><select class="fi-sm" style="margin-bottom:0;width:100%;" onchange="statSetMetric(${i},this.value)">${metricOpts}</select></div>
+        ${stageHtml}${blockHtml}`;
+    }
+
     return `
     <div class="bg-item" style="margin-bottom:8px;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
@@ -2559,16 +2671,14 @@ function renderStatList() {
       <div style="margin-bottom:6px;">
         <select class="fi-sm" style="margin-bottom:0;width:100%;" onchange="curStats[${i}].countType=this.value;renderStatList();">
           <option value="count"${ct==='count'?' selected':''}>커스텀 컬렉션 문서 수</option>
-          <option value="project-users-total"${ct==='project-users-total'?' selected':''}>프로젝트 사용자 누적 (전체)</option>
-          <option value="project-users-today"${ct==='project-users-today'?' selected':''}>프로젝트 사용자 오늘 (당일 접속)</option>
+          <option value="project-users-total"${ct==='project-users-total'?' selected':''}>이 프로젝트 사용자 누적 (전체)</option>
+          <option value="project-users-today"${ct==='project-users-today'?' selected':''}>이 프로젝트 사용자 오늘 (당일 접속)</option>
+          <option value="ext-project"${ct==='ext-project'?' selected':''}>다른 프로젝트 지표 선택 →</option>
         </select>
       </div>
-      <div style="display:flex;gap:6px;">
-        ${isCustom ? `<input class="fi-sm" style="flex:2;margin-bottom:0;" placeholder="Firestore 컬렉션 (예: visit_requests)" value="${(s.collection||'').replace(/"/g,'&quot;')}"
-          oninput="curStats[${i}].collection=this.value;">` : `<div style="flex:2;font-size:11px;color:rgba(0,0,0,.45);line-height:1.4;padding:4px 0;">cms_users_{프로젝트ID}에서 자동 집계</div>`}
-        <input class="fi-sm" style="flex:1;margin-bottom:0;width:70px;" placeholder="단위 (예: 명)" value="${(s.unit||'').replace(/"/g,'&quot;')}"
-          oninput="curStats[${i}].unit=this.value;schedulePreviewUpdate();">
-      </div>
+      ${isCustom ? `<div style="display:flex;gap:6px;"><input class="fi-sm" style="flex:2;margin-bottom:0;" placeholder="Firestore 컬렉션 (예: visit_requests)" value="${(s.collection||'').replace(/"/g,'&quot;')}" oninput="curStats[${i}].collection=this.value;"><input class="fi-sm" style="flex:1;margin-bottom:0;width:70px;" placeholder="단위 (예: 명)" value="${(s.unit||'').replace(/"/g,'&quot;')}" oninput="curStats[${i}].unit=this.value;schedulePreviewUpdate();"></div>`
+       : isExt ? `${extHtml}<div><input class="fi-sm" style="margin-bottom:0;width:70px;" placeholder="단위 (예: 명)" value="${(s.unit||'').replace(/"/g,'&quot;')}" oninput="curStats[${i}].unit=this.value;schedulePreviewUpdate();"></div>`
+       : `<div style="font-size:11px;color:rgba(0,0,0,.45);line-height:1.4;margin-bottom:4px;">cms_users_{프로젝트ID}에서 자동 집계</div><input class="fi-sm" style="margin-bottom:0;width:70px;" placeholder="단위 (예: 명)" value="${(s.unit||'').replace(/"/g,'&quot;')}" oninput="curStats[${i}].unit=this.value;schedulePreviewUpdate();">`}
     </div>`;
   }).join('');
 }
