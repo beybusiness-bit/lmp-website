@@ -390,7 +390,6 @@ const db = firebase.firestore();
 const PROJECT_ID = 'block-test-demo';
 const ADMIN_PARAM = new URLSearchParams(location.search).get('admin') || '';
 let IS_ADMIN_PREVIEW = false;
-const COLORS     = ['#00CE6B','#FFF100','#F95548','#0BC6FF','#FFFFFF'];
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxjQmrW5PFpdq_5P4XkYZvsXxxAwgHaTl1weS1u1eML_R8nKpMXSP6U-IDGDsazUg-duw/exec';
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 const formBlockData = {};
@@ -712,7 +711,7 @@ function initSlides(){
   slideIdx=0;
   scheduleNextSlide();
 }
-function nextColor(){ let i; do{i=Math.floor(Math.random()*COLORS.length);}while(i===colorIdx); colorIdx=i; return COLORS[i]; }
+function nextColor(){ let i; do{i=Math.floor(Math.random()*KEY_COLORS.length);}while(KEY_COLORS.length>1&&i===colorIdx); colorIdx=i; return KEY_COLORS[i]; }
 function scheduleNextSlide(){
   if(slideTimer) clearTimeout(slideTimer);
   const cur=bgImages[slideIdx];
