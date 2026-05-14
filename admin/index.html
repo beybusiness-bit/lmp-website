@@ -1858,6 +1858,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <span style="font-size:12px;opacity:.5;">~</span>
           <input class="fi-sm" id="fm-date-max" type="date" style="margin-bottom:0;flex:1;">
         </div>
+        <div class="ed-lbl" style="margin-top:10px;margin-bottom:6px;">선택 방식</div>
+        <div class="toggle-row" style="margin-bottom:6px;">
+          <button class="tgl-btn on" id="fm-date-single" onclick="setFmDatePickMode('single')">하루만</button>
+          <button class="tgl-btn" id="fm-date-range" onclick="setFmDatePickMode('range')">기간</button>
+          <button class="tgl-btn" id="fm-date-multi" onclick="setFmDatePickMode('multi')">여러 날짜</button>
+        </div>
+        <div id="fm-date-maxdays-wrap" style="display:none;margin-top:4px;">
+          <div class="ed-lbl" style="margin-bottom:3px;">최대 선택 기간 <span style="font-weight:400;opacity:.55;">(비워두면 자유)</span></div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input class="fi-sm" id="fm-date-max-days" type="number" min="2" placeholder="자유" style="margin-bottom:0;flex:1;">
+            <span style="font-size:12px;opacity:.6;">일</span>
+          </div>
+        </div>
       </div>
       <div class="ed-lbl" style="margin-bottom:4px;">필드 설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
       <textarea id="fm-desc" style="width:100%;height:60px;border:1.5px solid #000;padding:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none;margin-bottom:14px;" placeholder="이 항목에 대한 안내 문구"></textarea>
@@ -1962,6 +1975,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <input class="fi-sm" id="ff-date-min" type="date" style="margin-bottom:0;flex:1;" placeholder="시작일">
           <span style="font-size:12px;opacity:.5;">~</span>
           <input class="fi-sm" id="ff-date-max" type="date" style="margin-bottom:0;flex:1;" placeholder="종료일">
+        </div>
+        <div class="ed-lbl" style="margin-top:10px;margin-bottom:6px;">선택 방식</div>
+        <div class="toggle-row" style="margin-bottom:6px;">
+          <button class="tgl-btn on" id="ff-date-single" onclick="setFfDatePickMode('single')">하루만</button>
+          <button class="tgl-btn" id="ff-date-range" onclick="setFfDatePickMode('range')">기간</button>
+          <button class="tgl-btn" id="ff-date-multi" onclick="setFfDatePickMode('multi')">여러 날짜</button>
+        </div>
+        <div id="ff-date-maxdays-wrap" style="display:none;margin-top:4px;">
+          <div class="ed-lbl" style="margin-bottom:3px;">최대 선택 기간 <span style="font-weight:400;opacity:.55;">(비워두면 자유)</span></div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input class="fi-sm" id="ff-date-max-days" type="number" min="2" placeholder="자유" style="margin-bottom:0;flex:1;">
+            <span style="font-size:12px;opacity:.6;">일</span>
+          </div>
         </div>
       </div>
       <div id="ff-options-wrap" style="display:none;margin-bottom:10px;">
@@ -2279,6 +2305,7 @@ let ffReqOn = false;
 let ffOtherOn = false;
 let ffSelectMode = 'dropdown';
 let ffDateMode = 'date';
+let ffDatePickMode = 'single';
 let curRespFormId = null;
 let curRespData = [];
 let curRespFormBlock = null;
@@ -2867,6 +2894,7 @@ function removeField(i) {
 /* Field modal */
 let fmSelectMode = 'dropdown';
 let fmDateMode = 'date';
+let fmDatePickMode = 'single';
 function toggleFmReq() {
   fmReqOn = !fmReqOn;
   document.getElementById('fm-req-sw').classList.toggle('on', fmReqOn);
@@ -2886,6 +2914,11 @@ function setFmDateMode(m) {
   document.getElementById('fm-date-date').classList.toggle('on', m==='date');
   document.getElementById('fm-date-datetime').classList.toggle('on', m==='datetime');
 }
+function setFmDatePickMode(m) {
+  fmDatePickMode = m;
+  ['single','range','multi'].forEach(x => document.getElementById('fm-date-'+x)?.classList.toggle('on', x===m));
+  document.getElementById('fm-date-maxdays-wrap').style.display = m==='range' ? '' : 'none';
+}
 function openFieldModal(idx) {
   curEditingFieldIdx = idx;
   document.getElementById('field-modal-ttl').textContent = idx===null ? '필드 추가' : '필드 편집';
@@ -2901,6 +2934,9 @@ function openFieldModal(idx) {
   fmDateMode   = f.dateMode||'date';
   setFmSelectMode(fmSelectMode);
   setFmDateMode(fmDateMode);
+  fmDatePickMode = f.datePickMode||'single';
+  setFmDatePickMode(fmDatePickMode);
+  document.getElementById('fm-date-max-days').value = f.dateMaxDays!=null ? f.dateMaxDays : '';
   onFmTypeChange();
   fmReqOn = f.required||false;
   document.getElementById('fm-req-sw').classList.toggle('on', fmReqOn);
@@ -2923,6 +2959,8 @@ function saveField() {
     extra.dateMode = fmDateMode;
     extra.dateMin = document.getElementById('fm-date-min').value;
     extra.dateMax = document.getElementById('fm-date-max').value;
+    extra.datePickMode = fmDatePickMode;
+    extra.dateMaxDays = fmDatePickMode==='range' && document.getElementById('fm-date-max-days').value ? parseInt(document.getElementById('fm-date-max-days').value) : null;
   }
   if (curEditingFieldIdx === null) {
     if (curAuthFields.find(f=>f.key===key)) { alert('이미 같은 키가 있어요.'); return; }
@@ -4318,6 +4356,9 @@ function openFormFieldModal(idx, insertAt) {
   setFfDateMode(ffDateMode);
   document.getElementById('ff-date-min').value = f.dateMin||'';
   document.getElementById('ff-date-max').value = f.dateMax||'';
+  ffDatePickMode = f.datePickMode||'single';
+  setFfDatePickMode(ffDatePickMode);
+  document.getElementById('ff-date-max-days').value = f.dateMaxDays!=null ? f.dateMaxDays : '';
   onFfTypeChange();
   document.getElementById('form-field-modal').classList.add('on');
 }
@@ -4343,6 +4384,11 @@ function setFfDateMode(m) {
   ffDateMode = m;
   document.getElementById('ff-date-date').classList.toggle('on', m==='date');
   document.getElementById('ff-date-datetime').classList.toggle('on', m==='datetime');
+}
+function setFfDatePickMode(m) {
+  ffDatePickMode = m;
+  ['single','range','multi'].forEach(x => document.getElementById('ff-date-'+x)?.classList.toggle('on', x===m));
+  document.getElementById('ff-date-maxdays-wrap').style.display = m==='range' ? '' : 'none';
 }
 function setFfSelectMode(mode) {
   ffSelectMode = mode;
@@ -4373,7 +4419,9 @@ function saveFormField() {
   const dateMin = type==='date' ? document.getElementById('ff-date-min').value : '';
   const dateMax = type==='date' ? document.getElementById('ff-date-max').value : '';
   const dateMode = type==='date' ? ffDateMode : 'date';
-  const extra = {description, placeholder, selectMode: type==='select'?ffSelectMode:'dropdown', allowOther: type==='select'&&ffOtherOn, minSelect: minSel, maxSelect: maxSel, minChars, maxChars, accept, maxFiles, maxTotalMB, dateMode, dateMin, dateMax};
+  const datePickMode = type==='date' ? ffDatePickMode : 'single';
+  const dateMaxDays = type==='date' && ffDatePickMode==='range' && document.getElementById('ff-date-max-days').value ? parseInt(document.getElementById('ff-date-max-days').value) : null;
+  const extra = {description, placeholder, selectMode: type==='select'?ffSelectMode:'dropdown', allowOther: type==='select'&&ffOtherOn, minSelect: minSel, maxSelect: maxSel, minChars, maxChars, accept, maxFiles, maxTotalMB, dateMode, dateMin, dateMax, datePickMode, dateMaxDays};
   if (curEditingFormFieldIdx===null) {
     if (curFormFields.find(f=>f.key===key)) { alert('이미 같은 키가 있어요.'); return; }
     const newField = {id:uid(), key, label, type, required:ffReqOn, options, ...extra};

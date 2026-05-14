@@ -63,6 +63,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 #loading{padding:40px 20px;text-align:center;font-size:14px;color:rgba(0,0,0,.5);}
 #err-screen{display:none;padding:40px 20px;text-align:center;font-size:14px;color:#c00;font-weight:700;}
 #err-screen.on{display:block;}
+
+/* 달력 위젯 */
+.cal-w{border:1.5px solid #000;border-radius:4px;overflow:hidden;user-select:none;}
+.cal-hd{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#000;color:#fff;}
+.cal-nav{background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0 10px;line-height:1;}
+.cal-ttl{font-size:14px;font-weight:700;}
+.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);background:#f5f5f5;border-bottom:1px solid rgba(0,0,0,.1);}
+.cal-dow span{text-align:center;padding:6px 0;font-size:11px;font-weight:700;color:rgba(0,0,0,.45);}
+.cal-dow span:first-child{color:#e00;}
+.cal-dow span:last-child{color:#00c;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);padding:4px;gap:2px;}
+.cal-day{text-align:center;padding:7px 2px;font-size:13px;cursor:pointer;border-radius:4px;transition:background .1s;}
+.cal-day:hover:not(.cal-dis){background:rgba(0,0,0,.08);}
+.cal-day.cal-sel{background:#000!important;color:#fff!important;border-radius:4px!important;}
+.cal-day.cal-range-in{background:rgba(0,0,0,.12);border-radius:0;}
+.cal-day.cal-range-start{background:#000!important;color:#fff!important;border-radius:4px 0 0 4px!important;}
+.cal-day.cal-range-end{background:#000!important;color:#fff!important;border-radius:0 4px 4px 0!important;}
+.cal-day.cal-today{font-weight:800;}
+.cal-day.cal-dis{opacity:.22;cursor:not-allowed;pointer-events:none;}
+.cal-day.cal-sun{color:#e00;}
+.cal-day.cal-sat{color:#00c;}
+.cal-info{padding:8px 12px;font-size:12px;text-align:center;border-top:1px solid rgba(0,0,0,.08);min-height:34px;display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.55);}
 </style>
 </head>
 <body>
@@ -172,10 +194,16 @@ function renderField(f) {
     </div>`;
   }
   if (type === 'date') {
-    const inputType = f.dateMode==='datetime' ? 'datetime-local' : 'date';
-    const minAttr = f.dateMin ? ` min="${f.dateMin}"` : '';
-    const maxAttr = f.dateMax ? ` max="${f.dateMax}"` : '';
-    return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<input class="ff-inp" id="ff-${fid}" type="${inputType}"${minAttr}${maxAttr}></div>`;
+    const pickMode = f.datePickMode||'single';
+    if(pickMode==='single' && f.dateMode==='datetime'){
+      const minAttr = f.dateMin ? ` min="${f.dateMin}"` : '';
+      const maxAttr = f.dateMax ? ` max="${f.dateMax}"` : '';
+      return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}<input class="ff-inp" id="ff-${fid}" type="datetime-local"${minAttr}${maxAttr}></div>`;
+    }
+    // 달력 위젯 (single/range/multi, 날짜만 모드)
+    const calHtml = _calHtml(fid);
+    setTimeout(()=>_calInit(fid,{mode:pickMode,dateMin:f.dateMin||'',dateMax:f.dateMax||'',maxDays:f.dateMaxDays||0}),0);
+    return `<div class="ff-wrap"><label class="ff-label">${esc(f.label)}${req}</label>${desc}${calHtml}</div>`;
   }
   if (type === 'select') {
     const mode = f.selectMode || 'dropdown';
@@ -515,6 +543,126 @@ function _sendHeight() {
   window.parent.postMessage({ type: 'lmp-resize', height: document.body.scrollHeight }, '*');
 }
 new ResizeObserver(_sendHeight).observe(document.body);
+
+// ── 달력 위젯 ──────────────────────────────────────────────────────────
+const _cals = {};
+function _calISO(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function _calFromISO(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function _calDayDiff(a,b){ return Math.round((_calFromISO(b)-_calFromISO(a))/(864e5)); }
+
+function _calInit(fid, opts){
+  const today = _calFromISO(_calISO(new Date()));
+  _cals[fid] = {
+    mode: opts.mode||'single',
+    dateMin: opts.dateMin||'',
+    dateMax: opts.dateMax||'',
+    maxDays: opts.maxDays||0,
+    sel: [],
+    year: today.getFullYear(),
+    month: today.getMonth()
+  };
+  _calRender(fid);
+}
+
+function _calRender(fid){
+  const s = _cals[fid]; if(!s) return;
+  const ttl = document.getElementById('cal-ttl-'+fid);
+  const grid = document.getElementById('cal-grid-'+fid);
+  if(!ttl||!grid) return;
+  ttl.textContent = `${s.year}년 ${s.month+1}월`;
+  const first = new Date(s.year, s.month, 1).getDay();
+  const total = new Date(s.year, s.month+1, 0).getDate();
+  const todayISO = _calISO(new Date());
+  let html = '';
+  for(let i=0;i<first;i++) html+='<span class="cal-day"></span>';
+  for(let d=1;d<=total;d++){
+    const iso=`${s.year}-${String(s.month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    let cls='cal-day';
+    const dow=new Date(s.year,s.month,d).getDay();
+    if(dow===0) cls+=' cal-sun';
+    if(dow===6) cls+=' cal-sat';
+    if(iso===todayISO) cls+=' cal-today';
+    let disabled=(s.dateMin&&iso<s.dateMin)||(s.dateMax&&iso>s.dateMax);
+    if(!disabled && s.mode==='range' && s.sel.length===1 && s.maxDays>0){
+      const diff=_calDayDiff(s.sel[0],iso);
+      if(Math.abs(diff)>=s.maxDays) disabled=true;
+    }
+    if(disabled) cls+=' cal-dis';
+    else {
+      if(s.mode==='single' && s.sel.includes(iso)) cls+=' cal-sel';
+      else if(s.mode==='range'){
+        if(s.sel.length>=2){
+          if(iso===s.sel[0]) cls+=' cal-range-start';
+          else if(iso===s.sel[1]) cls+=' cal-range-end';
+          else if(iso>s.sel[0]&&iso<s.sel[1]) cls+=' cal-range-in';
+        } else if(s.sel.length===1 && iso===s.sel[0]) cls+=' cal-sel';
+      } else if(s.mode==='multi' && s.sel.includes(iso)) cls+=' cal-sel';
+    }
+    const click=disabled?'':`onclick="_calClick('${fid}','${iso}')"`;
+    html+=`<span class="${cls}" ${click}>${d}</span>`;
+  }
+  grid.innerHTML=html;
+  _calUpdateInfo(fid);
+}
+
+function _calClick(fid, iso){
+  const s=_cals[fid]; if(!s) return;
+  if(s.mode==='single'){
+    s.sel=[iso];
+  } else if(s.mode==='range'){
+    if(s.sel.length===0||s.sel.length===2){ s.sel=[iso]; }
+    else {
+      const st=s.sel[0];
+      if(iso===st) s.sel=[];
+      else if(iso<st) s.sel=[iso,st];
+      else s.sel=[st,iso];
+    }
+  } else {
+    const i=s.sel.indexOf(iso);
+    if(i>=0) s.sel.splice(i,1); else s.sel.push(iso);
+    s.sel.sort();
+  }
+  const inp=document.getElementById('ff-'+fid);
+  if(inp){
+    if(s.mode==='single') inp.value=s.sel[0]||'';
+    else if(s.mode==='range') inp.value=s.sel.length===2?s.sel[0]+' ~ '+s.sel[1]:(s.sel[0]||'');
+    else inp.value=s.sel.join(', ');
+  }
+  _calRender(fid);
+}
+
+function _calNav(fid,dir){
+  const s=_cals[fid]; if(!s) return;
+  s.month+=dir;
+  if(s.month>11){s.month=0;s.year++;}
+  if(s.month<0){s.month=11;s.year--;}
+  _calRender(fid);
+}
+
+function _calUpdateInfo(fid){
+  const s=_cals[fid];
+  const el=document.getElementById('cal-info-'+fid); if(!el) return;
+  if(!s.sel.length){ el.textContent='날짜를 선택해주세요'; return; }
+  if(s.mode==='single') el.textContent=s.sel[0];
+  else if(s.mode==='range'){
+    if(s.sel.length===1) el.textContent=(s.maxDays>0?`종료일 선택 (최대 ${s.maxDays}일)`:'종료일을 선택해주세요');
+    else { const days=_calDayDiff(s.sel[0],s.sel[1])+1; el.textContent=`${s.sel[0]} ~ ${s.sel[1]} (${days}일)`; }
+  } else el.textContent=`${s.sel.length}개 날짜 선택됨`;
+}
+
+function _calHtml(fid){
+  return `<div class="cal-w" id="cal-${fid}">
+    <div class="cal-hd">
+      <button class="cal-nav" type="button" onclick="_calNav('${fid}',-1)">‹</button>
+      <span class="cal-ttl" id="cal-ttl-${fid}"></span>
+      <button class="cal-nav" type="button" onclick="_calNav('${fid}',1)">›</button>
+    </div>
+    <div class="cal-dow"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+    <div class="cal-grid" id="cal-grid-${fid}"></div>
+    <div class="cal-info" id="cal-info-${fid}"></div>
+    <input type="hidden" id="ff-${fid}" value="">
+  </div>`;
+}
 </script>
 </body>
 </html>
