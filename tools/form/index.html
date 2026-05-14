@@ -125,7 +125,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   </div>
   <div id="history-screen">
     <button class="hist-back" onclick="backFromHistory()">← 뒤로</button>
-    <div style="font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-.3px;">제출 내역</div>
+    <div id="history-title" style="font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-.3px;">제출 내역</div>
     <div id="history-list"></div>
   </div>
 </div>
@@ -617,6 +617,9 @@ async function showHistory() {
   document.getElementById('form-screen').classList.add('off');
   document.getElementById('done-screen').classList.remove('on');
   document.getElementById('history-screen').classList.add('on');
+  const formTitle = formConfig.title || '폼';
+  const userDisplay = Object.values(ctxUserFields)[0] || '';
+  document.getElementById('history-title').textContent = userDisplay ? `${formTitle} — ${userDisplay} 제출내역` : `${formTitle} 제출내역`;
   document.getElementById('history-list').innerHTML = '<div style="text-align:center;padding:24px 0;font-size:13px;color:rgba(0,0,0,.5);">불러오는 중…</div>';
   try {
     const snap = await db.collection('cms_form_responses').doc(FORM_ID).collection('responses')
