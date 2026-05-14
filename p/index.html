@@ -873,7 +873,7 @@ function onCtaClick(){
   if(AUTH_ENABLED && !IS_ADMIN_PREVIEW){
     const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
     if(saved.project===PROJECT_ID) reopenPrep();
-    else if(AUTH_MODE==='lazy') openPrep();
+    else if(AUTH_MODE==='on-demand') openPrep();
     else openAuthModal();
   } else openPrep();
 }
@@ -893,7 +893,7 @@ function requireAuthOr(action, reason){
 
 /* ── Auth ── */
 function openAuthModal(showReason){
-  const c=pickOther(COLORS[colorIdx]||'',KEY_COLORS);
+  const c=pickOther(KEY_COLORS[colorIdx]||'',KEY_COLORS);
   const box=document.getElementById('auth-box');
   box.style.background=c; box.style.setProperty('--modal-bg',c);
   document.getElementById('auth-key-input').value='';
@@ -917,7 +917,7 @@ function openAuthModal(showReason){
 }
 function openRegModal(){
   closeModal('auth-modal');
-  const c=pickOther(COLORS[colorIdx]||'',KEY_COLORS);
+  const c=pickOther(KEY_COLORS[colorIdx]||'',KEY_COLORS);
   const box=document.getElementById('reg-box');
   box.style.background=c; box.style.setProperty('--modal-bg',c);
   document.getElementById('reg-err').textContent='';
