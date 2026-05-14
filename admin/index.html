@@ -2221,7 +2221,7 @@ let curRespColWidths = {}; // {formId: {colKey: widthPx}} — 레거시 폼 응�
 let tfRespColWidths = {}; // {colKey: widthPx} — 폼 도구 응답 테이블 너비 (cms_form_configs/{id}.columnWidths)
 let curEditingFieldIdx = null;
 let curEditingUserId = null;
-let pendingBgUploadIdx = null;
+let pendingBgUploadTarget = null; // 인덱스 대신 객체 참조 — 비동기 업로드 중 배열 변경에도 안전
 let fmReqOn = false;
 let curLogoTextSize = '24';
 let curLogoTextAlign = 'center';
@@ -2594,7 +2594,7 @@ function updateBgThumb(i, url) {
   if (url) { img.src=url; img.style.opacity=1; } else img.style.opacity=0;
 }
 function openBgUpload(i) {
-  pendingBgUploadIdx = i;
+  pendingBgUploadTarget = curBgImages[i];
   document.getElementById('bg-file-input').click();
 }
 function checkUnsupportedImageFormat(file) {
@@ -2754,9 +2754,9 @@ async function uploadBlockImage(event, urlFieldId, prevId) {
 async function onBgFileSelected(e) {
   const file = e.target.files[0];
   e.target.value = '';
-  if (!file || pendingBgUploadIdx === null) return;
-  const i = pendingBgUploadIdx;
-  pendingBgUploadIdx = null;
+  if (!file || !pendingBgUploadTarget) return;
+  const target = pendingBgUploadTarget; // 로컬 변수에 저장 — 이후 배열 변경의 영향 없음
+  pendingBgUploadTarget = null;
   const projId = document.getElementById('p-id').value.trim() || 'tmp';
   const compressed = await compressImage(file, { maxWidth: 1600, quality: 0.85 });
   const path = `cms_projects/${projId}/bg/${Date.now()}.webp`;
@@ -2764,7 +2764,8 @@ async function onBgFileSelected(e) {
     const ref = storage.ref(path);
     await ref.put(compressed, { contentType: 'image/webp' });
     const url = await ref.getDownloadURL();
-    curBgImages[i].url = url;
+    if (!curBgImages.includes(target)) return; // 업로드 중 해당 항목이 삭제된 경우 무시
+    target.url = url;
     renderBgImages();
   } catch(err) {
     alert('업로드 실패: ' + err.message + '\n\nFirebase Storage 규칙에서 인증된 쓰기를 허용해야 해요.');
