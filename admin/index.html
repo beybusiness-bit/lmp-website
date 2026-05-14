@@ -1991,6 +1991,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           </div>
         </div>
       </div>
+      <div id="ff-file-extra" style="display:none;padding:10px 12px;background:#f8f8f8;border:1.5px solid rgba(0,0,0,.12);margin-bottom:12px;">
+        <div class="ed-lbl" style="margin-bottom:4px;">허용 파일 형식 <span style="font-weight:400;opacity:.55;">(비워두면 모든 형식)</span></div>
+        <input class="fi-sm" id="ff-accept" placeholder="예: image/* 또는 .jpg,.png,.pdf" style="margin-bottom:10px;">
+        <div style="font-size:11px;color:rgba(0,0,0,.4);margin-top:-6px;margin-bottom:10px;">image/* · video/* · .pdf · .pdf,.docx 등 쉼표로 구분</div>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;">
+            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:3px;">최대 파일 수</div>
+            <input class="fi-sm" id="ff-max-files" type="number" min="1" placeholder="제한 없음" style="margin-bottom:0;">
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:3px;">전체 용량 한도 (MB)</div>
+            <input class="fi-sm" id="ff-max-total-mb" type="number" min="1" placeholder="제한 없음" style="margin-bottom:0;">
+          </div>
+        </div>
+      </div>
       <div class="switch-row">
         <div class="switch" id="ff-req-sw" onclick="toggleFfReq()"></div>
         <span class="switch-lbl">필수 입력 항목</span>
@@ -4191,7 +4206,7 @@ function openFormFieldModal(idx, insertAt) {
   curEditingFormFieldIdx = idx;
   curFieldInsertAt = (idx===null && insertAt!=null) ? insertAt : null;
   document.getElementById('form-field-modal-ttl').textContent = idx===null ? '필드 추가' : '필드 편집';
-  const f = idx!==null ? curFormFields[idx] : {label:'',key:'',type:'string',required:false,options:[],description:'',placeholder:'',selectMode:'dropdown',allowOther:false,minSelect:null,maxSelect:null,minChars:null,maxChars:null};
+  const f = idx!==null ? curFormFields[idx] : {label:'',key:'',type:'string',required:false,options:[],description:'',placeholder:'',selectMode:'dropdown',allowOther:false,minSelect:null,maxSelect:null,minChars:null,maxChars:null,accept:'',maxFiles:null,maxTotalMB:null};
   const labelEl = document.getElementById('ff-label');
   const keyEl   = document.getElementById('ff-key');
   labelEl.value = f.label||'';
@@ -4212,6 +4227,9 @@ function openFormFieldModal(idx, insertAt) {
   document.getElementById('ff-max-sel').value = f.maxSelect!=null ? f.maxSelect : '';
   document.getElementById('ff-min-chars').value = f.minChars!=null ? f.minChars : '';
   document.getElementById('ff-max-chars').value = f.maxChars!=null ? f.maxChars : '';
+  document.getElementById('ff-accept').value = f.accept||'';
+  document.getElementById('ff-max-files').value = f.maxFiles!=null ? f.maxFiles : '';
+  document.getElementById('ff-max-total-mb').value = f.maxTotalMB!=null ? f.maxTotalMB : '';
   onFfTypeChange();
   document.getElementById('form-field-modal').classList.add('on');
 }
@@ -4229,6 +4247,7 @@ function onFfTypeChange() {
   document.getElementById('ff-select-extra').style.display   = isSel ? '' : 'none';
   document.getElementById('ff-placeholder-wrap').style.display = (t==='file'||t==='select'||isColor) ? 'none' : '';
   document.getElementById('ff-charcount-wrap').style.display  = isText ? '' : 'none';
+  document.getElementById('ff-file-extra').style.display     = t==='file' ? '' : 'none';
 }
 function setFfSelectMode(mode) {
   ffSelectMode = mode;
@@ -4251,8 +4270,12 @@ function saveFormField() {
   const isTextType = type === 'string' || type === 'textarea';
   const minChars = isTextType && document.getElementById('ff-min-chars').value !== '' ? parseInt(document.getElementById('ff-min-chars').value) : null;
   const maxChars = isTextType && document.getElementById('ff-max-chars').value !== '' ? parseInt(document.getElementById('ff-max-chars').value) : null;
+  const isFileType = type === 'file';
+  const accept = isFileType ? document.getElementById('ff-accept').value.trim() : '';
+  const maxFiles = isFileType && document.getElementById('ff-max-files').value !== '' ? parseInt(document.getElementById('ff-max-files').value) : null;
+  const maxTotalMB = isFileType && document.getElementById('ff-max-total-mb').value !== '' ? parseFloat(document.getElementById('ff-max-total-mb').value) : null;
   if (!label||!key) { alert('이름과 키를 입력해주세요.'); return; }
-  const extra = {description, placeholder, selectMode: type==='select'?ffSelectMode:'dropdown', allowOther: type==='select'&&ffOtherOn, minSelect: minSel, maxSelect: maxSel, minChars, maxChars};
+  const extra = {description, placeholder, selectMode: type==='select'?ffSelectMode:'dropdown', allowOther: type==='select'&&ffOtherOn, minSelect: minSel, maxSelect: maxSel, minChars, maxChars, accept, maxFiles, maxTotalMB};
   if (curEditingFormFieldIdx===null) {
     if (curFormFields.find(f=>f.key===key)) { alert('이미 같은 키가 있어요.'); return; }
     const newField = {id:uid(), key, label, type, required:ffReqOn, options, ...extra};
