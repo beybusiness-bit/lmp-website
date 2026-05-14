@@ -1030,12 +1030,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 </div>
               </div>
             </div>
+            <!-- 드라이브 파일 저장 -->
+            <div class="ed-sect" style="margin-top:12px;margin-bottom:0;">
+              <div style="font-size:11px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:6px;">Google Drive 폴더에 파일 저장</div>
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <input id="tf-drive-folder-name" placeholder="Drive 폴더 이름 (예: 응답_파일모음)" style="flex:1;min-width:160px;padding:6px 8px;border:1.5px solid rgba(0,0,0,.2);font-size:12px;font-family:inherit;border-radius:0;">
+                <button onclick="saveTfFilesToDrive()" style="padding:6px 12px;background:transparent;border:1.5px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📁 Drive에 저장</button>
+              </div>
+              <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;cursor:pointer;">
+                <input type="checkbox" id="tf-drive-backfill-all"> 불러온 응답 전체 파일 저장 (체크 해제 시 최신 응답만)
+              </label>
+              <div id="tf-drive-status" style="font-size:11px;color:rgba(0,0,0,.5);margin-top:6px;min-height:16px;"></div>
+            </div>
             <!-- 응답 목록 -->
             <div style="margin-top:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
               <div style="font-size:12px;font-weight:700;">응답 목록</div>
               <div style="display:flex;gap:6px;">
                 <button class="mbtn-cancel" onclick="loadTfInlineResponses()" style="font-size:11px;padding:5px 10px;">↻ 새로고침</button>
                 <button class="mbtn-cancel" onclick="exportTfRespCsv()" style="font-size:11px;padding:5px 10px;">CSV 내보내기</button>
+                <button class="mbtn-cancel" onclick="dlAllTfRespFiles()" style="font-size:11px;padding:5px 10px;">📥 전체 파일 다운</button>
               </div>
             </div>
             <div id="tf-resp-scroll" style="margin-top:8px;max-height:60vh;overflow:auto;border:1.5px solid rgba(0,0,0,.1);padding:0;font-size:12px;">
@@ -2026,6 +2039,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     </div>
     <div class="modal-footer" style="margin-top:8px;">
       <button class="mbtn-cancel" onclick="closeModal('form-resp-modal')">닫기</button>
+      <button class="mbtn-cancel" onclick="dlAllRespFiles()">📥 전체 파일 다운</button>
       <button class="mbtn-ok" onclick="exportRespCsv()">CSV 내보내기</button>
     </div>
   </div>
@@ -4331,12 +4345,42 @@ async function disconnectRespSheet() {
   } catch(e) { alert('해제 실패: ' + e.message); }
 }
 function _respCellHtml(col, row) {
-  const raw = col.val(row);
-  if (col.isFile && raw && raw.startsWith('http')) {
-    const name = decodeURIComponent(raw.split('/').pop().split('?')[0]).replace(/^\d+_/, '');
-    return `<a href="${raw}" target="_blank" rel="noopener" style="color:#000;font-weight:700;text-decoration:underline;word-break:break-all;">📎 ${name || '파일 보기'}</a>`;
+  if (col.isFile) {
+    const v = row[col.key];
+    const urls = Array.isArray(v) ? v : (typeof v==='string'&&v ? v.split(', ').filter(u=>u.startsWith('http')) : []);
+    if (!urls.length) return '';
+    return urls.map(u=>{
+      const name = decodeURIComponent(u.split('/').pop().split('?')[0]).replace(/^\d+_/,'');
+      return `<a href="${u}" target="_blank" rel="noopener" style="color:#000;font-weight:700;text-decoration:underline;word-break:break-all;display:block;margin-bottom:2px;">📎 ${name||'파일 보기'}</a>`;
+    }).join('');
   }
-  return raw;
+  return col.val(row);
+}
+function _getRowFileUrls(row, cols) {
+  const result = [];
+  cols.filter(c=>c.isFile).forEach(c=>{
+    const v = row[c.key];
+    const urls = Array.isArray(v) ? v : (typeof v==='string'&&v ? v.split(', ').filter(u=>u.startsWith('http')) : []);
+    urls.forEach(u=>result.push({url:u, fieldLabel:c.label}));
+  });
+  return result;
+}
+async function _downloadFiles(fileUrls) {
+  if (!fileUrls.length) { alert('다운로드할 파일이 없어요.'); return; }
+  for (const {url} of fileUrls) {
+    try {
+      const r = await fetch(url);
+      const blob = await r.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = decodeURIComponent(url.split('/').pop().split('?')[0]).replace(/^\d+_/,'') || 'file';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      await new Promise(res=>setTimeout(res,300));
+    } catch(_) {
+      window.open(url,'_blank');
+      await new Promise(res=>setTimeout(res,500));
+    }
+  }
 }
 function _getRespCols(){
   const block=curRespFormBlock;
@@ -4363,6 +4407,8 @@ function renderRespTable() {
   const resetLink = hasCustom ? `<span class="col-resize-reset" onclick="resetAllRespColWidths()">↺ 컬럼 너비 모두 기본값으로</span>` : '';
   const chipBar = _frozenChipBar(cols.map(c=>({label:c.label})), stickyCount, 'setRespFrozen');
   const visBar = _colVisBar(allCols.map(c=>({key:c.key,label:c.label})), _rHidden, 'toggleRespColVis');
+  const hasFileCol = cols.some(c=>c.isFile);
+  const dlColHd = hasFileCol ? `<th style="white-space:nowrap;padding:6px 10px;background:#000;color:#fff;font-size:11px;text-align:left;font-weight:700;position:sticky;top:0;z-index:2;">파일</th>` : '';
   el.innerHTML = chipBar + visBar + `<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
     <thead><tr>${cols.map((c,idx)=>{
       const defaultW = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;` : _colWidthCss(c.type);
@@ -4370,18 +4416,29 @@ function renderRespTable() {
       const isLast=idx===stickyCount-1;
       const sticky = idx<stickyCount ? `position:sticky;left:${_rfLefts[idx]}px;z-index:3;top:0;`+(isLast?'box-shadow:2px 0 4px rgba(0,0,0,.1);':'') : 'position:sticky;top:0;z-index:2;';
       return `<th style="white-space:nowrap;padding:6px 10px;background:#000;color:#fff;font-size:11px;text-align:left;font-weight:700;${sticky}${w}">${c.label}${_resizeHandle(c.key,'resp')}</th>`;
-    }).join('')}</tr></thead>
-    <tbody>${curRespData.map(r=>
+    }).join('')}${dlColHd}</tr></thead>
+    <tbody>${curRespData.map((r,rowIdx)=>
       `<tr>${cols.map((c,idx)=>{
         const defaultW = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;white-space:nowrap;` : _colWidthCss(c.type);
         const w = _respColStyle(c.key, defaultW);
         const isLast=idx===stickyCount-1;
         const sticky = idx<stickyCount ? `position:sticky;left:${_rfLefts[idx]}px;z-index:1;background:#fff;`+(isLast?'box-shadow:2px 0 4px rgba(0,0,0,.1);':'') : '';
         return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.08);font-size:12px;word-break:keep-all;overflow-wrap:break-word;background:#fff;${w}${sticky}">${_respCellHtml(c,r)}</td>`;
-      }).join('')}</tr>`
+      }).join('')}${hasFileCol?`<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.08);white-space:nowrap;"><button onclick="dlRespRowFiles(${rowIdx})" style="padding:3px 8px;font-size:11px;font-family:inherit;cursor:pointer;border:1.5px solid #000;background:transparent;">📥 다운</button></td>`:''}</tr>`
     ).join('')}</tbody>
   </table>
   <div style="position:sticky;left:0;padding:10px;font-size:11px;color:rgba(0,0,0,.4);display:flex;align-items:center;gap:12px;">${curRespData.length}개 응답 (최근 100개)${resetLink}</div>`;
+}
+function dlRespRowFiles(idx) {
+  const row = curRespData[idx]; if (!row) return;
+  _downloadFiles(_getRowFileUrls(row, _getRespCols()));
+}
+function dlAllRespFiles() {
+  const cols = _getRespCols();
+  const all = []; curRespData.forEach(r=>all.push(..._getRowFileUrls(r,cols)));
+  if (!all.length) { alert('파일이 없어요.'); return; }
+  if (!confirm(all.length+'개 파일을 다운로드할까요?')) return;
+  _downloadFiles(all);
 }
 function exportRespCsv() {
   if (!curRespData.length) { alert('응답이 없어요.'); return; }
@@ -6590,6 +6647,8 @@ function renderTfRespTable(){
   const resetLink = hasCustom ? `<span class="col-resize-reset" onclick="resetAllTfRespColWidths()">↺ 컬럼 너비 모두 기본값으로</span>` : '';
   const chipBar = _frozenChipBar(cols.map(c=>({label:c.label})), stickyCount, 'setTfFrozen');
   const visBar = _colVisBar(allCols.map(c=>({key:c.key,label:c.label})), _tfHidden, 'toggleTfColVis');
+  const hasFileCol = cols.some(c=>c.isFile);
+  const dlColHdTf = hasFileCol ? `<th style="white-space:nowrap;padding:6px 10px;background:#000;color:#fff;font-size:11px;text-align:left;font-weight:700;position:sticky;top:0;z-index:2;">파일</th>` : '';
   el.innerHTML=chipBar+visBar+`<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
     <thead><tr>${cols.map((c,idx)=>{
       const baseType=c.type==='_user'?'string':c.type;
@@ -6598,8 +6657,8 @@ function renderTfRespTable(){
       const isLast=idx===stickyCount-1;
       const sticky = idx<stickyCount ? `position:sticky;left:${_tfLefts[idx]}px;z-index:3;top:0;`+(isLast?'box-shadow:2px 0 4px rgba(0,0,0,.1);':'') : 'position:sticky;top:0;z-index:2;';
       return `<th style="white-space:nowrap;padding:6px 10px;background:#000;color:#fff;font-size:11px;text-align:left;font-weight:700;${sticky}${w}">${c.label}${_resizeHandle(c.key,'tf')}</th>`;
-    }).join('')}</tr></thead>
-    <tbody>${tfRespData.map(r=>
+    }).join('')}${dlColHdTf}</tr></thead>
+    <tbody>${tfRespData.map((r,rowIdx)=>
       `<tr>${cols.map((c,idx)=>{
         const baseType=c.type==='_user'?'string':c.type;
         const defaultW = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;white-space:nowrap;` : _colWidthCss(baseType);
@@ -6607,10 +6666,21 @@ function renderTfRespTable(){
         const isLast=idx===stickyCount-1;
         const sticky = idx<stickyCount ? `position:sticky;left:${_tfLefts[idx]}px;z-index:1;background:#fff;`+(isLast?'box-shadow:2px 0 4px rgba(0,0,0,.1);':'') : '';
         return `<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.08);font-size:12px;word-break:keep-all;overflow-wrap:break-word;background:#fff;${w}${sticky}">${_respCellHtml(c,r)}</td>`;
-      }).join('')}</tr>`
+      }).join('')}${hasFileCol?`<td style="padding:5px 10px;border-bottom:1px solid rgba(0,0,0,.08);white-space:nowrap;"><button onclick="dlTfRespRowFiles(${rowIdx})" style="padding:3px 8px;font-size:11px;font-family:inherit;cursor:pointer;border:1.5px solid #000;background:transparent;">📥 다운</button></td>`:''}</tr>`
     ).join('')}</tbody>
   </table>
   <div style="position:sticky;left:0;padding:10px;font-size:11px;color:rgba(0,0,0,.4);display:flex;align-items:center;gap:12px;">${tfRespData.length}개 응답 (최근 100개)${resetLink}</div>`;
+}
+function dlTfRespRowFiles(idx) {
+  const row = tfRespData[idx]; if (!row) return;
+  _downloadFiles(_getRowFileUrls(row, _getTfRespCols()));
+}
+function dlAllTfRespFiles() {
+  const cols = _getTfRespCols();
+  const all = []; tfRespData.forEach(r=>all.push(..._getRowFileUrls(r,cols)));
+  if (!all.length) { alert('파일이 없어요.'); return; }
+  if (!confirm(all.length+'개 파일을 다운로드할까요?')) return;
+  _downloadFiles(all);
 }
 
 function _getTfRespCols(){
@@ -6624,6 +6694,37 @@ function _getTfRespCols(){
   }}] : [];
   const formCols=fields.map(f=>({key:f.key,label:f.label,type:f.type,isFile:f.type==='file',val:r=>{const v=r[f.key];return Array.isArray(v)?v.join(', '):String(v??'');}}));
   return [tsCol,...userCol,...formCols];
+}
+
+async function saveTfFilesToDrive(){
+  const folderName=(document.getElementById('tf-drive-folder-name')?.value||'').trim();
+  if(!folderName){alert('Drive 폴더 이름을 입력해주세요.');return;}
+  const fields=(tfRespFields||[]).filter(f=>f.type==='file');
+  if(!fields.length){alert('파일 업로드 필드가 없어요.');return;}
+  const statusEl=document.getElementById('tf-drive-status');
+  const files=[];
+  tfRespData.forEach(resp=>{
+    const submittedDate=resp.submittedAt?.seconds
+      ?new Date(resp.submittedAt.seconds*1000).toLocaleDateString('ko').replace(/\.\s?/g,'-').replace(/-$/,'')
+      :'날짜없음';
+    const userFields=resp._userFields||{};
+    const userName=Object.values(userFields).filter(v=>v&&typeof v==='string').slice(0,1)[0]||'익명';
+    fields.forEach(fc=>{
+      const v=resp[fc.key];
+      const urls=Array.isArray(v)?v:(typeof v==='string'&&v?v.split(', ').filter(u=>u.startsWith('http')):[]);
+      urls.forEach(url=>{files.push({url,fileName:`${fc.label}_${userName}_${submittedDate}`});});
+    });
+  });
+  if(!files.length){alert('저장할 파일이 없어요.');return;}
+  if(statusEl) statusEl.textContent=`저장 중… (${files.length}개 파일)`;
+  try{
+    const r=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'saveFilesToDrive',folderName,files})});
+    const data=await r.json();
+    if(!data.success) throw new Error(data.error||'저장 실패');
+    if(statusEl) statusEl.innerHTML=`✅ ${data.savedCount}개 파일 저장 완료 · <a href="${data.folderUrl}" target="_blank" style="color:#000;font-weight:700;">폴더 열기 ↗</a>`;
+  }catch(e){
+    if(statusEl) statusEl.textContent='❌ 저장 실패: '+e.message;
+  }
 }
 
 function exportTfRespCsv(){
