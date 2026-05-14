@@ -901,24 +901,58 @@ function openRegModal(){
   document.getElementById('reg-err').textContent='';
   document.getElementById('reg-ok').textContent='등록';
   document.getElementById('reg-ok').disabled=false;
-  const fieldsHtml=AUTH_FIELDS.map(f=>`
-    <div style="margin-bottom:12px;">
-      <div style="font-size:12px;font-weight:700;margin-bottom:4px;">${f.label}${f.required?'<span style="color:red;margin-left:2px;">*</span>':''}</div>
-      <input class="inp" data-reg-key="${f.key}" data-reg-type="${f.type||'string'}" placeholder="${f.label}" style="margin-bottom:0;">
-    </div>`).join('');
+  const fieldsHtml=AUTH_FIELDS.map(f=>{
+    const req=f.required?'<span style="color:red;margin-left:2px;">*</span>':'';
+    const lbl=`<div style="font-size:12px;font-weight:700;margin-bottom:4px;">${f.label}${req}</div>`;
+    let inp='';
+    const t=f.type||'string';
+    if(t==='textarea'){
+      inp=`<textarea class="inp" data-reg-key="${f.key}" data-reg-type="${t}" placeholder="${f.label}" style="margin-bottom:0;min-height:72px;resize:vertical;"></textarea>`;
+    } else if(t==='select'){
+      const opts=f.options||[];
+      if(f.selectMode==='buttons'){
+        const btns=opts.map(o=>`<button type="button" class="reg-opt-btn" data-val="${o}" onclick="toggleRegOptBtn(this,'${f.key}')" style="padding:7px 14px;border:1.5px solid #000;background:transparent;font-size:13px;font-family:inherit;cursor:pointer;border-radius:2px;">${o}</button>`).join('');
+        inp=`<div data-reg-key="${f.key}" data-reg-type="${t}" data-reg-val="" style="display:flex;flex-wrap:wrap;gap:6px;">${btns}</div>`;
+      } else {
+        const optsHtml=opts.map(o=>`<option value="${o}">${o}</option>`).join('');
+        inp=`<select class="inp" data-reg-key="${f.key}" data-reg-type="${t}" style="margin-bottom:0;cursor:pointer;"><option value="">선택해주세요</option>${optsHtml}</select>`;
+      }
+    } else if(t==='date'){
+      const dateType=f.dateMode==='datetime'?'datetime-local':'date';
+      inp=`<input class="inp" type="${dateType}" data-reg-key="${f.key}" data-reg-type="${t}" style="margin-bottom:0;">`;
+    } else if(t==='number'){
+      inp=`<input class="inp" type="number" data-reg-key="${f.key}" data-reg-type="${t}" placeholder="${f.label}" style="margin-bottom:0;">`;
+    } else {
+      inp=`<input class="inp" data-reg-key="${f.key}" data-reg-type="${t}" placeholder="${f.label}" style="margin-bottom:0;">`;
+    }
+    return `<div style="margin-bottom:12px;">${lbl}${inp}</div>`;
+  }).join('');
   document.getElementById('reg-fields').innerHTML=fieldsHtml;
   document.getElementById('reg-modal').classList.add('on');
-  setTimeout(()=>{ const first=document.querySelector('#reg-fields input'); if(first) first.focus(); },200);
+  setTimeout(()=>{ const first=document.querySelector('#reg-fields input,#reg-fields select,#reg-fields textarea'); if(first) first.focus(); },200);
+}
+function toggleRegOptBtn(btn, key){
+  const wrap=btn.closest('[data-reg-key]');
+  const prev=wrap.dataset.regVal||'';
+  const val=btn.dataset.val;
+  if(prev===val){ wrap.dataset.regVal=''; btn.style.background='transparent'; btn.style.color=''; }
+  else { wrap.dataset.regVal=val; wrap.querySelectorAll('.reg-opt-btn').forEach(b=>{ b.style.background='transparent'; b.style.color=''; }); btn.style.background='#000'; btn.style.color='#fff'; }
 }
 async function submitRegistration(){
-  const inputs=[...document.querySelectorAll('#reg-fields input[data-reg-key]')];
   const data={};
-  for(const inp of inputs){
-    const key=inp.dataset.regKey;
-    const type=inp.dataset.regType;
-    const val=inp.value.trim();
-    if(!val){ const f=AUTH_FIELDS.find(f=>f.key===key); if(f?.required){ document.getElementById('reg-err').textContent=`'${f.label}'을(를) 입력해주세요.`; inp.focus(); return; } }
-    data[key]=type==='number'?(parseFloat(val)||0):val;
+  for(const f of AUTH_FIELDS){
+    const key=f.key;
+    const t=f.type||'string';
+    let val='';
+    if(t==='select'&&f.selectMode==='buttons'){
+      const wrap=document.querySelector(`#reg-fields [data-reg-key="${key}"]`);
+      val=wrap?wrap.dataset.regVal||'':'';
+    } else {
+      const el=document.querySelector(`#reg-fields [data-reg-key="${key}"]`);
+      val=el?(el.value||'').trim():'';
+    }
+    if(!val&&f.required){ document.getElementById('reg-err').textContent=`'${f.label}'을(를) 입력해주세요.`; const el=document.querySelector(`#reg-fields [data-reg-key="${key}"]`); if(el) el.focus(); return; }
+    data[key]=t==='number'?(parseFloat(val)||0):val;
   }
   const btn=document.getElementById('reg-ok');
   btn.textContent='등록 중…'; btn.disabled=true;
@@ -1331,6 +1365,10 @@ function _effectivePageBg(){
 function _lmpContext(iframeEl){
   let bb = iframeEl ? (iframeEl.getAttribute('data-block-bg')||'') : '';
   const _session = JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  const _authKeys = typeof AUTH_FIELDS!=='undefined' ? AUTH_FIELDS.map(f=>f.key) : null;
+  const _userFields = _authKeys
+    ? Object.fromEntries(_authKeys.filter(k=>k in _session).map(k=>[k,_session[k]]))
+    : _session;
   return {
     type:'lmp-context',
     projectId: typeof PROJECT_ID!=='undefined' ? PROJECT_ID : '',
@@ -1338,7 +1376,7 @@ function _lmpContext(iframeEl){
     boothType: _session.boothType||_session.type||'',
     keyColors: typeof KEY_COLORS!=='undefined' ? KEY_COLORS : [],
     prepBg: typeof prepBg!=='undefined' ? prepBg : '',
-    userFields: _session,
+    userFields: _userFields,
     blockBg: bb
   };
 }
