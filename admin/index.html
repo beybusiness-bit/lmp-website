@@ -142,6 +142,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .blk-tab.on{background:#000;color:#fff;}
 .fmt-bar{display:flex;flex-wrap:wrap;gap:5px;padding-bottom:10px;margin-bottom:10px;border-bottom:1.5px solid rgba(0,0,0,.1);}
 .fmt-btn{padding:5px 8px;background:transparent;border:1.5px solid rgba(0,0,0,.3);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:#000;min-width:30px;text-align:center;user-select:none;}
+.rte-itb-btn{padding:3px 7px;background:transparent;border:1.5px solid rgba(0,0,0,.25);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#000;}
+.rte-itb-btn.on{background:#000;color:#fff;border-color:#000;}
+.rte-itb-btn:hover{border-color:#000;}
 .fmt-btn:active{background:#000;color:#fff;}
 .fmt-btn.on{background:#000;color:#fff;border-color:#000;}
 #fmt-popup{display:none;position:fixed;background:#fff;border:2px solid #000;z-index:600;box-shadow:3px 3px 0 rgba(0,0,0,.1);min-width:110px;}
@@ -6089,12 +6092,21 @@ function openFmtDd(btn,type,ctx){
       <button onpointerdown="epd(event)" onclick="insertHr('${ctx}')" style="width:100%;padding:7px 0;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">삽입</button>
     </div>`;
   } else if(type==='img'){
+    const wPresets=['자동','25%','50%','75%','100%'];
+    const wBtns=wPresets.map(w=>`<button class="rte-itb-btn${_fmtImgW===w?' on':''}" onpointerdown="epd(event)" onclick="_fmtImgW='${w}';document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');document.getElementById('fmt-img-px-pop').value='';event.stopPropagation();">${w}</button>`).join('');
     html=`<div style="padding:10px 10px 10px;min-width:230px;">
     <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:8px;">이미지 삽입</div>
     <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:4px;">이미지 URL</div>
     <input id="fmt-img-url-inp" class="fi-sm" type="url" placeholder="https://…" style="margin-bottom:8px;"
       onpointerdown="epd(event)"
       onkeydown="if(event.key==='Enter'){applyFmtImg('${ctx}',this.value.trim());closeFmtPopup();}">
+    <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:4px;">가로 폭</div>
+    <div id="fmt-img-w-row" style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px;">${wBtns}
+      <input id="fmt-img-px-pop" type="number" min="10" max="2000" placeholder="직접(px)" onpointerdown="epd(event)"
+        style="width:72px;padding:3px 5px;border:1.5px solid rgba(0,0,0,.25);font-size:11px;font-family:inherit;outline:none;"
+        oninput="if(this.value){_fmtImgW=this.value+'px';document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.remove('on'));}"
+        onkeydown="if(event.key==='Enter'&&this.value){_fmtImgW=this.value+'px';}">
+    </div>
     <div style="display:flex;gap:6px;margin-bottom:8px;">
       <button onpointerdown="epd(event)" onclick="applyFmtImg('${ctx}',document.getElementById('fmt-img-url-inp').value.trim());closeFmtPopup();"
         style="flex:1;padding:7px 0;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">삽입</button>
@@ -6112,13 +6124,75 @@ function openFmtDd(btn,type,ctx){
 }
 function closeFmtPopup(){document.getElementById('fmt-popup').style.display='none';_fmtPopType=null;_fmtPopCtx=null;}
 function applyFmtVar(ctx,key){focusEd(ctx);document.execCommand('insertText',false,`{{${key}}}`);closeFmtPopup();}
-let _fmtImgUploadCtx='';
+let _fmtImgUploadCtx='', _fmtImgW='100%', _rteSelectedImg=null;
 function applyFmtImg(ctx,url){
   if(!url)return;
   focusEd(ctx);
-  document.execCommand('insertHTML',false,`<img src="${url}" style="max-width:100%;height:auto;display:block;" loading="lazy">`);
+  const w=_fmtImgW||'100%';
+  const wStyle=w==='자동'?'max-width:100%;':`width:${w};max-width:100%;`;
+  document.execCommand('insertHTML',false,`<img src="${url}" style="${wStyle}height:auto;display:block;" loading="lazy">`);
   scheduleBmPreview();
 }
+
+// 플로팅 이미지 툴바
+function _showRteImgTb(img){
+  _rteSelectedImg=img;
+  const tb=document.getElementById('rte-img-tb');
+  tb.style.display='flex';
+  // 현재 폭 감지해서 버튼 활성화
+  const curW=img.style.width||'';
+  tb.querySelectorAll('.rte-itb-btn').forEach(b=>{
+    const txt=b.textContent.trim();
+    b.classList.toggle('on', txt===curW||(txt==='자동'&&!curW));
+  });
+  const inp=document.getElementById('rte-img-px-inp');
+  if(inp) inp.value='';
+  _positionRteImgTb(img);
+}
+function _positionRteImgTb(img){
+  const tb=document.getElementById('rte-img-tb');
+  const r=img.getBoundingClientRect();
+  let top=r.top-tb.offsetHeight-6;
+  if(top<4) top=r.bottom+4;
+  let left=r.left;
+  if(left+tb.offsetWidth>window.innerWidth-6) left=window.innerWidth-tb.offsetWidth-6;
+  tb.style.top=top+'px'; tb.style.left=left+'px';
+}
+function _hideRteImgTb(){
+  document.getElementById('rte-img-tb').style.display='none';
+  _rteSelectedImg=null;
+}
+function setRteImgW(w){
+  if(!_rteSelectedImg) return;
+  if(w==='자동'){_rteSelectedImg.style.width='';_rteSelectedImg.style.maxWidth='100%';}
+  else{_rteSelectedImg.style.width=w;_rteSelectedImg.style.maxWidth='100%';}
+  document.querySelectorAll('#rte-img-tb .rte-itb-btn').forEach(b=>b.classList.toggle('on',b.textContent.trim()===w));
+  scheduleBmPreview();
+}
+function setRteImgWPx(){
+  const v=document.getElementById('rte-img-px-inp')?.value;
+  if(!v||!_rteSelectedImg) return;
+  _rteSelectedImg.style.width=v+'px'; _rteSelectedImg.style.maxWidth='100%';
+  document.querySelectorAll('#rte-img-tb .rte-itb-btn').forEach(b=>b.classList.remove('on'));
+  scheduleBmPreview();
+}
+function deleteRteImg(){
+  if(!_rteSelectedImg) return;
+  _rteSelectedImg.remove();
+  _hideRteImgTb();
+  scheduleBmPreview();
+}
+// contenteditable 클릭 이벤트 위임 — 이미지 감지
+document.addEventListener('click',e=>{
+  const tb=document.getElementById('rte-img-tb');
+  if(tb&&tb.contains(e.target)) return;
+  if(e.target.tagName==='IMG'&&e.target.closest('[contenteditable]')){
+    e.preventDefault();
+    _showRteImgTb(e.target);
+    return;
+  }
+  _hideRteImgTb();
+});
 function triggerFmtImgUpload(ctx){
   _fmtImgUploadCtx=ctx;
   closeFmtPopup();
@@ -9621,5 +9695,17 @@ async function deleteGbkEntry(configId, entryId) {
 }
 </script>
 <div id="fmt-popup" style="display:none;position:fixed;background:#fff;border:2px solid #000;z-index:600;box-shadow:3px 3px 0 rgba(0,0,0,.1);min-width:110px;"><div id="fmt-popup-inner"></div></div>
+<div id="rte-img-tb" style="display:none;position:fixed;z-index:700;background:#fff;border:1.5px solid #000;box-shadow:2px 2px 0 rgba(0,0,0,.12);padding:3px 4px;gap:3px;align-items:center;flex-wrap:wrap;">
+  <span style="font-size:9px;font-weight:800;color:rgba(0,0,0,.4);padding:0 2px;">폭</span>
+  <button class="rte-itb-btn" onclick="setRteImgW('auto')">자동</button>
+  <button class="rte-itb-btn" onclick="setRteImgW('25%')">25%</button>
+  <button class="rte-itb-btn" onclick="setRteImgW('50%')">50%</button>
+  <button class="rte-itb-btn" onclick="setRteImgW('75%')">75%</button>
+  <button class="rte-itb-btn" onclick="setRteImgW('100%')">100%</button>
+  <input id="rte-img-px-inp" type="number" min="10" max="2000" placeholder="px" style="width:48px;padding:2px 4px;border:1.5px solid rgba(0,0,0,.3);font-size:11px;font-family:inherit;outline:none;" onkeydown="if(event.key==='Enter')setRteImgWPx()">
+  <button class="rte-itb-btn" onclick="setRteImgWPx()">적용</button>
+  <div style="width:1px;height:18px;background:rgba(0,0,0,.18);margin:0 1px;flex-shrink:0;"></div>
+  <button class="rte-itb-btn" onclick="deleteRteImg()" style="color:#c00;font-weight:900;">✕ 삭제</button>
+</div>
 </body>
 </html>
