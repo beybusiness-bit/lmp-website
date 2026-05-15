@@ -6192,7 +6192,7 @@ function _fmtImgColsHtml(ctx){
         </div>
         <img id="fmt-img-prev-${i}" src="${_fmtImgUrls[i]||''}" style="display:${_fmtImgUrls[i]?'block':'none'};width:100%;height:60px;object-fit:cover;margin-top:4px;border:1px solid rgba(0,0,0,.15);">
       </div>`).join('');
-    return `${slots}
+    return `<div style="max-height:210px;overflow-y:auto;margin-bottom:4px;">${slots}</div>
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
         <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);white-space:nowrap;">열 간격</div>
         <input id="fmt-img-gap-inp" type="number" min="0" max="100" value="${_fmtImgGap}"
