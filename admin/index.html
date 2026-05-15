@@ -6279,7 +6279,9 @@ function insertHr(ctx){
   const thickness=_hrThickness||parseInt(document.getElementById('hr-thickness')?.value)||1;
   const color=_hrColor||'#000000';
   const style=_hrStyle||'solid';
-  focusEd(ctx);
+  const ed=getEd(ctx);
+  ed.focus();
+  if(savedRange&&savedRange.el===ed){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}
   const html=`<hr style="border:none;border-top:${thickness}px ${style} ${color};margin:8px 0;" contenteditable="false">`;
   document.execCommand('insertHTML',false,html);
   closeFmtPopup();
