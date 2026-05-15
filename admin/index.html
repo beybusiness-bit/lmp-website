@@ -6666,7 +6666,7 @@ function _detectBgClr(){
 }
 document.addEventListener('click',e=>{
   const pop=document.getElementById('fmt-popup');
-  if(pop&&pop.style.display!=='none'&&!pop.contains(e.target)&&!e.target.closest('#fmt-sz-text,#fmt-al-text,#fmt-clr-text,#fmt-bg-text,#fmt-link-text,#fmt-hr-text,#fmt-var-text,#fmt-img-text,#fmt-sz-mixed,#fmt-al-mixed,#fmt-clr-mixed,#fmt-bg-mixed,#fmt-link-mixed,#fmt-hr-mixed,#fmt-var-mixed,#fmt-img-mixed,#fmt-sz-formpost,#fmt-al-formpost,#fmt-clr-formpost,#fmt-bg-formpost'))
+  if(pop&&pop.style.display!=='none'&&!pop.contains(e.target)&&e.target.id!=='fmt-img-file-inp'&&!e.target.closest('#fmt-sz-text,#fmt-al-text,#fmt-clr-text,#fmt-bg-text,#fmt-link-text,#fmt-hr-text,#fmt-var-text,#fmt-img-text,#fmt-sz-mixed,#fmt-al-mixed,#fmt-clr-mixed,#fmt-bg-mixed,#fmt-link-mixed,#fmt-hr-mixed,#fmt-var-mixed,#fmt-img-mixed,#fmt-sz-formpost,#fmt-al-formpost,#fmt-clr-formpost,#fmt-bg-formpost'))
     closeFmtPopup();
 });
 
