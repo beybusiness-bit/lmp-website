@@ -3657,12 +3657,37 @@ function _colVisBar(items, hiddenSet, toggleFn){
 function _getHiddenSet(lsKey){ try{ return new Set(JSON.parse(localStorage.getItem(lsKey)||'[]')); }catch(e){ return new Set(); } }
 function _setHiddenSet(lsKey, set){ localStorage.setItem(lsKey, JSON.stringify([...set])); }
 
+/* 열 설정 Firestore 저장 (디바운스) */
+let _userColPrefsTimer=null;
+function _saveUserColPrefsDebounced(){
+  clearTimeout(_userColPrefsTimer);
+  _userColPrefsTimer=setTimeout(async()=>{
+    if(!curProjId) return;
+    try{ await db.collection('cms_projects').doc(curProjId).update({
+      'adminColPrefs.hiddenUser':[..._getHiddenSet(_userVisKey())],
+      'adminColPrefs.frozenUser':parseInt(localStorage.getItem('fc_user_'+curProjId)||'1'),
+    }); }catch(e){}
+  },800);
+}
+let _tfColPrefsTimer=null;
+function _saveTfColPrefsDebounced(){
+  clearTimeout(_tfColPrefsTimer);
+  _tfColPrefsTimer=setTimeout(async()=>{
+    if(!tfCurDocId) return;
+    try{ await db.collection('cms_form_configs').doc(tfCurDocId).update({
+      'adminColPrefs.hidden':[..._getHiddenSet(_tfVisKey())],
+      'adminColPrefs.frozen':parseInt(localStorage.getItem('fc_tf_'+tfCurDocId)||'1'),
+    }); }catch(e){}
+  },800);
+}
+
 /* 사용자 테이블 열 숨기기 */
 function _userVisKey(){ return 'hc_user_'+(curProjId||''); }
 function toggleUserColVis(key){
   const s=_getHiddenSet(_userVisKey());
   s.has(key)?s.delete(key):s.add(key);
   _setHiddenSet(_userVisKey(),s);
+  _saveUserColPrefsDebounced();
   renderUserTable();
 }
 /* 레거시 폼 응답 테이블 열 숨기기 */
@@ -3679,11 +3704,13 @@ function toggleTfColVis(key){
   const s=_getHiddenSet(_tfVisKey());
   s.has(key)?s.delete(key):s.add(key);
   _setHiddenSet(_tfVisKey(),s);
+  _saveTfColPrefsDebounced();
   renderTfRespTable();
 }
 function setUserFrozen(n){
   if(!curProjId) return;
   localStorage.setItem('fc_user_'+curProjId, n);
+  _saveUserColPrefsDebounced();
   renderUserTable();
 }
 function setRespFrozen(n){
@@ -3694,6 +3721,7 @@ function setRespFrozen(n){
 function setTfFrozen(n){
   const key='fc_tf_'+(tfCurDocId||'');
   localStorage.setItem(key, n);
+  _saveTfColPrefsDebounced();
   renderTfRespTable();
 }
 async function resetAllRespColWidths(){
@@ -4164,6 +4192,9 @@ async function editProject(id) {
     curStages = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
     customColWidths = d.userColumnWidths || {};
     curRespColWidths = d.formRespColWidths || {};
+    const _acp=d.adminColPrefs||{};
+    if(Array.isArray(_acp.hiddenUser))_setHiddenSet('hc_user_'+id,new Set(_acp.hiddenUser));
+    if(_acp.frozenUser!=null)localStorage.setItem('fc_user_'+id,String(_acp.frozenUser));
     const _legacyOvOp = d.bgOverlayOpacity ?? 0.38;
     const _legacyOvCl = d.bgOverlayColor || '#000000';
     curBgImages = (d.bgImages||[]).map(b => {
@@ -6045,12 +6076,12 @@ function fmtClr(ctx,clr){
 function prevImg(id,url){const el=document.getElementById(id);if(url&&url.startsWith('http')){el.src=url;el.style.display='block';}else el.style.display='none';}
 
 /* ── 포맷 드롭다운 팝업 ── */
-let _fmtPopCtx=null,_fmtPopType=null;
+let _fmtPopCtx=null,_fmtPopType=null,_fmtPopBtn=null;
 function openFmtDd(btn,type,ctx){
   const pop=document.getElementById('fmt-popup');
   if(pop.style.display!=='none'&&_fmtPopType===type&&_fmtPopCtx===ctx){closeFmtPopup();return;}
   const _ed=getEd(ctx);if(_ed)saveRange(_ed);
-  _fmtPopType=type;_fmtPopCtx=ctx;
+  _fmtPopType=type;_fmtPopCtx=ctx;_fmtPopBtn=btn;
   let html='';
   if(type==='sz'){
     const curPx=_detectSzRaw(ctx)||14;
@@ -6273,7 +6304,8 @@ function applyFmtImgGrid(ctx){
     }
   });
   const sel=window.getSelection();
-  if(sel.rangeCount){
+  const rangeOk=sel.rangeCount&&ed.contains(sel.getRangeAt(0).commonAncestorContainer);
+  if(rangeOk){
     const range=sel.getRangeAt(0);
     range.deleteContents();
     range.insertNode(grid);
@@ -7070,6 +7102,16 @@ function renderPreview() {
 
 window.addEventListener('load', () => {
   updatePATBtn();
+  const _bmBody=document.querySelector('.bm-body');
+  if(_bmBody) _bmBody.addEventListener('scroll',()=>{
+    const pop=document.getElementById('fmt-popup');
+    if(!_fmtPopBtn||pop.style.display==='none') return;
+    const r=_fmtPopBtn.getBoundingClientRect();
+    if(r.bottom<0||r.top>window.innerHeight){closeFmtPopup();return;}
+    pop.style.top=(r.bottom+3)+'px'; pop.style.left=r.left+'px';
+    const pr=pop.getBoundingClientRect();
+    if(pr.right>window.innerWidth-6) pop.style.left=(window.innerWidth-pr.width-6)+'px';
+  },{passive:true});
   const pev = document.getElementById('proj-edit-view');
   if (pev) {
     pev.addEventListener('input', e => {
@@ -7848,6 +7890,9 @@ async function toolFormEdit(docId){
   try{
     const snap=await db.collection('cms_form_configs').doc(docId).get();
     const d=snap.data()||{};
+    const _fcp=d.adminColPrefs||{};
+    if(Array.isArray(_fcp.hidden))_setHiddenSet('hc_tf_'+docId,new Set(_fcp.hidden));
+    if(_fcp.frozen!=null)localStorage.setItem('fc_tf_'+docId,String(_fcp.frozen));
     tfFields=JSON.parse(JSON.stringify(d.fields||[]));
     document.getElementById('tf-title').value=d.title||'';
     rteSet('tf-desc',d.desc||'');
