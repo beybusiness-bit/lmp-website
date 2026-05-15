@@ -417,10 +417,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <select class="fi" id="p-widget-tool-type" onchange="onWidgetToolTypeChange()" style="margin-bottom:0;">
                   <option value="">선택하세요</option>
                   <option value="booth">꾸미기 도구 — 완성 이미지 갤러리</option>
+                  <option value="guestbook">방명록 — 카드 슬라이더</option>
                 </select>
               </div>
               <div id="p-widget-instance-wrap" style="margin-bottom:10px;display:none;">
-                <div class="ed-lbl" style="margin-bottom:4px;">꾸미기 인스턴스</div>
+                <div class="ed-lbl" id="p-widget-instance-lbl" style="margin-bottom:4px;">인스턴스</div>
                 <select class="fi" id="p-widget-instance-id" style="margin-bottom:0;"></select>
               </div>
               <div id="p-widget-detail-wrap" style="display:none;">
@@ -439,7 +440,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                     <div class="ed-lbl" style="margin-bottom:4px;">전환 속도 (ms)</div>
                     <input class="fi" id="p-widget-speed" type="number" placeholder="400" value="400" style="margin-bottom:0;">
                   </div>
-                  <div style="flex:1;">
+                  <div id="p-widget-click-action-wrap" style="flex:1;">
                     <div class="ed-lbl" style="margin-bottom:4px;">클릭 동작</div>
                     <select class="fi" id="p-widget-click-action" style="margin-bottom:0;">
                       <option value="none">동작 없음</option>
@@ -3002,11 +3003,22 @@ async function onWidgetToolTypeChange(preselect) {
   detailWrap.style.display = '';
   const sel = document.getElementById('p-widget-instance-id');
   sel.innerHTML = '<option value="">불러오는 중…</option>';
+  const lbl = document.getElementById('p-widget-instance-lbl');
+  const caWrap = document.getElementById('p-widget-click-action-wrap');
   if(toolType === 'booth') {
+    if(lbl) lbl.textContent = '꾸미기 인스턴스';
+    if(caWrap) caWrap.style.display = '';
     const snap = await db.collection('game_configs').get();
     const opts = [{ id: 'booth', name: '부스 꾸미기 (기본)' }];
     snap.docs.filter(d => d.id !== 'booth').forEach(d => opts.push({ id: d.id, name: d.data().name || d.id }));
     sel.innerHTML = opts.map(o => `<option value="${o.id}"${preselect===o.id?' selected':''}>${o.name}</option>`).join('');
+  }
+  if(toolType === 'guestbook') {
+    if(lbl) lbl.textContent = '방명록 인스턴스';
+    if(caWrap) caWrap.style.display = 'none';
+    const snap = await db.collection('cms_guestbook_configs').orderBy('createdAt','desc').get();
+    if(snap.empty) { sel.innerHTML = '<option value="">방명록이 없어요</option>'; return; }
+    sel.innerHTML = snap.docs.map(d => `<option value="${d.id}"${preselect===d.id?' selected':''}>${d.data().title||d.id}</option>`).join('');
   }
 }
 
