@@ -829,7 +829,7 @@ async function loadWidget() {
     if(WIDGET.toolType === 'booth') {
       const configId = WIDGET.instanceId;
       let q = db.collection('cms_booth_gallery').doc(configId).collection('images')
-        .where('approved','==',true).where('projectId','==',PROJECT_ID);
+        .where('approved','==',true);
       if(order !== 'random') q = q.orderBy('createdAt', order === 'asc' ? 'asc' : 'desc');
       const snap = await q.limit(40).get();
       snap.docs.forEach(d => boothImages.push(d.data().imageUrl));
@@ -843,7 +843,7 @@ async function loadWidget() {
       const cfg = cfgDoc.exists ? cfgDoc.data() : {};
       const txtFields = (cfg.fields || []).filter(f => f.type !== 'image');
       let q = db.collection('cms_guestbook_entries').doc(configId).collection('entries')
-        .where('approved','==',true).where('projectId','==',PROJECT_ID);
+        .where('approved','==',true);
       if(order !== 'random') q = q.orderBy('createdAt', order === 'asc' ? 'asc' : 'desc');
       const snap = await q.limit(40).get();
       snap.docs.forEach(d => {
