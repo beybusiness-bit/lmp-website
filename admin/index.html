@@ -158,9 +158,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .img-pos-btn.on{border-color:#000;background:#000;color:#fff;}
 .fmt-pop-opt:last-child{border-bottom:none;}
 .fmt-pop-opt:hover,.fmt-pop-opt.cur{background:#000;color:#fff;}
-.ced{min-height:150px;overflow-y:auto;border:2px solid #000;padding:10px;font-size:14px;line-height:1.7;outline:none;font-family:inherit;}
-.ced-resize-handle{height:10px;background:#e8e8e8 repeating-linear-gradient(90deg,rgba(0,0,0,.25) 0,rgba(0,0,0,.25) 4px,transparent 4px,transparent 8px);border:1.5px solid #000;border-top:none;cursor:ns-resize;user-select:none;touch-action:none;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-.ced-resize-handle:hover,.ced-resize-handle:active{background:#d0d0d0 repeating-linear-gradient(90deg,rgba(0,0,0,.5) 0,rgba(0,0,0,.5) 4px,transparent 4px,transparent 8px);}
+.ced{height:180px;overflow-y:auto;border:2px solid #000;padding:10px;font-size:14px;line-height:1.7;outline:none;font-family:inherit;}
+.ced-resize-handle{height:14px;background:#f2f2f2;border:1px solid rgba(0,0,0,.14);border-top:none;cursor:ns-resize;user-select:none;touch-action:none;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:0 0 3px 3px;}
+.ced-resize-handle::after{content:'';width:30px;height:7px;background:linear-gradient(rgba(0,0,0,.22),rgba(0,0,0,.22)) 0 1px/100% 1.5px no-repeat,linear-gradient(rgba(0,0,0,.22),rgba(0,0,0,.22)) 0 5px/100% 1.5px no-repeat;}
+.ced-resize-handle:hover,.ced-resize-handle:active{background:#e4e4e4;}
+.ced-resize-handle:hover::after,.ced-resize-handle:active::after{background:linear-gradient(rgba(0,0,0,.4),rgba(0,0,0,.4)) 0 1px/100% 1.5px no-repeat,linear-gradient(rgba(0,0,0,.4),rgba(0,0,0,.4)) 0 5px/100% 1.5px no-repeat;}
 .ced:empty::before{content:attr(data-ph);color:rgba(0,0,0,.3);pointer-events:none;}
 .ced a{color:inherit;text-decoration:underline;}
 /* ── 미니 RTE (도구 설명·완료메시지용) ── */
@@ -5481,13 +5483,15 @@ function openBlockModal(idx,insertAt){
     curBlkCompleteTrigger=b.completeTrigger||'tool-signal';
   }
   switchBlkTab(curBlkType);
-  document.getElementById('ced-text').innerHTML=b.type==='text'?(b.textContent||''):'';
+  const _cedT=document.getElementById('ced-text');
+  _cedT.innerHTML=b.type==='text'?(b.textContent||''):''; _cedT.style.height='';
   document.getElementById('text-link-url').value=b.type==='text'?(b.linkUrl||''):'';
   document.getElementById('img-url').value=b.type==='image'?(b.imageUrl||''):'';
   document.getElementById('img-link-url').value=b.type==='image'?(b.linkUrl||''):'';
   document.getElementById('mixed-img-url').value=b.type==='mixed'?(b.imageUrl||''):'';
   document.getElementById('mixed-img-link-url').value=b.type==='mixed'?(b.imageLinkUrl||''):'';
-  document.getElementById('ced-mixed').innerHTML=b.type==='mixed'?(b.textContent||''):'';
+  const _cedM=document.getElementById('ced-mixed');
+  _cedM.innerHTML=b.type==='mixed'?(b.textContent||''):''; _cedM.style.height='';
   document.getElementById('embed-url').value=b.type==='embed'?(b.embedUrl||''):'';
   const _isAutoH=b.type==='embed'&&(b.embedHeight===0);
   document.getElementById('embed-height-auto').checked=_isAutoH;
@@ -6156,7 +6160,7 @@ function openFmtDd(btn,type,ctx){
       <button onpointerdown="epd(event)" onclick="insertHr('${ctx}')" style="width:100%;padding:7px 0;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">삽입</button>
     </div>`;
   } else if(type==='img'){
-    _fmtImgUrls=['','','']; _fmtImgWidths=[1,1,1];
+    _fmtImgUrls=['','','']; _fmtImgWidths=[50,50,50];
     const colBtns=[1,2,3].map(n=>`<button class="rte-itb-btn fmt-img-col-btn${_fmtImgCols===n?' on':''}" onpointerdown="epd(event)" onclick="setFmtImgCols('${ctx}',${n})">${n}열</button>`).join('');
     html=`<div style="padding:10px;min-width:240px;">
     <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:8px;">이미지 삽입</div>
@@ -6174,7 +6178,7 @@ function openFmtDd(btn,type,ctx){
 function closeFmtPopup(){document.getElementById('fmt-popup').style.display='none';_fmtPopType=null;_fmtPopCtx=null;}
 function applyFmtVar(ctx,key){focusEd(ctx);document.execCommand('insertText',false,`{{${key}}}`);closeFmtPopup();}
 let _fmtImgUploadCtx='', _fmtImgW='100%', _fmtImgAlign='center', _rteSelectedImg=null;
-let _fmtImgCols=1, _fmtImgGap=8, _fmtImgUrls=['','',''], _fmtImgWidths=[1,1,1], _fmtImgUploadSlot=0;
+let _fmtImgCols=1, _fmtImgGap=8, _fmtImgUrls=['','',''], _fmtImgWidths=[50,50,50], _fmtImgUploadSlot=0;
 function _fmtImgColsHtml(ctx){
   if(_fmtImgCols===1){
     const wPresets=['자동','25%','50%','75%','100%'];
@@ -6211,10 +6215,11 @@ function _fmtImgColsHtml(ctx){
             style="padding:4px 7px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;">📁</button>
         </div>
         <div style="display:flex;align-items:center;gap:4px;">
-          <span style="font-size:10px;color:rgba(0,0,0,.5);white-space:nowrap;">열 너비 비율</span>
-          <input id="fmt-img-colw-${i}" type="number" min="1" max="99" value="${_fmtImgWidths[i]||1}"
-            onpointerdown="epd(event)" oninput="_fmtImgWidths[${i}]=Math.max(1,parseInt(this.value)||1)"
+          <span style="font-size:10px;color:rgba(0,0,0,.5);white-space:nowrap;">너비</span>
+          <input id="fmt-img-colw-${i}" type="number" min="1" max="100" value="${_fmtImgWidths[i]||50}"
+            onpointerdown="epd(event)" oninput="_fmtImgWidths[${i}]=Math.max(1,parseInt(this.value)||50)"
             style="width:48px;padding:3px 5px;border:1.5px solid rgba(0,0,0,.35);font-size:12px;font-weight:700;font-family:inherit;outline:none;text-align:center;">
+          <span style="font-size:10px;color:rgba(0,0,0,.5);">%</span>
         </div>
         <img id="fmt-img-prev-${i}" src="${_fmtImgUrls[i]||''}" style="display:${_fmtImgUrls[i]?'block':'none'};width:100%;height:60px;object-fit:cover;margin-top:4px;border:1px solid rgba(0,0,0,.15);">
       </div>`).join('');
@@ -6231,7 +6236,7 @@ function _fmtImgColsHtml(ctx){
   }
 }
 function setFmtImgCols(ctx,n){
-  _fmtImgCols=n; _fmtImgWidths=[1,1,1];
+  _fmtImgCols=n; _fmtImgWidths=n===3?[34,33,33]:[50,50,50];
   document.getElementById('fmt-img-cols-content').innerHTML=_fmtImgColsHtml(ctx);
   document.querySelectorAll('.fmt-img-col-btn').forEach((b,i)=>b.classList.toggle('on',i+1===n));
 }
