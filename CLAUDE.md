@@ -401,11 +401,12 @@ lmp-website/
 │   ├── form/              ← 폼 도구 (cms_form_configs 기반)
 │   ├── guide/             ← 계산기·가이드 도구
 │   ├── schedule/          ← 일정 잡기 도구 (Google Calendar 연동)
-│   ├── payment/           ← 결제 도구 (토스페이먼츠)
+│   ├── payment/           ← 결제 도구 (페이업 PayUp)
 │   ├── copy-gen/          ← 문구 생성기 (Claude AI)
 │   └── youtube-playlist/  ← 유튜브 뮤직 재생목록
 ├── api/
-│   ├── confirm-payment.js ← 토스페이먼츠 서버 검증 (Vercel function)
+│   ├── confirm-payup.js   ← 페이업 결제 승인 서버 엔드포인트 (Vercel function)
+│   ├── confirm-payment.js ← 구 토스페이먼츠 서버 검증 (미사용, 보존 중)
 │   └── generate-copy.js   ← 문구 생성 API (Vercel function, Anthropic)
 ├── apps-script/Code.gs    ← Google Apps Script 코드 (폼 응답 → 시트 저장용)
 ├── block-test-demo/       ← 테스트용 배포 프로젝트 (p/index.html 동기화 필요)
@@ -490,7 +491,8 @@ cms_admin_settings/github
   adminPreviewToken: string  ← 관리자 프리뷰 URL 토큰 (adm_ prefix)
 
 cms_admin_settings/payment
-  tossClientKey: string  ← 토스 클라이언트 키 (secret은 Vercel 환경변수 TOSS_SECRET_KEY)
+  payupMerchantId: string  ← 페이업 가맹점 ID (Vercel 환경변수 PAYUP_MERCHANT_ID와 동일값)
+  payupTestMode: boolean   ← 테스트 모드 여부 (Vercel 환경변수 PAYUP_TEST와 연동)
 
 cms_payment_configs/{configId}
   title, productName, amount, description, tier, successMessage
@@ -525,7 +527,7 @@ match /cms_copy_gen_usages/{document=**} { allow write: if true; }
 | **Google Apps Script** | 폼 응답 → Google Sheets 저장 전용 |
 | **GitHub API** | 관리자 저장+배포 (p/{id}/index.html 자동 생성) |
 | **Anthropic Claude API** | 문구 생성기 (claude-haiku-4-5-20251001) |
-| **토스페이먼츠** | 결제 도구 (v2 결제위젯) |
+| **페이업 (PayUp)** | 결제 도구 (`api/confirm-payup.js`, Vercel 환경변수: PAYUP_MERCHANT_ID / PAYUP_API_KEY / PAYUP_TEST) |
 | **YouTube Data API v3** | 유튜브 뮤직 검색 |
 | **Google Calendar (GAS)** | 일정 잡기 도구 |
 
@@ -671,7 +673,7 @@ closeHelpPanel();
 - 폼 도구 (`tools/form/`): cms_form_configs 기반, 글자 수 제한(min/max), 응답 관리 인라인 통합, 달력 위젯(single/range/multi), 파일 업로드 썸네일 뷰(72×72), 제출 내역 확인 및 수정 기능, 업로드 카운터 표시
 - 계산기·가이드 (`tools/guide/`): 조건부 계산식 엔진
 - 일정 잡기 (`tools/schedule/`): Google Calendar 연동 (GAS), 타임존, 슬롯 계산, Firestore 저장
-- 결제 (`tools/payment/`): 토스페이먼츠 v2, 서버 검증 (`api/confirm-payment.js`), `paidTiers` 누적
+- 결제 (`tools/payment/`): 페이업(PayUp), 서버 검증 (`api/confirm-payup.js`), `paidTiers` 누적
 - 문구 생성기 (`tools/copy-gen/`): Claude API (Haiku), 스타일 옵션, 사용 횟수 제한, RTE 변수 지원
 - 유튜브 뮤직 재생목록 (`tools/youtube-playlist/`): YouTube API v3 검색, 선택·제출
 
@@ -743,8 +745,8 @@ match /cms_form_responses/{document=**} { allow write: if true; allow read: if t
 
 현재 흐름의 문제:
 ```
-현재:  [결제 버튼 클릭] → 토스 결제창 → 완료
-필요:  [결제 버튼 클릭] → 최종 확인(상품/금액/환불조건 명시) → 청약철회 배제 동의 체크 → 토스 결제창 → 완료 → 영수증 발송
+현재:  [결제 버튼 클릭] → 페이업 결제창 → 완료
+필요:  [결제 버튼 클릭] → 최종 확인(상품/금액/환불조건 명시) → 청약철회 배제 동의 체크 → 페이업 결제창 → 완료 → 영수증 발송
 ```
 
 | 항목 | 현황 | 필요 이유 |
@@ -753,7 +755,7 @@ match /cms_form_responses/{document=**} { allow write: if true; allow read: if t
 | 디지털 콘텐츠 청약철회 배제 동의 체크박스 | ❌ 미구현 | 미고지 시 무조건 7일 환불 의무 |
 | 결제 완료 후 영수증·확인 발송 (이메일/문자) | ❌ 미구현 | 전자상거래법 제8조 거래 확인 의무 |
 | 에스크로 또는 대안 안전결제 | ❌ 미구현 | 30만 원 이상 거래 시 의무 (PG사 통해 처리 가능) |
-| 환불 처리 기능 (토스 환불 API) | ❌ 미구현 | 청약철회 의무 이행 수단 |
+| 환불 처리 기능 (페이업 환불 API) | ❌ 미구현 | 청약철회 의무 이행 수단 |
 
 ---
 
