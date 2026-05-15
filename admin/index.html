@@ -158,7 +158,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .img-pos-btn.on{border-color:#000;background:#000;color:#fff;}
 .fmt-pop-opt:last-child{border-bottom:none;}
 .fmt-pop-opt:hover,.fmt-pop-opt.cur{background:#000;color:#fff;}
-.ced{min-height:150px;max-height:260px;overflow-y:auto;border:2px solid #000;padding:10px;font-size:14px;line-height:1.7;outline:none;font-family:inherit;}
+.ced{min-height:150px;overflow-y:auto;border:2px solid #000;padding:10px;font-size:14px;line-height:1.7;outline:none;font-family:inherit;}
+.ced-resize-handle{height:8px;background:repeating-linear-gradient(90deg,rgba(0,0,0,.18) 0,rgba(0,0,0,.18) 3px,transparent 3px,transparent 7px);border:1.5px solid #000;border-top:none;cursor:ns-resize;user-select:none;touch-action:none;flex-shrink:0;}
+.ced-resize-handle:hover,.ced-resize-handle:active{background:repeating-linear-gradient(90deg,rgba(0,0,0,.45) 0,rgba(0,0,0,.45) 3px,transparent 3px,transparent 7px);}
 .ced:empty::before{content:attr(data-ph);color:rgba(0,0,0,.3);pointer-events:none;}
 .ced a{color:inherit;text-decoration:underline;}
 /* ── 미니 RTE (도구 설명·완료메시지용) ── */
@@ -1681,6 +1683,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-img-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','text')" title="이미지 삽입" style="font-size:13px;padding:4px 7px;">🖼</button>
       </div>
       <div class="ced" id="ced-text" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="syncFmtBar('text')" onmouseup="syncFmtBar('text')"></div>
+      <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-text')" title="드래그하여 편집기 높이 조절"></div>
       <div id="blk-txtpadding-section" style="margin-top:8px;padding:8px 10px;background:rgba(0,0,0,.03);border-radius:6px;border:1px solid rgba(0,0,0,.08);">
         <div class="ed-lbl" style="margin-bottom:4px;font-size:11px;">텍스트 안쪽 여백 (px)</div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
@@ -1923,6 +1926,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-img-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','mixed')" title="이미지 삽입" style="font-size:13px;padding:4px 7px;">🖼</button>
       </div>
       <div class="ced" id="ced-mixed" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="syncFmtBar('mixed')" onmouseup="syncFmtBar('mixed')"></div>
+      <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-mixed')" title="드래그하여 편집기 높이 조절"></div>
     </div>
     <!-- 스페이서 패널 -->
     <div id="bpanel-spacer" style="display:none;padding-bottom:4px;">
@@ -5373,6 +5377,16 @@ function rteInsertVar(id){
   document.execCommand('insertText',false,'{{'+key+'}}');
 }
 function saveRange(el){if(_fmtPopType)return;const sel=window.getSelection();if(sel.rangeCount)savedRange={el,range:sel.getRangeAt(0).cloneRange()};}
+function cedResizeStart(e,cedId){
+  e.preventDefault();
+  const handle=e.currentTarget;
+  handle.setPointerCapture(e.pointerId);
+  const ced=document.getElementById(cedId);
+  if(!ced) return;
+  const startY=e.clientY, startH=ced.offsetHeight;
+  handle.onpointermove=ev=>{ced.style.height=Math.max(100,startH+ev.clientY-startY)+'px';};
+  handle.onpointerup=()=>{handle.onpointermove=null;handle.onpointerup=null;};
+}
 function restoreRange(el){if(!savedRange||savedRange.el!==el)return;const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}
 function renderBlkKeyColors(){
   const kc = curKeyColors.length ? curKeyColors.map(k=>k.color||k) : ['#00CE6B','#FFF100'];
