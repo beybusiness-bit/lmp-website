@@ -1092,14 +1092,7 @@ function openAuthModal(showReason){
   document.getElementById('auth-ok').textContent='확인';
   document.getElementById('auth-ok').disabled=false;
   const reasonEl=document.getElementById('auth-reason');
-  if(reasonEl){
-    if(showReason && _pendingAuthReason){
-      reasonEl.textContent=_pendingAuthReason;
-      reasonEl.style.display='block';
-    } else {
-      reasonEl.style.display='none';
-    }
-  }
+  if(reasonEl) reasonEl.style.display='none';
   const regWrap=document.getElementById('auth-reg-wrap');
   regWrap.style.display=SELF_REG_ENABLED?'':'none';
   if(SELF_REG_ENABLED) document.getElementById('auth-reg-btn').textContent=SELF_REG_CTA;
