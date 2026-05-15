@@ -59,11 +59,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .gb-card.layout-img-overlay .card-dim{position:absolute;inset:0;background:rgba(0,0,0,.45);}
 .gb-card.layout-img-overlay .card-body{position:relative;z-index:1;padding:20px 16px;color:#fff;}
 .gb-card.layout-img-overlay .card-field-val{color:rgba(255,255,255,.9);}
-.gb-card.layout-img-overlay .card-field-key{color:rgba(255,255,255,.55);}
 .gb-card.layout-img-overlay .card-meta{color:rgba(255,255,255,.45);}
 .card-field{margin-bottom:9px;}
 .card-field:last-of-type{margin-bottom:0;}
-.card-field-key{font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:rgba(0,0,0,.45);margin-bottom:2px;}
 .card-field-val{font-size:14px;font-weight:600;line-height:1.55;word-break:break-word;}
 .card-meta{font-size:10px;color:rgba(0,0,0,.35);margin-top:10px;font-weight:600;}
 .gb-card.has-color .card-field-val{color:inherit;}
@@ -113,7 +111,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .dm-body-inner{overflow-y:auto;flex:1;padding:16px;}
 .dm-img{width:100%;display:block;margin-bottom:14px;}
 .dm-field{margin-bottom:12px;}
-.dm-field-key{font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:rgba(0,0,0,.45);margin-bottom:3px;}
 .dm-field-val{font-size:15px;line-height:1.65;word-break:break-word;}
 .dm-meta{font-size:11px;color:rgba(0,0,0,.35);margin-top:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,.08);}
 .dm-del-btn{margin-top:14px;width:100%;padding:10px;border:2px solid #c00;background:#fff;color:#c00;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
@@ -163,6 +160,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   <div class="modal-body">
     <div id="done-banner">✅ 등록됐어요!</div>
     <div id="write-fields-wrap"></div>
+    <div id="anon-row" class="ff-wrap" style="display:none;">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:600;">
+        <input type="checkbox" id="anon-check" style="width:18px;height:18px;"> 익명으로 남기기
+      </label>
+    </div>
     <div id="color-section" class="ff-wrap" style="display:none;">
       <label class="ff-label">카드 배경 색상</label>
       <div class="color-swatches-wrap" id="color-swatches"></div>
@@ -203,7 +205,20 @@ window.addEventListener('message', e => {
   ctxUserId     = e.data.userId     || '';
   ctxUserFields = e.data.userFields || {};
   ctxKeyColors  = e.data.keyColors  || [];
-  if (e.data.blockBg) document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg);
+  // Block background color
+  if (e.data.blockBg) {
+    document.body.style.backgroundColor = e.data.blockBg;
+    document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg);
+  }
+  // Block background image
+  if (e.data.blockBgImage) {
+    const fit = e.data.blockBgFit || 'cover';
+    const pos = e.data.blockBgPos  || 'center';
+    document.body.style.backgroundImage    = `url('${e.data.blockBgImage}')`;
+    document.body.style.backgroundSize     = fit;
+    document.body.style.backgroundPosition = pos;
+    document.body.style.backgroundRepeat   = 'no-repeat';
+  }
   if (CONFIG && !hasImageField()) buildColorSwatches();
   updateWriteBtn();
 });
@@ -217,7 +232,6 @@ let pendingImageUrl  = '';
 let uploadedImageUrl = '';
 let isUploading = false;
 
-// Gallery settings (loaded from CONFIG)
 let DISPLAY_MODE   = 'scroll';
 let SCROLL_COLS    = 2;
 let INITIAL_ROWS   = 0;
@@ -250,11 +264,20 @@ function updateWriteBtn() {
   if (submitBtn && !submitBtn.disabled) submitBtn.textContent = label;
 }
 
+function generateAnonName() {
+  const w1 = CONFIG.anonWords1 || [];
+  const w2 = CONFIG.anonWords2 || [];
+  if (!w1.length && !w2.length) return '익명';
+  const p1 = w1.length ? w1[Math.floor(Math.random() * w1.length)] : '';
+  const p2 = w2.length ? w2[Math.floor(Math.random() * w2.length)] : '';
+  return [p1, p2].filter(Boolean).join(' ') || '익명';
+}
+
 async function init() {
   if (!CONFIG_ID) { showErr('설정 ID가 없어요. (URL에 ?id=... 필요)'); return; }
   try {
     const doc = await db.collection('cms_guestbook_configs').doc(CONFIG_ID).get();
-    if (!doc.exists) { showErr('방명록 설정을 찾을 수 없어요.'); return; }
+    if (!doc.exists) { showErr('설정을 찾을 수 없어요.'); return; }
     CONFIG = { id: doc.id, ...doc.data() };
 
     DISPLAY_MODE   = CONFIG.displayMode   || 'scroll';
@@ -276,7 +299,6 @@ async function init() {
   }
 }
 
-// ── Write Modal ──
 function openWriteModal() {
   document.getElementById('done-banner').classList.remove('on');
   document.getElementById('form-err').textContent = '';
@@ -290,6 +312,10 @@ function renderWriteForm() {
   const wrap = document.getElementById('write-fields-wrap');
   wrap.innerHTML = '';
   (CONFIG.fields || []).forEach(f => wrap.appendChild(buildFieldEl(f)));
+  // Anonymous option
+  const anonRow = document.getElementById('anon-row');
+  if (anonRow) anonRow.style.display = CONFIG.allowAnonymous ? '' : 'none';
+  // Color picker (when no image field)
   if (!hasImageField()) {
     document.getElementById('color-section').style.display = '';
     buildColorSwatches();
@@ -406,6 +432,8 @@ async function submitEntry() {
     errEl.textContent = '카드 배경 색상을 선택해주세요.'; return;
   }
   const lbl = applyVars(CONFIG.writeLabel || '') || '남기기';
+  const isAnon = !ctxUserId || (CONFIG.allowAnonymous && !!document.getElementById('anon-check')?.checked);
+  const authorName = isAnon ? generateAnonName() : (ctxUserFields?.name || ctxUserFields?.이름 || ctxUserId || '');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>저장 중…';
   isUploading = true;
@@ -417,9 +445,8 @@ async function submitEntry() {
     }
     const fieldValues = { ...values };
     if (imgField) fieldValues[imgField.id || imgField.key] = finalImageUrl;
-    const authorName = ctxUserFields?.name || ctxUserFields?.이름 || ctxUserId || '익명';
     const entry = {
-      fieldValues, authorName, isAnonymous: false,
+      fieldValues, authorName, isAnonymous: isAnon,
       userId: ctxUserId, projectId: ctxProjectId, userFields: ctxUserFields,
       approved: !(CONFIG.requireApproval), pinned: false,
       bgColor: hasImageField() ? '' : selectedColor,
@@ -462,9 +489,10 @@ function resetForm() {
       if (el) el.value = '';
     }
   });
+  const anonCheck = document.getElementById('anon-check');
+  if (anonCheck) anonCheck.checked = false;
 }
 
-// ── Load Entries ──
 async function loadEntries() {
   try {
     const snap = await db.collection('cms_guestbook_entries').doc(CONFIG_ID)
@@ -482,7 +510,6 @@ async function loadEntries() {
   }
 }
 
-// ── Gallery ──
 function renderGallery() {
   const countEl = document.getElementById('cards-count');
   countEl.textContent = ENTRIES.length ? `${ENTRIES.length}개` : '';
@@ -502,16 +529,14 @@ function renderScrollGallery() {
   if (infiniteObserver) { infiniteObserver.disconnect(); infiniteObserver = null; }
   if (SCROLL_COLS >= 2) grid.classList.add('two-col');
   else grid.classList.remove('two-col');
-
   if (!ENTRIES.length) {
-    grid.innerHTML = '<div class="cards-empty">아직 방명록이 없어요.<br>첫 번째로 남겨보세요!</div>';
+    grid.innerHTML = '<div class="cards-empty">아직 없어요.<br>첫 번째로 남겨보세요!</div>';
     document.getElementById('load-more-wrap').style.display = 'none';
     return;
   }
   const initialCount = INITIAL_ROWS > 0 ? INITIAL_ROWS * SCROLL_COLS : ENTRIES.length;
   SHOWN_COUNT = Math.min(initialCount, ENTRIES.length);
   grid.innerHTML = ENTRIES.slice(0, SHOWN_COUNT).map(e => buildCardHtml(e)).join('');
-
   const loadMoreWrap = document.getElementById('load-more-wrap');
   if (SHOWN_COUNT < ENTRIES.length) {
     if (LOAD_MORE_TYPE === 'infinite') {
@@ -546,12 +571,11 @@ function setupInfiniteScroll() {
   infiniteObserver.observe(sentinel);
 }
 
-// ── Slide ──
 function renderSlideGallery() {
   clearAutoSlide();
   const track = document.getElementById('slide-track');
   if (!ENTRIES.length) {
-    track.innerHTML = '<div class="slide-item"><div class="cards-empty">아직 방명록이 없어요.<br>첫 번째로 남겨보세요!</div></div>';
+    track.innerHTML = '<div class="slide-item"><div class="cards-empty">아직 없어요.<br>첫 번째로 남겨보세요!</div></div>';
     document.getElementById('slide-pager').innerHTML = '';
     return;
   }
@@ -573,8 +597,7 @@ function buildSlidePager() {
     pager.className = 'slide-fraction';
     pager.textContent = `1 / ${ENTRIES.length}`;
   } else {
-    pager.className = '';
-    pager.innerHTML = '';
+    pager.className = ''; pager.innerHTML = '';
   }
 }
 
@@ -607,7 +630,6 @@ function clearAutoSlide() {
   if (slideTimer) { clearInterval(slideTimer); slideTimer = null; }
 }
 
-// ── Card HTML ──
 function buildCardHtml(entry) {
   const layout = CONFIG.cardLayout || 'text-top';
   const imgField = (CONFIG.fields || []).find(f => f.type === 'image');
@@ -627,25 +649,27 @@ function buildCardHtml(entry) {
       dimLayer = `<div class="card-dim"></div>`;
     }
   }
+  // Only show field values — no label keys
   const fieldsHtml = fields.map(f => {
     const fk = f.id || f.key;
     const val = entry.fieldValues?.[fk] || entry.values?.[fk] || '';
     if (!val) return '';
-    return `<div class="card-field"><div class="card-field-key">${esc(f.label)}</div><div class="card-field-val">${esc(val)}</div></div>`;
+    return `<div class="card-field"><div class="card-field-val">${esc(val)}</div></div>`;
   }).join('');
-  let metaStr = '';
+  // Meta: date + author name
+  const parts = [];
   if (entry.createdAt?.toDate) {
     const d = entry.createdAt.toDate();
-    metaStr = `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`;
+    parts.push(`${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`);
   }
-  const metaHtml = metaStr ? `<div class="card-meta">${metaStr}</div>` : '';
+  if (entry.authorName) parts.push(esc(entry.authorName));
+  const metaHtml = parts.length ? `<div class="card-meta">${parts.join(' · ')}</div>` : '';
   return `<div class="gb-card layout-${effectiveLayout}${hasBgCls}" ${bgStyle} onclick="openDetail('${entry.id}')">
     ${bgLayer}${dimLayer}${imgSection}
     <div class="card-body">${fieldsHtml}${metaHtml}</div>
   </div>`;
 }
 
-// ── Detail Modal ──
 function openDetail(entryId) {
   const entry = ENTRIES.find(e => e.id === entryId);
   if (!entry) return;
@@ -659,28 +683,26 @@ function openDetail(entryId) {
     const fk = f.id || f.key;
     const val = entry.fieldValues?.[fk] || entry.values?.[fk] || '';
     if (!val) return;
-    html += `<div class="dm-field"><div class="dm-field-key">${esc(f.label)}</div><div class="dm-field-val">${esc(val)}</div></div>`;
+    html += `<div class="dm-field"><div class="dm-field-val">${esc(val)}</div></div>`;
   });
+  const metaParts = [];
   if (entry.createdAt?.toDate) {
     const d = entry.createdAt.toDate();
-    html += `<div class="dm-meta">${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}</div>`;
+    metaParts.push(`${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`);
   }
-  if (isOwner) {
-    html += `<button class="dm-del-btn" onclick="deleteEntry('${entryId}')">삭제하기</button>`;
-  }
-  document.getElementById('dm-title').textContent = CONFIG.entryLabel || '방명록';
+  if (entry.authorName) metaParts.push(esc(entry.authorName));
+  if (metaParts.length) html += `<div class="dm-meta">${metaParts.join(' · ')}</div>`;
+  if (isOwner) html += `<button class="dm-del-btn" onclick="deleteEntry('${entryId}')">삭제하기</button>`;
+  document.getElementById('dm-title').textContent = CONFIG.entryLabel || '';
   document.getElementById('dm-body').innerHTML = html;
   document.getElementById('detail-modal').classList.add('on');
 }
-function closeDetail() {
-  document.getElementById('detail-modal').classList.remove('on');
-}
+function closeDetail() { document.getElementById('detail-modal').classList.remove('on'); }
 async function deleteEntry(entryId) {
-  if (!confirm('이 방명록을 삭제할까요?')) return;
+  if (!confirm('삭제할까요?')) return;
   try {
     await db.collection('cms_guestbook_entries').doc(CONFIG_ID).collection('entries').doc(entryId).delete();
-    closeDetail();
-    await loadEntries();
+    closeDetail(); await loadEntries();
   } catch(e) { alert('삭제 실패: ' + e.message); }
 }
 
