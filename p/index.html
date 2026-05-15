@@ -890,10 +890,10 @@ async function loadWidget() {
     }
     if(WIDGET.toolType === 'guestbook') {
       trackHtml = gbCards.map(c => {
-        return `<div class="ws-slide" style="flex:0 0 ${slideW};height:${h}px;overflow:hidden;border-radius:${radius}px;${border}flex-shrink:0;box-sizing:border-box;">
+        return `<div class="ws-slide" style="flex:0 0 ${slideW};height:${h}px;overflow:hidden;border-radius:${radius}px;${border}flex-shrink:0;box-sizing:border-box;background:${c.bg||'#fff'};">
           <div style="height:100%;padding:10px 12px;display:flex;flex-direction:column;overflow:hidden;">
             ${c.name ? `<div style="font-size:12px;font-weight:800;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${_wesc(c.name)}</div>` : ''}
-            <div style="flex:1;min-height:0;overflow:hidden;font-size:11px;line-height:1.5;white-space:pre-wrap;word-break:break-word;">${_wesc(c.text)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:6;font-size:11px;line-height:1.5;word-break:break-word;">${_wesc(c.text)}</div>
             ${c.dt ? `<div style="font-size:10px;opacity:.45;margin-top:5px;flex-shrink:0;">${c.dt}</div>` : ''}
           </div>
         </div>`;

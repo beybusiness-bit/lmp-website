@@ -65,6 +65,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .card-field-val{font-size:14px;font-weight:600;line-height:1.55;word-break:break-word;}
 .card-meta{font-size:10px;color:rgba(0,0,0,.35);margin-top:10px;font-weight:600;}
 .gb-card.has-color .card-field-val{color:inherit;}
+/* Gallery & slide cards — uniform height with ellipsis */
+.cards-grid .gb-card,.slide-item .gb-card{height:var(--gallery-card-h,200px);}
+.cards-grid .card-field-val,.slide-item .card-field-val{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
 
 /* Write Modal — full screen */
 #write-modal{position:fixed;inset:0;z-index:200;display:none;flex-direction:column;background:#fff;}
@@ -102,17 +105,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 #done-banner{display:none;background:#000;color:#fff;padding:14px 16px;font-size:14px;font-weight:700;text-align:center;margin-bottom:20px;}
 #done-banner.on{display:block;}
 
-/* Detail Modal — full screen */
-#detail-modal{position:fixed;inset:0;z-index:300;display:none;flex-direction:column;background:#fff;}
+/* Detail Lightbox */
+#detail-modal{position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);padding:24px;}
 #detail-modal.on{display:flex;}
-.dm-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:2px solid #000;flex-shrink:0;}
-.dm-back{background:none;border:none;font-size:22px;cursor:pointer;line-height:1;padding:2px 8px 2px 0;font-weight:700;color:#000;}
-.dm-title-txt{font-size:15px;font-weight:800;flex:1;}
-.dm-body-inner{overflow-y:auto;flex:1;padding:16px;}
-.dm-img{width:100%;display:block;margin-bottom:14px;}
-.dm-field{margin-bottom:12px;}
-.dm-field-val{font-size:15px;line-height:1.65;word-break:break-word;}
-.dm-meta{font-size:11px;color:rgba(0,0,0,.35);margin-top:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,.08);}
+#detail-card{width:100%;max-height:72vh;overflow-y:auto;border:2px solid #000;background:#fff;}
+#detail-card .gb-lightbox-img{width:100%;display:block;}
+#detail-card .gb-lightbox-body{padding:16px;}
+#detail-card .card-field{margin-bottom:9px;}
+#detail-card .card-field:last-of-type{margin-bottom:0;}
+#detail-card .card-field-val{font-size:14px;font-weight:600;line-height:1.6;word-break:break-word;white-space:pre-wrap;}
+#detail-card .card-meta{font-size:10px;color:rgba(0,0,0,.35);margin-top:10px;font-weight:600;}
 .dm-del-btn{margin-top:14px;width:100%;padding:10px;border:2px solid #c00;background:#fff;color:#c00;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -174,13 +176,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   </div>
 </div>
 
-<!-- Detail Modal -->
-<div id="detail-modal">
-  <div class="dm-head">
-    <button class="dm-back" onclick="closeDetail()">←</button>
-    <span class="dm-title-txt" id="dm-title"></span>
-  </div>
-  <div class="dm-body-inner" id="dm-body"></div>
+<!-- Detail Lightbox -->
+<div id="detail-modal" onclick="closeDetail()">
+  <div id="detail-card" onclick="event.stopPropagation()"></div>
 </div>
 
 <script>
@@ -287,6 +285,7 @@ async function init() {
     AUTO_SLIDE     = !!CONFIG.autoSlide;
     SLIDE_INTERVAL = Number(CONFIG.slideInterval) || 3000;
     PAGER_TYPE     = CONFIG.pagerType     || 'dots';
+    document.documentElement.style.setProperty('--gallery-card-h', (Number(CONFIG.cardHeight) || 200) + 'px');
 
     renderWriteForm();
     updateWriteBtn();
@@ -675,15 +674,21 @@ function openDetail(entryId) {
   if (!entry) return;
   const fields = CONFIG.fields || [];
   const isOwner = ctxUserId && entry.userId === ctxUserId;
-  let html = '';
   const imgField = fields.find(f => f.type === 'image');
   const imgUrl = (imgField ? entry.fieldValues?.[imgField.id || imgField.key] : '') || entry.imageUrl || '';
-  if (imgUrl) html += `<img class="dm-img" src="${esc(imgUrl)}" alt="" loading="lazy">`;
-  fields.filter(f => f.type !== 'image').forEach(f => {
+  const bgColor = entry.bgColor || '';
+  const textFields = fields.filter(f => f.type !== 'image');
+
+  let html = '';
+  if (imgUrl) html += `<img class="gb-lightbox-img" src="${esc(imgUrl)}" alt="">`;
+
+  const bodyBg = (!imgUrl && bgColor) ? `background:${bgColor};` : '';
+  html += `<div class="gb-lightbox-body" style="${bodyBg}">`;
+  textFields.forEach(f => {
     const fk = f.id || f.key;
     const val = entry.fieldValues?.[fk] || entry.values?.[fk] || '';
     if (!val) return;
-    html += `<div class="dm-field"><div class="dm-field-val">${esc(val)}</div></div>`;
+    html += `<div class="card-field"><div class="card-field-val">${esc(val)}</div></div>`;
   });
   const metaParts = [];
   if (entry.createdAt?.toDate) {
@@ -691,13 +696,18 @@ function openDetail(entryId) {
     metaParts.push(`${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`);
   }
   if (entry.authorName) metaParts.push(esc(entry.authorName));
-  if (metaParts.length) html += `<div class="dm-meta">${metaParts.join(' · ')}</div>`;
+  if (metaParts.length) html += `<div class="card-meta">${metaParts.join(' · ')}</div>`;
   if (isOwner) html += `<button class="dm-del-btn" onclick="deleteEntry('${entryId}')">삭제하기</button>`;
-  document.getElementById('dm-title').textContent = CONFIG.entryLabel || '';
-  document.getElementById('dm-body').innerHTML = html;
+  html += `</div>`;
+
+  document.getElementById('detail-card').innerHTML = html;
   document.getElementById('detail-modal').classList.add('on');
+  document.body.style.overflow = 'hidden';
 }
-function closeDetail() { document.getElementById('detail-modal').classList.remove('on'); }
+function closeDetail() {
+  document.getElementById('detail-modal').classList.remove('on');
+  document.body.style.overflow = '';
+}
 async function deleteEntry(entryId) {
   if (!confirm('삭제할까요?')) return;
   try {
