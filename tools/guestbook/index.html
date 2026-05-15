@@ -312,9 +312,9 @@ function renderWriteForm() {
   const wrap = document.getElementById('write-fields-wrap');
   wrap.innerHTML = '';
   (CONFIG.fields || []).forEach(f => wrap.appendChild(buildFieldEl(f)));
-  // Anonymous option
+  // Anonymous option: 로그인된 상태에서만 체크박스 표시
   const anonRow = document.getElementById('anon-row');
-  if (anonRow) anonRow.style.display = CONFIG.allowAnonymous ? '' : 'none';
+  if (anonRow) anonRow.style.display = (ctxUserId && CONFIG.allowAnonymous) ? '' : 'none';
   // Color picker (when no image field)
   if (!hasImageField()) {
     document.getElementById('color-section').style.display = '';
