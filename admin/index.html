@@ -2598,7 +2598,7 @@ function switchTab(t) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('on', b.id === 'tabbtn-'+t));
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === 'panel-'+t));
   if (t === 'tools') closeTool();
-  if (t === 'site') loadSiteSettings();
+  if (t === 'site') { showProjView('list'); loadSiteSettings(); }
 }
 function switchInnerTab(t) {
   document.querySelectorAll('.inner-tab').forEach((el,i) => {
