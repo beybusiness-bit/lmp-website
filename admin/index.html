@@ -752,6 +752,114 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div class="pi-name">결제 (페이업)</div>
             <div class="pi-meta">상품·금액 설정 · 결제 권한 부여 · 결제 내역 조회</div>
           </div>
+          <div class="proj-item" onclick="openTool('guestbook')" style="cursor:pointer;">
+            <div class="pi-name">방명록</div>
+            <div class="pi-meta">방명록·기대평·후기 등 카드형 항목 수집 · 승인 관리</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 방명록 관리 화면 -->
+      <div id="tool-guestbook-view" style="display:none;flex-direction:column;overflow:hidden;">
+        <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
+          <span class="back-btn" onclick="gbkBack()">←</span>
+          <span id="gbk-header-title" style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">방명록</span>
+          <div style="flex:1;"></div>
+          <div id="gbk-header-actions" style="display:flex;gap:6px;"></div>
+        </div>
+        <!-- 목록 화면 -->
+        <div id="gbk-list-screen" style="padding:16px;overflow-y:auto;flex:1;">
+          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">방명록을 만든 뒤 블록 에디터의 "도구" 탭에서 방명록 블록으로 연결할 수 있어요.</div>
+          <button class="save-btn" onclick="gbkCreateConfig()" style="width:100%;margin-bottom:16px;">+ 새 방명록 만들기</button>
+          <div id="gbk-config-list"><div class="empty-msg">불러오는 중…</div></div>
+        </div>
+        <!-- 편집 화면 -->
+        <div id="gbk-edit-screen" style="display:none;flex-direction:column;overflow:hidden;">
+          <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button class="mbtn-cancel" style="flex:0 0 auto;" onclick="gbkShowList()">← 목록</button>
+            <button class="save-btn" style="flex:1;" onclick="gbkSaveConfig(event)">저장</button>
+            <button class="prev-btn" onclick="openToolPreview('/tools/guestbook/?id='+gbkState.curConfigId)" style="font-size:11px;padding:6px 10px;">미리보기</button>
+            <button class="prev-btn" onclick="gbkViewEntries()" style="font-size:11px;padding:6px 10px;">제출 내역</button>
+            <button class="prev-btn" onclick="gbkDeleteConfig()" style="font-size:11px;padding:6px 10px;color:#c00;border-color:#c00;">삭제</button>
+          </div>
+          <div style="padding:16px;overflow-y:auto;flex:1;">
+            <div class="ed-sect">
+              <div class="ed-lbl">제목 <span style="font-weight:400;opacity:.55;">(관리용 · 도구 상단에 표시)</span></div>
+              <input class="fi" id="gbk-title" placeholder="예: 행사 기대평" style="margin-bottom:0;">
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
+              <div class="mini-rte-wrap">
+                <div class="mini-rte-tb">
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('gbk-desc','bold')"><b>B</b></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('gbk-desc','italic')"><i>I</i></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('gbk-desc','underline')"><u>U</u></button>
+                </div>
+                <div class="mini-rte" id="rte-gbk-desc" contenteditable="true" data-ph="사용자에게 보여줄 설명을 입력하세요"></div>
+              </div>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">항목 이름 <span style="font-weight:400;opacity:.55;">(버튼 등 UI에 사용 · 기본값: 방명록)</span></div>
+              <input class="fi" id="gbk-entry-label" placeholder="방명록" style="margin-bottom:4px;">
+              <div style="font-size:11px;color:rgba(0,0,0,.45);">예: 기대평, 후기, 응원 메시지</div>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl" style="margin-bottom:10px;">카드 레이아웃</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;" id="gbk-layout-btns">
+                <button class="blk-tab on" id="gbk-layout-img-overlay" onclick="gbkSetLayout('img-overlay')" style="font-size:12px;padding:6px 12px;">이미지 오버레이</button>
+                <button class="blk-tab" id="gbk-layout-img-top" onclick="gbkSetLayout('img-top')" style="font-size:12px;padding:6px 12px;">이미지 상단</button>
+                <button class="blk-tab" id="gbk-layout-text-top" onclick="gbkSetLayout('text-top')" style="font-size:12px;padding:6px 12px;">텍스트 상단</button>
+                <button class="blk-tab" id="gbk-layout-text-only" onclick="gbkSetLayout('text-only')" style="font-size:12px;padding:6px 12px;">텍스트만</button>
+              </div>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl" style="margin-bottom:10px;">필드 구성</div>
+              <div id="gbk-field-list" style="margin-bottom:8px;"></div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button class="prev-btn" style="font-size:12px;" onclick="gbkAddField('text')">+ 짧은 텍스트</button>
+                <button class="prev-btn" style="font-size:12px;" onclick="gbkAddField('textarea')">+ 긴 텍스트</button>
+                <button class="prev-btn" style="font-size:12px;" onclick="gbkAddField('image')">+ 이미지</button>
+              </div>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl" style="margin-bottom:10px;">옵션</div>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;margin-bottom:10px;">
+                <input type="checkbox" id="gbk-allow-dup" style="width:16px;height:16px;"> 중복 등록 허용 <span style="font-weight:400;opacity:.6;">(같은 사용자가 여러 개 남길 수 있음)</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;margin-bottom:10px;">
+                <input type="checkbox" id="gbk-require-approval" style="width:16px;height:16px;"> 관리자 승인 후 표시 <span style="font-weight:400;opacity:.6;">(새 항목은 승인 전까지 다른 사용자에게 보이지 않음)</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;" id="gbk-anon-row">
+                <input type="checkbox" id="gbk-allow-anon" onchange="gbkToggleAnonSection()" style="width:16px;height:16px;"> 익명 허용 <span style="font-weight:400;opacity:.6;">(익명 닉네임 자동 생성)</span>
+              </label>
+            </div>
+            <!-- 익명 단어 설정 -->
+            <div id="gbk-anon-section" style="display:none;" class="ed-sect">
+              <div class="ed-lbl" style="margin-bottom:8px;">익명 닉네임 단어 조합 <span style="font-weight:400;opacity:.55;">(단어1 + 단어2 → 예: "게으른 카피바라")</span></div>
+              <div style="margin-bottom:12px;">
+                <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:rgba(0,0,0,.55);">단어1 (형용사·수식어)</div>
+                <div id="gbk-anon-words1-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+                <div style="display:flex;gap:6px;">
+                  <input class="fi-sm" id="gbk-anon-w1-inp" placeholder="예: 게으른" style="flex:1;margin-bottom:0;" onkeydown="if(event.key==='Enter')gbkAddAnonWord(1)">
+                  <button class="prev-btn" style="font-size:12px;" onclick="gbkAddAnonWord(1)">추가</button>
+                </div>
+              </div>
+              <div>
+                <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:rgba(0,0,0,.55);">단어2 (명사)</div>
+                <div id="gbk-anon-words2-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+                <div style="display:flex;gap:6px;">
+                  <input class="fi-sm" id="gbk-anon-w2-inp" placeholder="예: 카피바라" style="flex:1;margin-bottom:0;" onkeydown="if(event.key==='Enter')gbkAddAnonWord(2)">
+                  <button class="prev-btn" style="font-size:12px;" onclick="gbkAddAnonWord(2)">추가</button>
+                </div>
+              </div>
+            </div>
+            <!-- 제출 내역 인라인 -->
+            <div id="gbk-entries-section" style="display:none;margin-top:8px;">
+              <div class="sect-head">제출 내역</div>
+              <div id="gbk-entries-summary" style="font-size:12px;color:rgba(0,0,0,.55);margin-bottom:10px;"></div>
+              <div id="gbk-entries-list"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1638,6 +1746,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="blk-tab"    id="ttab-schedule"          onclick="switchToolType('schedule')"          style="font-size:12px;padding:6px 12px;">일정 잡기</button>
         <button class="blk-tab"    id="ttab-copy-gen"          onclick="switchToolType('copy-gen')"          style="font-size:12px;padding:6px 12px;">문구 생성기</button>
         <button class="blk-tab"    id="ttab-payment"           onclick="switchToolType('payment')"           style="font-size:12px;padding:6px 12px;">결제</button>
+        <button class="blk-tab"    id="ttab-guestbook"         onclick="switchToolType('guestbook')"         style="font-size:12px;padding:6px 12px;">방명록</button>
       </div>
       <div id="tool-inst-section">
         <div class="ed-lbl" style="margin-bottom:6px;">인스턴스 선택</div>
@@ -1884,7 +1993,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button onclick="clearBlkBg()" style="padding:4px 9px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">없음</button>
         <div id="blk-kc-bg" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"></div>
       </div>
-      <div class="ed-lbl">마진 (px)</div>
+      <div class="ed-lbl" style="margin-bottom:6px;">배경 이미지</div>
+      <input class="fi" id="blk-bg-image-url" placeholder="https://... 이미지 URL" style="margin-bottom:4px;" oninput="scheduleBmPreview()">
+      <button class="bg-up-btn" onclick="document.getElementById('blk-bg-img-file').click()" style="margin-bottom:8px;">📁 업로드</button>
+      <input type="file" id="blk-bg-img-file" accept="image/*" style="display:none;" onchange="uploadBlkBgImage(event)">
+      <div id="blk-bg-image-opts" style="display:none;">
+        <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
+          <button data-fit="cover"    class="blk-bg-fit-btn" onclick="setBlkBgFit('cover')"    style="flex:1;padding:5px 0;font-size:11px;font-weight:700;border:2px solid #000;cursor:pointer;font-family:inherit;background:transparent;">꽉 채우기</button>
+          <button data-fit="contain"  class="blk-bg-fit-btn" onclick="setBlkBgFit('contain')"  style="flex:1;padding:5px 0;font-size:11px;font-weight:700;border:2px solid #000;cursor:pointer;font-family:inherit;background:transparent;">비율 유지</button>
+          <button data-fit="natural"  class="blk-bg-fit-btn" onclick="setBlkBgFit('natural')"  style="flex:1;padding:5px 0;font-size:11px;font-weight:700;border:2px solid #000;cursor:pointer;font-family:inherit;background:transparent;">원본</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;" id="blk-bg-pos-row">
+          <button data-pos="center" class="blk-bg-pos-btn" onclick="setBlkBgPos('center')" style="flex:1;padding:5px 0;font-size:11px;border:2px solid #000;cursor:pointer;font-family:inherit;background:transparent;">중앙</button>
+          <button data-pos="top"    class="blk-bg-pos-btn" onclick="setBlkBgPos('top')"    style="flex:1;padding:5px 0;font-size:11px;border:2px solid #000;cursor:pointer;font-family:inherit;background:transparent;">상단</button>
+          <button data-pos="bottom" class="blk-bg-pos-btn" onclick="setBlkBgPos('bottom')" style="flex:1;padding:5px 0;font-size:11px;border:2px solid #000;cursor:pointer;font-family:inherit;background:transparent;">하단</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <span style="font-size:11px;font-weight:700;min-width:64px;">오버레이</span>
+          <input type="color" id="blk-bg-ov-color" value="#000000" oninput="scheduleBmPreview()" style="width:28px;height:28px;border:1.5px solid #000;padding:0;cursor:pointer;">
+          <input type="range" id="blk-bg-ov-opacity" min="0" max="1" step="0.05" value="0" oninput="document.getElementById('blk-bg-ov-val').textContent=Math.round(this.value*100)+'%';scheduleBmPreview()" style="flex:1;">
+          <span id="blk-bg-ov-val" style="font-size:11px;min-width:30px;text-align:right;">0%</span>
+        </div>
+        <button onclick="clearBlkBgImage()" style="padding:4px 9px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">배경 이미지 제거</button>
+      </div>
+      <div class="ed-lbl" style="margin-top:12px;">마진 (px)</div>
       <div style="display:flex;gap:8px;align-items:center;">
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
           <span style="font-size:10px;color:rgba(0,0,0,.45);font-weight:700;">상하</span>
@@ -4652,9 +4784,9 @@ function renderBlockList() {
   if(!curBlocks.length){el.innerHTML=_blkInsertRow(0)+'<div class="empty-msg" style="padding:10px 0;">블록이 없어요.</div>';return;}
   const items=curBlocks.map((b,i)=>{
     const tl=b.type==='text'?'텍스트':b.type==='image'?'이미지':b.type==='mixed'?'혼합':b.type==='embed'?'임베드':b.type==='tool'?'도구':b.type==='spacer'?'스페이서':b.type==='divider'?'구분선':'폼(구)';
-    const _ttMap={'form':'폼','booth':'꾸미기','guide':'계산기','youtube-playlist':'유튜브 뮤직','schedule':'일정잡기','copy-gen':'문구 생성기','payment':'결제'};
+    const _ttMap={'form':'폼','booth':'꾸미기','guide':'계산기','youtube-playlist':'유튜브 뮤직','schedule':'일정잡기','copy-gen':'문구 생성기','payment':'결제','guestbook':'방명록'};
     const _ttLabel=_ttMap[b.toolType]||b.toolType||'?';
-    const _tcId=b.toolConfig?.formId||b.toolConfig?.boothId||b.toolConfig?.guideId||b.toolConfig?.copyGenId||b.toolConfig?.scheduleId||b.toolConfig?.youtubePlaylistId||b.toolConfig?.paymentId||'';
+    const _tcId=b.toolConfig?.formId||b.toolConfig?.boothId||b.toolConfig?.guideId||b.toolConfig?.copyGenId||b.toolConfig?.scheduleId||b.toolConfig?.youtubePlaylistId||b.toolConfig?.paymentId||b.toolConfig?.guestbookId||'';
     const toolSubLbl=b.type==='tool'?(_ttLabel+(_tcId?' · '+_tcId:'')):'';
 
     const pv=b.type==='text'?(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,32):
@@ -5106,6 +5238,9 @@ function exportRespCsv() {
 /* ── Block editor ── */
 let curBlkIdx=null,curBlkInsertAt=null,curBlkType='text',curMixedLayout='overlay',curOverlayVAlign='bottom',savedRange=null;
 let curBlkBgColor='';
+let curBlkBgImageUrl='';
+let curBlkBgImageFit='cover';
+let curBlkBgImagePos='center';
 let curBlkCheckColor='';
 let curBlkCheckTextColor='';
 let curBlkVerticalAlign='center';
@@ -5250,6 +5385,38 @@ function onBlkBgPick(v){
 }
 function onBlkBgHex(v){ if(/^#[0-9a-fA-F]{6}$/.test(v)) onBlkBgPick(v); }
 function clearBlkBg(){ curBlkBgColor=''; const h=document.getElementById('blk-bg-hex'); if(h) h.value=''; const p=document.getElementById('blk-bg-color'); if(p) p.value='#ffffff'; scheduleBmPreview(); }
+
+function _syncBlkBgImageOpts(){
+  const url=document.getElementById('blk-bg-image-url')?.value.trim()||'';
+  const opts=document.getElementById('blk-bg-image-opts');
+  if(opts) opts.style.display=url?'':'none';
+  document.querySelectorAll('.blk-bg-fit-btn').forEach(b=>{ b.style.background=b.dataset.fit===curBlkBgImageFit?'#000':'transparent'; b.style.color=b.dataset.fit===curBlkBgImageFit?'#fff':''; });
+  document.querySelectorAll('.blk-bg-pos-btn').forEach(b=>{ b.style.background=b.dataset.pos===curBlkBgImagePos?'#000':'transparent'; b.style.color=b.dataset.pos===curBlkBgImagePos?'#fff':''; });
+  const posRow=document.getElementById('blk-bg-pos-row');
+  if(posRow) posRow.style.display=curBlkBgImageFit==='natural'?'none':'flex';
+}
+function setBlkBgFit(fit){ curBlkBgImageFit=fit; _syncBlkBgImageOpts(); scheduleBmPreview(); }
+function setBlkBgPos(pos){ curBlkBgImagePos=pos; _syncBlkBgImageOpts(); scheduleBmPreview(); }
+function clearBlkBgImage(){
+  curBlkBgImageUrl='';
+  const u=document.getElementById('blk-bg-image-url'); if(u) u.value='';
+  _syncBlkBgImageOpts();
+  scheduleBmPreview();
+}
+async function uploadBlkBgImage(event){
+  const file=event.target.files?.[0]; if(!file) return;
+  try{
+    const path=`block_bg/${curProjId||'misc'}/${Date.now()}.${file.name.split('.').pop()}`;
+    const ref=storage.ref(path);
+    await ref.put(file,{contentType:file.type});
+    const url=await ref.getDownloadURL();
+    document.getElementById('blk-bg-image-url').value=url;
+    curBlkBgImageUrl=url;
+    _syncBlkBgImageOpts();
+    scheduleBmPreview();
+  }catch(e){alert('업로드 실패: '+e.message);}
+  event.target.value='';
+}
 function openBlockModal(idx,insertAt){
   curBlkIdx=idx;
   curBlkInsertAt=(idx===null&&insertAt!==undefined&&insertAt!==null)?insertAt:null;
@@ -5280,7 +5447,7 @@ function openBlockModal(idx,insertAt){
     curBlkToolType=b.toolType||'form';
     curBlkToolConfig={...b.toolConfig||{}};
     curBlkCompleteTrigger=b.completeTrigger||'tool-signal';
-    ['form','booth','guide','youtube-playlist','schedule','copy-gen','payment'].forEach(k=>{
+    ['form','booth','guide','youtube-playlist','schedule','copy-gen','payment','guestbook'].forEach(k=>{
       const el=document.getElementById('ttab-'+k);
       if(el) el.classList.toggle('on',k===curBlkToolType);
     });
@@ -5338,6 +5505,14 @@ function openBlockModal(idx,insertAt){
   const _dfw=document.getElementById('blk-div-fullwidth-sw'); if(_dfw) _dfw.classList.toggle('on',b.type==='divider'&&!!b.dividerFullWidth);
   curBlkBgColor=b.bgColor||'';
   const bgP=document.getElementById('blk-bg-color'); if(bgP) bgP.value=curBlkBgColor||'#ffffff';
+  curBlkBgImageUrl=b.bgImageUrl||'';
+  curBlkBgImageFit=b.bgImageFit||'cover';
+  curBlkBgImagePos=b.bgImagePos||'center';
+  const biu=document.getElementById('blk-bg-image-url'); if(biu) biu.value=curBlkBgImageUrl;
+  const bioc=document.getElementById('blk-bg-ov-color'); if(bioc) bioc.value=b.bgImageOvColor||'#000000';
+  const bioo=document.getElementById('blk-bg-ov-opacity'); if(bioo) bioo.value=b.bgImageOvOpacity??0;
+  const bioov=document.getElementById('blk-bg-ov-val'); if(bioov) bioov.textContent=Math.round((b.bgImageOvOpacity??0)*100)+'%';
+  _syncBlkBgImageOpts();
   const _noChk=curBlkType==='form'||curBlkType==='tool'||curBlkType==='spacer'||curBlkType==='divider';
   const chkSection=document.getElementById('blk-check-section'); if(chkSection) chkSection.style.display=_noChk?'none':'';
   const chkSw=document.getElementById('blk-checkable-sw'); if(chkSw) chkSw.classList.toggle('on',!!b.checkable&&!_noChk);
@@ -5463,6 +5638,7 @@ function saveBlock(){
     else if(curBlkToolType==='copy-gen') tc.copyGenId=selV;
     else if(curBlkToolType==='youtube-playlist') tc.youtubePlaylistId=selV;
     else if(curBlkToolType==='payment') tc.paymentId=selV;
+    else if(curBlkToolType==='guestbook') tc.guestbookId=selV;
     b.toolType=curBlkToolType;
     b.toolConfig=tc;
     b.height=curToolHeightMode==='full'?'full':(curToolHeightMode==='px'?parseInt(document.getElementById('tool-height')?.value)||0:0);
@@ -5483,6 +5659,15 @@ function saveBlock(){
     b.dividerFullWidth=!!document.getElementById('blk-div-fullwidth-sw')?.classList.contains('on');
   }
   if(curBlkBgColor) b.bgColor=curBlkBgColor;
+  const _biu=(document.getElementById('blk-bg-image-url')?.value||'').trim();
+  if(_biu){
+    b.bgImageUrl=_biu;
+    b.bgImageFit=curBlkBgImageFit||'cover';
+    b.bgImagePos=curBlkBgImagePos||'center';
+    const _oc=document.getElementById('blk-bg-ov-color')?.value||'#000000';
+    const _oo=parseFloat(document.getElementById('blk-bg-ov-opacity')?.value)||0;
+    b.bgImageOvColor=_oc; b.bgImageOvOpacity=_oo;
+  } else { delete b.bgImageUrl; delete b.bgImageFit; delete b.bgImagePos; delete b.bgImageOvColor; delete b.bgImageOvOpacity; }
   const _mv=parseInt(document.getElementById('blk-margin-v')?.value)||0;
   const _mh=parseInt(document.getElementById('blk-margin-h')?.value)||0;
   if(_mv) b.marginV=_mv; else delete b.marginV;
@@ -5530,7 +5715,7 @@ function switchBlkTab(t){
 const SINGLE_TOOL_TYPES = []; // 모든 도구 인스턴스 선택형
 function switchToolType(tt){
   curBlkToolType=tt;
-  ['form','booth','guide','youtube-playlist','schedule','copy-gen','payment'].forEach(k=>{
+  ['form','booth','guide','youtube-playlist','schedule','copy-gen','payment','guestbook'].forEach(k=>{
     const el=document.getElementById('ttab-'+k);
     if(el) el.classList.toggle('on',k===tt);
   });
@@ -5569,9 +5754,12 @@ async function loadToolInstList(tt){
     } else if(tt==='payment'){
       const snap=await db.collection('cms_payment_configs').orderBy('createdAt','desc').get();
       toolInstList=snap.docs.map(d=>({id:d.id,...d.data()}));
+    } else if(tt==='guestbook'){
+      const snap=await db.collection('cms_guestbook_configs').orderBy('createdAt','desc').get();
+      toolInstList=snap.docs.map(d=>({id:d.id,...d.data()}));
     }
   }catch(e){ console.error('[loadToolInstList]',e); }
-  const cur=tt==='form'?curBlkToolConfig?.formId:tt==='booth'?curBlkToolConfig?.boothId:tt==='guide'?curBlkToolConfig?.guideId:tt==='schedule'?curBlkToolConfig?.scheduleId:tt==='copy-gen'?curBlkToolConfig?.copyGenId:tt==='youtube-playlist'?curBlkToolConfig?.youtubePlaylistId:tt==='payment'?curBlkToolConfig?.paymentId:'';
+  const cur=tt==='form'?curBlkToolConfig?.formId:tt==='booth'?curBlkToolConfig?.boothId:tt==='guide'?curBlkToolConfig?.guideId:tt==='schedule'?curBlkToolConfig?.scheduleId:tt==='copy-gen'?curBlkToolConfig?.copyGenId:tt==='youtube-playlist'?curBlkToolConfig?.youtubePlaylistId:tt==='payment'?curBlkToolConfig?.paymentId:tt==='guestbook'?curBlkToolConfig?.guestbookId:'';
   sel.innerHTML='<option value="">— 선택하세요 —</option>'+toolInstList.map(x=>`<option value="${x.id}"${x.id===cur?' selected':''}>${x.name||x.title||x.id}</option>`).join('');
 }
 function openToolManageLink(e){
@@ -5585,6 +5773,7 @@ function openToolManageLink(e){
     'copy-gen':          'copy-gen',
     'youtube-playlist':  'youtube-playlist',
     'payment':           'payment',
+    'guestbook':         'guestbook',
   };
   const toolId = toolIdMap[tt] || 'form-mgr';
   const instId = tt==='form'?curBlkToolConfig?.formId
@@ -5593,7 +5782,8 @@ function openToolManageLink(e){
     :tt==='schedule'?curBlkToolConfig?.scheduleId
     :tt==='copy-gen'?curBlkToolConfig?.copyGenId
     :tt==='youtube-playlist'?curBlkToolConfig?.youtubePlaylistId
-    :tt==='payment'?curBlkToolConfig?.paymentId:'';
+    :tt==='payment'?curBlkToolConfig?.paymentId
+    :tt==='guestbook'?curBlkToolConfig?.guestbookId:'';
   /* 블록 모달 + 스테이지 오버레이(z-index:200) 닫기 — 오버레이가 열린 채로 switchTab 하면 도구 패널이 가려짐 */
   document.getElementById('block-modal').classList.remove('on');
   const sco = document.getElementById('stage-content-overlay');
@@ -5606,6 +5796,7 @@ function openToolManageLink(e){
     else if(tt==='copy-gen') cgEdit(instId);
     else if(tt==='youtube-playlist') ytPlaylistEdit(instId);
     else if(tt==='payment') pyEdit(instId);
+    else if(tt==='guestbook') gbkOpenConfig(instId);
   }
 }
 /* ── 이미지 초점 드래그 ── */
@@ -6038,6 +6229,14 @@ const TOOL_LINK_REGISTRY = [
       return s.docs.map(d => ({ id: d.id, name: d.data().title }));
     },
   },
+  {
+    id: 'guestbook', label: '방명록',
+    urlPrefix: '/tools/guestbook/?id=',
+    getInstances: async () => {
+      const s = await db.collection('cms_guestbook_configs').orderBy('createdAt','desc').get();
+      return s.docs.map(d => ({ id: d.id, name: d.data().title || '방명록' }));
+    },
+  },
   /* 새 도구 추가 예시:
   {
     id: 'youtube-playlist', label: '유튜브 재생목록',
@@ -6153,17 +6352,30 @@ function renderGuidePreview(){
     content.innerHTML=curBlocks.map(b=>gBlockHtml(b,S)).join('');
   }
 }
+function _buildBgImgStyle(b){
+  if(!b.bgImageUrl) return '';
+  const fit=b.bgImageFit||'cover';
+  const pos=b.bgImagePos||'center';
+  const oc=b.bgImageOvColor||'#000000';
+  const oo=b.bgImageOvOpacity??0;
+  const r=parseInt(oc.slice(1,3),16)||0,g=parseInt(oc.slice(3,5),16)||0,bl=parseInt(oc.slice(5,7),16)||0;
+  const ovLayer=oo>0?`,linear-gradient(rgba(${r},${g},${bl},${oo}),rgba(${r},${g},${bl},${oo}))`:'';
+  if(fit==='natural') return `background-image:url('${b.bgImageUrl}')${ovLayer};background-repeat:no-repeat;background-size:contain;background-position:${pos};`;
+  return `background-image:url('${b.bgImageUrl}')${ovLayer};background-size:${fit};background-position:${pos};background-repeat:no-repeat;`;
+}
+
 function _gBlockCore(b,S){
   const pad=`padding:${Math.round(10*S)}px`;
   const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
   const txS=b.txtColor?`color:${b.txtColor};`:'';
   const mv=b.marginV?Math.round(b.marginV*S):0, mh=b.marginH?Math.round(b.marginH*S):0;
   const mS=(mv||mh)?`margin:${mv}px ${mh}px;`:'';
-  if(b.type==='text') return `<div style="${mS}${bgS}${pad};font-size:${Math.round(13*S)}px;line-height:1.6;word-break:break-word;overflow:hidden;box-sizing:border-box;width:calc(100% - ${mh*2}px);${txS}">${b.textContent||''}</div>`;
+  const bgImgS=b.bgImageUrl?_buildBgImgStyle(b):'';
+  if(b.type==='text') return `<div style="${mS}${bgS}${bgImgS}${pad};font-size:${Math.round(13*S)}px;line-height:1.6;word-break:break-word;overflow:hidden;box-sizing:border-box;width:calc(100% - ${mh*2}px);${txS}">${b.textContent||''}</div>`;
   if(b.type==='image'){
     const fit=b.imageFit||'natural', pos=b.imagePosition||'center', ih=b.imageHeight?Math.round(b.imageHeight*S):0;
     const imgS=(fit==='natural'||!ih)?'width:100%;display:block;':`width:100%;height:${ih}px;object-fit:${fit};object-position:${pos};display:block;`;
-    return `<div style="${mS}${bgS}"><img src="${b.imageUrl||''}" style="${imgS}" alt=""></div>`;
+    return `<div style="${mS}${bgS}${bgImgS}"><img src="${b.imageUrl||''}" style="${imgS}" alt=""></div>`;
   }
   if(b.type==='mixed'){
     const mfit=b.imageFit||'cover', mpos=b.imagePosition||'center';
@@ -6172,22 +6384,22 @@ function _gBlockCore(b,S){
     const mihCss=b.imageHeight==='full'?'min-height:200px;':mih?`height:${mih}px;`:'';
     if(b.mixedLayout==='split'){
       const spS=(mfit==='natural'||!mih)?`width:100%;display:block;margin-bottom:${Math.round(6*S)}px;`:`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;margin-bottom:${Math.round(6*S)}px;`;
-      return `<div style="${mS}${bgS}${pad}"><img src="${b.imageUrl||''}" style="${spS}" alt=""><div style="${txS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div></div>`;
+      return `<div style="${mS}${bgS}${bgImgS}${pad}"><img src="${b.imageUrl||''}" style="${spS}" alt=""><div style="${txS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div></div>`;
     }
     const ovS=mfit==='natural'?'width:100%;display:block;':`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;`;
     const _ova=b.overlayTextVAlign||'bottom';const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};const _ai=_aiMap[_ova]||'flex-end';const _sha=b.overlayShadow??0.4;const _shclr=b.overlayColor||'#000000';const _shR=parseInt(_shclr.slice(1,3),16)||0,_shG=parseInt(_shclr.slice(3,5),16)||0,_shB=parseInt(_shclr.slice(5,7),16)||0;
-    return `<div style="${mS}position:relative;${bgS}"><img src="${b.imageUrl||''}" style="${ovS}" alt=""><div style="position:absolute;inset:0;display:flex;align-items:${_ai};background:rgba(${_shR},${_shG},${_shB},${_sha});${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;width:100%;">${b.textContent||''}</div></div></div>`;
+    return `<div style="${mS}position:relative;${bgS}${bgImgS}"><img src="${b.imageUrl||''}" style="${ovS}" alt=""><div style="position:absolute;inset:0;display:flex;align-items:${_ai};background:rgba(${_shR},${_shG},${_shB},${_sha});${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;width:100%;">${b.textContent||''}</div></div></div>`;
   }
   if(b.type==='embed'){
-    if(!b.embedUrl) return `<div style="${mS}${bgS}${pad};text-align:center;font-size:${Math.round(11*S)}px;color:rgba(0,0,0,.4);">임베드 URL 없음</div>`;
+    if(!b.embedUrl) return `<div style="${mS}${bgS}${bgImgS}${pad};text-align:center;font-size:${Math.round(11*S)}px;color:rgba(0,0,0,.4);">임베드 URL 없음</div>`;
     const rawH = b.embedHeight===0 ? Math.round(360*S) : Math.round((b.embedHeight||500)*S);
     const eh = Math.min(rawH, 300);
-    return `<div style="${mS}${bgS}position:relative;"><iframe src="${b.embedUrl}" width="100%" height="${eh}" frameborder="0" allowfullscreen loading="lazy" style="display:block;border:none;pointer-events:none;"></iframe></div>`;
+    return `<div style="${mS}${bgS}${bgImgS}position:relative;"><iframe src="${b.embedUrl}" width="100%" height="${eh}" frameborder="0" allowfullscreen loading="lazy" style="display:block;border:none;pointer-events:none;"></iframe></div>`;
   }
   if(b.type==='form'){
     const fields=(b.formFields||[]).map(f=>`<div style="margin-bottom:${Math.round(6*S)}px;"><div style="font-size:${Math.round(10*S)}px;font-weight:700;margin-bottom:${Math.round(2*S)}px;">${f.label}${f.required?'*':''}</div><div style="border:1px solid rgba(0,0,0,.3);height:${Math.round(22*S)}px;background:#fafafa;border-radius:2px;"></div></div>`).join('');
     const btn=`<div style="margin-top:${Math.round(8*S)}px;background:#000;color:#fff;text-align:center;font-size:${Math.round(11*S)}px;font-weight:700;padding:${Math.round(8*S)}px;">${b.formConfig?.submitBtnText||'제출하기'}</div>`;
-    return `<div style="${mS}${bgS}${pad}">${fields}${btn}</div>`;
+    return `<div style="${mS}${bgS}${bgImgS}${pad}">${fields}${btn}</div>`;
   }
   if(b.type==='spacer'){
     const h=Math.round((b.spacerHeight||40)*S);
@@ -6547,6 +6759,7 @@ window.addEventListener('load', () => {
       else if(st.toolId==='form-mgr') toolFormEdit(st.docId);
       else if(st.toolId==='youtube-playlist') ytPlaylistEdit(st.docId);
       else if(st.toolId==='payment') pyEdit(st.docId);
+      else if(st.toolId==='guestbook') gbkOpenConfig(st.docId);
       _navRestore=false;
       return;
     }
@@ -6570,6 +6783,7 @@ function openTool(toolId) {
   if(toolId === 'schedule') { scInit(); }
   if(toolId === 'copy-gen') { cgShowList(); }
   if(toolId === 'payment') { pyInit(); }
+  if(toolId === 'guestbook') { gbkShowList(); }
 }
 
 function closeTool() {
@@ -8973,6 +9187,278 @@ async function pyViewRecords(){
       }).join('')}</tbody>
     </table></div>`;
   }catch(e){ list.innerHTML = '<div class="empty-msg">불러오기 실패: '+escHtml(e.message)+'</div>'; }
+}
+
+/* ════════════════════════════════════════════
+   방명록 관리 (Guestbook Manager)
+════════════════════════════════════════════ */
+const gbkState = { curConfigId: null, curConfig: null, curLayout: 'img-overlay', curFields: [], curAnonWords1: [], curAnonWords2: [] };
+
+function gbkBack() { closeTool(); }
+
+function gbkShowList() {
+  document.getElementById('gbk-list-screen').style.display = '';
+  document.getElementById('gbk-edit-screen').style.display = 'none';
+  document.getElementById('gbk-header-title').textContent = '방명록';
+  document.getElementById('gbk-header-actions').innerHTML = '';
+  gbkLoadList();
+}
+
+async function gbkLoadList() {
+  const listEl = document.getElementById('gbk-config-list');
+  listEl.innerHTML = '<div class="empty-msg">불러오는 중…</div>';
+  try {
+    const snap = await db.collection('cms_guestbook_configs').orderBy('createdAt','desc').get();
+    if (snap.empty) { listEl.innerHTML = '<div class="empty-msg">아직 방명록이 없어요.</div>'; return; }
+    listEl.innerHTML = snap.docs.map(d => {
+      const data = d.data();
+      return `<div class="proj-item" onclick="gbkOpenConfig('${d.id}')" style="cursor:pointer;">
+        <div class="pi-name">${escHtml(data.title || '(제목 없음)')}</div>
+        <div class="pi-meta">${escHtml(data.entryLabel || '방명록')} · 필드 ${(data.fields||[]).length}개 · ${data.cardLayout || 'text-only'}</div>
+      </div>`;
+    }).join('');
+  } catch(e) { listEl.innerHTML = `<div class="empty-msg">불러오기 실패: ${escHtml(e.message)}</div>`; }
+}
+
+async function gbkCreateConfig() {
+  try {
+    const docRef = await db.collection('cms_guestbook_configs').add({
+      title: '새 방명록',
+      description: '',
+      entryLabel: '방명록',
+      fields: [],
+      cardLayout: 'text-only',
+      allowDuplicate: false,
+      allowAnonymous: false,
+      requireApproval: false,
+      anonWords1: [],
+      anonWords2: [],
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    gbkOpenConfig(docRef.id);
+  } catch(e) { alert('생성 실패: ' + e.message); }
+}
+
+async function gbkOpenConfig(configId) {
+  gbkState.curConfigId = configId;
+  document.getElementById('gbk-list-screen').style.display = 'none';
+  document.getElementById('gbk-edit-screen').style.display = 'flex';
+  document.getElementById('gbk-header-title').textContent = '방명록 편집';
+  document.getElementById('gbk-entries-section').style.display = 'none';
+
+  try {
+    const snap = await db.collection('cms_guestbook_configs').doc(configId).get();
+    if (!snap.exists) { alert('설정을 찾을 수 없어요.'); gbkShowList(); return; }
+    const data = snap.data();
+    gbkState.curConfig = data;
+    gbkState.curLayout = data.cardLayout || 'text-only';
+    gbkState.curFields = JSON.parse(JSON.stringify(data.fields || []));
+    gbkState.curAnonWords1 = [...(data.anonWords1 || [])];
+    gbkState.curAnonWords2 = [...(data.anonWords2 || [])];
+
+    document.getElementById('gbk-title').value = data.title || '';
+    rteSet('gbk-desc', data.description || '');
+    document.getElementById('gbk-entry-label').value = data.entryLabel || '';
+    document.getElementById('gbk-allow-dup').checked = !!data.allowDuplicate;
+    document.getElementById('gbk-require-approval').checked = !!data.requireApproval;
+    document.getElementById('gbk-allow-anon').checked = !!data.allowAnonymous;
+
+    gbkSetLayout(gbkState.curLayout, true);
+    gbkRenderFields();
+    gbkToggleAnonSection();
+    gbkRenderAnonWords();
+  } catch(e) { alert('불러오기 실패: ' + e.message); }
+}
+
+function gbkSetLayout(layout, skipBtn = false) {
+  gbkState.curLayout = layout;
+  if (!skipBtn) {
+    ['img-overlay','img-top','text-top','text-only'].forEach(l => {
+      const btn = document.getElementById('gbk-layout-' + l);
+      if (btn) btn.classList.toggle('on', l === layout);
+    });
+  } else {
+    ['img-overlay','img-top','text-top','text-only'].forEach(l => {
+      const btn = document.getElementById('gbk-layout-' + l);
+      if (btn) btn.classList.toggle('on', l === layout);
+    });
+  }
+}
+
+async function gbkSaveConfig(e) {
+  const btn = e?.currentTarget;
+  if (!gbkState.curConfigId) return;
+  try {
+    if (btn) { btn.textContent = '저장 중…'; btn.disabled = true; }
+    await db.collection('cms_guestbook_configs').doc(gbkState.curConfigId).update({
+      title: document.getElementById('gbk-title').value.trim() || '새 방명록',
+      description: rteGet('gbk-desc'),
+      entryLabel: document.getElementById('gbk-entry-label').value.trim() || '방명록',
+      fields: gbkState.curFields,
+      cardLayout: gbkState.curLayout,
+      allowDuplicate: document.getElementById('gbk-allow-dup').checked,
+      requireApproval: document.getElementById('gbk-require-approval').checked,
+      allowAnonymous: document.getElementById('gbk-allow-anon').checked,
+      anonWords1: gbkState.curAnonWords1,
+      anonWords2: gbkState.curAnonWords2,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    if (btn) _btnFlash(btn, '저장됨 ✓');
+  } catch(err) {
+    alert('저장 실패: ' + err.message);
+    if (btn) { btn.textContent = '저장'; btn.disabled = false; }
+  }
+}
+
+async function gbkDeleteConfig() {
+  if (!gbkState.curConfigId) return;
+  if (!confirm('이 방명록을 삭제할까요? 제출된 항목은 그대로 남습니다.')) return;
+  try {
+    await db.collection('cms_guestbook_configs').doc(gbkState.curConfigId).delete();
+    gbkShowList();
+  } catch(e) { alert('삭제 실패: ' + e.message); }
+}
+
+function gbkAddField(type) {
+  const labelMap = { text: '짧은 텍스트', textarea: '긴 텍스트', image: '이미지' };
+  gbkState.curFields.push({
+    id: 'f_' + Date.now(),
+    type,
+    label: labelMap[type] || type,
+    required: false,
+    placeholder: '',
+    order: gbkState.curFields.length
+  });
+  gbkRenderFields();
+}
+
+function gbkRemoveField(idx) {
+  if (!confirm('이 필드를 삭제할까요?')) return;
+  gbkState.curFields.splice(idx, 1);
+  gbkRenderFields();
+}
+
+function gbkMoveField(idx, dir) {
+  const j = idx + dir;
+  if (j < 0 || j >= gbkState.curFields.length) return;
+  [gbkState.curFields[idx], gbkState.curFields[j]] = [gbkState.curFields[j], gbkState.curFields[idx]];
+  gbkRenderFields();
+}
+
+function gbkRenderFields() {
+  const container = document.getElementById('gbk-field-list');
+  const typeLabel = { text: '짧은 텍스트', textarea: '긴 텍스트', image: '이미지' };
+  container.innerHTML = gbkState.curFields.map((f, i) => `
+    <div style="border:1.5px solid rgba(0,0,0,.12);border-radius:6px;padding:10px 12px;margin-bottom:8px;background:#fafafa;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:11px;font-weight:800;background:#000;color:#fff;padding:2px 6px;border-radius:3px;">${escHtml(typeLabel[f.type]||f.type)}</span>
+        <span style="font-size:12px;font-weight:700;flex:1;">${escHtml(f.label)}</span>
+        ${i>0?`<button class="b-btn" onclick="gbkMoveField(${i},-1)">↑</button>`:''}
+        ${i<gbkState.curFields.length-1?`<button class="b-btn" onclick="gbkMoveField(${i},1)">↓</button>`:''}
+        <button class="b-btn" onclick="gbkRemoveField(${i})">✕</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input class="fi-sm" placeholder="필드 라벨" value="${escHtml(f.label)}" oninput="gbkState.curFields[${i}].label=this.value" style="flex:1;min-width:100px;margin-bottom:0;">
+        <input class="fi-sm" placeholder="placeholder" value="${escHtml(f.placeholder||'')}" oninput="gbkState.curFields[${i}].placeholder=this.value" style="flex:1;min-width:100px;margin-bottom:0;">
+        <label style="display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">
+          <input type="checkbox" ${f.required?'checked':''} onchange="gbkState.curFields[${i}].required=this.checked" style="width:14px;height:14px;">필수
+        </label>
+      </div>
+    </div>
+  `).join('') || '<div style="font-size:12px;color:rgba(0,0,0,.4);padding:8px 0;">필드가 없습니다. 아래에서 추가하세요.</div>';
+}
+
+function gbkToggleAnonSection() {
+  const chk = document.getElementById('gbk-allow-anon');
+  const sect = document.getElementById('gbk-anon-section');
+  if (sect) sect.style.display = chk?.checked ? '' : 'none';
+}
+
+function gbkAddAnonWord(which) {
+  const inpId = which === 1 ? 'gbk-anon-w1-inp' : 'gbk-anon-w2-inp';
+  const inp = document.getElementById(inpId);
+  const val = inp?.value?.trim();
+  if (!val) return;
+  if (which === 1) gbkState.curAnonWords1.push(val);
+  else gbkState.curAnonWords2.push(val);
+  inp.value = '';
+  gbkRenderAnonWords();
+}
+
+function gbkRemoveAnonWord(which, idx) {
+  if (which === 1) gbkState.curAnonWords1.splice(idx, 1);
+  else gbkState.curAnonWords2.splice(idx, 1);
+  gbkRenderAnonWords();
+}
+
+function gbkRenderAnonWords() {
+  const renderList = (words, which, containerId) => {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = words.map((w, i) => `<span style="display:inline-flex;align-items:center;gap:4px;background:#f0f0f0;padding:4px 8px;border-radius:4px;font-size:12px;">
+      ${escHtml(w)}<button onclick="gbkRemoveAnonWord(${which},${i})" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0;color:rgba(0,0,0,.4);line-height:1;">×</button>
+    </span>`).join('');
+  };
+  renderList(gbkState.curAnonWords1, 1, 'gbk-anon-words1-list');
+  renderList(gbkState.curAnonWords2, 2, 'gbk-anon-words2-list');
+}
+
+async function gbkViewEntries() {
+  const sect = document.getElementById('gbk-entries-section');
+  const list = document.getElementById('gbk-entries-list');
+  const summary = document.getElementById('gbk-entries-summary');
+  sect.style.display = 'block';
+  list.innerHTML = '<div class="empty-msg">불러오는 중…</div>';
+  summary.textContent = '';
+  try {
+    const snap = await db.collection('cms_guestbook_entries').doc(gbkState.curConfigId).collection('entries')
+      .orderBy('createdAt','desc').get();
+    if (snap.empty) { list.innerHTML = '<div class="empty-msg">아직 제출된 항목이 없어요.</div>'; return; }
+    summary.textContent = `총 ${snap.size}건`;
+    list.innerHTML = snap.docs.map(d => {
+      const e = d.data();
+      const createdAt = e.createdAt?.toDate?.()?.toLocaleDateString('ko-KR') || '';
+      const firstText = (gbkState.curConfig?.fields || []).reduce((acc, f) => acc || (f.type !== 'image' ? (e.fieldValues?.[f.id] || '') : ''), '');
+      const isApproved = e.approved;
+      const isPinned = e.pinned;
+      return `<div style="border:1.5px solid rgba(0,0,0,.12);border-radius:6px;padding:10px 12px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+          <span style="font-size:12px;font-weight:800;">${escHtml(e.authorName||'익명')}</span>
+          ${e.isAnonymous?'<span style="font-size:10px;background:#eee;padding:1px 5px;border-radius:3px;">익명</span>':''}
+          <span style="font-size:10px;color:rgba(0,0,0,.4);margin-left:auto;">${createdAt}</span>
+        </div>
+        <div style="font-size:12px;color:rgba(0,0,0,.6);margin-bottom:8px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${escHtml(firstText||'(내용 없음)')}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="prev-btn" style="font-size:11px;padding:4px 8px;${isApproved?'background:#000;color:#fff;':''}" onclick="toggleGbkApproval('${gbkState.curConfigId}','${d.id}',${isApproved})">${isApproved?'✓ 승인됨':'승인하기'}</button>
+          <button class="prev-btn" style="font-size:11px;padding:4px 8px;${isPinned?'background:#000;color:#fff;':''}" onclick="toggleGbkPin('${gbkState.curConfigId}','${d.id}',${isPinned})">${isPinned?'📌 고정됨':'고정하기'}</button>
+          <button class="prev-btn" style="font-size:11px;padding:4px 8px;color:#c00;border-color:#c00;" onclick="deleteGbkEntry('${gbkState.curConfigId}','${d.id}')">삭제</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { list.innerHTML = `<div class="empty-msg">불러오기 실패: ${escHtml(e.message)}</div>`; }
+}
+
+async function toggleGbkApproval(configId, entryId, current) {
+  try {
+    await db.collection('cms_guestbook_entries').doc(configId).collection('entries').doc(entryId).update({ approved: !current });
+    gbkViewEntries();
+  } catch(e) { alert('변경 실패: ' + e.message); }
+}
+
+async function toggleGbkPin(configId, entryId, current) {
+  try {
+    await db.collection('cms_guestbook_entries').doc(configId).collection('entries').doc(entryId).update({ pinned: !current });
+    gbkViewEntries();
+  } catch(e) { alert('변경 실패: ' + e.message); }
+}
+
+async function deleteGbkEntry(configId, entryId) {
+  if (!confirm('이 항목을 삭제할까요?')) return;
+  try {
+    await db.collection('cms_guestbook_entries').doc(configId).collection('entries').doc(entryId).delete();
+    gbkViewEntries();
+  } catch(e) { alert('삭제 실패: ' + e.message); }
 }
 </script>
 <div id="fmt-popup" style="display:none;position:fixed;background:#fff;border:2px solid #000;z-index:600;box-shadow:3px 3px 0 rgba(0,0,0,.1);min-width:110px;"><div id="fmt-popup-inner"></div></div>
