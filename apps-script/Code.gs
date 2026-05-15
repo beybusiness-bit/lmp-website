@@ -129,30 +129,50 @@ function doPost(e) {
       const folderName = data.folderName || '폼_파일모음';
       const files = data.files || [];
       try {
-        var folder;
-        var folderIter = DriveApp.getFoldersByName(folderName);
-        if (folderIter.hasNext()) {
-          folder = folderIter.next();
-        } else {
-          folder = DriveApp.createFolder(folderName);
-          SHARED_EDITORS.forEach(function(email) {
-            try { folder.addEditor(email); } catch(_) {}
+        // 슬래시 구분 경로 지원 (예: "2026행사/브랜드사진")
+        var folder = DriveApp.getRootFolder();
+        folderName.split('/').map(function(s){ return s.trim(); }).filter(function(s){ return s; })
+          .forEach(function(name) {
+            var iter = folder.getFoldersByName(name);
+            if (iter.hasNext()) { folder = iter.next(); }
+            else {
+              folder = folder.createFolder(name);
+              SHARED_EDITORS.forEach(function(email) {
+                try { folder.addEditor(email); } catch(_) {}
+              });
+            }
           });
-        }
         var savedCount = 0;
+        var errors = [];
         files.forEach(function(f) {
           try {
             var response = UrlFetchApp.fetch(f.url, {muteHttpExceptions: true});
-            if (response.getResponseCode() !== 200) return;
+            var code = response.getResponseCode();
+            if (code !== 200) { errors.push(f.fileName + ': HTTP ' + code); return; }
             var blob = response.getBlob();
-            var contentType = blob.getContentType() || 'application/octet-stream';
-            var ext = contentType.split('/').pop().replace('jpeg','jpg');
+            // URL에서 원본 확장자 추출 (content-type보다 정확)
+            var ext = '';
+            try {
+              var pathPart = f.url.split('?')[0];
+              var lastSeg = decodeURIComponent(pathPart.split('/').pop());
+              var dotIdx = lastSeg.lastIndexOf('.');
+              if (dotIdx > -1) ext = lastSeg.substring(dotIdx + 1).toLowerCase();
+            } catch(_) {}
+            // URL에 확장자 없으면 content-type으로 대체
+            if (!ext) {
+              var ct = blob.getContentType() || 'application/octet-stream';
+              ext = ct.split('/').pop().replace('jpeg','jpg');
+            }
+            // HEIC/HEIF MIME 타입 명시
+            if (ext === 'heic' || ext === 'heif') blob.setContentType('image/heic');
             blob.setName(f.fileName + '.' + ext);
             folder.createFile(blob);
             savedCount++;
-          } catch(err) {}
+          } catch(err) {
+            errors.push(f.fileName + ': ' + err.message);
+          }
         });
-        return json({ success: true, savedCount: savedCount, folderUrl: folder.getUrl() });
+        return json({ success: true, savedCount: savedCount, folderUrl: folder.getUrl(), errors: errors });
       } catch(err) {
         return json({ success: false, error: err.message });
       }
