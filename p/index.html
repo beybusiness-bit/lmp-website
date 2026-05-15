@@ -828,15 +828,11 @@ async function loadWidget() {
 
     if(WIDGET.toolType === 'booth') {
       const configId = WIDGET.instanceId;
-      const projectIds = [PROJECT_ID];
-      if(WIDGET.filterProjectId && WIDGET.filterProjectId !== PROJECT_ID) projectIds.push(WIDGET.filterProjectId);
-      for(const pid of projectIds) {
-        let q = db.collection('cms_booth_gallery').doc(configId).collection('images')
-          .where('approved','==',true).where('projectId','==',pid);
-        if(order !== 'random') q = q.orderBy('createdAt', order === 'asc' ? 'asc' : 'desc');
-        const snap = await q.limit(40).get();
-        snap.docs.forEach(d => boothImages.push(d.data().imageUrl));
-      }
+      let q = db.collection('cms_booth_gallery').doc(configId).collection('images')
+        .where('approved','==',true).where('projectId','==',PROJECT_ID);
+      if(order !== 'random') q = q.orderBy('createdAt', order === 'asc' ? 'asc' : 'desc');
+      const snap = await q.limit(40).get();
+      snap.docs.forEach(d => boothImages.push(d.data().imageUrl));
       if(order === 'random') boothImages = boothImages.sort(() => Math.random() - 0.5);
       if(!boothImages.length) { el.style.display = 'none'; return; }
     }
@@ -846,21 +842,17 @@ async function loadWidget() {
       const cfgDoc = await db.collection('cms_guestbook_configs').doc(configId).get();
       const cfg = cfgDoc.exists ? cfgDoc.data() : {};
       const txtFields = (cfg.fields || []).filter(f => f.type !== 'image');
-      const projectIds = [PROJECT_ID];
-      if(WIDGET.filterProjectId && WIDGET.filterProjectId !== PROJECT_ID) projectIds.push(WIDGET.filterProjectId);
-      for(const pid of projectIds) {
-        let q = db.collection('cms_guestbook_entries').doc(configId).collection('entries')
-          .where('approved','==',true).where('projectId','==',pid);
-        if(order !== 'random') q = q.orderBy('createdAt', order === 'asc' ? 'asc' : 'desc');
-        const snap = await q.limit(40).get();
-        snap.docs.forEach(d => {
-          const e = d.data();
-          const text = txtFields.map(f => e.fieldValues?.[f.id||f.key]||'').filter(Boolean).join('\n');
-          const bg = e.bgColor || '#f2f2f2';
-          const dt = e.createdAt?.toDate ? (()=>{const dd=e.createdAt.toDate();return `${dd.getMonth()+1}.${dd.getDate()}`;})() : '';
-          gbCards.push({name:e.authorName||'', text, bg, dt});
-        });
-      }
+      let q = db.collection('cms_guestbook_entries').doc(configId).collection('entries')
+        .where('approved','==',true).where('projectId','==',PROJECT_ID);
+      if(order !== 'random') q = q.orderBy('createdAt', order === 'asc' ? 'asc' : 'desc');
+      const snap = await q.limit(40).get();
+      snap.docs.forEach(d => {
+        const e = d.data();
+        const text = txtFields.map(f => e.fieldValues?.[f.id||f.key]||'').filter(Boolean).join('\n');
+        const bg = e.bgColor || '#f2f2f2';
+        const dt = e.createdAt?.toDate ? (()=>{const dd=e.createdAt.toDate();return `${dd.getMonth()+1}.${dd.getDate()}`;})() : '';
+        gbCards.push({name:e.authorName||'', text, bg, dt});
+      });
       if(order === 'random') gbCards = gbCards.sort(() => Math.random() - 0.5);
       if(!gbCards.length) { el.style.display = 'none'; return; }
     }

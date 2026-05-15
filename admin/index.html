@@ -464,11 +464,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                     <option value="random">무작위</option>
                   </select>
                 </div>
-                <div>
-                  <div class="ed-lbl" style="margin-bottom:4px;">다른 프로젝트 이미지 포함</div>
-                  <input class="fi" id="p-widget-filter-project" placeholder="프로젝트 ID (비워두면 현재 프로젝트만)" style="margin-bottom:4px;">
-                  <div style="font-size:11px;color:rgba(0,0,0,.45);">해당 프로젝트의 승인된 이미지도 함께 표시됩니다.</div>
-                </div>
               </div>
             </div>
           </div>
@@ -3038,7 +3033,6 @@ function loadWidgetConfig(w) {
   document.getElementById('p-widget-pager').checked = w.pager !== false;
   document.getElementById('p-widget-click-action').value = w.clickAction || 'none';
   document.getElementById('p-widget-order').value = w.order || 'desc';
-  document.getElementById('p-widget-filter-project').value = w.filterProjectId || '';
 }
 
 function getWidgetConfig() {
@@ -3054,7 +3048,6 @@ function getWidgetConfig() {
     pager: document.getElementById('p-widget-pager').checked,
     clickAction: document.getElementById('p-widget-click-action').value || 'none',
     order: document.getElementById('p-widget-order').value || 'desc',
-    filterProjectId: document.getElementById('p-widget-filter-project').value.trim(),
   };
 }
 
