@@ -1546,26 +1546,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <div style="flex:1;"></div>
         </div>
         <!-- 목록 화면 -->
+        <!-- 결제 내부 탭 -->
+        <div id="py-tab-nav" style="display:flex;border-bottom:2px solid #000;flex-shrink:0;">
+          <button class="tgl-btn on" id="py-tab-products" onclick="pySwTab('products')" style="flex:1;border-radius:0;border:none;border-right:1px solid rgba(0,0,0,.15);font-size:12px;">결제 상품</button>
+          <button class="tgl-btn"    id="py-tab-settings" onclick="pySwTab('settings')" style="flex:1;border-radius:0;border:none;font-size:12px;">결제 설정</button>
+        </div>
+        <!-- 결제 상품 탭 -->
         <div id="py-list-screen" style="padding:16px;overflow-y:auto;flex:1;">
           <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">상품·금액을 등록한 뒤 블록 에디터의 "도구" 탭에서 결제 블록으로 연결할 수 있어요.</div>
-          <div class="ed-sect" style="border:1.5px solid rgba(0,0,0,.15);padding:14px;margin-bottom:18px;">
-            <div class="ed-lbl" style="margin-bottom:6px;">페이업 가맹점 ID <span style="font-weight:400;opacity:.55;">(merchantId · 테스트: standard_test)</span></div>
-            <input class="fi" id="py-merchant-id" placeholder="가맹점 아이디 입력" style="margin-bottom:8px;font-family:monospace;font-size:11px;">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600;">
-                <input type="checkbox" id="py-test-mode" onchange="projDirty=true;">
-                테스트 모드 사용 (테스트 서버 · 실제 결제 안 됨)
-              </label>
-            </div>
-            <button class="save-btn" onclick="pySaveSettings(event)" style="width:100%;font-size:12px;padding:8px 0;">설정 저장</button>
-            <div style="font-size:10px;color:rgba(0,0,0,.45);line-height:1.55;margin-top:8px;">
-              📌 <b>API 키(apiKey)</b>는 Vercel 환경변수 <code>PAYUP_API_KEY</code>에 설정해주세요.<br>
-              📌 가맹점 ID도 Vercel 환경변수 <code>PAYUP_MERCHANT_ID</code>에 동일하게 입력해주세요.<br>
-              📌 테스트 모드일 때도 Vercel 환경변수 <code>PAYUP_TEST=true</code>로 설정해야 해요.
-            </div>
-          </div>
           <button class="save-btn" onclick="pyCreate()" style="width:100%;margin-bottom:16px;">+ 새 결제 상품 만들기</button>
           <div id="py-config-list"><div class="empty-msg">불러오는 중…</div></div>
+        </div>
+        <!-- 결제 설정 탭 -->
+        <div id="py-settings-screen" style="display:none;padding:16px;overflow-y:auto;flex:1;">
+          <div class="ed-lbl" style="margin-bottom:6px;">페이업 가맹점 ID <span style="font-weight:400;opacity:.55;">(merchantId · 테스트: standard_test)</span></div>
+          <input class="fi" id="py-merchant-id" placeholder="가맹점 아이디 입력" style="margin-bottom:8px;font-family:monospace;font-size:11px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600;">
+              <input type="checkbox" id="py-test-mode" onchange="projDirty=true;">
+              테스트 모드 사용 (테스트 서버 · 실제 결제 안 됨)
+            </label>
+          </div>
+          <button class="save-btn" onclick="pySaveSettings(event)" style="width:100%;font-size:12px;padding:8px 0;">설정 저장</button>
+          <div style="font-size:10px;color:rgba(0,0,0,.45);line-height:1.55;margin-top:8px;">
+            📌 <b>API 키(apiKey)</b>는 Vercel 환경변수 <code>PAYUP_API_KEY</code>에 설정해주세요.<br>
+            📌 가맹점 ID도 Vercel 환경변수 <code>PAYUP_MERCHANT_ID</code>에 동일하게 입력해주세요.<br>
+            📌 테스트 모드일 때도 Vercel 환경변수 <code>PAYUP_TEST=true</code>로 설정해야 해요.
+          </div>
         </div>
         <!-- 편집 화면 -->
         <div id="py-edit-screen" style="display:none;flex-direction:column;overflow:hidden;">
@@ -2614,7 +2621,6 @@ function switchInnerTab(t) {
 let _siteLoaded = false;
 async function loadSiteSettings() {
   if (_siteLoaded) return;
-  _siteLoaded = true;
   try {
     const doc = await db.collection('cms_admin_settings').doc('site').get();
     const s = doc.exists ? doc.data() : {};
@@ -2629,9 +2635,14 @@ async function loadSiteSettings() {
     document.getElementById('site-instagram').value = s.footerInstagram || '';
     document.getElementById('site-copyright').value = s.footerCopyright || '';
     document.getElementById('site-copyright-year').value = s.footerCopyrightYear || new Date().getFullYear();
-    rteSet('rte-privacy', s.privacyHtml || '');
-    rteSet('rte-terms', s.termsHtml || '');
-  } catch(e) { console.error('loadSiteSettings:', e); }
+    rteSet('privacy', s.privacyHtml || '');
+    rteSet('terms', s.termsHtml || '');
+    _siteLoaded = true;
+  } catch(e) {
+    console.error('loadSiteSettings:', e);
+    const btn = document.getElementById('site-save-btn');
+    if (btn) btn.insertAdjacentHTML('beforebegin', '<div style="color:#c00;font-size:12px;margin-bottom:8px;">설정을 불러오지 못했어요: ' + e.message + '</div>');
+  }
 }
 
 async function saveSiteSettings() {
@@ -2648,8 +2659,8 @@ async function saveSiteSettings() {
     footerInstagram: document.getElementById('site-instagram').value.trim(),
     footerCopyright: document.getElementById('site-copyright').value.trim(),
     footerCopyrightYear: document.getElementById('site-copyright-year').value.trim(),
-    privacyHtml: rteGet('rte-privacy'),
-    termsHtml: rteGet('rte-terms'),
+    privacyHtml: rteGet('privacy'),
+    termsHtml: rteGet('terms'),
     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
   };
   try {
@@ -9926,6 +9937,8 @@ async function pyEdit(id){
   pyCurDocId = id;
   if(!_navRestore) history.pushState({v:'tool-edit',toolId:'payment',docId:id},'','#tools/payment/'+id);
   document.getElementById('py-list-screen').style.display = 'none';
+  document.getElementById('py-settings-screen').style.display = 'none';
+  document.getElementById('py-tab-nav').style.display = 'none';
   const ed = document.getElementById('py-edit-screen');
   ed.style.display = 'flex';
   document.getElementById('py-records-section').style.display = 'none';
@@ -9942,9 +9955,16 @@ async function pyEdit(id){
   }catch(e){ alert('불러오기 실패: '+e.message); }
 }
 
+function pySwTab(t) {
+  document.getElementById('py-tab-products').classList.toggle('on', t === 'products');
+  document.getElementById('py-tab-settings').classList.toggle('on', t === 'settings');
+  document.getElementById('py-list-screen').style.display    = t === 'products' ? '' : 'none';
+  document.getElementById('py-settings-screen').style.display = t === 'settings' ? '' : 'none';
+}
 function pyShowList(){
   document.getElementById('py-edit-screen').style.display = 'none';
-  document.getElementById('py-list-screen').style.display = '';
+  document.getElementById('py-tab-nav').style.display = 'flex';
+  pySwTab('products');
   pyCurDocId = null;
   pyLoadList();
 }

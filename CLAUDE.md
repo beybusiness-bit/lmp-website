@@ -709,16 +709,29 @@ closeHelpPanel();
 - 익명 닉네임 단어 입력 → 콤마 구분 textarea (한 번에 여러 개 입력)
 - 위젯 타입으로 방명록 추가 — 카드 슬라이더(작성자·텍스트·날짜, 승인된 항목만 표시)
 
+**사이트 설정 탭 (`admin/index.html`)**
+- `cms_admin_settings/site` Firestore 문서로 전역 푸터 설정 저장
+- 푸터 로고, 사업자 정보, Instagram URL, 저작권, 개인정보처리방침(RTE), 이용약관(RTE) 설정 가능
+- `switchTab('site')` 호출 시 `showProjView('list')` 먼저 호출 → proj-edit-view 오버레이 닫힘
+- `loadSiteSettings()` 에러 시 화면에 메시지 표시 + 재시도 가능 (`_siteLoaded` 플래그 위치 수정)
+
+**결제 도구 UX 개선**
+- 결제 전 최종 확인 화면: 상품명·금액 표시 + 청약철회 불가 동의 체크박스 (전자상거래법 제17조)
+- 결제 화면에서 상품명 중복 제거 (제목만 표시, 상품명은 영수증·확인 화면에서만)
+- admin 결제 탭 내부 분리: "결제 상품" | "결제 설정" 탭 (가맹점 ID는 "결제 설정"으로 이동)
+- 결제 도구가 `cms_admin_settings/site`에서 문의 이메일 자동 로드 (`window._siteEmail`)
+
 ---
 
 #### 미완료 / 이슈 🔶
 
+- **사이트 설정 탭 원인 미확정**: 구조·CSS·JS 모두 정상이나 일부 환경에서 여전히 빈칸 보고. 에러 메시지 표시 기능 추가됨 — 다음 세션에서 에러 내용 확인 후 원인 파악 필요
 - **GAS 재배포 필요** (updateFormRow + bulkAppend + Calendar 액션 코드는 추가됐으나 GAS 편집기에서 "새 버전" 배포 안 됨)
   → script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
 - **일정 잡기 도구 end-to-end 테스트**: GAS 재배포 후 실제 캘린더 연동 확인 필요
-- **결제 후 권한 분기(잠금 게이트)**: `paidTiers` 데이터는 저장되나 블록/스테이지/프로젝트 잠금 로직 미구현 — 사용 예시 확인 후 단위 결정
+- **결제 후 권한 분기(잠금 게이트)**: `paidTiers` 데이터는 저장되나 블록/스테이지/프로젝트 잠금 로직 미구현
 
-#### Firestore 보안 규칙 (이번 세션에서 변경됨)
+#### Firestore 보안 규칙 (이전 세션에서 변경됨)
 ```
 match /cms_form_responses/{document=**} { allow write: if true; allow read: if true; }
 ```
