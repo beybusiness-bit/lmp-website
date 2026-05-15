@@ -1226,7 +1226,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <button onclick="saveTfFilesToDrive()" style="padding:6px 12px;background:transparent;border:1.5px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">📁 Drive에 저장</button>
               </div>
               <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;cursor:pointer;">
-                <input type="checkbox" id="tf-drive-backfill-all"> 불러온 응답 전체 파일 저장 (체크 해제 시 최신 응답만)
+                <input type="checkbox" id="tf-drive-backfill-all"> 불러온 응답 전체 파일 저장 <span id="tf-drive-last-save-label" style="color:rgba(0,0,0,.4);font-size:11px;"></span>
               </label>
               <div id="tf-drive-status" style="font-size:11px;color:rgba(0,0,0,.5);margin-top:6px;min-height:16px;"></div>
             </div>
@@ -7569,8 +7569,10 @@ async function loadTfInlineResponses(){
   try{
     const snap=await db.collection('cms_form_configs').doc(tfCurDocId).get();
     const d=snap.data()||{};
-    tfRespFormConfig={sheetId:d.sheetId||'',sheetTab:d.sheetTab||'응답',sheetUrl:d.sheetUrl||''};
+    tfRespFormConfig={sheetId:d.sheetId||'',sheetTab:d.sheetTab||'응답',sheetUrl:d.sheetUrl||'',lastDriveSaveAt:d.lastDriveSaveAt||null};
     tfRespColWidths=d.columnWidths||{};
+    const lbl=document.getElementById('tf-drive-last-save-label');
+    if(lbl) lbl.textContent=d.lastDriveSaveAt?.seconds?`(체크 해제 시 ${new Date(d.lastDriveSaveAt.seconds*1000).toLocaleDateString('ko')} 이후 응답만)`:'(체크 해제 시 전체)';
   }catch(e){}
   updateTfRespSheetStatus();
   const el=document.getElementById('tf-resp-scroll');
@@ -7682,8 +7684,17 @@ async function saveTfFilesToDrive(){
   const fields=(tfRespFields||[]).filter(f=>f.type==='file');
   if(!fields.length){alert('파일 업로드 필드가 없어요.');return;}
   const statusEl=document.getElementById('tf-drive-status');
+  const backfillAll=document.getElementById('tf-drive-backfill-all')?.checked;
+
+  // 체크박스 해제 시 마지막 저장 이후 응답만 필터링
+  let targetResps=tfRespData;
+  if(!backfillAll && tfRespFormConfig.lastDriveSaveAt?.seconds){
+    const lastTs=tfRespFormConfig.lastDriveSaveAt.seconds;
+    targetResps=tfRespData.filter(resp=>(resp.submittedAt?.seconds||0)>lastTs);
+  }
+
   const files=[];
-  tfRespData.forEach(resp=>{
+  targetResps.forEach(resp=>{
     const submittedDate=resp.submittedAt?.seconds
       ?new Date(resp.submittedAt.seconds*1000).toLocaleDateString('ko').replace(/\.\s?/g,'-').replace(/-$/,'')
       :'날짜없음';
@@ -7695,14 +7706,36 @@ async function saveTfFilesToDrive(){
       urls.forEach(url=>{files.push({url,fileName:`${fc.label}_${userName}_${submittedDate}`});});
     });
   });
-  if(!files.length){alert('저장할 파일이 없어요.');return;}
-  if(statusEl) statusEl.textContent=`저장 중… (${files.length}개 파일)`;
+  if(!files.length){
+    alert(!backfillAll&&tfRespFormConfig.lastDriveSaveAt?.seconds?'마지막 저장 이후 새 파일이 없어요.':'저장할 파일이 없어요.');
+    return;
+  }
+
+  const CHUNK=20;
+  const chunks=[];
+  for(let i=0;i<files.length;i+=CHUNK) chunks.push(files.slice(i,i+CHUNK));
+
+  let savedCount=0, allErrors=[], folderUrl='';
+  if(statusEl) statusEl.textContent=`저장 중… 0/${files.length}개`;
+
   try{
-    const r=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'saveFilesToDrive',folderName,files})});
-    const data=await r.json();
-    if(!data.success) throw new Error(data.error||'저장 실패');
-    const errMsg=(data.errors&&data.errors.length)?`<br><span style="color:#c00;">오류(${data.errors.length}): ${data.errors.join(' / ')}</span>`:'';
-    if(statusEl) statusEl.innerHTML=`✅ ${data.savedCount}개 파일 저장 완료 · <a href="${data.folderUrl}" target="_blank" style="color:#000;font-weight:700;">폴더 열기 ↗</a>${errMsg}`;
+    for(const chunk of chunks){
+      const r=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'saveFilesToDrive',folderName,files:chunk})});
+      const data=await r.json();
+      if(!data.success) throw new Error(data.error||'저장 실패');
+      savedCount+=data.savedCount||0;
+      if(data.errors) allErrors.push(...data.errors);
+      if(data.folderUrl) folderUrl=data.folderUrl;
+      if(statusEl) statusEl.textContent=`저장 중… ${savedCount}/${files.length}개`;
+    }
+    // 마지막 Drive 저장 시각 Firestore에 기록
+    const now=firebase.firestore.FieldValue.serverTimestamp();
+    await db.collection('cms_form_configs').doc(tfCurDocId).update({lastDriveSaveAt:now});
+    tfRespFormConfig.lastDriveSaveAt={seconds:Date.now()/1000};
+    const lbl=document.getElementById('tf-drive-last-save-label');
+    if(lbl) lbl.textContent=`(체크 해제 시 ${new Date().toLocaleDateString('ko')} 이후 응답만)`;
+    const errMsg=allErrors.length?`<br><span style="color:#c00;">오류(${allErrors.length}): ${allErrors.join(' / ')}</span>`:'';
+    if(statusEl) statusEl.innerHTML=`✅ ${savedCount}개 파일 저장 완료 · <a href="${folderUrl}" target="_blank" style="color:#000;font-weight:700;">폴더 열기 ↗</a>${errMsg}`;
   }catch(e){
     if(statusEl) statusEl.textContent='❌ 저장 실패: '+e.message;
   }
