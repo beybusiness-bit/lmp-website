@@ -5184,13 +5184,19 @@ async function _downloadFiles(fileUrls) {
   if (!fileUrls.length) { alert('다운로드할 파일이 없어요.'); return; }
   for (const {url} of fileUrls) {
     try {
-      const r = await fetch(url);
+      const proxyUrl = '/api/download-file?url=' + encodeURIComponent(url);
+      const r = await fetch(proxyUrl);
+      if (!r.ok) throw new Error(r.status);
       const blob = await r.blob();
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = decodeURIComponent(url.split('/').pop().split('?')[0]).replace(/^\d+_/,'') || 'file';
+      const pathPart = url.split('?')[0];
+      const encodedName = pathPart.split('%2F').pop() || pathPart.split('/').pop() || 'file';
+      let fname; try { fname = decodeURIComponent(encodedName); } catch { fname = encodedName; }
+      a.download = fname.replace(/^\d+_/, '') || 'file';
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      await new Promise(res=>setTimeout(res,300));
+      URL.revokeObjectURL(a.href);
+      await new Promise(res=>setTimeout(res,200));
     } catch(_) {
       window.open(url,'_blank');
       await new Promise(res=>setTimeout(res,500));
