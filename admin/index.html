@@ -350,7 +350,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <input class="fi" id="p-name" placeholder="예: GMBF 플리마켓">
           </div>
           <div class="ed-sect">
-            <div class="ed-lbl">문구</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+              <div class="ed-lbl" style="margin-bottom:0;flex:1;">문구</div>
+              <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+                <span style="font-size:11px;color:rgba(0,0,0,.45);">글씨 크기</span>
+                <input type="number" min="8" max="80" id="p-edition-font-size" value="18" style="width:52px;border:1.5px solid #ddd;border-radius:3px;padding:3px 5px;font-size:12px;text-align:center;" oninput="curElemFontSizes.edition=parseInt(this.value)||18;schedulePreviewUpdate();">
+                <span style="font-size:11px;color:rgba(0,0,0,.45);">px</span>
+              </div>
+            </div>
             <input class="fi" id="p-edition" placeholder="예: 제3회">
           </div>
           <div class="sect-head">게시 상태</div>
@@ -395,12 +402,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <span class="switch-lbl">D-Day 표시 사용</span>
             </div>
             <div id="dday-fields" style="display:none;">
-              <input class="fi" id="p-dday-date" type="date">
+              <input class="fi" id="p-dday-date" type="date" style="margin-bottom:8px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:11px;color:rgba(0,0,0,.55);">글씨 크기</span>
+                <input type="number" min="8" max="120" id="p-dday-font-size" value="32" style="width:56px;border:1.5px solid #ddd;border-radius:3px;padding:3px 5px;font-size:12px;text-align:center;" oninput="curElemFontSizes.dday=parseInt(this.value)||32;schedulePreviewUpdate();">
+                <span style="font-size:11px;color:rgba(0,0,0,.45);">px</span>
+              </div>
             </div>
           </div>
           <div class="sect-head">실시간 카운터</div>
           <div class="ed-sect">
             <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;line-height:1.6;">메인 화면에 실시간 숫자를 표시합니다.<br>예: "방문신청 42명" · 유형을 선택해 이 프로젝트 사용자 수도 집계할 수 있어요.</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+              <span style="font-size:11px;color:rgba(0,0,0,.55);">글씨 크기</span>
+              <input type="number" min="8" max="80" id="p-stats-font-size" value="21" style="width:56px;border:1.5px solid #ddd;border-radius:3px;padding:3px 5px;font-size:12px;text-align:center;" oninput="curElemFontSizes.stats=parseInt(this.value)||21;schedulePreviewUpdate();">
+              <span style="font-size:11px;color:rgba(0,0,0,.45);">px</span>
+            </div>
             <div id="stats-list"></div>
             <button class="add-btn" style="margin-top:8px;" onclick="addStat()">+ 카운터 추가</button>
           </div>
@@ -2624,6 +2641,8 @@ let _statProjCache = undefined; // undefined=미로드, null=로딩중, [{id,nam
 let _statStageCache = {};       // {pid: undefined|null|[{id,title}]}
 let _statBlockCache = {};       // {'pid__sid': undefined|null|[{id,label}]}
 let curElementOrder = ['edition','logo','dday','stats']; // order of main screen elements
+let curElementMargins = {}; // {edition:20, logo:20, dday:20, stats:20, widget:4}
+let curElemFontSizes = {}; // {edition:18, dday:32, stats:21}
 let curUsers = [];
 let curAuthCollection = '';
 let selectedUserIds = new Set();
@@ -3083,14 +3102,26 @@ async function onWidgetToolTypeChange(preselect) {
 function renderElemOrderList() {
   const el = document.getElementById('elem-order-list');
   if (!el) return;
-  el.innerHTML = curElementOrder.map((key,i) => `
+  const last = curElementOrder.length - 1;
+  el.innerHTML = curElementOrder.map((key,i) => {
+    const isLast = i === last;
+    const mb = curElementMargins[key] ?? 20;
+    return `
     <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fafafa;border:1.5px solid rgba(0,0,0,.12);margin-bottom:5px;">
       <div style="flex:1;font-size:13px;font-weight:600;">${ELEM_LABELS[key]||key}</div>
+      ${isLast ? '<div style="font-size:10px;color:rgba(0,0,0,.3);width:88px;text-align:center;">맨 아래</div>' :
+        `<div style="display:flex;align-items:center;gap:3px;">
+          <span style="font-size:10px;color:rgba(0,0,0,.45);">아래 간격</span>
+          <input type="number" min="0" max="200" value="${mb}" style="width:48px;border:1.5px solid #ddd;border-radius:3px;padding:2px 4px;font-size:12px;text-align:center;"
+            onchange="curElementMargins['${key}']=parseInt(this.value)||0;schedulePreviewUpdate();">
+          <span style="font-size:10px;color:rgba(0,0,0,.45);">px</span>
+        </div>`}
       <div style="display:flex;gap:3px;">
         ${i>0?`<button class="s-btn" onclick="mvElem(${i},-1)">↑</button>`:'<div style="width:28px;"></div>'}
-        ${i<curElementOrder.length-1?`<button class="s-btn" onclick="mvElem(${i},1)">↓</button>`:'<div style="width:28px;"></div>'}
+        ${i<last?`<button class="s-btn" onclick="mvElem(${i},1)">↓</button>`:'<div style="width:28px;"></div>'}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function mvElem(i,d) {
   const j=i+d;
@@ -4281,12 +4312,18 @@ async function editProject(id) {
     curAuthKeyField = d.authKeyField || curAuthFields[0]?.key || 'name';
     curStats = d.stats || [];
     curElementOrder = d.elementOrder || ['edition','logo','dday','stats'];
+    curElementMargins = d.elementMargins || {};
+    curElemFontSizes = d.elemFontSizes || {};
     const rawKc = (d.keyColors && d.keyColors.length >= 2) ? d.keyColors : ['#00CE6B','#FFF100','#F95548','#0BC6FF'];
     curKeyColors = rawKc.map(k=>typeof k==='string'?{color:k,holdTime:8,transitionTime:2}:k);
 
     document.getElementById('p-id').value         = id;
     document.getElementById('p-name').value       = d.name||'';
     document.getElementById('p-edition').value    = d.editionText||'';
+    const _efs = d.elemFontSizes || {};
+    const _efEdEl = document.getElementById('p-edition-font-size'); if(_efEdEl) _efEdEl.value = _efs.edition || 18;
+    const _efDdEl = document.getElementById('p-dday-font-size'); if(_efDdEl) _efDdEl.value = _efs.dday || 32;
+    const _efStEl = document.getElementById('p-stats-font-size'); if(_efStEl) _efStEl.value = _efs.stats || 21;
     document.getElementById('p-logo-url').value   = d.logoImageUrl||'';
     document.getElementById('p-logo-txt').value   = d.logoText||'';
     curLogoTextSize  = d.logoTextSize  || '24';
@@ -4426,9 +4463,11 @@ async function saveProject(deploy=true, e=null) {
     bgOverlayOpacity: curBgOverlayOpacity,
     bgOverlayColor:   curBgOverlayColor,
     stages:       curStages.map((s,i)=>({...s,order:i})),
-    stats:        curStats,
-    elementOrder: curElementOrder,
-    widget:       getWidgetConfig(),
+    stats:         curStats,
+    elementOrder:  curElementOrder,
+    elementMargins: curElementMargins,
+    elemFontSizes:  curElemFontSizes,
+    widget:        getWidgetConfig(),
     keyColors:    curKeyColors,
     published:    document.getElementById('published-sw')?.classList.contains('on') ?? true,
     ogTitle:      document.getElementById('p-og-title')?.value.trim()||'',

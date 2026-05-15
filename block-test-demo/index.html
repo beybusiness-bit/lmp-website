@@ -289,7 +289,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
       <div class="dday-num" id="dday-num"></div>
       <div class="visitor-line" id="visitor-line"></div>
     </div>
-    <div id="cta-area" style="display:flex;align-items:flex-end;justify-content:center;gap:40px;">
+    <div id="cta-area" style="display:flex;align-items:flex-end;justify-content:center;gap:60px;">
       <div class="bottom-group basket-btn" onclick="onCtaClick()">
         <div class="basket-mask" id="cta-icon"></div>
         <div class="basket-text" id="cta-text">준비하기</div>
@@ -457,6 +457,8 @@ let STAGES         = [];
 let _navRestore    = false;
 let STATS          = [];   // [{id, label, collection, countType, unit, enabled}]
 let ELEMENT_ORDER  = ['edition','logo','dday','stats'];
+let ELEM_MARGINS   = {};   // {edition:20, logo:20, dday:20, stats:20, widget:4}
+let ELEM_FONT_SIZES = {};  // {edition:18, dday:32, stats:21}
 let WIDGET         = {};   // widget config from cms_projects
 
 /* slideshow */
@@ -626,6 +628,8 @@ function applySettings(d){
     }));
   STATS = (d.stats||[]).filter(s=>s.enabled);
   ELEMENT_ORDER = d.elementOrder || ['edition','logo','dday','stats'];
+  ELEM_MARGINS = d.elementMargins || {};
+  ELEM_FONT_SIZES = d.elemFontSizes || {};
   WIDGET = d.widget || {};
   if(d.keyColors && d.keyColors.length>=2){
     KEY_COLORS_DATA = d.keyColors.map(k=>typeof k==='string'?{color:k,holdTime:8,transitionTime:2}:k);
@@ -713,15 +717,22 @@ function renderTopGroup(d){
   const tg = document.getElementById('main-content')?.querySelector('.top-group');
   if(!tg) return;
   tg.innerHTML = '';
+  tg.style.gap = '0';
+  const lastKey = ELEMENT_ORDER[ELEMENT_ORDER.length - 1];
   ELEMENT_ORDER.forEach(key => {
+    const isLast = key === lastKey;
+    const mb = isLast ? 0 : (ELEM_MARGINS[key] ?? 20);
     if(key==='edition'){
       const el=document.createElement('div');
       el.className='edition-text'; el.id='edition-text';
       el.textContent=d.editionText||'';
+      el.style.marginBottom = mb + 'px';
+      if(ELEM_FONT_SIZES.edition) el.style.fontSize = ELEM_FONT_SIZES.edition + 'px';
       tg.appendChild(el);
     } else if(key==='logo'){
       const wrap=document.createElement('div');
       wrap.className='logo-wrap';
+      wrap.style.marginBottom = mb + 'px';
       if(d.logoImgW){
         const pct=d.logoImgW;
         wrap.style.width=`calc(${pct}% + ${(pct/100*64).toFixed(1)}px)`;
@@ -745,15 +756,19 @@ function renderTopGroup(d){
       const el=document.createElement('div');
       el.className='dday-num'; el.id='dday-num';
       if(DDAY_ENABLED && DDAY_DATE) el.textContent=calcDDay(DDAY_DATE);
+      el.style.marginBottom = mb + 'px';
+      if(ELEM_FONT_SIZES.dday) el.style.fontSize = ELEM_FONT_SIZES.dday + 'px';
       tg.appendChild(el);
     } else if(key==='stats'){
       const el=document.createElement('div');
       el.className='visitor-line'; el.id='visitor-line';
+      el.style.marginBottom = mb + 'px';
+      if(ELEM_FONT_SIZES.stats) el.style.fontSize = ELEM_FONT_SIZES.stats + 'px';
       tg.appendChild(el);
     } else if(key==='widget'){
       const el=document.createElement('div');
       el.id='widget-line';
-      el.style.cssText='display:none;margin:0 0 4px;overflow:hidden;';
+      el.style.cssText=`display:none;overflow:hidden;margin-bottom:${mb}px;`;
       tg.appendChild(el);
     }
   });
@@ -859,7 +874,10 @@ async function loadWidget() {
 
     const itemCount = WIDGET.toolType==='booth' ? boothImages.length : gbCards.length;
     const effectiveIpv = Math.min(ipv, itemCount);
-    const slideW = effectiveIpv <= 1 ? '100%' : `calc(${100/effectiveIpv}% - ${gap*(effectiveIpv-1)/effectiveIpv}px)`;
+    const peek = itemCount > effectiveIpv ? 24 : 0;
+    const slideW = peek > 0
+      ? `calc((100% - ${gap * (effectiveIpv - 1) + peek}px) / ${effectiveIpv})`
+      : (effectiveIpv <= 1 ? '100%' : `calc(${100/effectiveIpv}% - ${gap*(effectiveIpv-1)/effectiveIpv}px)`);
 
     let trackHtml = '';
     if(WIDGET.toolType === 'booth') {
@@ -872,10 +890,12 @@ async function loadWidget() {
     }
     if(WIDGET.toolType === 'guestbook') {
       trackHtml = gbCards.map(c => {
-        return `<div class="ws-slide" style="flex:0 0 ${slideW};height:${h}px;overflow:hidden;border-radius:${radius}px;${border}flex-shrink:0;background:${c.bg};padding:10px 12px;box-sizing:border-box;display:flex;flex-direction:column;">
-          ${c.name ? `<div style="font-size:12px;font-weight:800;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_wesc(c.name)}</div>` : ''}
-          <div style="font-size:11px;flex:1;overflow:hidden;line-height:1.5;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;">${_wesc(c.text)}</div>
-          ${c.dt ? `<div style="font-size:10px;opacity:.45;margin-top:5px;">${c.dt}</div>` : ''}
+        return `<div class="ws-slide" style="flex:0 0 ${slideW};height:${h}px;overflow:hidden;border-radius:${radius}px;${border}flex-shrink:0;box-sizing:border-box;">
+          <div style="height:100%;padding:10px 12px;display:flex;flex-direction:column;overflow:hidden;">
+            ${c.name ? `<div style="font-size:12px;font-weight:800;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${_wesc(c.name)}</div>` : ''}
+            <div style="flex:1;min-height:0;overflow:hidden;font-size:11px;line-height:1.5;white-space:pre-wrap;word-break:break-word;">${_wesc(c.text)}</div>
+            ${c.dt ? `<div style="font-size:10px;opacity:.45;margin-top:5px;flex-shrink:0;">${c.dt}</div>` : ''}
+          </div>
         </div>`;
       }).join('');
     }
