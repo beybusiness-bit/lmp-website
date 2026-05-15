@@ -5640,25 +5640,23 @@ function saveBlock(){
   let b={id:existingId,type:curBlkType};
   if(curBlkType==='text'){
     b.textContent=document.getElementById('ced-text').innerHTML;
-    const lnk=document.getElementById('text-link-url').value.trim();
-    if(lnk) b.linkUrl=lnk;
+    b.linkUrl=document.getElementById('text-link-url').value.trim();
   } else if(curBlkType==='image'){
     b.imageUrl=document.getElementById('img-url').value.trim();
-    const lnk=document.getElementById('img-link-url').value.trim();
-    if(lnk) b.linkUrl=lnk;
+    b.linkUrl=document.getElementById('img-link-url').value.trim();
     b.imageFit=curImgFit||'natural'; b.imagePosition=curImgPos||'center';
-    const _ih=parseInt(document.getElementById('img-height-val')?.value)||0;
-    if(_ih) b.imageHeight=_ih; else delete b.imageHeight;
+    b.imageHeight=parseInt(document.getElementById('img-height-val')?.value)||0;
   } else if(curBlkType==='mixed'){
     b.imageUrl=document.getElementById('mixed-img-url').value.trim();
-    const mlnk=document.getElementById('mixed-img-link-url').value.trim();
-    if(mlnk) b.imageLinkUrl=mlnk;
+    b.imageLinkUrl=document.getElementById('mixed-img-link-url').value.trim();
     b.textContent=document.getElementById('ced-mixed').innerHTML;
     b.mixedLayout=curMixedLayout;
-    if(curMixedLayout==='split') b.imageOrder=curMixedImgOrder; else delete b.imageOrder;
+    b.imageOrder=curMixedLayout==='split'?(curMixedImgOrder||'image-first'):'';
     b.imageFit=curMixedImgFit||'cover'; b.imagePosition=curMixedImgPos||'center';
-    if(curMixedHeightFull){b.imageHeight='full';}else{const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0;if(_mh) b.imageHeight=_mh; else delete b.imageHeight;}
-    if(curMixedLayout==='overlay'){b.overlayTextVAlign=curOverlayVAlign||'bottom';b.overlayShadow=curOverlayShadow;b.overlayColor=curOverlayColor;}else{delete b.overlayTextVAlign;delete b.overlayShadow;delete b.overlayColor;}
+    if(curMixedHeightFull){b.imageHeight='full';}else{b.imageHeight=parseInt(document.getElementById('mixed-height-val')?.value)||0;}
+    b.overlayTextVAlign=curMixedLayout==='overlay'?(curOverlayVAlign||'bottom'):'';
+    b.overlayShadow=curMixedLayout==='overlay'?curOverlayShadow:0;
+    b.overlayColor=curMixedLayout==='overlay'?(curOverlayColor||''):'';
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url').value.trim();
     b.embedHeight=document.getElementById('embed-height-auto').checked?0:(parseInt(document.getElementById('embed-height').value)||500);
@@ -5702,14 +5700,10 @@ function saveBlock(){
     const _oo=parseFloat(document.getElementById('blk-bg-ov-opacity')?.value)||0;
     b.bgImageOvColor=_oc; b.bgImageOvOpacity=_oo;
   } else { delete b.bgImageUrl; delete b.bgImageFit; delete b.bgImagePos; delete b.bgImageOvColor; delete b.bgImageOvOpacity; }
-  const _mv=parseInt(document.getElementById('blk-margin-v')?.value)||0;
-  const _mh=parseInt(document.getElementById('blk-margin-h')?.value)||0;
-  if(_mv) b.marginV=_mv; else delete b.marginV;
-  if(_mh) b.marginH=_mh; else delete b.marginH;
-  const _pv=parseInt(document.getElementById('blk-padding-v')?.value)||0;
-  const _ph=parseInt(document.getElementById('blk-padding-h')?.value)||0;
-  if(_pv) b.paddingV=_pv; else delete b.paddingV;
-  if(_ph) b.paddingH=_ph; else delete b.paddingH;
+  b.marginV=parseInt(document.getElementById('blk-margin-v')?.value)||0;
+  b.marginH=parseInt(document.getElementById('blk-margin-h')?.value)||0;
+  b.paddingV=parseInt(document.getElementById('blk-padding-v')?.value)||0;
+  b.paddingH=parseInt(document.getElementById('blk-padding-h')?.value)||0;
   b.verticalAlign = curBlkVerticalAlign||'center';
   b.checkable=!!document.getElementById('blk-checkable-sw')?.classList.contains('on');
   b.checkBeforeText=document.getElementById('blk-check-before')?.value.trim()||'';
@@ -5718,7 +5712,8 @@ function saveBlock(){
   if(curBlkCheckTextColor) b.checkTextColor=curBlkCheckTextColor; else delete b.checkTextColor;
   if(b.checkable) b.checkPosition=curCheckPos; else delete b.checkPosition;
   if(curBlkIdx!==null){
-    curBlocks[curBlkIdx]={...curBlocks[curBlkIdx],...b};
+    // order만 보존하고 나머지는 새 b로 교체 — 스프레드 병합 시 삭제된 필드가 남는 버그 방지
+    curBlocks[curBlkIdx]={order:curBlocks[curBlkIdx].order,...b};
   } else if(curBlkInsertAt!==null){
     curBlocks.splice(curBlkInsertAt,0,b);
     curBlkIdx=curBlkInsertAt; // 이후 저장은 같은 블록 업데이트
