@@ -932,11 +932,12 @@ async function loadWidget() {
     }
 
     let touchStartX = 0;
+    const autoInterval = Math.max(WIDGET.interval || 3000, 500);
     let autoTimer = null;
     function resetAutoTimer() {
       if(!loop || slideCount <= 1) return;
       clearInterval(autoTimer);
-      autoTimer = setInterval(() => goTo(idx + 1), Math.max(speed * 8, 2000));
+      autoTimer = setInterval(() => goTo(idx + 1), autoInterval);
     }
     resetAutoTimer();
 

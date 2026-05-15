@@ -461,6 +461,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                     <div class="ed-lbl" style="margin-bottom:4px;">전환 속도 (ms)</div>
                     <input class="fi" id="p-widget-speed" type="number" placeholder="400" value="400" style="margin-bottom:0;">
                   </div>
+                  <div style="flex:1;">
+                    <div class="ed-lbl" style="margin-bottom:4px;">대기 시간 (ms)</div>
+                    <input class="fi" id="p-widget-interval" type="number" placeholder="3000" value="3000" style="margin-bottom:0;">
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px;margin-bottom:10px;">
                   <div id="p-widget-click-action-wrap" style="flex:1;">
                     <div class="ed-lbl" style="margin-bottom:4px;">클릭 동작</div>
                     <select class="fi" id="p-widget-click-action" style="margin-bottom:0;">
@@ -3048,6 +3054,7 @@ function loadWidgetConfig(w) {
   document.getElementById('p-widget-items-per-view').value = w.itemsPerView || 2;
   document.getElementById('p-widget-radius').value = w.radius ?? 4;
   document.getElementById('p-widget-speed').value = w.speed || 400;
+  document.getElementById('p-widget-interval').value = w.interval || 3000;
   document.getElementById('p-widget-loop').checked = w.loop !== false;
   document.getElementById('p-widget-pager').checked = w.pager !== false;
   document.getElementById('p-widget-click-action').value = w.clickAction || 'none';
@@ -3063,6 +3070,7 @@ function getWidgetConfig() {
     itemsPerView: parseInt(document.getElementById('p-widget-items-per-view').value) || 2,
     radius: parseInt(document.getElementById('p-widget-radius').value) ?? 4,
     speed: parseInt(document.getElementById('p-widget-speed').value) || 400,
+    interval: parseInt(document.getElementById('p-widget-interval').value) || 3000,
     loop: document.getElementById('p-widget-loop').checked,
     pager: document.getElementById('p-widget-pager').checked,
     clickAction: document.getElementById('p-widget-click-action').value || 'none',
