@@ -5945,7 +5945,22 @@ function fmtSz(ctx,px){
   ed.querySelectorAll('font[size="7"]').forEach(el=>{el.removeAttribute('size');el.style.fontSize=px+'px';});
   _syncBgFontSize(ed); // 배경색 span 안에 글씨 크기가 바뀐 경우 배경도 맞춤
 }
-function fmtAlign(ctx,dir){focusEd(ctx);document.execCommand('justify'+dir.charAt(0).toUpperCase()+dir.slice(1),false,null);}
+function fmtAlign(ctx,dir){
+  focusEd(ctx);
+  // styleWithCSS:true → <div style="text-align:..."> 생성 (이미지 인근에서도 안정적)
+  document.execCommand('styleWithCSS',false,true);
+  document.execCommand('justify'+dir.charAt(0).toUpperCase()+dir.slice(1),false,null);
+  document.execCommand('styleWithCSS',false,false);
+  // 직접 DOM 조작으로 보강 — 이미지 인근에서 execCommand가 실패해도 적용됨
+  const sel=window.getSelection();
+  if(sel&&sel.rangeCount){
+    const ed=getEd(ctx);
+    let node=sel.getRangeAt(0).commonAncestorContainer;
+    if(node.nodeType===3)node=node.parentNode;
+    while(node&&node!==ed&&!['DIV','P','LI','BLOCKQUOTE'].includes(node.tagName))node=node.parentNode;
+    if(node&&node!==ed&&ed.contains(node))node.style.textAlign=dir==='left'?'':dir;
+  }
+}
 function fmtClr(ctx,clr){
   focusEd(ctx);
   const sel=window.getSelection();
@@ -6130,7 +6145,8 @@ function applyFmtImg(ctx,url){
   focusEd(ctx);
   const w=_fmtImgW||'100%';
   const wStyle=w==='자동'?'max-width:100%;':`width:${w};max-width:100%;`;
-  document.execCommand('insertHTML',false,`<img src="${url}" style="${wStyle}height:auto;display:block;" loading="lazy">`);
+  // 이미지를 <div>로 감싸서 삽입 — 주변 텍스트 블록과 명확히 분리돼 정렬 등이 안전하게 동작함
+  document.execCommand('insertHTML',false,`<div><img src="${url}" style="${wStyle}height:auto;display:block;" loading="lazy"></div>`);
   scheduleBmPreview();
 }
 
@@ -6447,6 +6463,16 @@ function _detectSzRaw(ctx){
 }
 function _detectSz(ctx){ return _detectSzRaw(ctx); }
 function _detectAl(){
+  // DOM 인라인 스타일 우선 확인 (이미지 인근에서도 신뢰성 높음)
+  try{
+    const sel=window.getSelection();
+    if(sel&&sel.rangeCount){
+      let node=sel.getRangeAt(0).startContainer;
+      if(node.nodeType===3)node=node.parentElement;
+      const blk=node?.closest('[style]');
+      if(blk){const al=blk.style.textAlign;if(al==='center')return 'center';if(al==='right')return 'right';if(al==='left')return 'left';}
+    }
+  }catch(_){}
   if(document.queryCommandValue('justifyCenter')==='true')return 'center';
   if(document.queryCommandValue('justifyRight')==='true')return 'right';
   return 'left';
