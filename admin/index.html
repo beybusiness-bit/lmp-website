@@ -6142,7 +6142,7 @@ function openFmtDd(btn,type,ctx){
       <button onpointerdown="epd(event)" onclick="insertHr('${ctx}')" style="width:100%;padding:7px 0;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">삽입</button>
     </div>`;
   } else if(type==='img'){
-    _fmtImgUrls=['','',''];
+    _fmtImgUrls=['','','']; _fmtImgWidths=[1,1,1];
     const colBtns=[1,2,3].map(n=>`<button class="rte-itb-btn fmt-img-col-btn${_fmtImgCols===n?' on':''}" onpointerdown="epd(event)" onclick="setFmtImgCols('${ctx}',${n})">${n}열</button>`).join('');
     html=`<div style="padding:10px;min-width:240px;">
     <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:8px;">이미지 삽입</div>
@@ -6160,7 +6160,7 @@ function openFmtDd(btn,type,ctx){
 function closeFmtPopup(){document.getElementById('fmt-popup').style.display='none';_fmtPopType=null;_fmtPopCtx=null;}
 function applyFmtVar(ctx,key){focusEd(ctx);document.execCommand('insertText',false,`{{${key}}}`);closeFmtPopup();}
 let _fmtImgUploadCtx='', _fmtImgW='100%', _fmtImgAlign='center', _rteSelectedImg=null;
-let _fmtImgCols=1, _fmtImgGap=8, _fmtImgUrls=['','',''], _fmtImgUploadSlot=0;
+let _fmtImgCols=1, _fmtImgGap=8, _fmtImgUrls=['','',''], _fmtImgWidths=[1,1,1], _fmtImgUploadSlot=0;
 function _fmtImgColsHtml(ctx){
   if(_fmtImgCols===1){
     const wPresets=['자동','25%','50%','75%','100%'];
@@ -6187,8 +6187,16 @@ function _fmtImgColsHtml(ctx){
         style="width:100%;padding:7px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📁 파일 업로드</button>`;
   } else {
     const slots=Array.from({length:_fmtImgCols},(_,i)=>`
-      <div style="margin-bottom:8px;">
-        <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:3px;">${i+1}번째 이미지</div>
+      <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(0,0,0,.07);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+          <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);">${i+1}번째 이미지</div>
+          <div style="display:flex;align-items:center;gap:3px;">
+            <span style="font-size:10px;color:rgba(0,0,0,.4);">너비 비율</span>
+            <input id="fmt-img-colw-${i}" type="number" min="1" max="99" value="${_fmtImgWidths[i]||1}"
+              onpointerdown="epd(event)" oninput="_fmtImgWidths[${i}]=Math.max(1,parseInt(this.value)||1)"
+              style="width:38px;padding:2px 4px;border:1.5px solid rgba(0,0,0,.25);font-size:11px;font-family:inherit;outline:none;text-align:center;">
+          </div>
+        </div>
         <div style="display:flex;gap:4px;align-items:center;">
           <input id="fmt-img-url-${i}" class="fi-sm" type="url" placeholder="https://…" style="flex:1;margin-bottom:0;"
             onpointerdown="epd(event)" value="${_fmtImgUrls[i]||''}"
@@ -6211,7 +6219,7 @@ function _fmtImgColsHtml(ctx){
   }
 }
 function setFmtImgCols(ctx,n){
-  _fmtImgCols=n;
+  _fmtImgCols=n; _fmtImgWidths=[1,1,1];
   document.getElementById('fmt-img-cols-content').innerHTML=_fmtImgColsHtml(ctx);
   document.querySelectorAll('.fmt-img-col-btn').forEach((b,i)=>b.classList.toggle('on',i+1===n));
 }
@@ -6219,7 +6227,8 @@ function applyFmtImgGrid(ctx){
   const urls=_fmtImgUrls.slice(0,_fmtImgCols);
   if(!urls.some(u=>u)) return;
   focusEd(ctx);
-  const cols=Array(_fmtImgCols).fill('1fr').join(' ');
+  const widths=Array.from({length:_fmtImgCols},(_,i)=>Math.max(1,_fmtImgWidths[i]||1));
+  const cols=widths.map(w=>w+'fr').join(' ');
   const gap=_fmtImgGap??8;
   const imgs=Array.from({length:_fmtImgCols},(_,i)=>{
     const url=_fmtImgUrls[i]||'';
@@ -6227,7 +6236,8 @@ function applyFmtImgGrid(ctx){
       ?`<img src="${url}" style="width:100%;height:auto;display:block;" loading="lazy">`
       :`<div style="width:100%;background:rgba(0,0,0,.06);aspect-ratio:1;"></div>`;
   }).join('');
-  document.execCommand('insertHTML',false,`<div class="rte-img-grid" style="display:grid;grid-template-columns:${cols};gap:${gap}px;" data-gap="${gap}">${imgs}</div>`);
+  const dataWidths=widths.join(',');
+  document.execCommand('insertHTML',false,`<div class="rte-img-grid" style="display:grid;grid-template-columns:${cols};gap:${gap}px;" data-gap="${gap}" data-widths="${dataWidths}">${imgs}</div>`);
   scheduleBmPreview();
 }
 function triggerFmtImgUploadSlot(ctx,slot){
@@ -6274,9 +6284,19 @@ function _showRteImgTb(img){
   if(inGrid){
     const grid=img.closest('.rte-img-grid');
     const gap=parseInt(grid.dataset.gap)||8;
-    tb.innerHTML=`<span style="font-size:9px;font-weight:800;color:rgba(0,0,0,.4);padding:0 2px;">간격</span>
+    const imgs=[...grid.querySelectorAll('img')];
+    const colIdx=imgs.indexOf(img);
+    const savedWidths=(grid.dataset.widths||'').split(',').map(v=>parseInt(v)||1);
+    const curColW=savedWidths[colIdx]??1;
+    tb.innerHTML=`<span style="font-size:9px;font-weight:800;color:rgba(0,0,0,.4);padding:0 2px;">이 열 너비</span>
+      <input id="rte-grid-colw-inp" type="number" min="1" max="99" value="${curColW}"
+        style="width:38px;padding:2px 4px;border:1.5px solid rgba(0,0,0,.3);font-size:11px;font-family:inherit;outline:none;text-align:center;"
+        onkeydown="if(event.key==='Enter')setRteGridColW()">
+      <button class="rte-itb-btn" onclick="setRteGridColW()">적용</button>
+      <div style="width:1px;height:18px;background:rgba(0,0,0,.18);margin:0 1px;flex-shrink:0;"></div>
+      <span style="font-size:9px;font-weight:800;color:rgba(0,0,0,.4);padding:0 2px;">간격</span>
       <input id="rte-grid-gap-inp" type="number" min="0" max="100" value="${gap}"
-        style="width:40px;padding:2px 4px;border:1.5px solid rgba(0,0,0,.3);font-size:11px;font-family:inherit;outline:none;"
+        style="width:38px;padding:2px 4px;border:1.5px solid rgba(0,0,0,.3);font-size:11px;font-family:inherit;outline:none;"
         onkeydown="if(event.key==='Enter')setRteGridGap()">
       <span style="font-size:10px;color:rgba(0,0,0,.4);">px</span>
       <button class="rte-itb-btn" onclick="setRteGridGap()">적용</button>
@@ -6368,6 +6388,22 @@ function setRteGridGap(){
   const gap=parseInt(v)||0;
   grid.style.gap=gap+'px';
   grid.dataset.gap=gap;
+  scheduleBmPreview();
+}
+function setRteGridColW(){
+  if(!_rteSelectedImg) return;
+  const grid=_rteSelectedImg.closest('.rte-img-grid');
+  if(!grid) return;
+  const v=document.getElementById('rte-grid-colw-inp')?.value;
+  if(v===''||v===null) return;
+  const imgs=[...grid.querySelectorAll('img')];
+  const colIdx=imgs.indexOf(_rteSelectedImg);
+  if(colIdx<0) return;
+  const savedWidths=(grid.dataset.widths||'').split(',').map(x=>parseInt(x)||1);
+  while(savedWidths.length<imgs.length) savedWidths.push(1);
+  savedWidths[colIdx]=Math.max(1,parseInt(v)||1);
+  grid.dataset.widths=savedWidths.join(',');
+  grid.style.gridTemplateColumns=savedWidths.map(w=>w+'fr').join(' ');
   scheduleBmPreview();
 }
 // contenteditable 클릭 이벤트 위임 — 이미지 감지
