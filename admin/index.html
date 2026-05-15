@@ -846,19 +846,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl" style="margin-bottom:8px;">익명 닉네임 단어 조합 <span style="font-weight:400;opacity:.55;">(단어1 + 단어2 → 예: "게으른 카피바라")</span></div>
               <div style="margin-bottom:12px;">
                 <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:rgba(0,0,0,.55);">단어1 (형용사·수식어)</div>
-                <div id="gbk-anon-words1-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
-                <div style="display:flex;gap:6px;">
-                  <input class="fi-sm" id="gbk-anon-w1-inp" placeholder="예: 게으른" style="flex:1;margin-bottom:0;" onkeydown="if(event.key==='Enter')gbkAddAnonWord(1)">
-                  <button class="prev-btn" style="font-size:12px;" onclick="gbkAddAnonWord(1)">추가</button>
-                </div>
+                <textarea class="fi-sm" id="gbk-anon-w1-inp" placeholder="예: 게으른, 빠른, 귀여운, 졸린" style="width:100%;height:64px;resize:vertical;margin-bottom:0;font-size:13px;" oninput="gbkSyncAnonWords(1)"></textarea>
+                <div style="font-size:11px;color:rgba(0,0,0,.4);margin-top:4px;">콤마(,)로 구분해서 여러 개 입력</div>
               </div>
               <div>
                 <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:rgba(0,0,0,.55);">단어2 (명사)</div>
-                <div id="gbk-anon-words2-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
-                <div style="display:flex;gap:6px;">
-                  <input class="fi-sm" id="gbk-anon-w2-inp" placeholder="예: 카피바라" style="flex:1;margin-bottom:0;" onkeydown="if(event.key==='Enter')gbkAddAnonWord(2)">
-                  <button class="prev-btn" style="font-size:12px;" onclick="gbkAddAnonWord(2)">추가</button>
-                </div>
+                <textarea class="fi-sm" id="gbk-anon-w2-inp" placeholder="예: 카피바라, 너구리, 고양이, 판다" style="width:100%;height:64px;resize:vertical;margin-bottom:0;font-size:13px;" oninput="gbkSyncAnonWords(2)"></textarea>
+                <div style="font-size:11px;color:rgba(0,0,0,.4);margin-top:4px;">콤마(,)로 구분해서 여러 개 입력</div>
               </div>
             </div>
             <!-- 제출 내역 인라인 -->
@@ -9891,8 +9885,8 @@ async function gbkSaveConfig(e) {
       allowDuplicate: document.getElementById('gbk-allow-dup').checked,
       requireApproval: document.getElementById('gbk-require-approval').checked,
       allowAnonymous: document.getElementById('gbk-allow-anon').checked,
-      anonWords1: gbkState.curAnonWords1,
-      anonWords2: gbkState.curAnonWords2,
+      anonWords1: (() => { gbkSyncAnonWords(1); return gbkState.curAnonWords1; })(),
+      anonWords2: (() => { gbkSyncAnonWords(2); return gbkState.curAnonWords2; })(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     if (btn) _btnFlash(btn, '저장됨 ✓');
@@ -9966,33 +9960,18 @@ function gbkToggleAnonSection() {
   if (sect) sect.style.display = chk?.checked ? '' : 'none';
 }
 
-function gbkAddAnonWord(which) {
-  const inpId = which === 1 ? 'gbk-anon-w1-inp' : 'gbk-anon-w2-inp';
-  const inp = document.getElementById(inpId);
-  const val = inp?.value?.trim();
-  if (!val) return;
-  if (which === 1) gbkState.curAnonWords1.push(val);
-  else gbkState.curAnonWords2.push(val);
-  inp.value = '';
-  gbkRenderAnonWords();
-}
-
-function gbkRemoveAnonWord(which, idx) {
-  if (which === 1) gbkState.curAnonWords1.splice(idx, 1);
-  else gbkState.curAnonWords2.splice(idx, 1);
-  gbkRenderAnonWords();
+function gbkSyncAnonWords(which) {
+  const inp = document.getElementById(which === 1 ? 'gbk-anon-w1-inp' : 'gbk-anon-w2-inp');
+  const words = (inp?.value || '').split(',').map(w => w.trim()).filter(Boolean);
+  if (which === 1) gbkState.curAnonWords1 = words;
+  else gbkState.curAnonWords2 = words;
 }
 
 function gbkRenderAnonWords() {
-  const renderList = (words, which, containerId) => {
-    const el = document.getElementById(containerId);
-    if (!el) return;
-    el.innerHTML = words.map((w, i) => `<span style="display:inline-flex;align-items:center;gap:4px;background:#f0f0f0;padding:4px 8px;border-radius:4px;font-size:12px;">
-      ${escHtml(w)}<button onclick="gbkRemoveAnonWord(${which},${i})" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0;color:rgba(0,0,0,.4);line-height:1;">×</button>
-    </span>`).join('');
-  };
-  renderList(gbkState.curAnonWords1, 1, 'gbk-anon-words1-list');
-  renderList(gbkState.curAnonWords2, 2, 'gbk-anon-words2-list');
+  const el1 = document.getElementById('gbk-anon-w1-inp');
+  const el2 = document.getElementById('gbk-anon-w2-inp');
+  if (el1) el1.value = gbkState.curAnonWords1.join(', ');
+  if (el2) el2.value = gbkState.curAnonWords2.join(', ');
 }
 
 async function gbkViewEntries() {
