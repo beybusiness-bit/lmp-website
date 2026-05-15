@@ -1675,6 +1675,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-link-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','text')" title="텍스트 링크" style="font-size:13px;padding:4px 7px;">🔗</button>
         <button class="fmt-btn" id="fmt-hr-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','text')" title="구분선 삽입" style="font-size:11px;">—</button>
         <button class="fmt-btn" id="fmt-var-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','text')" style="display:none;font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+        <button class="fmt-btn" id="fmt-img-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','text')" title="이미지 삽입" style="font-size:13px;padding:4px 7px;">🖼</button>
       </div>
       <div class="ced" id="ced-text" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="syncFmtBar('text')" onmouseup="syncFmtBar('text')"></div>
       <div style="margin-top:10px;">
@@ -1827,7 +1828,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <div class="ed-lbl" style="margin-bottom:8px;">레이아웃</div>
       <div class="mixed-row">
         <button class="mixed-btn on" id="ml-overlay" onclick="setMixedLayout('overlay')">오버레이형<br><small style="font-weight:400;">이미지+텍스트 겹침</small></button>
-        <button class="mixed-btn"    id="ml-split"   onclick="setMixedLayout('split')">분리형<br><small style="font-weight:400;">이미지 위 · 텍스트 아래</small></button>
+        <button class="mixed-btn"    id="ml-split"   onclick="setMixedLayout('split')">분리형<br><small style="font-weight:400;">이미지·텍스트 분리</small></button>
+      </div>
+      <div id="split-order-row" style="display:none;margin-top:8px;margin-bottom:10px;">
+        <div class="ed-lbl" style="font-size:10px;margin-bottom:6px;">순서</div>
+        <div style="display:flex;gap:4px;">
+          <button class="img-fit-btn on" id="img-order-img-first" onpointerdown="epd(event)" onclick="setMixedImgOrder('img-first')" style="flex:1;">이미지→텍스트</button>
+          <button class="img-fit-btn"    id="img-order-text-first" onpointerdown="epd(event)" onclick="setMixedImgOrder('text-first')" style="flex:1;">텍스트→이미지</button>
+        </div>
       </div>
       <div class="ed-lbl" style="margin-bottom:8px;">이미지</div>
       <input class="img-inp" id="mixed-img-url" type="url" placeholder="https://…" oninput="prevImg('mixed-img-prev',this.value);const _mft=document.getElementById('mixed-focal-thumb');if(_mft)_mft.src=this.value||'';">
@@ -1896,6 +1904,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-link-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','mixed')" title="텍스트 링크" style="font-size:13px;padding:4px 7px;">🔗</button>
         <button class="fmt-btn" id="fmt-hr-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','mixed')" title="구분선 삽입" style="font-size:11px;">—</button>
         <button class="fmt-btn" id="fmt-var-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','mixed')" style="display:none;font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+        <button class="fmt-btn" id="fmt-img-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','mixed')" title="이미지 삽입" style="font-size:13px;padding:4px 7px;">🖼</button>
       </div>
       <div class="ced" id="ced-mixed" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="syncFmtBar('mixed')" onmouseup="syncFmtBar('mixed')"></div>
     </div>
@@ -1997,6 +2006,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <input class="fi" id="blk-bg-image-url" placeholder="https://... 이미지 URL" style="margin-bottom:4px;" oninput="scheduleBmPreview()">
       <button class="bg-up-btn" onclick="document.getElementById('blk-bg-img-file').click()" style="margin-bottom:8px;">📁 업로드</button>
       <input type="file" id="blk-bg-img-file" accept="image/*" style="display:none;" onchange="uploadBlkBgImage(event)">
+      <input type="file" id="fmt-img-file-inp" accept="image/*" style="display:none;" onchange="uploadFmtImg(event)">
       <div id="blk-bg-image-opts" style="display:none;">
         <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
           <button data-fit="cover"    class="blk-bg-fit-btn" onclick="setBlkBgFit('cover')"    style="flex:1;padding:5px 0;font-size:11px;font-weight:700;border:2px solid #000;cursor:pointer;font-family:inherit;background:transparent;">꽉 채우기</button>
@@ -2025,6 +2035,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
           <span style="font-size:10px;color:rgba(0,0,0,.45);font-weight:700;">좌우</span>
           <input class="fi-sm" id="blk-margin-h" type="number" min="0" max="120" placeholder="0" style="margin-bottom:0;text-align:center;">
+        </div>
+      </div>
+      <div class="ed-lbl" style="margin-top:10px;">패딩 (px) <span style="font-weight:400;opacity:.55;font-size:10px;">배경색·이미지 안쪽 여백</span></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
+          <span style="font-size:10px;color:rgba(0,0,0,.45);font-weight:700;">상하</span>
+          <input class="fi-sm" id="blk-padding-v" type="number" min="0" max="120" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;">
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
+          <span style="font-size:10px;color:rgba(0,0,0,.45);font-weight:700;">좌우</span>
+          <input class="fi-sm" id="blk-padding-h" type="number" min="0" max="120" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;">
         </div>
       </div>
     </div>
@@ -5246,6 +5267,7 @@ let curBlkCheckTextColor='';
 let curBlkVerticalAlign='center';
 let curImgFit='natural',curImgPos='center';
 let curMixedImgFit='cover',curMixedImgPos='center',curMixedHeightFull=false;
+let curMixedImgOrder='img-first';
 let curOverlayShadow=0.4;
 let curOverlayColor='#000000';
 function setMixedHeightFull(){
@@ -5492,6 +5514,8 @@ function openBlockModal(idx,insertAt){
   curOverlayColor=b.type==='mixed'?(b.overlayColor||'#000000'):'#000000';
   const _ssl=document.getElementById('overlay-shadow-slider');if(_ssl){_ssl.value=curOverlayShadow;document.getElementById('overlay-shadow-val').textContent=Math.round(curOverlayShadow*100)+'%';}
   const _ocp=document.getElementById('overlay-color-picker');if(_ocp){_ocp.value=curOverlayColor;document.getElementById('overlay-color-hex').value=curOverlayColor.toUpperCase();}
+  curMixedImgOrder=b.imageOrder||'img-first';
+  setMixedImgOrder(curMixedImgOrder);
   setMixedLayout(curMixedLayout);savedRange=null;
   /* spacer 블록 */
   const _sh=document.getElementById('blk-spacer-height');
@@ -5529,6 +5553,8 @@ function openBlockModal(idx,insertAt){
   const bgH=document.getElementById('blk-bg-hex');  if(bgH) bgH.value=(curBlkBgColor||'').toUpperCase();
   const mv=document.getElementById('blk-margin-v'); if(mv) mv.value=b.marginV??'';
   const mh=document.getElementById('blk-margin-h'); if(mh) mh.value=b.marginH??'';
+  const pv=document.getElementById('blk-padding-v'); if(pv) pv.value=b.paddingV??'';
+  const ph=document.getElementById('blk-padding-h'); if(ph) ph.value=b.paddingH??'';
   setBlkVerticalAlign(b.verticalAlign||'center');
   renderBlkKeyColors();
   /* 변수 버튼: 인증 활성화 + 필드 있을 때만 표시 */
@@ -5557,6 +5583,7 @@ function _buildCurrentBlock(){
     b.imageUrl=document.getElementById('mixed-img-url')?.value||'';
     b.textContent=document.getElementById('ced-mixed')?.innerHTML||'';
     b.mixedLayout=curMixedLayout;
+    if(curMixedLayout==='split') b.imageOrder=curMixedImgOrder; else delete b.imageOrder;
     b.imageFit=curMixedImgFit; b.imagePosition=curMixedImgPos;
     if(curMixedHeightFull){b.imageHeight='full';}else{const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0; if(_mh) b.imageHeight=_mh;}
     if(curMixedLayout==='overlay'){b.overlayTextVAlign=curOverlayVAlign||'bottom';b.overlayShadow=curOverlayShadow;b.overlayColor=curOverlayColor;}
@@ -5582,6 +5609,9 @@ function _buildCurrentBlock(){
   const _mv=parseInt(document.getElementById('blk-margin-v')?.value)||0;
   const _mh=parseInt(document.getElementById('blk-margin-h')?.value)||0;
   if(_mv) b.marginV=_mv; if(_mh) b.marginH=_mh;
+  const _pv=parseInt(document.getElementById('blk-padding-v')?.value)||0;
+  const _ph=parseInt(document.getElementById('blk-padding-h')?.value)||0;
+  if(_pv) b.paddingV=_pv; if(_ph) b.paddingH=_ph;
   // 체크 기능
   const _checkSw=document.getElementById('blk-checkable-sw');
   if(_checkSw?.classList.contains('on')){
@@ -5622,6 +5652,7 @@ function saveBlock(){
     if(mlnk) b.imageLinkUrl=mlnk;
     b.textContent=document.getElementById('ced-mixed').innerHTML;
     b.mixedLayout=curMixedLayout;
+    if(curMixedLayout==='split') b.imageOrder=curMixedImgOrder; else delete b.imageOrder;
     b.imageFit=curMixedImgFit||'cover'; b.imagePosition=curMixedImgPos||'center';
     if(curMixedHeightFull){b.imageHeight='full';}else{const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0;if(_mh) b.imageHeight=_mh; else delete b.imageHeight;}
     if(curMixedLayout==='overlay'){b.overlayTextVAlign=curOverlayVAlign||'bottom';b.overlayShadow=curOverlayShadow;b.overlayColor=curOverlayColor;}else{delete b.overlayTextVAlign;delete b.overlayShadow;delete b.overlayColor;}
@@ -5672,6 +5703,10 @@ function saveBlock(){
   const _mh=parseInt(document.getElementById('blk-margin-h')?.value)||0;
   if(_mv) b.marginV=_mv; else delete b.marginV;
   if(_mh) b.marginH=_mh; else delete b.marginH;
+  const _pv=parseInt(document.getElementById('blk-padding-v')?.value)||0;
+  const _ph=parseInt(document.getElementById('blk-padding-h')?.value)||0;
+  if(_pv) b.paddingV=_pv; else delete b.paddingV;
+  if(_ph) b.paddingH=_ph; else delete b.paddingH;
   b.verticalAlign = curBlkVerticalAlign||'center';
   b.checkable=!!document.getElementById('blk-checkable-sw')?.classList.contains('on');
   b.checkBeforeText=document.getElementById('blk-check-before')?.value.trim()||'';
