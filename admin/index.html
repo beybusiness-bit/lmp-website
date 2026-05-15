@@ -396,6 +396,69 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div id="stats-list"></div>
             <button class="add-btn" style="margin-top:8px;" onclick="addStat()">+ 카운터 추가</button>
           </div>
+          <div class="sect-head">위젯</div>
+          <div class="ed-sect">
+            <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:10px;line-height:1.6;">메인 화면에 이미지 갤러리 슬라이더를 표시합니다. 위치는 아래 '요소 순서'에서 조정하세요.</div>
+            <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;">
+              <input type="checkbox" id="p-widget-enabled" onchange="onWidgetEnabledChange(this.checked)">
+              <span style="font-size:13px;font-weight:700;">위젯 사용</span>
+            </label>
+            <div id="p-widget-config" style="display:none;">
+              <div style="margin-bottom:10px;">
+                <div class="ed-lbl" style="margin-bottom:4px;">도구 종류</div>
+                <select class="fi" id="p-widget-tool-type" onchange="onWidgetToolTypeChange()" style="margin-bottom:0;">
+                  <option value="">선택하세요</option>
+                  <option value="booth">꾸미기 도구 — 완성 이미지 갤러리</option>
+                </select>
+              </div>
+              <div id="p-widget-instance-wrap" style="margin-bottom:10px;display:none;">
+                <div class="ed-lbl" style="margin-bottom:4px;">꾸미기 인스턴스</div>
+                <select class="fi" id="p-widget-instance-id" style="margin-bottom:0;"></select>
+              </div>
+              <div id="p-widget-detail-wrap" style="display:none;">
+                <div style="display:flex;gap:8px;margin-bottom:10px;">
+                  <div style="flex:1;">
+                    <div class="ed-lbl" style="margin-bottom:4px;">높이 (px)</div>
+                    <input class="fi" id="p-widget-height" type="number" placeholder="200" value="200" style="margin-bottom:0;">
+                  </div>
+                  <div style="flex:1;">
+                    <div class="ed-lbl" style="margin-bottom:4px;">한 화면에 표시 수</div>
+                    <input class="fi" id="p-widget-items-per-view" type="number" min="1" max="5" value="2" style="margin-bottom:0;">
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px;margin-bottom:10px;">
+                  <div style="flex:1;">
+                    <div class="ed-lbl" style="margin-bottom:4px;">전환 속도 (ms)</div>
+                    <input class="fi" id="p-widget-speed" type="number" placeholder="400" value="400" style="margin-bottom:0;">
+                  </div>
+                  <div style="flex:1;">
+                    <div class="ed-lbl" style="margin-bottom:4px;">클릭 동작</div>
+                    <select class="fi" id="p-widget-click-action" style="margin-bottom:0;">
+                      <option value="none">동작 없음</option>
+                      <option value="lightbox">원본 이미지 확대</option>
+                    </select>
+                  </div>
+                </div>
+                <div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;"><input type="checkbox" id="p-widget-loop" checked> 루프</label>
+                  <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;"><input type="checkbox" id="p-widget-pager" checked> 페이저 표시</label>
+                </div>
+                <div style="margin-bottom:10px;">
+                  <div class="ed-lbl" style="margin-bottom:4px;">표시 순서</div>
+                  <select class="fi" id="p-widget-order" style="margin-bottom:0;">
+                    <option value="desc">최신순</option>
+                    <option value="asc">오래된순</option>
+                    <option value="random">무작위</option>
+                  </select>
+                </div>
+                <div>
+                  <div class="ed-lbl" style="margin-bottom:4px;">다른 프로젝트 이미지 포함</div>
+                  <input class="fi" id="p-widget-filter-project" placeholder="프로젝트 ID (비워두면 현재 프로젝트만)" style="margin-bottom:4px;">
+                  <div style="font-size:11px;color:rgba(0,0,0,.45);">해당 프로젝트의 승인된 이미지도 함께 표시됩니다.</div>
+                </div>
+              </div>
+            </div>
+          </div>
           <div class="sect-head">메인 화면 요소 순서</div>
           <div class="ed-sect">
             <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;">메인 화면 상단에 표시되는 요소의 순서를 설정합니다.</div>
@@ -1125,6 +1188,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <div class="sect-head" style="margin-top:28px;margin-bottom:4px;">공통 꾸미기 소스</div>
           <div class="ed-lbl" style="margin-bottom:12px;color:rgba(0,0,0,.5);">필드 값과 무관하게 모든 사용자의 "이미지 추가" 목록에 표시되는 꾸미기 소스예요. 필드값별 소스와 함께 보입니다.</div>
           <div id="common-preset-list" style="margin-bottom:4px;"></div>
+
+          <!-- 완성 이미지 갤러리 -->
+          <div class="sect-head" style="margin-top:28px;margin-bottom:4px;">완성 이미지 갤러리</div>
+          <div class="ed-lbl" style="margin-bottom:12px;color:rgba(0,0,0,.5);">사용자가 저장한 완성 이미지예요. 이미지를 클릭하면 승인/대기 상태가 바뀝니다. 승인된 이미지만 위젯에 표시돼요.</div>
+          <div id="booth-gallery-list" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;"></div>
+          <div id="booth-gallery-empty" class="empty-msg" style="display:none;">저장된 이미지가 없어요.</div>
 
           <!-- 연결된 프로젝트·블록 -->
           <div class="sect-head" style="margin-top:28px;margin-bottom:4px;">연결된 프로젝트 · 블록</div>
@@ -2544,7 +2613,7 @@ function removeKeyColor(i) {
 }
 
 /* ── Stats (realtime counters) ── */
-const ELEM_LABELS = {edition:'문구',logo:'로고',dday:'D-Day',stats:'카운터'};
+const ELEM_LABELS = {edition:'문구',logo:'로고',dday:'D-Day',stats:'카운터',widget:'위젯'};
 
 async function _statLoadProjects() {
   if (_statProjCache !== undefined) return;
@@ -2687,6 +2756,80 @@ function addStat() {
   renderStatList();
 }
 function removeStat(i) { curStats.splice(i,1); renderStatList(); schedulePreviewUpdate(); }
+
+/* ── Widget config ── */
+function onWidgetEnabledChange(enabled) {
+  document.getElementById('p-widget-config').style.display = enabled ? '' : 'none';
+  if(enabled && !curElementOrder.includes('widget')) {
+    curElementOrder.push('widget');
+    renderElemOrderList();
+  } else if(!enabled) {
+    curElementOrder = curElementOrder.filter(k => k !== 'widget');
+    renderElemOrderList();
+  }
+}
+
+function loadWidgetConfig(w) {
+  document.getElementById('p-widget-enabled').checked = !!w.enabled;
+  document.getElementById('p-widget-config').style.display = w.enabled ? '' : 'none';
+  // elementOrder와 동기화
+  if(w.enabled && !curElementOrder.includes('widget')) curElementOrder.push('widget');
+  else if(!w.enabled) curElementOrder = curElementOrder.filter(k => k !== 'widget');
+  document.getElementById('p-widget-tool-type').value = w.toolType || '';
+  const instWrap = document.getElementById('p-widget-instance-wrap');
+  const detailWrap = document.getElementById('p-widget-detail-wrap');
+  if(w.toolType) {
+    instWrap.style.display = '';
+    detailWrap.style.display = '';
+    const instSel = document.getElementById('p-widget-instance-id');
+    instSel.innerHTML = w.instanceId ? `<option value="${w.instanceId}">${w.instanceId}</option>` : '';
+    onWidgetToolTypeChange(w.instanceId);
+  } else {
+    instWrap.style.display = 'none';
+    detailWrap.style.display = 'none';
+  }
+  document.getElementById('p-widget-height').value = w.height || 200;
+  document.getElementById('p-widget-items-per-view').value = w.itemsPerView || 2;
+  document.getElementById('p-widget-speed').value = w.speed || 400;
+  document.getElementById('p-widget-loop').checked = w.loop !== false;
+  document.getElementById('p-widget-pager').checked = w.pager !== false;
+  document.getElementById('p-widget-click-action').value = w.clickAction || 'none';
+  document.getElementById('p-widget-order').value = w.order || 'desc';
+  document.getElementById('p-widget-filter-project').value = w.filterProjectId || '';
+}
+
+function getWidgetConfig() {
+  return {
+    enabled: document.getElementById('p-widget-enabled').checked,
+    toolType: document.getElementById('p-widget-tool-type').value,
+    instanceId: document.getElementById('p-widget-instance-id').value,
+    height: parseInt(document.getElementById('p-widget-height').value) || 200,
+    itemsPerView: parseInt(document.getElementById('p-widget-items-per-view').value) || 2,
+    speed: parseInt(document.getElementById('p-widget-speed').value) || 400,
+    loop: document.getElementById('p-widget-loop').checked,
+    pager: document.getElementById('p-widget-pager').checked,
+    clickAction: document.getElementById('p-widget-click-action').value || 'none',
+    order: document.getElementById('p-widget-order').value || 'desc',
+    filterProjectId: document.getElementById('p-widget-filter-project').value.trim(),
+  };
+}
+
+async function onWidgetToolTypeChange(preselect) {
+  const toolType = document.getElementById('p-widget-tool-type').value;
+  const instWrap = document.getElementById('p-widget-instance-wrap');
+  const detailWrap = document.getElementById('p-widget-detail-wrap');
+  if(!toolType) { instWrap.style.display = 'none'; detailWrap.style.display = 'none'; return; }
+  instWrap.style.display = '';
+  detailWrap.style.display = '';
+  const sel = document.getElementById('p-widget-instance-id');
+  sel.innerHTML = '<option value="">불러오는 중…</option>';
+  if(toolType === 'booth') {
+    const snap = await db.collection('game_configs').get();
+    const opts = [{ id: 'booth', name: '부스 꾸미기 (기본)' }];
+    snap.docs.filter(d => d.id !== 'booth').forEach(d => opts.push({ id: d.id, name: d.data().name || d.id }));
+    sel.innerHTML = opts.map(o => `<option value="${o.id}"${preselect===o.id?' selected':''}>${o.name}</option>`).join('');
+  }
+}
 
 /* ── Element order ── */
 function renderElemOrderList() {
@@ -3925,7 +4068,7 @@ async function editProject(id) {
     setDday(d.ddayEnabled||false);
     setAuth(d.authEnabled||false);
     setAuthMode(d.authMode||'immediate');
-    renderKeyColorList(); renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList(); renderTextColorRows();
+    renderKeyColorList(); renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList(); renderTextColorRows(); loadWidgetConfig(d.widget||{});
     if (d.authEnabled) await loadUsers();
     switchInnerTab('basic'); showProjView('edit');
     setTimeout(()=>{ _projDirtyLock=false; projDirty=false; }, 300);
@@ -4006,6 +4149,7 @@ async function saveProject(deploy=true, e=null) {
     stages:       curStages.map((s,i)=>({...s,order:i})),
     stats:        curStats,
     elementOrder: curElementOrder,
+    widget:       getWidgetConfig(),
     keyColors:    curKeyColors,
     published:    document.getElementById('published-sw')?.classList.contains('on') ?? true,
     ogTitle:      document.getElementById('p-og-title')?.value.trim()||'',
@@ -7399,10 +7543,52 @@ async function decoOpenConfig(configId) {
   document.getElementById('deco-config-name').disabled = false;
   loadBoothBgs(configId);
   loadBoothConnections(configId);
+  loadBoothGallery(configId);
   const pvUrl = configId === 'booth' ? '/tools/booth/' : `/tools/booth/?config=${configId}`;
   document.getElementById('deco-header-actions').innerHTML = `
     <button class="prev-btn" onclick="openToolPreview('${pvUrl}')" style="font-size:12px;padding:4px 8px;">미리보기</button>
     <button class="save-btn" id="deco-save-btn" onclick="saveDecoConfig()" style="font-size:12px;padding:4px 12px;margin:0;">저장</button>`;
+}
+
+async function loadBoothGallery(configId) {
+  const el = document.getElementById('booth-gallery-list');
+  const emp = document.getElementById('booth-gallery-empty');
+  if(!el) return;
+  el.innerHTML = '<div style="grid-column:1/-1;color:rgba(0,0,0,.4);font-size:12px;padding:8px 0;">불러오는 중…</div>';
+  if(emp) emp.style.display = 'none';
+  try {
+    const snap = await db.collection('cms_booth_gallery').doc(configId)
+      .collection('images').orderBy('createdAt','desc').limit(60).get();
+    if(snap.empty) {
+      el.innerHTML = '';
+      if(emp) emp.style.display = '';
+      return;
+    }
+    el.innerHTML = snap.docs.map(d => {
+      const data = d.data();
+      const approved = !!data.approved;
+      return `<div style="position:relative;">
+        <img src="${data.imageUrl}" style="width:100%;aspect-ratio:4/5;object-fit:cover;border:2.5px solid ${approved?'#000':'rgba(0,0,0,.15)'};display:block;background:#f0f0f0;cursor:pointer;" onclick="toggleGalleryApproval('${configId}','${d.id}',${approved})" title="${approved?'승인됨 — 클릭하면 취소':'대기 — 클릭하면 승인'}">
+        <div style="position:absolute;top:3px;left:3px;background:${approved?'#000':'rgba(80,80,80,.7)'};color:#fff;font-size:9px;font-weight:700;padding:2px 5px;pointer-events:none;">${approved?'승인':'대기'}</div>
+        <button onclick="deleteGalleryImage('${configId}','${d.id}','${data.imageUrl}')" style="position:absolute;bottom:3px;right:3px;background:rgba(200,0,0,.85);color:#fff;border:none;font-size:10px;padding:2px 6px;cursor:pointer;font-weight:700;">✕</button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = `<div style="grid-column:1/-1;color:red;font-size:12px;">불러오기 실패: ${e.message}</div>`;
+  }
+}
+
+async function toggleGalleryApproval(configId, docId, currentApproved) {
+  await db.collection('cms_booth_gallery').doc(configId).collection('images').doc(docId)
+    .update({ approved: !currentApproved });
+  loadBoothGallery(configId);
+}
+
+async function deleteGalleryImage(configId, docId, imageUrl) {
+  if(!confirm('이미지를 삭제할까요?')) return;
+  await db.collection('cms_booth_gallery').doc(configId).collection('images').doc(docId).delete();
+  try { await storage.refFromURL(imageUrl).delete(); } catch(e) {}
+  loadBoothGallery(configId);
 }
 
 /* ════════════════════════════════════════════

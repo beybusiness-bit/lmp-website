@@ -443,6 +443,7 @@ let STAGES         = [];
 let _navRestore    = false;
 let STATS          = [];   // [{id, label, collection, countType, unit, enabled}]
 let ELEMENT_ORDER  = ['edition','logo','dday','stats'];
+let WIDGET         = {};   // widget config from cms_projects
 
 /* slideshow */
 let bgImages   = [];   // [{url, holdTime, transitionTime}]
@@ -611,6 +612,7 @@ function applySettings(d){
     }));
   STATS = (d.stats||[]).filter(s=>s.enabled);
   ELEMENT_ORDER = d.elementOrder || ['edition','logo','dday','stats'];
+  WIDGET = d.widget || {};
   if(d.keyColors && d.keyColors.length>=2){
     KEY_COLORS_DATA = d.keyColors.map(k=>typeof k==='string'?{color:k,holdTime:8,transitionTime:2}:k);
     KEY_COLORS.length=0; KEY_COLORS_DATA.forEach(k=>KEY_COLORS.push(k.color));
@@ -689,6 +691,8 @@ function applySettings(d){
 
   /* load real-time counters */
   if(STATS.length) loadStats();
+  /* load widget */
+  if(WIDGET.enabled) loadWidget();
 }
 
 function renderTopGroup(d){
@@ -731,6 +735,11 @@ function renderTopGroup(d){
     } else if(key==='stats'){
       const el=document.createElement('div');
       el.className='visitor-line'; el.id='visitor-line';
+      tg.appendChild(el);
+    } else if(key==='widget'){
+      const el=document.createElement('div');
+      el.id='widget-line';
+      el.style.cssText='display:none;margin:0 0 4px;overflow:hidden;';
       tg.appendChild(el);
     }
   });
@@ -779,6 +788,103 @@ async function loadStats(){
     }));
     vl.textContent = parts.join(' · ');
   } catch(e) { /* silently fail */ }
+}
+
+/* ── Widget ── */
+async function loadWidget() {
+  const el = document.getElementById('widget-line');
+  if(!el || !WIDGET.enabled || !WIDGET.toolType || !WIDGET.instanceId) return;
+  el.style.display = '';
+  el.innerHTML = '<div style="height:8px;"></div>';
+  try {
+    const h = WIDGET.height || 200;
+    const ipv = Math.max(1, WIDGET.itemsPerView || 2);
+    const order = WIDGET.order || 'desc';
+    const clickAction = WIDGET.clickAction || 'none';
+    const loop = WIDGET.loop !== false;
+    const showPager = WIDGET.pager !== false;
+    const speed = WIDGET.speed || 400;
+    const gap = 8;
+
+    let images = [];
+    if(WIDGET.toolType === 'booth') {
+      const configId = WIDGET.instanceId;
+      const projectIds = [PROJECT_ID];
+      if(WIDGET.filterProjectId && WIDGET.filterProjectId !== PROJECT_ID) projectIds.push(WIDGET.filterProjectId);
+      for(const pid of projectIds) {
+        let q = db.collection('cms_booth_gallery').doc(configId).collection('images')
+          .where('approved','==',true).where('projectId','==',pid);
+        if(order !== 'random') q = q.orderBy('createdAt', order === 'asc' ? 'asc' : 'desc');
+        const snap = await q.limit(40).get();
+        snap.docs.forEach(d => images.push(d.data().imageUrl));
+      }
+      if(order === 'random') images = images.sort(() => Math.random() - 0.5);
+    }
+
+    if(!images.length) { el.style.display = 'none'; return; }
+
+    const itemWidthPct = (100 - gap * (ipv - 1) / ipv * ipv / ipv) / ipv;
+    const trackHtml = images.map(url => {
+      const clickAttr = clickAction === 'lightbox' ? `onclick="openWidgetLightbox('${url.replace(/'/g,"\\'")}')" style="cursor:pointer;"` : '';
+      return `<div class="ws-slide" style="flex:0 0 calc(${100/ipv}% - ${gap*(ipv-1)/ipv}px);height:${h}px;overflow:hidden;border-radius:4px;flex-shrink:0;">
+        <img src="${url}" style="width:100%;height:100%;object-fit:cover;display:block;" ${clickAttr}>
+      </div>`;
+    }).join('');
+
+    const pagerHtml = showPager ? `<div class="ws-pager" style="display:flex;justify-content:center;gap:4px;padding:6px 0;"></div>` : '';
+
+    el.innerHTML = `<div class="ws-wrap" style="position:relative;overflow:hidden;touch-action:pan-y;">
+      <div class="ws-track" style="display:flex;gap:${gap}px;will-change:transform;">${trackHtml}</div>
+    </div>${pagerHtml}`;
+
+    // slider logic
+    const wrap = el.querySelector('.ws-wrap');
+    const track = el.querySelector('.ws-track');
+    const pager = el.querySelector('.ws-pager');
+    const slideCount = images.length;
+    let idx = 0;
+
+    function getSlideW() {
+      const slide = track.querySelector('.ws-slide');
+      return slide ? slide.offsetWidth + gap : 0;
+    }
+
+    function goTo(i, animated = true) {
+      idx = loop ? ((i % slideCount) + slideCount) % slideCount : Math.max(0, Math.min(i, slideCount - 1));
+      track.style.transition = animated ? `transform ${speed}ms ease` : 'none';
+      track.style.transform = `translateX(-${idx * getSlideW()}px)`;
+      if(pager) pager.querySelectorAll('.ws-dot').forEach((d,di) => d.style.opacity = di===idx ? '1' : '0.3');
+    }
+
+    if(pager) {
+      pager.innerHTML = images.map((_,i) => `<div class="ws-dot" style="width:6px;height:6px;border-radius:50%;background:#fff;opacity:${i===0?'1':'0.3'};cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.5);" onclick="event.stopPropagation();"></div>`).join('');
+      pager.querySelectorAll('.ws-dot').forEach((dot, i) => dot.addEventListener('click', () => goTo(i)));
+    }
+
+    // touch/swipe
+    let touchStartX = 0;
+    wrap.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    wrap.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if(Math.abs(dx) > 40) goTo(idx + (dx < 0 ? 1 : -1));
+    });
+    wrap.addEventListener('click', () => goTo(idx + 1));
+
+  } catch(e) { console.error('widget error', e); }
+}
+
+function openWidgetLightbox(url) {
+  let lb = document.getElementById('widget-lb');
+  if(!lb) {
+    lb = document.createElement('div');
+    lb.id = 'widget-lb';
+    lb.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    lb.innerHTML = '<img style="max-width:92%;max-height:92%;object-fit:contain;">';
+    lb.addEventListener('click', () => lb.remove());
+    document.getElementById('app').appendChild(lb);
+  }
+  lb.querySelector('img').src = url;
+  document.getElementById('app').appendChild(lb);
 }
 
 /* ── Slideshow ── */
