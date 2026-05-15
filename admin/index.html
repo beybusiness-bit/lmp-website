@@ -1173,6 +1173,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 사용자 인증 필드 중 어떤 필드값으로 배경을 자동 선택할지 키를 입력하세요. 예: <code>boothType</code>, <code>category</code></div>
           </div>
 
+          <div style="margin-bottom:16px;">
+            <div class="ed-lbl" style="margin-bottom:4px;">갤러리 저장 버튼 라벨</div>
+            <input class="fi" id="deco-save-label" placeholder="저장하기" style="margin-bottom:4px;">
+            <div style="font-size:11px;color:rgba(0,0,0,.45);">꾸미기 완성 화면의 "저장하기" 버튼에 표시될 텍스트예요. 비워두면 기본값(저장하기)이 사용됩니다.</div>
+          </div>
+
           <div class="sect-head" style="margin-bottom:4px;">필드 값별 배경 이미지</div>
           <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">각 필드 값에 해당하는 배경 이미지를 설정하세요. 값이 일치하는 사용자에게 자동 적용됩니다. 이미지를 여러 장 등록하면 사용자가 직접 고릅니다. 권장 크기: 1080×1350px (4:5)</div>
 
@@ -8113,6 +8119,8 @@ async function loadBoothBgs(configId = 'booth') {
     document.getElementById('deco-config-name').value = decoState.curConfig.name;
     const fkEl = document.getElementById('deco-field-key');
     if(fkEl) fkEl.value = decoState.curConfig.fieldKey;
+    const slEl = document.getElementById('deco-save-label');
+    if(slEl) slEl.value = data.saveLabel || '';
     renderBoothBgList(decoState.curConfig.backgrounds);
     renderCommonPresetList(decoState.curConfig.commonPresetImages);
   } catch(e) {
@@ -8394,6 +8402,7 @@ async function saveDecoConfig() {
       backgrounds: cfg.backgrounds || [],
       commonPresetImages: cfg.commonPresetImages || [],
       fieldKey: (document.getElementById('deco-field-key')?.value || '').trim(),
+      saveLabel: (document.getElementById('deco-save-label')?.value || '').trim(),
       name: (document.getElementById('deco-config-name')?.value || '').trim() || cfg.name || '',
     };
     await db.collection('game_configs').doc(configId).set(payload, { merge: true });

@@ -537,6 +537,10 @@ async function loadBackgrounds() {
         document.getElementById('page-title').textContent = data.name;
         toolTitle = data.name;
       }
+      if(data.saveLabel) {
+        const btn = document.getElementById('btn-save-gallery');
+        if(btn) btn.textContent = data.saveLabel;
+      }
       // lmp-context가 먼저 도착한 경우: fieldKey가 확정된 지금 다시 값 추출
       if(lastContextData) {
         const d = lastContextData;
