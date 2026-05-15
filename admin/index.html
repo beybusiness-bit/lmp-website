@@ -813,12 +813,70 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div style="font-size:11px;color:rgba(0,0,0,.45);">예: 기대평, 후기, 응원 메시지</div>
             </div>
             <div class="ed-sect">
+              <div class="ed-lbl">남기기 버튼 라벨 <span style="font-weight:400;opacity:.55;">(기본값: 남기기)</span></div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input class="fi" id="gbk-write-label" placeholder="남기기" style="flex:1;margin-bottom:0;">
+                <button class="prev-btn" style="flex-shrink:0;font-size:12px;padding:6px 10px;" onclick="gbkInsertVar('gbk-write-label')">&#123;&#123;변수&#125;&#125;</button>
+              </div>
+              <div style="font-size:11px;color:rgba(0,0,0,.45);margin-top:4px;">예: {{이름}}의 기대평 남기기 — 로그인 사용자 필드 자동 치환</div>
+            </div>
+            <div class="ed-sect">
               <div class="ed-lbl" style="margin-bottom:10px;">카드 레이아웃</div>
               <div style="display:flex;flex-wrap:wrap;gap:6px;" id="gbk-layout-btns">
                 <button class="blk-tab on" id="gbk-layout-img-overlay" onclick="gbkSetLayout('img-overlay')" style="font-size:12px;padding:6px 12px;">이미지 오버레이</button>
                 <button class="blk-tab" id="gbk-layout-img-top" onclick="gbkSetLayout('img-top')" style="font-size:12px;padding:6px 12px;">이미지 상단</button>
                 <button class="blk-tab" id="gbk-layout-text-top" onclick="gbkSetLayout('text-top')" style="font-size:12px;padding:6px 12px;">텍스트 상단</button>
                 <button class="blk-tab" id="gbk-layout-text-only" onclick="gbkSetLayout('text-only')" style="font-size:12px;padding:6px 12px;">텍스트만</button>
+              </div>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl" style="margin-bottom:10px;">갤러리 표시 방식</div>
+              <div style="display:flex;gap:6px;margin-bottom:14px;">
+                <button class="blk-tab on" id="gbk-dm-scroll" onclick="gbkSetDisplayMode('scroll')" style="font-size:12px;padding:6px 14px;">스크롤</button>
+                <button class="blk-tab" id="gbk-dm-slide" onclick="gbkSetDisplayMode('slide')" style="font-size:12px;padding:6px 14px;">슬라이드</button>
+              </div>
+              <!-- 스크롤 설정 -->
+              <div id="gbk-scroll-settings">
+                <div style="display:flex;gap:8px;margin-bottom:10px;">
+                  <div style="flex:1;">
+                    <div style="font-size:11px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:4px;">열 수</div>
+                    <select class="fi" id="gbk-scroll-cols" style="margin-bottom:0;">
+                      <option value="1">1열</option>
+                      <option value="2" selected>2열</option>
+                    </select>
+                  </div>
+                  <div style="flex:1;">
+                    <div style="font-size:11px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:4px;">초기 표시 행 수</div>
+                    <input class="fi" type="number" id="gbk-initial-rows" min="0" value="0" placeholder="0=전체" style="margin-bottom:0;">
+                  </div>
+                </div>
+                <div>
+                  <div style="font-size:11px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:4px;">더보기 방식 <span style="font-weight:400;">(초기 행수 0이면 미사용)</span></div>
+                  <select class="fi" id="gbk-load-more-type" style="margin-bottom:0;">
+                    <option value="button">버튼 클릭</option>
+                    <option value="infinite">자동 (스크롤 시)</option>
+                  </select>
+                </div>
+              </div>
+              <!-- 슬라이드 설정 -->
+              <div id="gbk-slide-settings" style="display:none;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;margin-bottom:12px;">
+                  <input type="checkbox" id="gbk-auto-slide" style="width:16px;height:16px;"> 자동 슬라이드
+                </label>
+                <div style="display:flex;gap:8px;">
+                  <div style="flex:1;">
+                    <div style="font-size:11px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:4px;">전환 속도 (ms)</div>
+                    <input class="fi" type="number" id="gbk-slide-interval" value="3000" min="500" style="margin-bottom:0;">
+                  </div>
+                  <div style="flex:1;">
+                    <div style="font-size:11px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:4px;">페이저</div>
+                    <select class="fi" id="gbk-pager-type" style="margin-bottom:0;">
+                      <option value="dots">점 (●●●)</option>
+                      <option value="fraction">숫자 (1/5)</option>
+                      <option value="none">없음</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="ed-sect">
@@ -9799,7 +9857,7 @@ async function pyViewRecords(){
 /* ════════════════════════════════════════════
    방명록 관리 (Guestbook Manager)
 ════════════════════════════════════════════ */
-const gbkState = { curConfigId: null, curConfig: null, curLayout: 'img-overlay', curFields: [], curAnonWords1: [], curAnonWords2: [] };
+const gbkState = { curConfigId: null, curConfig: null, curLayout: 'img-overlay', curDisplayMode: 'scroll', curFields: [], curAnonWords1: [], curAnonWords2: [] };
 
 function gbkBack() { closeTool(); }
 
@@ -9867,15 +9925,56 @@ async function gbkOpenConfig(configId) {
     document.getElementById('gbk-title').value = data.title || '';
     rteSet('gbk-desc', data.description || '');
     document.getElementById('gbk-entry-label').value = data.entryLabel || '';
+    document.getElementById('gbk-write-label').value = data.writeLabel || '';
     document.getElementById('gbk-allow-dup').checked = !!data.allowDuplicate;
     document.getElementById('gbk-require-approval').checked = !!data.requireApproval;
     document.getElementById('gbk-allow-anon').checked = !!data.allowAnonymous;
+
+    // Gallery display settings
+    gbkSetDisplayMode(data.displayMode || 'scroll');
+    const scrollColsSel = document.getElementById('gbk-scroll-cols');
+    if (scrollColsSel) scrollColsSel.value = String(data.scrollCols || 2);
+    const initialRowsEl = document.getElementById('gbk-initial-rows');
+    if (initialRowsEl) initialRowsEl.value = String(data.initialRows || 0);
+    const loadMoreSel = document.getElementById('gbk-load-more-type');
+    if (loadMoreSel) loadMoreSel.value = data.loadMoreType || 'button';
+    const autoSlideEl = document.getElementById('gbk-auto-slide');
+    if (autoSlideEl) autoSlideEl.checked = !!data.autoSlide;
+    const slideIntEl = document.getElementById('gbk-slide-interval');
+    if (slideIntEl) slideIntEl.value = String(data.slideInterval || 3000);
+    const pagerSel = document.getElementById('gbk-pager-type');
+    if (pagerSel) pagerSel.value = data.pagerType || 'dots';
 
     gbkSetLayout(gbkState.curLayout, true);
     gbkRenderFields();
     gbkToggleAnonSection();
     gbkRenderAnonWords();
   } catch(e) { alert('불러오기 실패: ' + e.message); }
+}
+
+function gbkInsertVar(inputId) {
+  const key = prompt('삽입할 변수 키 입력 (예: 이름, 연락처)');
+  if (!key) return;
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const start = input.selectionStart;
+  const end   = input.selectionEnd;
+  const val   = input.value;
+  input.value = val.slice(0, start) + '{{' + key + '}}' + val.slice(end);
+  input.setSelectionRange(start + key.length + 4, start + key.length + 4);
+  input.focus();
+}
+
+function gbkSetDisplayMode(mode) {
+  gbkState.curDisplayMode = mode;
+  ['scroll','slide'].forEach(m => {
+    const btn = document.getElementById('gbk-dm-' + m);
+    if (btn) btn.classList.toggle('on', m === mode);
+  });
+  const scrollEl = document.getElementById('gbk-scroll-settings');
+  const slideEl  = document.getElementById('gbk-slide-settings');
+  if (scrollEl) scrollEl.style.display = mode === 'scroll' ? '' : 'none';
+  if (slideEl)  slideEl.style.display  = mode === 'slide'  ? '' : 'none';
 }
 
 function gbkSetLayout(layout, skipBtn = false) {
@@ -9898,10 +9997,12 @@ async function gbkSaveConfig(e) {
   if (!gbkState.curConfigId) return;
   try {
     if (btn) { btn.textContent = '저장 중…'; btn.disabled = true; }
+    const gbkDisplayMode = gbkState.curDisplayMode || 'scroll';
     await db.collection('cms_guestbook_configs').doc(gbkState.curConfigId).update({
       title: document.getElementById('gbk-title').value.trim() || '새 방명록',
       description: rteGet('gbk-desc'),
       entryLabel: document.getElementById('gbk-entry-label').value.trim() || '방명록',
+      writeLabel: document.getElementById('gbk-write-label').value.trim(),
       fields: gbkState.curFields,
       cardLayout: gbkState.curLayout,
       allowDuplicate: document.getElementById('gbk-allow-dup').checked,
@@ -9909,6 +10010,13 @@ async function gbkSaveConfig(e) {
       allowAnonymous: document.getElementById('gbk-allow-anon').checked,
       anonWords1: (() => { gbkSyncAnonWords(1); return gbkState.curAnonWords1; })(),
       anonWords2: (() => { gbkSyncAnonWords(2); return gbkState.curAnonWords2; })(),
+      displayMode:   gbkDisplayMode,
+      scrollCols:    Number(document.getElementById('gbk-scroll-cols')?.value) || 2,
+      initialRows:   Number(document.getElementById('gbk-initial-rows')?.value) || 0,
+      loadMoreType:  document.getElementById('gbk-load-more-type')?.value || 'button',
+      autoSlide:     !!document.getElementById('gbk-auto-slide')?.checked,
+      slideInterval: Number(document.getElementById('gbk-slide-interval')?.value) || 3000,
+      pagerType:     document.getElementById('gbk-pager-type')?.value || 'dots',
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     if (btn) _btnFlash(btn, '저장됨 ✓');
