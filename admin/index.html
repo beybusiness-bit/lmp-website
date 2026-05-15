@@ -7701,7 +7701,8 @@ async function saveTfFilesToDrive(){
     const r=await fetch(GAS_URL,{method:'POST',body:JSON.stringify({action:'saveFilesToDrive',folderName,files})});
     const data=await r.json();
     if(!data.success) throw new Error(data.error||'저장 실패');
-    if(statusEl) statusEl.innerHTML=`✅ ${data.savedCount}개 파일 저장 완료 · <a href="${data.folderUrl}" target="_blank" style="color:#000;font-weight:700;">폴더 열기 ↗</a>`;
+    const errMsg=(data.errors&&data.errors.length)?`<br><span style="color:#c00;">오류(${data.errors.length}): ${data.errors.join(' / ')}</span>`:'';
+    if(statusEl) statusEl.innerHTML=`✅ ${data.savedCount}개 파일 저장 완료 · <a href="${data.folderUrl}" target="_blank" style="color:#000;font-weight:700;">폴더 열기 ↗</a>${errMsg}`;
   }catch(e){
     if(statusEl) statusEl.textContent='❌ 저장 실패: '+e.message;
   }
