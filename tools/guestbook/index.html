@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>방명록</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<style>
+:root{--lmp-block-bg:#fff;--lmp-input-bg:transparent;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:transparent;overflow-y:auto;-webkit-overflow-scrolling:touch;color:#000;}
+
+/* ─── Loading / Errors ─── */
+#loading{padding:60px 20px;text-align:center;font-size:14px;color:rgba(0,0,0,.5);}
+#err-screen{display:none;padding:40px 20px;text-align:center;font-size:14px;color:#c00;font-weight:700;}
+#err-screen.on{display:block;}
+#app{display:none;padding:16px 16px 60px;}
+#app.on{display:block;}
+
+/* ─── Tabs ─── */
+.tab-row{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid #000;}
+.tab-btn{flex:1;padding:10px 8px;background:transparent;border:none;border-bottom:3px solid transparent;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:-2px;color:rgba(0,0,0,.55);}
+.tab-btn.on{border-bottom-color:#000;color:#000;}
+
+/* ─── Form ─── */
+.ff-wrap{margin-bottom:22px;}
+.ff-label{display:block;font-size:14px;font-weight:700;margin-bottom:7px;line-height:1.4;}
+.ff-req{color:#c00;}
+.ff-inp,.ff-textarea{width:100%;border:2px solid #000;border-radius:0;padding:12px 14px;font-size:15px;font-family:inherit;background:var(--lmp-input-bg);color:#000;outline:none;-webkit-appearance:none;appearance:none;}
+.ff-textarea{min-height:90px;resize:vertical;}
+.ff-inp:focus,.ff-textarea:focus{box-shadow:0 0 0 3px rgba(0,0,0,.08);}
+
+/* ─── Image Upload ─── */
+.img-upload-area{border:2px dashed rgba(0,0,0,.3);padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .15s;background:rgba(0,0,0,.02);}
+.img-upload-area:hover{border-color:#000;}
+.img-upload-area.has-img{border-style:solid;border-color:#000;padding:12px;}
+.img-upload-preview{width:100%;max-height:220px;object-fit:contain;display:block;margin-bottom:8px;}
+.img-upload-icon{font-size:28px;margin-bottom:8px;}
+.img-upload-label{font-size:13px;color:rgba(0,0,0,.55);font-weight:600;}
+.img-upload-hint{font-size:11px;color:rgba(0,0,0,.4);margin-top:4px;}
+.img-upload-change{font-size:12px;color:rgba(0,0,0,.5);margin-top:6px;text-decoration:underline;cursor:pointer;}
+.img-prog-wrap{height:4px;background:rgba(0,0,0,.1);margin-top:8px;display:none;}
+.img-prog-bar{height:100%;background:#000;transition:width .2s;width:0%;}
+
+/* ─── Color Swatches ─── */
+.color-swatches-wrap{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;}
+.color-swatch{width:44px;height:44px;border:2px solid transparent;cursor:pointer;position:relative;transition:transform .1s;outline:none;}
+.color-swatch.selected{border-color:#000;}
+.color-swatch.selected::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;text-shadow:0 0 3px rgba(0,0,0,.8);}
+.color-swatch:hover{transform:scale(1.1);}
+
+/* ─── Submit ─── */
+.lmp-btn{display:block;width:100%;padding:14px 18px;background:#000;color:var(--lmp-block-bg);border:2px solid #000;border-radius:0;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.2px;transition:background .15s,color .15s;}
+.lmp-btn:hover,.lmp-btn:active{background:var(--lmp-block-bg);color:#000;}
+.lmp-btn:disabled{opacity:.35;cursor:default;}
+.ff-err{color:#c00;font-size:13px;font-weight:700;margin-bottom:12px;min-height:16px;}
+
+/* ─── Success Banner ─── */
+#done-banner{display:none;background:#000;color:#fff;padding:14px 16px;font-size:14px;font-weight:700;text-align:center;margin-bottom:20px;}
+#done-banner.on{display:block;}
+
+/* ─── Gallery ─── */
+.cards-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.cards-count{font-size:12px;font-weight:700;color:rgba(0,0,0,.45);}
+.cards-grid{display:flex;flex-direction:column;gap:16px;}
+.cards-grid.two-col{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.cards-empty{padding:40px 20px;text-align:center;font-size:14px;color:rgba(0,0,0,.4);font-weight:600;line-height:1.7;}
+
+/* ─── Card (ALL layouts share border) ─── */
+.gb-card{border:2px solid #000;overflow:hidden;cursor:pointer;position:relative;transition:opacity .12s;}
+.gb-card:active{opacity:.8;}
+
+/* layout: text-top (텍스트 위, 이미지 없음 또는 아래) */
+.gb-card.layout-text-top .card-img-wrap{display:none;}
+.gb-card.layout-text-top .card-body{padding:16px;}
+
+/* layout: img-top (이미지 위, 텍스트 아래) */
+.gb-card.layout-img-top .card-img-wrap{width:100%;aspect-ratio:4/3;overflow:hidden;background:#e8e8e8;}
+.gb-card.layout-img-top .card-img-wrap img{width:100%;height:100%;object-fit:cover;display:block;}
+.gb-card.layout-img-top .card-body{padding:14px;}
+
+/* layout: img-overlay (이미지 + 텍스트 오버레이) */
+.gb-card.layout-img-overlay{min-height:200px;}
+.gb-card.layout-img-overlay .card-bg{position:absolute;inset:0;}
+.gb-card.layout-img-overlay .card-bg img{width:100%;height:100%;object-fit:cover;display:block;}
+.gb-card.layout-img-overlay .card-dim{position:absolute;inset:0;background:rgba(0,0,0,.45);}
+.gb-card.layout-img-overlay .card-body{position:relative;z-index:1;padding:20px 16px;color:#fff;}
+.gb-card.layout-img-overlay .card-field-val{color:rgba(255,255,255,.9);}
+.gb-card.layout-img-overlay .card-field-key{color:rgba(255,255,255,.55);}
+.gb-card.layout-img-overlay .card-meta{color:rgba(255,255,255,.45);}
+
+/* card content */
+.card-field{margin-bottom:9px;}
+.card-field:last-of-type{margin-bottom:0;}
+.card-field-key{font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:rgba(0,0,0,.45);margin-bottom:2px;}
+.card-field-val{font-size:14px;font-weight:600;line-height:1.55;word-break:break-word;}
+.card-meta{font-size:10px;color:rgba(0,0,0,.35);margin-top:10px;font-weight:600;}
+
+/* card: color background (only when no image) */
+.gb-card.has-color .card-field-val{color:inherit;}
+
+/* ─── Card Detail Modal ─── */
+#detail-modal{position:fixed;inset:0;z-index:300;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);}
+#detail-modal.on{display:flex;}
+#detail-modal-inner{background:#fff;width:100%;max-width:480px;max-height:85vh;overflow-y:auto;border-top:3px solid #000;}
+.dm-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1.5px solid rgba(0,0,0,.1);}
+.dm-title{font-size:14px;font-weight:800;}
+.dm-close{background:none;border:none;font-size:22px;cursor:pointer;line-height:1;color:rgba(0,0,0,.5);padding:0;}
+.dm-body{padding:16px;}
+.dm-img{width:100%;display:block;margin-bottom:14px;}
+.dm-field{margin-bottom:12px;}
+.dm-field-key{font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:rgba(0,0,0,.45);margin-bottom:3px;}
+.dm-field-val{font-size:15px;line-height:1.65;word-break:break-word;}
+.dm-meta{font-size:11px;color:rgba(0,0,0,.35);margin-top:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,.08);}
+.dm-actions{display:flex;gap:8px;margin-top:14px;}
+.dm-del-btn{flex:1;padding:10px;border:2px solid #c00;background:#fff;color:#c00;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+
+/* spinner */
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{width:16px;height:16px;border:2px solid rgba(0,0,0,.15);border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px;}
+</style>
+</head>
+<body>
+<div id="loading">불러오는 중…</div>
+<div id="err-screen"></div>
+
+<div id="app">
+  <!-- Tabs -->
+  <div class="tab-row">
+    <button class="tab-btn on" id="tab-write"   onclick="switchTab('write')">남기기</button>
+    <button class="tab-btn"    id="tab-gallery" onclick="switchTab('gallery')">모아보기</button>
+  </div>
+
+  <!-- Write Tab -->
+  <div id="screen-write">
+    <div id="done-banner">✅ 방명록을 남겼어요!</div>
+    <div id="write-fields-wrap"></div>
+    <!-- Color picker (shown when no image field) -->
+    <div id="color-section" class="ff-wrap" style="display:none;">
+      <label class="ff-label">카드 배경 색상</label>
+      <div class="color-swatches-wrap" id="color-swatches"></div>
+    </div>
+    <div class="ff-err" id="form-err"></div>
+    <button class="lmp-btn" id="submit-btn" onclick="submitEntry()">방명록 남기기</button>
+  </div>
+
+  <!-- Gallery Tab -->
+  <div id="screen-gallery" style="display:none;">
+    <div class="cards-header">
+      <span class="cards-count" id="cards-count"></span>
+    </div>
+    <div class="cards-grid" id="cards-grid">
+      <div class="cards-empty">불러오는 중…</div>
+    </div>
+  </div>
+</div>
+
+<!-- Card Detail Modal -->
+<div id="detail-modal" onclick="onDetailBg(event)">
+  <div id="detail-modal-inner">
+    <div class="dm-head">
+      <span class="dm-title" id="dm-title">방명록</span>
+      <button class="dm-close" onclick="closeDetail()">×</button>
+    </div>
+    <div class="dm-body" id="dm-body"></div>
+  </div>
+</div>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
+  authDomain: "beyhome-admin.firebaseapp.com",
+  projectId: "beyhome-admin",
+  storageBucket: "beyhome-admin.firebasestorage.app",
+  messagingSenderId: "849320781553",
+  appId: "1:849320781553:web:9d844044e85995c0aa2b50"
+};
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+const CONFIG_ID = new URLSearchParams(location.search).get('id') || '';
+
+// ── lmp-context ──
+let ctxProjectId = '', ctxUserId = '', ctxUserFields = {}, ctxKeyColors = [];
+let stageDisplayType = 'scroll';
+window.addEventListener('message', e => {
+  if (e.data?.type !== 'lmp-context') return;
+  ctxProjectId      = e.data.projectId      || '';
+  ctxUserId         = e.data.userId         || '';
+  ctxUserFields     = e.data.userFields     || {};
+  ctxKeyColors      = e.data.keyColors      || [];
+  stageDisplayType  = e.data.stageDisplayType || 'scroll';
+  if (e.data.blockBg) document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg);
+  // Rebuild color swatches if config already loaded
+  if (CONFIG && !hasImageField()) buildColorSwatches();
+});
+window.parent.postMessage({ type: 'lmp-ready' }, '*');
+
+let CONFIG = null;
+let ENTRIES = [];
+let selectedColor = '';
+let pendingImageFile = null;
+let pendingImageUrl  = '';   // local object URL for preview only
+let uploadedImageUrl = '';   // final Firebase Storage URL
+let isUploading = false;
+
+function hasImageField() {
+  return !!(CONFIG && (CONFIG.fields || []).some(f => f.type === 'image'));
+}
+
+// ── Init ──
+async function init() {
+  if (!CONFIG_ID) { showErr('설정 ID가 없어요. (URL에 ?id=... 필요)'); return; }
+  try {
+    const doc = await db.collection('cms_guestbook_configs').doc(CONFIG_ID).get();
+    if (!doc.exists) { showErr('방명록 설정을 찾을 수 없어요.'); return; }
+    CONFIG = { id: doc.id, ...doc.data() };
+    renderWriteForm();
+    renderGalleryHeader();
+    loadEntries();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').classList.add('on');
+  } catch(e) {
+    showErr('불러오기 실패: ' + e.message);
+  }
+}
+
+// ── Render Write Form ──
+function renderWriteForm() {
+  const wrap = document.getElementById('write-fields-wrap');
+  wrap.innerHTML = '';
+  (CONFIG.fields || []).forEach(f => {
+    wrap.appendChild(buildFieldEl(f));
+  });
+
+  // Color picker or image: mutually exclusive
+  if (!hasImageField()) {
+    document.getElementById('color-section').style.display = '';
+    buildColorSwatches();
+  }
+}
+
+function buildFieldEl(f) {
+  const div = document.createElement('div');
+  div.className = 'ff-wrap';
+  const req = f.required ? '<span class="ff-req"> *</span>' : '';
+
+  const fk = f.id || f.key || ('f_' + Math.random().toString(36).slice(2));
+  if (f.type === 'image') {
+    div.innerHTML = `
+      <label class="ff-label">${esc(f.label)}${req}</label>
+      <div class="img-upload-area" id="img-area-${fk}" onclick="document.getElementById('img-file-${fk}').click()">
+        <img id="img-prev-${fk}" class="img-upload-preview" style="display:none;" alt="">
+        <div id="img-icon-${fk}" class="img-upload-icon">📷</div>
+        <div id="img-lbl-${fk}" class="img-upload-label">사진을 탭해서 선택하세요</div>
+        <div class="img-upload-hint">JPG, PNG, GIF 등 이미지 파일</div>
+      </div>
+      <div class="img-prog-wrap" id="img-prog-${fk}"><div class="img-prog-bar" id="img-bar-${fk}"></div></div>
+      <input type="file" id="img-file-${fk}" accept="image/*" style="display:none;" onchange="onImageSelect(event,'${fk}')">
+    `;
+  } else if (f.type === 'textarea') {
+    div.innerHTML = `
+      <label class="ff-label" for="field-${fk}">${esc(f.label)}${req}</label>
+      <textarea class="ff-textarea" id="field-${fk}" placeholder="${esc(f.placeholder||'')}"></textarea>
+    `;
+  } else {
+    div.innerHTML = `
+      <label class="ff-label" for="field-${fk}">${esc(f.label)}${req}</label>
+      <input class="ff-inp" id="field-${fk}" type="text" placeholder="${esc(f.placeholder||'')}">
+    `;
+  }
+  return div;
+}
+
+// ── Color Swatches ──
+function buildColorSwatches() {
+  const wrap = document.getElementById('color-swatches');
+  wrap.innerHTML = '';
+  const colors = ctxKeyColors.length ? ctxKeyColors : ['#000000','#333333','#555555','#888888','#cccccc','#ffffff'];
+  colors.forEach((c, i) => {
+    const sw = document.createElement('button');
+    sw.type = 'button';
+    sw.className = 'color-swatch' + (i === 0 ? ' selected' : '');
+    sw.style.background = c;
+    sw.title = c;
+    sw.dataset.color = c;
+    sw.setAttribute('aria-label', `색상 ${c}`);
+    sw.onclick = () => pickColor(c);
+    wrap.appendChild(sw);
+  });
+  if (colors.length) pickColor(colors[0]);
+}
+
+function pickColor(c) {
+  selectedColor = c;
+  document.querySelectorAll('.color-swatch').forEach(sw => {
+    sw.classList.toggle('selected', sw.dataset.color === c);
+  });
+}
+
+// ── Image Selection ──
+function onImageSelect(event, fieldKey) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  pendingImageFile = file;
+  // revoke previous object URL
+  if (pendingImageUrl) URL.revokeObjectURL(pendingImageUrl);
+  pendingImageUrl = URL.createObjectURL(file);
+
+  const prevEl  = document.getElementById('img-prev-' + fieldKey);
+  const iconEl  = document.getElementById('img-icon-' + fieldKey);
+  const lblEl   = document.getElementById('img-lbl-' + fieldKey);
+  const areaEl  = document.getElementById('img-area-' + fieldKey);
+  if (prevEl)  { prevEl.src = pendingImageUrl; prevEl.style.display = 'block'; }
+  if (iconEl)  iconEl.style.display = 'none';
+  if (lblEl)   lblEl.textContent = '📷 사진 변경하기';
+  if (areaEl)  areaEl.classList.add('has-img');
+}
+
+async function doUpload(file) {
+  const imgField = (CONFIG.fields || []).find(f => f.type === 'image');
+  if (!imgField) return '';
+  const ext = file.name.split('.').pop() || 'jpg';
+  const path = `guestbook_entries/${CONFIG_ID}/${ctxUserId||'anon'}_${Date.now()}.${ext}`;
+  const ref = storage.ref(path);
+  const fk = imgField.id || imgField.key;
+  const progWrap = document.getElementById('img-prog-' + fk);
+  const progBar  = document.getElementById('img-bar-' + fk);
+  if (progWrap) progWrap.style.display = 'block';
+  const task = ref.put(file);
+  task.on('state_changed', snap => {
+    const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
+    if (progBar) progBar.style.width = pct + '%';
+  });
+  await task;
+  const url = await ref.getDownloadURL();
+  if (progWrap) progWrap.style.display = 'none';
+  return url;
+}
+
+// ── Submit ──
+async function submitEntry() {
+  const errEl = document.getElementById('form-err');
+  const btn   = document.getElementById('submit-btn');
+  errEl.textContent = '';
+
+  const fields = CONFIG.fields || [];
+  const values = {};
+
+  // Collect + validate text fields
+  for (const f of fields) {
+    if (f.type === 'image') continue;
+    const el = document.getElementById('field-' + (f.id || f.key));
+    const val = el ? el.value.trim() : '';
+    if (f.required && !val) { errEl.textContent = `"${f.label}" 항목을 입력해주세요.`; return; }
+    values[f.id || f.key] = val;
+  }
+
+  // Validate image field
+  const imgField = fields.find(f => f.type === 'image');
+  if (imgField && imgField.required && !pendingImageFile) {
+    errEl.textContent = `"${imgField.label}" 사진을 추가해주세요.`; return;
+  }
+
+  // Validate color (when no image field)
+  if (!hasImageField() && !selectedColor) {
+    errEl.textContent = '카드 배경 색상을 선택해주세요.'; return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>저장 중…';
+  isUploading = true;
+
+  try {
+    let finalImageUrl = '';
+    if (imgField && pendingImageFile) {
+      finalImageUrl = await doUpload(pendingImageFile);
+      uploadedImageUrl = finalImageUrl;
+    }
+
+    // Build fieldValues map (spec: fieldValues[f.id])
+    const fieldValues = { ...values };
+    if (imgField) fieldValues[imgField.id || imgField.key] = finalImageUrl;
+
+    // Determine author name (anonymous or from userFields)
+    const authorName = ctxUserFields?.name || ctxUserFields?.이름 || ctxUserId || '익명';
+
+    const entry = {
+      fieldValues,
+      authorName,
+      isAnonymous: false,
+      userId: ctxUserId,
+      projectId: ctxProjectId,
+      userFields: ctxUserFields,
+      approved: !(CONFIG.requireApproval),
+      pinned: false,
+      bgColor: hasImageField() ? '' : selectedColor,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    };
+
+    await db.collection('cms_guestbook_entries').doc(CONFIG_ID)
+            .collection('entries').add(entry);
+
+    // Success
+    document.getElementById('done-banner').classList.add('on');
+    resetForm();
+    await loadEntries();
+    window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+  } catch(e) {
+    errEl.textContent = '저장 실패: ' + e.message;
+  } finally {
+    btn.textContent = '방명록 남기기';
+    btn.disabled = false;
+    isUploading = false;
+  }
+}
+
+function resetForm() {
+  (CONFIG.fields || []).forEach(f => {
+    const fk = f.id || f.key;
+    if (f.type === 'image') {
+      pendingImageFile = null;
+      if (pendingImageUrl) { URL.revokeObjectURL(pendingImageUrl); pendingImageUrl = ''; }
+      uploadedImageUrl = '';
+      const prevEl = document.getElementById('img-prev-' + fk);
+      const iconEl = document.getElementById('img-icon-' + fk);
+      const lblEl  = document.getElementById('img-lbl-'  + fk);
+      const areaEl = document.getElementById('img-area-' + fk);
+      const inpEl  = document.getElementById('img-file-' + fk);
+      if (prevEl)  { prevEl.src = ''; prevEl.style.display = 'none'; }
+      if (iconEl)  iconEl.style.display = '';
+      if (lblEl)   lblEl.textContent = '사진을 탭해서 선택하세요';
+      if (areaEl)  areaEl.classList.remove('has-img');
+      if (inpEl)   inpEl.value = '';
+    } else {
+      const el = document.getElementById('field-' + fk);
+      if (el) el.value = '';
+    }
+  });
+}
+
+// ── Load & Render Entries ──
+async function loadEntries() {
+  try {
+    const snap = await db.collection('cms_guestbook_entries').doc(CONFIG_ID)
+      .collection('entries')
+      .where('approved','==',true)
+      .orderBy('pinned','desc')
+      .orderBy('createdAt', 'desc')
+      .limit(200)
+      .get();
+    ENTRIES = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderGallery();
+  } catch(e) {
+    console.error('[loadEntries]', e);
+    // Fallback without compound query (may need Firestore index)
+    try {
+      const snap2 = await db.collection('cms_guestbook_entries').doc(CONFIG_ID)
+        .collection('entries').orderBy('createdAt','desc').limit(200).get();
+      ENTRIES = snap2.docs.map(d => ({ id: d.id, ...d.data() })).filter(e => e.approved !== false);
+      renderGallery();
+    } catch(e2) { console.error('[loadEntries fallback]', e2); }
+  }
+}
+
+function renderGalleryHeader() {
+  // nothing extra needed; count set in renderGallery
+}
+
+function renderGallery() {
+  const grid = document.getElementById('cards-grid');
+  const countEl = document.getElementById('cards-count');
+  countEl.textContent = ENTRIES.length ? `${ENTRIES.length}개의 방명록` : '';
+  if (!ENTRIES.length) {
+    grid.innerHTML = '<div class="cards-empty">아직 방명록이 없어요.<br>첫 번째로 남겨보세요!</div>';
+    return;
+  }
+  const layout = CONFIG.cardLayout || 'text-top';
+  // Use 2-col grid only for text-top and img-top layouts (not overlay which needs height)
+  if (layout === 'text-top' || layout === 'img-top') {
+    grid.classList.add('two-col');
+  } else {
+    grid.classList.remove('two-col');
+  }
+  grid.innerHTML = ENTRIES.map(e => buildCardHtml(e)).join('');
+}
+
+function buildCardHtml(entry) {
+  const layout  = CONFIG.cardLayout || 'text-top';
+  // image stored either at entry.fieldValues[imgFieldId] or legacy entry.imageUrl
+  const imgField = (CONFIG.fields || []).find(f => f.type === 'image');
+  const imgUrl  = (imgField ? entry.fieldValues?.[imgField.id || imgField.key] : '') || entry.imageUrl || '';
+  const bgColor = entry.bgColor || '';
+  const fields  = (CONFIG.fields || []).filter(f => f.type !== 'image');
+
+  // Determine if card has a background color
+  const bgStyle  = (!imgUrl && bgColor) ? `style="background:${bgColor};"` : '';
+  const hasBgCls = (!imgUrl && bgColor) ? ' has-color' : '';
+
+  // Only use img layouts if there's actually an image
+  const effectiveLayout = (imgUrl && (layout === 'img-top' || layout === 'img-overlay')) ? layout : 'text-top';
+
+  let imgSection = '';
+  let dimLayer   = '';
+  let bgLayer    = '';
+
+  if (imgUrl) {
+    if (effectiveLayout === 'img-top') {
+      imgSection = `<div class="card-img-wrap"><img src="${esc(imgUrl)}" alt="" loading="lazy"></div>`;
+    } else if (effectiveLayout === 'img-overlay') {
+      bgLayer  = `<div class="card-bg"><img src="${esc(imgUrl)}" alt="" loading="lazy"></div>`;
+      dimLayer = `<div class="card-dim"></div>`;
+    }
+  }
+
+  const fieldsHtml = fields.map(f => {
+    const fk = f.id || f.key;
+    const val = entry.fieldValues?.[fk] || entry.values?.[fk] || '';
+    if (!val) return '';
+    return `<div class="card-field">
+      <div class="card-field-key">${esc(f.label)}</div>
+      <div class="card-field-val">${esc(val)}</div>
+    </div>`;
+  }).join('');
+
+  let metaStr = '';
+  if (entry.createdAt?.toDate) {
+    const d = entry.createdAt.toDate();
+    metaStr = `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`;
+  }
+  const metaHtml = metaStr ? `<div class="card-meta">${metaStr}</div>` : '';
+
+  return `<div class="gb-card layout-${effectiveLayout}${hasBgCls}" ${bgStyle} onclick="openDetail('${entry.id}')">
+    ${bgLayer}${dimLayer}${imgSection}
+    <div class="card-body">${fieldsHtml}${metaHtml}</div>
+  </div>`;
+}
+
+// ── Card Detail ──
+function openDetail(entryId) {
+  const entry = ENTRIES.find(e => e.id === entryId);
+  if (!entry) return;
+  const fields = CONFIG.fields || [];
+  const isOwner = ctxUserId && entry.userId === ctxUserId;
+
+  let html = '';
+  const imgFieldForDetail = fields.find(f => f.type === 'image');
+  const detailImgUrl = (imgFieldForDetail ? entry.fieldValues?.[imgFieldForDetail.id || imgFieldForDetail.key] : '') || entry.imageUrl || '';
+  if (detailImgUrl) {
+    html += `<img class="dm-img" src="${esc(detailImgUrl)}" alt="" loading="lazy">`;
+  }
+  fields.filter(f => f.type !== 'image').forEach(f => {
+    const fk = f.id || f.key;
+    const val = entry.fieldValues?.[fk] || entry.values?.[fk] || '';
+    if (!val) return;
+    html += `<div class="dm-field">
+      <div class="dm-field-key">${esc(f.label)}</div>
+      <div class="dm-field-val">${esc(val)}</div>
+    </div>`;
+  });
+  let metaStr = '';
+  if (entry.createdAt?.toDate) {
+    const d = entry.createdAt.toDate();
+    metaStr = `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`;
+  }
+  if (metaStr) html += `<div class="dm-meta">${metaStr}</div>`;
+  if (isOwner) {
+    html += `<div class="dm-actions"><button class="dm-del-btn" onclick="deleteEntry('${entryId}')">삭제하기</button></div>`;
+  }
+
+  document.getElementById('dm-body').innerHTML = html;
+  document.getElementById('detail-modal').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDetail() {
+  document.getElementById('detail-modal').classList.remove('on');
+  document.body.style.overflow = '';
+}
+
+function onDetailBg(e) {
+  if (e.target === document.getElementById('detail-modal')) closeDetail();
+}
+
+async function deleteEntry(entryId) {
+  if (!confirm('이 방명록을 삭제할까요?')) return;
+  try {
+    await db.collection('cms_guestbook_entries').doc(CONFIG_ID)
+            .collection('entries').doc(entryId).delete();
+    closeDetail();
+    await loadEntries();
+  } catch(e) { alert('삭제 실패: ' + e.message); }
+}
+
+// ── Tab switching ──
+function switchTab(tab) {
+  document.getElementById('screen-write').style.display   = tab === 'write'   ? '' : 'none';
+  document.getElementById('screen-gallery').style.display = tab === 'gallery' ? '' : 'none';
+  document.getElementById('tab-write').classList.toggle('on',   tab === 'write');
+  document.getElementById('tab-gallery').classList.toggle('on', tab === 'gallery');
+  if (tab === 'gallery') loadEntries();
+}
+
+// ── Helpers ──
+function showErr(msg) {
+  document.getElementById('loading').style.display = 'none';
+  const el = document.getElementById('err-screen');
+  el.textContent = msg;
+  el.classList.add('on');
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function pad(n) { return String(n).padStart(2,'0'); }
+
+init();
+</script>
+</body>
+</html>
