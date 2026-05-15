@@ -2251,7 +2251,8 @@ function renderFooter() {
   const hint = document.getElementById('footer-hint');
   if (!el) return;
   const s = SITE_CONFIG;
-  const hasContent = s.footerBizName || s.footerLogoUrl || s.footerInstagram;
+  const snsList = s.snsLinks?.length ? s.snsLinks : (s.footerInstagram ? [{type:'instagram', url:s.footerInstagram}] : []);
+  const hasContent = s.footerBizName || s.footerLogoUrl || snsList.length;
   if (!hasContent) { el.innerHTML = ''; if (hint) hint.style.display = 'none'; return; }
   if (hint) hint.style.display = 'block';
   let html = '';
@@ -2272,8 +2273,16 @@ function renderFooter() {
   if (s.footerEmail) bizParts.push(`이메일: ${esc(s.footerEmail)}`);
   if (s.footerPhone) bizParts.push(`연락처: ${esc(s.footerPhone)}`);
   if (bizParts.length) html += `<div class="footer-biz">${bizParts.join('<br>')}</div>`;
-  if (s.footerInstagram) {
-    html += `<div class="footer-sns-row"><a class="footer-sns-link" href="${esc(s.footerInstagram)}" target="_blank" rel="noopener">📷</a></div>`;
+  if (snsList.length) {
+    const icons = snsList.map(item => {
+      const iconSrc = item.type === 'custom'
+        ? esc(item.iconUrl || '')
+        : `https://cdn.simpleicons.org/${item.type}/000000`;
+      return iconSrc
+        ? `<a class="footer-sns-link" href="${esc(item.url)}" target="_blank" rel="noopener"><img src="${iconSrc}" width="22" height="22" alt="${esc(item.type)}" style="opacity:.65;display:block;"></a>`
+        : '';
+    }).filter(Boolean).join('');
+    if (icons) html += `<div class="footer-sns-row">${icons}</div>`;
   }
   const yr = s.footerCopyrightYear || new Date().getFullYear();
   const brand = s.footerCopyright || 'lazymaxpotential';

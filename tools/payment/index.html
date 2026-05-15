@@ -69,6 +69,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .pc-agree-label{font-size:13px;font-weight:600;line-height:1.5;color:#000;}
 .pc-back{background:transparent;border:2px solid rgba(0,0,0,.25);color:rgba(0,0,0,.55);width:100%;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;}
 .pc-back:active{background:rgba(0,0,0,.05);}
+
+/* 수량 선택 */
+#qty-row{display:none;border:1.5px solid rgba(0,0,0,.15);padding:12px 16px;margin-bottom:16px;}
+.qty-inner{display:flex;align-items:center;justify-content:space-between;}
+.qty-label{font-size:14px;font-weight:700;}
+.qty-ctrl{display:flex;align-items:center;gap:10px;}
+.qty-btn{width:32px;height:32px;border:2px solid #000;background:none;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;font-family:inherit;}
+.qty-btn:disabled{opacity:.25;cursor:default;}
+#qty-display{font-size:20px;font-weight:900;min-width:32px;text-align:center;}
+#qty-unit-price{font-size:11px;color:rgba(0,0,0,.45);margin-top:4px;}
 </style>
 </head>
 <body>
@@ -82,6 +92,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <div class="pay-amount"><span id="p-amount">0</span><span class="won">원</span></div>
       <div id="pay-opts-hint" style="display:none;font-size:11px;color:rgba(0,0,0,.45);margin-top:2px;margin-bottom:4px;">선택 옵션에 따라 금액이 결정됩니다</div>
       <div class="pay-desc" id="p-desc" style="display:none;"></div>
+    </div>
+    <div id="qty-row">
+      <div class="qty-inner">
+        <span class="qty-label">수량</span>
+        <div class="qty-ctrl">
+          <button class="qty-btn" id="qty-minus" onclick="changeQty(-1)">−</button>
+          <span id="qty-display">1</span>
+          <button class="qty-btn" id="qty-plus"  onclick="changeQty(1)">+</button>
+        </div>
+      </div>
+      <div id="qty-unit-price"></div>
     </div>
     <button class="lmp-btn" id="pay-btn">결제하기</button>
   </div>
@@ -168,6 +189,8 @@ const ctxPromise = new Promise(res => { resolveCtx = res; });
 
 let selectedOption = null;  // { label, price } | null
 let questionAnswers = {};   // { [label]: answer }
+let selectedQty = 1;
+let qtyMaxAllowed = null;   // per-user remaining (null = unlimited)
 
 window.addEventListener('message', e => {
   if (e.data?.type !== 'lmp-context') return;
@@ -252,8 +275,10 @@ async function init() {
     try {
       selectedOption  = JSON.parse(sessionStorage.getItem('py_selectedOption') || 'null');
       questionAnswers = JSON.parse(sessionStorage.getItem('py_questionAnswers') || '{}');
+      selectedQty     = parseInt(sessionStorage.getItem('py_selectedQty') || '1') || 1;
       sessionStorage.removeItem('py_selectedOption');
       sessionStorage.removeItem('py_questionAnswers');
+      sessionStorage.removeItem('py_selectedQty');
     } catch(e) {}
 
     setStatus('결제 완료 처리 중…');
@@ -277,12 +302,26 @@ async function init() {
       const u = await db.collection('cms_users_' + ctxProjectId).doc(ctxUserId).get();
       const paidConfigs = u.exists ? (u.data().paidConfigs || {}) : {};
       if (paidConfigs[CONFIG_ID]) {
-        showResult('already', '이미 결제 완료된 상품이에요',
-          CONFIG.successMessage || '결제하신 권한이 이미 부여되어 있어요.',
-          { amount: paidConfigs[CONFIG_ID].amount, orderName: CONFIG.productName,
-            selectedOption: paidConfigs[CONFIG_ID].selectedOption || '' });
-        window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
-        return;
+        if (!CONFIG.qtyEnabled) {
+          showResult('already', '이미 결제 완료된 상품이에요',
+            CONFIG.successMessage || '결제하신 권한이 이미 부여되어 있어요.',
+            { amount: paidConfigs[CONFIG_ID].amount, orderName: CONFIG.productName,
+              selectedOption: paidConfigs[CONFIG_ID].selectedOption || '' });
+          window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+          return;
+        }
+        if (CONFIG.qtyPerUser) {
+          const alreadyBought = paidConfigs[CONFIG_ID].totalQty || 0;
+          const remaining = CONFIG.qtyPerUser - alreadyBought;
+          if (remaining <= 0) {
+            showResult('already', '구매 한도에 도달했어요',
+              `이 상품은 1인당 최대 ${CONFIG.qtyPerUser}개까지 구매할 수 있어요. (이미 ${alreadyBought}개 구매)`,
+              null);
+            window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+            return;
+          }
+          qtyMaxAllowed = remaining;
+        }
       }
     } catch (e) { console.warn('paid check failed:', e); }
   }
@@ -323,6 +362,20 @@ async function renderPayScreen() {
     return;
   }
 
+  if (CONFIG.qtyEnabled) {
+    const qMin = CONFIG.qtyMin || 1;
+    const qMax = qtyMaxAllowed !== null
+      ? (CONFIG.qtyMax ? Math.min(CONFIG.qtyMax, qtyMaxAllowed) : qtyMaxAllowed)
+      : (CONFIG.qtyMax || null);
+    selectedQty = qMin;
+    document.getElementById('qty-display').textContent = selectedQty;
+    document.getElementById('qty-row').style.display = 'block';
+    updateQtyButtons(qMin, qMax);
+    updateQtyUnitPrice();
+    document.getElementById('qty-row').dataset.min = qMin;
+    document.getElementById('qty-row').dataset.max = qMax || '';
+  }
+
   document.getElementById('loading').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('pay-btn').onclick = onPayBtnClick;
@@ -332,6 +385,28 @@ async function renderPayScreen() {
   agree.onchange = () => { okBtn.disabled = !agree.checked; };
   okBtn.onclick  = onPayClick;
   document.getElementById('pc-back-btn').onclick = goBackFromConfirm;
+}
+
+function changeQty(delta) {
+  const row = document.getElementById('qty-row');
+  const qMin = parseInt(row.dataset.min) || 1;
+  const qMax = row.dataset.max ? parseInt(row.dataset.max) : null;
+  selectedQty = Math.max(qMin, selectedQty + delta);
+  if (qMax) selectedQty = Math.min(qMax, selectedQty);
+  document.getElementById('qty-display').textContent = selectedQty;
+  updateQtyButtons(qMin, qMax);
+  updateQtyUnitPrice();
+}
+function updateQtyButtons(qMin, qMax) {
+  document.getElementById('qty-minus').disabled = selectedQty <= qMin;
+  document.getElementById('qty-plus').disabled  = qMax !== null && selectedQty >= qMax;
+}
+function updateQtyUnitPrice() {
+  const unitEl = document.getElementById('qty-unit-price');
+  if (!unitEl || selectedQty <= 1) { if(unitEl) unitEl.textContent = ''; return; }
+  const unitPrice = selectedOption ? selectedOption.price : CONFIG.amount;
+  const total = unitPrice * selectedQty;
+  unitEl.textContent = `단가 ${Number(unitPrice).toLocaleString()}원 × ${selectedQty} = 합계 ${Number(total).toLocaleString()}원`;
 }
 
 function goBackFromConfirm() {
@@ -446,11 +521,16 @@ function onPayBtnClick() {
   if (opts.length && !selectedOption)                        { renderOptionsScreen();               return; }
   if (qs.length && !Object.keys(questionAnswers).length)     { renderQuestionsScreen('from-screen'); return; }
 
-  const effectiveAmount = selectedOption ? selectedOption.price : CONFIG.amount;
+  const unitPrice = selectedOption ? selectedOption.price : CONFIG.amount;
+  const effectiveAmount = unitPrice * selectedQty;
   const rows = [];
   if (selectedOption) rows.push(['선택 옵션', selectedOption.label]);
   rows.push(['상품명', CONFIG.productName || CONFIG.title || '-']);
   Object.entries(questionAnswers).forEach(([label, answer]) => { if (answer) rows.push([label, answer]); });
+  if (CONFIG.qtyEnabled && selectedQty > 1) {
+    rows.push(['수량', `${selectedQty}개`]);
+    rows.push(['단가', Number(unitPrice).toLocaleString() + '원']);
+  }
   rows.push(['결제 금액', Number(effectiveAmount).toLocaleString() + '원']);
 
   document.getElementById('pc-summary').innerHTML =
@@ -471,12 +551,14 @@ async function onPayClick() {
   btn.disabled = true;
   btn.textContent = '결제창 여는 중…';
 
-  const effectiveAmount = selectedOption ? selectedOption.price : CONFIG.amount;
+  const unitPrice = selectedOption ? selectedOption.price : CONFIG.amount;
+  const effectiveAmount = unitPrice * selectedQty;
   const orderNumber = 'ord_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
   const userName = ctxUserFields?.name || ctxUserFields?.이름 || '고객';
 
   sessionStorage.setItem('py_selectedOption',  JSON.stringify(selectedOption));
   sessionStorage.setItem('py_questionAnswers', JSON.stringify(questionAnswers));
+  sessionStorage.setItem('py_selectedQty',     String(selectedQty));
 
   const confirmBase = new URL('/api/confirm-payup', location.origin);
   confirmBase.searchParams.set('id', CONFIG_ID);
@@ -542,6 +624,7 @@ async function recordPayment(d) {
       userFields:      ctxUserFields || {},
       selectedOption:  selectedOption  || null,
       questionAnswers: Object.keys(questionAnswers).length ? questionAnswers : null,
+      qty:             selectedQty,
       pg:              'payup',
       createdAt:       firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
@@ -549,15 +632,16 @@ async function recordPayment(d) {
 
   if (ctxUserId && ctxProjectId) {
     try {
+      const p = `paidConfigs.${CONFIG_ID}`;
       const update = {
-        [`paidConfigs.${CONFIG_ID}`]: {
-          paidAt:          firebase.firestore.FieldValue.serverTimestamp(),
-          amount:          Number(d.amount),
-          tier:            CONFIG.tier || '',
-          transactionId:   d.transactionId,
-          selectedOption:  selectedOption?.label || '',
-          questionAnswers: questionAnswers || {},
-        },
+        [`${p}.paidAt`]:          firebase.firestore.FieldValue.serverTimestamp(),
+        [`${p}.amount`]:          Number(d.amount),
+        [`${p}.tier`]:            CONFIG.tier || '',
+        [`${p}.transactionId`]:   d.transactionId,
+        [`${p}.selectedOption`]:  selectedOption?.label || '',
+        [`${p}.questionAnswers`]: questionAnswers || {},
+        [`${p}.lastQty`]:         selectedQty,
+        [`${p}.totalQty`]:        firebase.firestore.FieldValue.increment(selectedQty),
       };
       if (CONFIG.tier) update.paidTiers = firebase.firestore.FieldValue.arrayUnion(CONFIG.tier);
       await db.collection('cms_users_' + ctxProjectId).doc(ctxUserId).update(update);
