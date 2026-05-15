@@ -8,8 +8,8 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 html{height:100%;}
-body{background:var(--body-bg,var(--c));transition:background-color 1s ease;display:flex;justify-content:center;min-height:100vh;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;}
-#app{width:100%;max-width:430px;min-height:100vh;position:relative;overflow:hidden;}
+body{background:var(--body-bg,var(--c));transition:background-color 1s ease;display:flex;justify-content:center;height:100svh;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;}
+#app{width:100%;max-width:430px;height:100svh;overflow-y:scroll;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;position:relative;}
 :root{--c:#00CE6B;--prep-bg:#FFF100;--fill-color:#F95548;--menu-bg:#0BC6FF;}
 .btn{display:block;width:100%;background:transparent;border:2px solid #000;border-radius:0;color:#000;font-size:15px;font-weight:700;padding:12px 0;cursor:pointer;font-family:inherit;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s;}
 .btn:hover,.btn:active{background:#000;color:var(--btn-ctx,#fff);}
@@ -54,8 +54,8 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .error-msg{font-size:18px;font-weight:800;color:#000;text-align:center;letter-spacing:-.5px;}
 .error-sub{font-size:14px;color:rgba(0,0,0,.5);text-align:center;}
 /* fullscreen panels */
-.fullscreen{position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:430px;transform:translateX(-50%) translateY(100%);transition:transform .5s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column;overflow:hidden;}
-.fullscreen.open{transform:translateX(-50%) translateY(0);}
+.fullscreen{position:absolute;top:0;bottom:0;left:0;right:0;transform:translateY(100%);transition:transform .5s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column;overflow:hidden;}
+.fullscreen.open{transform:translateY(0);}
 #prep-screen{z-index:50;background:var(--prep-bg);}
 #guide-screen{z-index:60;background:var(--prep-bg,#fff);transition:none;}
 /* topbar */
@@ -89,8 +89,8 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .stage-tag.bookmark{padding:5px 8px 12px;clip-path:polygon(0 0,100% 0,100% 76%,50% 100%,0 76%);}
 .stage-tag.rect{padding:4px 8px 6px;border-radius:0 0 5px 5px;}
 /* side menu */
-#side-menu{position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:430px;background:var(--menu-bg);transform:translateX(calc(-50% - 100vw));transition:transform .35s cubic-bezier(.32,.72,0,1);z-index:80;display:flex;flex-direction:column;}
-#side-menu.open{transform:translateX(-50%);}
+#side-menu{position:absolute;top:0;bottom:0;left:0;right:0;background:var(--menu-bg);transform:translateX(-100%);transition:transform .35s cubic-bezier(.32,.72,0,1);z-index:80;display:flex;flex-direction:column;}
+#side-menu.open{transform:translateX(0);}
 .menu-header{flex-shrink:0;display:flex;justify-content:flex-end;padding:16px 20px;border-bottom:1px solid rgba(0,0,0,.12);}
 .menu-close{font-size:24px;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:4px 4px 4px 16px;line-height:1;}
 #menu-list{flex:1;overflow-y:auto;padding:8px 28px 24px;}
@@ -254,6 +254,34 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .cal-day.cal-sun{color:#e00;}
 .cal-day.cal-sat{color:#00c;}
 .cal-info{padding:8px 12px;font-size:12px;text-align:center;border-top:1px solid rgba(0,0,0,.08);min-height:34px;display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.55);}
+/* Snap scroll structure */
+#screens-snap{height:100svh;scroll-snap-align:start;overflow:hidden;position:relative;flex-shrink:0;}
+#site-footer-snap{scroll-snap-align:start;background:#fff;}
+/* Site footer */
+#site-footer{padding:28px 20px 48px;}
+.footer-logo{max-height:36px;max-width:160px;object-fit:contain;display:block;margin-bottom:18px;}
+.footer-policy-row{display:flex;gap:8px;margin-bottom:16px;}
+.footer-policy-btn{background:none;border:2px solid #000;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.2px;-webkit-tap-highlight-color:transparent;}
+.footer-policy-btn:active{background:#000;color:#fff;}
+.footer-biz{font-size:11px;color:rgba(0,0,0,.55);line-height:1.8;margin-bottom:14px;word-break:keep-all;}
+.footer-sns-row{display:flex;gap:14px;margin-bottom:14px;align-items:center;}
+.footer-sns-link{text-decoration:none;font-size:20px;opacity:.6;}
+.footer-sns-link:hover{opacity:1;}
+.footer-copy{font-size:11px;color:rgba(0,0,0,.35);font-weight:600;}
+.footer-hint{position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:22px;color:rgba(0,0,0,.18);pointer-events:none;display:none;animation:hint-bounce 1.8s ease infinite;}
+@keyframes hint-bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(5px);}}
+/* Policy modal */
+#policy-modal{display:none;position:fixed;inset:0;z-index:600;flex-direction:column;background:#fff;}
+#policy-modal.on{display:flex;}
+.pm-head{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:2px solid #000;flex-shrink:0;}
+.pm-back{background:none;border:2px solid #000;width:32px;height:32px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;font-weight:900;line-height:1;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+.pm-back:active{background:#000;color:#fff;}
+.pm-title{font-size:15px;font-weight:800;flex:1;}
+.pm-body{flex:1;overflow-y:auto;padding:20px 16px;-webkit-overflow-scrolling:touch;font-size:13px;line-height:1.75;color:rgba(0,0,0,.75);word-break:keep-all;}
+.pm-body h2{font-size:15px;font-weight:800;margin:20px 0 8px;color:#000;}
+.pm-body h3{font-size:13px;font-weight:700;margin:14px 0 6px;color:#000;}
+.pm-body p,.pm-body li{margin-bottom:6px;}
+.pm-body ul,.pm-body ol{padding-left:20px;margin-bottom:10px;}
 </style>
 </head>
 <body>
@@ -267,6 +295,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
   </defs>
 </svg>
 <div id="app">
+  <div id="screens-snap">
   <!-- background slides (동적으로 추가됨) -->
   <div id="slides-container"></div>
 
@@ -289,7 +318,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
       <div class="dday-num" id="dday-num"></div>
       <div class="visitor-line" id="visitor-line"></div>
     </div>
-    <div id="cta-area" style="display:flex;align-items:flex-end;justify-content:center;gap:40px;">
+    <div id="cta-area" style="display:flex;align-items:flex-end;justify-content:center;gap:60px;">
       <div class="bottom-group basket-btn" onclick="onCtaClick()">
         <div class="basket-mask" id="cta-icon"></div>
         <div class="basket-text" id="cta-text">준비하기</div>
@@ -361,6 +390,11 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
       <div id="guide-dots" class="guide-dots"></div>
     </div>
   </div>
+    <div class="footer-hint" id="footer-hint">⌄</div>
+  </div><!-- /screens-snap -->
+  <div id="site-footer-snap">
+    <div id="site-footer"></div>
+  </div>
 </div>
 
 <!-- Auth modal -->
@@ -411,6 +445,15 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
   <button id="img-lightbox-close" onclick="closeLightbox()">✕</button>
 </div>
 
+<!-- Policy modal -->
+<div id="policy-modal">
+  <div class="pm-head">
+    <button class="pm-back" onclick="closePolicyModal()">‹</button>
+    <span class="pm-title" id="policy-modal-title"></span>
+  </div>
+  <div class="pm-body" id="policy-modal-body"></div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
@@ -457,7 +500,10 @@ let STAGES         = [];
 let _navRestore    = false;
 let STATS          = [];   // [{id, label, collection, countType, unit, enabled}]
 let ELEMENT_ORDER  = ['edition','logo','dday','stats'];
+let ELEM_MARGINS   = {};   // {edition:20, logo:20, dday:20, stats:20, widget:4}
+let ELEM_FONT_SIZES = {};  // {edition:18, dday:32, stats:21}
 let WIDGET         = {};   // widget config from cms_projects
+let SITE_CONFIG    = {};   // site-wide settings (footer, policies)
 
 /* slideshow */
 let bgImages   = [];   // [{url, holdTime, transitionTime}]
@@ -626,6 +672,8 @@ function applySettings(d){
     }));
   STATS = (d.stats||[]).filter(s=>s.enabled);
   ELEMENT_ORDER = d.elementOrder || ['edition','logo','dday','stats'];
+  ELEM_MARGINS = d.elementMargins || {};
+  ELEM_FONT_SIZES = d.elemFontSizes || {};
   WIDGET = d.widget || {};
   if(d.keyColors && d.keyColors.length>=2){
     KEY_COLORS_DATA = d.keyColors.map(k=>typeof k==='string'?{color:k,holdTime:8,transitionTime:2}:k);
@@ -707,21 +755,30 @@ function applySettings(d){
   if(STATS.length) loadStats();
   /* load widget */
   if(WIDGET.enabled) loadWidget();
+  /* load site settings (footer) */
+  loadSiteSettings();
 }
 
 function renderTopGroup(d){
   const tg = document.getElementById('main-content')?.querySelector('.top-group');
   if(!tg) return;
   tg.innerHTML = '';
+  tg.style.gap = '0';
+  const lastKey = ELEMENT_ORDER[ELEMENT_ORDER.length - 1];
   ELEMENT_ORDER.forEach(key => {
+    const isLast = key === lastKey;
+    const mb = isLast ? 0 : (ELEM_MARGINS[key] ?? 20);
     if(key==='edition'){
       const el=document.createElement('div');
       el.className='edition-text'; el.id='edition-text';
       el.textContent=d.editionText||'';
+      el.style.marginBottom = mb + 'px';
+      if(ELEM_FONT_SIZES.edition) el.style.fontSize = ELEM_FONT_SIZES.edition + 'px';
       tg.appendChild(el);
     } else if(key==='logo'){
       const wrap=document.createElement('div');
       wrap.className='logo-wrap';
+      wrap.style.marginBottom = mb + 'px';
       if(d.logoImgW){
         const pct=d.logoImgW;
         wrap.style.width=`calc(${pct}% + ${(pct/100*64).toFixed(1)}px)`;
@@ -745,15 +802,19 @@ function renderTopGroup(d){
       const el=document.createElement('div');
       el.className='dday-num'; el.id='dday-num';
       if(DDAY_ENABLED && DDAY_DATE) el.textContent=calcDDay(DDAY_DATE);
+      el.style.marginBottom = mb + 'px';
+      if(ELEM_FONT_SIZES.dday) el.style.fontSize = ELEM_FONT_SIZES.dday + 'px';
       tg.appendChild(el);
     } else if(key==='stats'){
       const el=document.createElement('div');
       el.className='visitor-line'; el.id='visitor-line';
+      el.style.marginBottom = mb + 'px';
+      if(ELEM_FONT_SIZES.stats) el.style.fontSize = ELEM_FONT_SIZES.stats + 'px';
       tg.appendChild(el);
     } else if(key==='widget'){
       const el=document.createElement('div');
       el.id='widget-line';
-      el.style.cssText='display:none;margin:0 0 4px;overflow:hidden;';
+      el.style.cssText=`display:none;overflow:hidden;margin-bottom:${mb}px;`;
       tg.appendChild(el);
     }
   });
@@ -813,67 +874,74 @@ async function loadWidget() {
   try {
     const h = WIDGET.height || 200;
     const ipv = Math.max(1, WIDGET.itemsPerView || 2);
+    const radius = WIDGET.radius ?? 4;
     const order = WIDGET.order || 'desc';
     const clickAction = WIDGET.clickAction || 'none';
     const loop = WIDGET.loop !== false;
     const showPager = WIDGET.pager !== false;
     const speed = WIDGET.speed || 400;
     const gap = 8;
-    const slideW = `calc(${100/ipv}% - ${gap*(ipv-1)/ipv}px)`;
+    const border = 'border:2px solid #000;';
+    const _wesc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-    let trackHtml = '';
+    let boothImages = [];
+    let gbCards = [];
 
     if(WIDGET.toolType === 'booth') {
-      let images = [];
       const configId = WIDGET.instanceId;
-      const projectIds = [PROJECT_ID];
-      if(WIDGET.filterProjectId && WIDGET.filterProjectId !== PROJECT_ID) projectIds.push(WIDGET.filterProjectId);
-      for(const pid of projectIds) {
-        let q = db.collection('cms_booth_gallery').doc(configId).collection('images')
-          .where('approved','==',true).where('projectId','==',pid);
-        if(order !== 'random') q = q.orderBy('createdAt', order === 'asc' ? 'asc' : 'desc');
-        const snap = await q.limit(40).get();
-        snap.docs.forEach(d => images.push(d.data().imageUrl));
-      }
-      if(order === 'random') images = images.sort(() => Math.random() - 0.5);
-      if(!images.length) { el.style.display = 'none'; return; }
-      trackHtml = images.map(url => {
-        const clickAttr = clickAction === 'lightbox' ? `onclick="openLightbox('${url.replace(/'/g,"\\'")}')" style="cursor:pointer;"` : '';
-        return `<div class="ws-slide" style="flex:0 0 ${slideW};height:${h}px;overflow:hidden;border-radius:4px;flex-shrink:0;">
-          <img src="${url}" style="width:100%;height:100%;object-fit:cover;display:block;" ${clickAttr}>
-        </div>`;
-      }).join('');
+      let q = db.collection('cms_booth_gallery').doc(configId).collection('images')
+        .where('approved','==',true);
+      if(order !== 'random') q = q.orderBy('createdAt', order === 'asc' ? 'asc' : 'desc');
+      const snap = await q.limit(40).get();
+      snap.docs.forEach(d => boothImages.push(d.data().imageUrl));
+      if(order === 'random') boothImages = boothImages.sort(() => Math.random() - 0.5);
+      if(!boothImages.length) { el.style.display = 'none'; return; }
     }
 
     if(WIDGET.toolType === 'guestbook') {
-      let cards = [];
       const configId = WIDGET.instanceId;
       const cfgDoc = await db.collection('cms_guestbook_configs').doc(configId).get();
       const cfg = cfgDoc.exists ? cfgDoc.data() : {};
       const txtFields = (cfg.fields || []).filter(f => f.type !== 'image');
-      const projectIds = [PROJECT_ID];
-      if(WIDGET.filterProjectId && WIDGET.filterProjectId !== PROJECT_ID) projectIds.push(WIDGET.filterProjectId);
-      for(const pid of projectIds) {
-        let q = db.collection('cms_guestbook_entries').doc(configId).collection('entries')
-          .where('approved','==',true).where('projectId','==',pid);
-        if(order !== 'random') q = q.orderBy('createdAt', order === 'asc' ? 'asc' : 'desc');
-        const snap = await q.limit(40).get();
-        snap.docs.forEach(d => {
-          const e = d.data();
-          const text = txtFields.map(f => e.fieldValues?.[f.id||f.key]||'').filter(Boolean).join('\n');
-          const bg = e.bgColor || '#f2f2f2';
-          const dt = e.createdAt?.toDate ? (()=>{const dd=e.createdAt.toDate();return `${dd.getMonth()+1}.${dd.getDate()}`;})() : '';
-          cards.push({name:e.authorName||'익명', text, bg, dt});
-        });
-      }
-      if(order === 'random') cards = cards.sort(() => Math.random() - 0.5);
-      if(!cards.length) { el.style.display = 'none'; return; }
-      trackHtml = cards.map(c => {
-        const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        return `<div class="ws-slide" style="flex:0 0 ${slideW};height:${h}px;overflow:hidden;border-radius:6px;flex-shrink:0;background:${c.bg};padding:10px 12px;box-sizing:border-box;display:flex;flex-direction:column;">
-          <div style="font-size:12px;font-weight:800;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c.name)}</div>
-          <div style="font-size:11px;flex:1;overflow:hidden;line-height:1.5;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;">${esc(c.text)}</div>
-          <div style="font-size:10px;opacity:.45;margin-top:5px;">${c.dt}</div>
+      let q = db.collection('cms_guestbook_entries').doc(configId).collection('entries')
+        .where('approved','==',true);
+      if(order !== 'random') q = q.orderBy('createdAt', order === 'asc' ? 'asc' : 'desc');
+      const snap = await q.limit(40).get();
+      snap.docs.forEach(d => {
+        const e = d.data();
+        const text = txtFields.map(f => e.fieldValues?.[f.id||f.key]||'').filter(Boolean).join('\n');
+        const bg = e.bgColor || '#f2f2f2';
+        const dt = e.createdAt?.toDate ? (()=>{const dd=e.createdAt.toDate();return `${dd.getMonth()+1}.${dd.getDate()}`;})() : '';
+        gbCards.push({name:e.authorName||'', text, bg, dt});
+      });
+      if(order === 'random') gbCards = gbCards.sort(() => Math.random() - 0.5);
+      if(!gbCards.length) { el.style.display = 'none'; return; }
+    }
+
+    const itemCount = WIDGET.toolType==='booth' ? boothImages.length : gbCards.length;
+    const effectiveIpv = Math.min(ipv, itemCount);
+    const peek = itemCount > effectiveIpv ? 24 : 0;
+    const slideW = peek > 0
+      ? `calc((100% - ${gap * (effectiveIpv - 1) + peek}px) / ${effectiveIpv})`
+      : (effectiveIpv <= 1 ? '100%' : `calc(${100/effectiveIpv}% - ${gap*(effectiveIpv-1)/effectiveIpv}px)`);
+
+    let trackHtml = '';
+    if(WIDGET.toolType === 'booth') {
+      trackHtml = boothImages.map(url => {
+        const clickAttr = clickAction === 'lightbox' ? `onclick="openLightbox('${url.replace(/'/g,"\\'")}')" style="cursor:pointer;"` : '';
+        return `<div class="ws-slide" style="flex:0 0 ${slideW};height:${h}px;overflow:hidden;border-radius:${radius}px;${border}flex-shrink:0;box-sizing:border-box;">
+          <img src="${url}" style="width:100%;height:100%;object-fit:cover;display:block;" ${clickAttr}>
+        </div>`;
+      }).join('');
+    }
+    if(WIDGET.toolType === 'guestbook') {
+      trackHtml = gbCards.map(c => {
+        return `<div class="ws-slide" style="flex:0 0 ${slideW};height:${h}px;overflow:hidden;border-radius:${radius}px;${border}flex-shrink:0;box-sizing:border-box;background:${c.bg||'#fff'};">
+          <div style="height:100%;padding:10px 12px;display:flex;flex-direction:column;overflow:hidden;">
+            ${c.name ? `<div style="font-size:12px;font-weight:800;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${_wesc(c.name)}</div>` : ''}
+            <div style="flex:1;min-height:0;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:6;font-size:11px;line-height:1.5;word-break:break-word;">${_wesc(c.text)}</div>
+            ${c.dt ? `<div style="font-size:10px;opacity:.45;margin-top:5px;flex-shrink:0;">${c.dt}</div>` : ''}
+          </div>
         </div>`;
       }).join('');
     }
@@ -910,12 +978,22 @@ async function loadWidget() {
     }
 
     let touchStartX = 0;
-    wrap.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    const autoInterval = Math.max(WIDGET.interval || 3000, 500);
+    let autoTimer = null;
+    function resetAutoTimer() {
+      if(!loop || slideCount <= 1) return;
+      clearInterval(autoTimer);
+      autoTimer = setInterval(() => goTo(idx + 1), autoInterval);
+    }
+    resetAutoTimer();
+
+    wrap.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; clearInterval(autoTimer); }, { passive: true });
     wrap.addEventListener('touchend', e => {
       const dx = e.changedTouches[0].clientX - touchStartX;
       if(Math.abs(dx) > 40) goTo(idx + (dx < 0 ? 1 : -1));
+      resetAutoTimer();
     });
-    wrap.addEventListener('click', () => goTo(idx + 1));
+    wrap.addEventListener('click', () => { goTo(idx + 1); resetAutoTimer(); });
 
   } catch(e) { console.error('widget error', e); }
 }
@@ -1601,7 +1679,7 @@ function blockHtml(b){
     const trigger=b.completeTrigger||'tool-signal';
     const onloadAttr=trigger==='open'?` onload="if(this.src&&this.src!=='about:blank')autoCheckBlock('${b.id}')"`:'';
     const wrapCls=isFull?'g-block-embed g-tool-full-wrap':'g-block-embed';
-    return `<div class="${wrapCls}" style="${mS}${bgS}${bgImgS}${pS}${wrapH}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}" data-block-bg="${b.bgColor||''}" data-complete-trigger="${trigger}"${onloadAttr}></iframe></div>`;
+    return `<div class="${wrapCls}" style="${mS}${bgS}${bgImgS}${pS}${wrapH}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}" data-block-bg="${b.bgColor||''}" data-block-bg-image="${b.bgImageUrl||''}" data-block-bg-fit="${b.bgImageFit||'cover'}" data-block-bg-pos="${b.bgImagePos||'center'}" data-complete-trigger="${trigger}"${onloadAttr}></iframe></div>`;
   }
   if(b.type==='spacer'){
     const h=b.spacerHeight||40;
@@ -1645,7 +1723,10 @@ function _effectivePageBg(){
   return (cs.getPropertyValue('--prep-bg')||cs.getPropertyValue('--body-bg')||cs.getPropertyValue('--c')||'').trim();
 }
 function _lmpContext(iframeEl){
-  let bb = iframeEl ? (iframeEl.getAttribute('data-block-bg')||'') : '';
+  let bb   = iframeEl ? (iframeEl.getAttribute('data-block-bg')||'') : '';
+  let bbi  = iframeEl ? (iframeEl.getAttribute('data-block-bg-image')||'') : '';
+  let bbf  = iframeEl ? (iframeEl.getAttribute('data-block-bg-fit')||'cover') : 'cover';
+  let bbp  = iframeEl ? (iframeEl.getAttribute('data-block-bg-pos')||'center') : 'center';
   const _session = JSON.parse(sessionStorage.getItem('userSession')||'{}');
   const _authKeys = typeof AUTH_FIELDS!=='undefined' ? AUTH_FIELDS.map(f=>f.key) : null;
   const _userFields = _authKeys
@@ -1660,6 +1741,9 @@ function _lmpContext(iframeEl){
     prepBg: typeof prepBg!=='undefined' ? prepBg : '',
     userFields: _userFields,
     blockBg: bb,
+    blockBgImage: bbi,
+    blockBgFit: bbf,
+    blockBgPos: bbp,
     stageDisplayType: (typeof curStageId!=='undefined'&&curStageId&&typeof STAGES!=='undefined') ? (STAGES.find(s=>s.id===curStageId)?.displayType||'scroll') : 'scroll'
   };
 }
@@ -2151,6 +2235,63 @@ function _calUpdateInfo(fid){
     if(s.sel.length===1) el.textContent=(s.maxDays>0?`종료일 선택 (최대 ${s.maxDays}일)`:'종료일을 선택해주세요');
     else { const days=_calDayDiff(s.sel[0],s.sel[1])+1; el.textContent=`${s.sel[0]} ~ ${s.sel[1]} (${days}일)`; }
   } else el.textContent=`${s.sel.length}개 날짜 선택됨`;
+}
+
+/* ── Site footer + Policy modal ── */
+async function loadSiteSettings() {
+  try {
+    const doc = await db.collection('cms_admin_settings').doc('site').get();
+    SITE_CONFIG = doc.exists ? doc.data() : {};
+  } catch(e) { SITE_CONFIG = {}; }
+  renderFooter();
+}
+
+function renderFooter() {
+  const el = document.getElementById('site-footer');
+  const hint = document.getElementById('footer-hint');
+  if (!el) return;
+  const s = SITE_CONFIG;
+  const hasContent = s.footerBizName || s.footerLogoUrl || s.footerInstagram;
+  if (!hasContent) { el.innerHTML = ''; if (hint) hint.style.display = 'none'; return; }
+  if (hint) hint.style.display = 'block';
+  let html = '';
+  if (s.footerLogoUrl) html += `<img class="footer-logo" src="${esc(s.footerLogoUrl)}" alt="">`;
+  const hasPolicies = s.privacyHtml || s.termsHtml;
+  if (hasPolicies) {
+    html += '<div class="footer-policy-row">';
+    if (s.privacyHtml) html += `<button class="footer-policy-btn" onclick="openPolicyModal('privacy')">개인정보처리방침</button>`;
+    if (s.termsHtml) html += `<button class="footer-policy-btn" onclick="openPolicyModal('terms')">이용약관</button>`;
+    html += '</div>';
+  }
+  const bizParts = [];
+  if (s.footerBizName) bizParts.push(`상호: ${esc(s.footerBizName)}`);
+  if (s.footerRepName) bizParts.push(`대표자: ${esc(s.footerRepName)}`);
+  if (s.footerBizRegNo) bizParts.push(`사업자등록번호: ${esc(s.footerBizRegNo)}`);
+  if (s.footerSalesRegNo) bizParts.push(`통신판매업 신고번호: ${esc(s.footerSalesRegNo)}`);
+  if (s.footerAddress) bizParts.push(`주소: ${esc(s.footerAddress)}`);
+  if (s.footerEmail) bizParts.push(`이메일: ${esc(s.footerEmail)}`);
+  if (s.footerPhone) bizParts.push(`연락처: ${esc(s.footerPhone)}`);
+  if (bizParts.length) html += `<div class="footer-biz">${bizParts.join('<br>')}</div>`;
+  if (s.footerInstagram) {
+    html += `<div class="footer-sns-row"><a class="footer-sns-link" href="${esc(s.footerInstagram)}" target="_blank" rel="noopener">📷</a></div>`;
+  }
+  const yr = s.footerCopyrightYear || new Date().getFullYear();
+  const brand = s.footerCopyright || 'lazymaxpotential';
+  html += `<div class="footer-copy">© ${yr} ${esc(brand)}</div>`;
+  el.innerHTML = html;
+}
+
+function openPolicyModal(type) {
+  const s = SITE_CONFIG;
+  const isPrivacy = type === 'privacy';
+  document.getElementById('policy-modal-title').textContent = isPrivacy ? '개인정보처리방침' : '이용약관';
+  document.getElementById('policy-modal-body').innerHTML = isPrivacy ? (s.privacyHtml || '') : (s.termsHtml || '');
+  document.getElementById('policy-modal').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+function closePolicyModal() {
+  document.getElementById('policy-modal').classList.remove('on');
+  document.body.style.overflow = '';
 }
 
 function _calHtml(fid){
