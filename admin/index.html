@@ -158,9 +158,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .img-pos-btn.on{border-color:#000;background:#000;color:#fff;}
 .fmt-pop-opt:last-child{border-bottom:none;}
 .fmt-pop-opt:hover,.fmt-pop-opt.cur{background:#000;color:#fff;}
-.ced{min-height:150px;overflow-y:auto;border:2px solid #000;padding:10px;font-size:14px;line-height:1.7;outline:none;font-family:inherit;}
-.ced-resize-handle{height:10px;background:#e8e8e8 repeating-linear-gradient(90deg,rgba(0,0,0,.25) 0,rgba(0,0,0,.25) 4px,transparent 4px,transparent 8px);border:1.5px solid #000;border-top:none;cursor:ns-resize;user-select:none;touch-action:none;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-.ced-resize-handle:hover,.ced-resize-handle:active{background:#d0d0d0 repeating-linear-gradient(90deg,rgba(0,0,0,.5) 0,rgba(0,0,0,.5) 4px,transparent 4px,transparent 8px);}
+.ced-wrap{display:flex;flex-direction:column;}
+.ced{height:360px;overflow-y:auto;border:2px solid #000;padding:10px;font-size:14px;line-height:1.7;outline:none;font-family:inherit;}
+.ced-resize-handle{height:14px;background:#f2f2f2;border:1px solid rgba(0,0,0,.14);border-top:none;cursor:ns-resize;user-select:none;touch-action:none;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:0 0 3px 3px;}
+.ced-resize-handle::after{content:'';width:30px;height:7px;background:linear-gradient(rgba(0,0,0,.22),rgba(0,0,0,.22)) 0 1px/100% 1.5px no-repeat,linear-gradient(rgba(0,0,0,.22),rgba(0,0,0,.22)) 0 5px/100% 1.5px no-repeat;}
+.ced-resize-handle:hover,.ced-resize-handle:active{background:#e4e4e4;}
+.ced-resize-handle:hover::after,.ced-resize-handle:active::after{background:linear-gradient(rgba(0,0,0,.4),rgba(0,0,0,.4)) 0 1px/100% 1.5px no-repeat,linear-gradient(rgba(0,0,0,.4),rgba(0,0,0,.4)) 0 5px/100% 1.5px no-repeat;}
 .ced:empty::before{content:attr(data-ph);color:rgba(0,0,0,.3);pointer-events:none;}
 .ced a{color:inherit;text-decoration:underline;}
 /* ── 미니 RTE (도구 설명·완료메시지용) ── */
@@ -414,10 +417,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <select class="fi" id="p-widget-tool-type" onchange="onWidgetToolTypeChange()" style="margin-bottom:0;">
                   <option value="">선택하세요</option>
                   <option value="booth">꾸미기 도구 — 완성 이미지 갤러리</option>
+                  <option value="guestbook">방명록 — 카드 슬라이더</option>
                 </select>
               </div>
               <div id="p-widget-instance-wrap" style="margin-bottom:10px;display:none;">
-                <div class="ed-lbl" style="margin-bottom:4px;">꾸미기 인스턴스</div>
+                <div class="ed-lbl" id="p-widget-instance-lbl" style="margin-bottom:4px;">인스턴스</div>
                 <select class="fi" id="p-widget-instance-id" style="margin-bottom:0;"></select>
               </div>
               <div id="p-widget-detail-wrap" style="display:none;">
@@ -436,7 +440,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                     <div class="ed-lbl" style="margin-bottom:4px;">전환 속도 (ms)</div>
                     <input class="fi" id="p-widget-speed" type="number" placeholder="400" value="400" style="margin-bottom:0;">
                   </div>
-                  <div style="flex:1;">
+                  <div id="p-widget-click-action-wrap" style="flex:1;">
                     <div class="ed-lbl" style="margin-bottom:4px;">클릭 동작</div>
                     <select class="fi" id="p-widget-click-action" style="margin-bottom:0;">
                       <option value="none">동작 없음</option>
@@ -843,19 +847,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl" style="margin-bottom:8px;">익명 닉네임 단어 조합 <span style="font-weight:400;opacity:.55;">(단어1 + 단어2 → 예: "게으른 카피바라")</span></div>
               <div style="margin-bottom:12px;">
                 <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:rgba(0,0,0,.55);">단어1 (형용사·수식어)</div>
-                <div id="gbk-anon-words1-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
-                <div style="display:flex;gap:6px;">
-                  <input class="fi-sm" id="gbk-anon-w1-inp" placeholder="예: 게으른" style="flex:1;margin-bottom:0;" onkeydown="if(event.key==='Enter')gbkAddAnonWord(1)">
-                  <button class="prev-btn" style="font-size:12px;" onclick="gbkAddAnonWord(1)">추가</button>
-                </div>
+                <textarea class="fi-sm" id="gbk-anon-w1-inp" placeholder="예: 게으른, 빠른, 귀여운, 졸린" style="width:100%;height:64px;resize:vertical;margin-bottom:0;font-size:13px;" oninput="gbkSyncAnonWords(1)"></textarea>
+                <div style="font-size:11px;color:rgba(0,0,0,.4);margin-top:4px;">콤마(,)로 구분해서 여러 개 입력</div>
               </div>
               <div>
                 <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:rgba(0,0,0,.55);">단어2 (명사)</div>
-                <div id="gbk-anon-words2-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
-                <div style="display:flex;gap:6px;">
-                  <input class="fi-sm" id="gbk-anon-w2-inp" placeholder="예: 카피바라" style="flex:1;margin-bottom:0;" onkeydown="if(event.key==='Enter')gbkAddAnonWord(2)">
-                  <button class="prev-btn" style="font-size:12px;" onclick="gbkAddAnonWord(2)">추가</button>
-                </div>
+                <textarea class="fi-sm" id="gbk-anon-w2-inp" placeholder="예: 카피바라, 너구리, 고양이, 판다" style="width:100%;height:64px;resize:vertical;margin-bottom:0;font-size:13px;" oninput="gbkSyncAnonWords(2)"></textarea>
+                <div style="font-size:11px;color:rgba(0,0,0,.4);margin-top:4px;">콤마(,)로 구분해서 여러 개 입력</div>
               </div>
             </div>
             <!-- 제출 내역 인라인 -->
@@ -1682,8 +1680,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-var-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','text')" style="display:none;font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
         <button class="fmt-btn" id="fmt-img-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','text')" title="이미지 삽입" style="font-size:13px;padding:4px 7px;">🖼</button>
       </div>
-      <div class="ced" id="ced-text" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="syncFmtBar('text')" onmouseup="syncFmtBar('text')"></div>
-      <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-text')" title="드래그하여 편집기 높이 조절"></div>
+      <div class="ced-wrap">
+        <div class="ced" id="ced-text" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="syncFmtBar('text')" onmouseup="syncFmtBar('text')"></div>
+        <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-text')" title="드래그하여 편집기 높이 조절"></div>
+      </div>
       <div id="blk-txtpadding-section" style="margin-top:8px;padding:8px 10px;background:rgba(0,0,0,.03);border-radius:6px;border:1px solid rgba(0,0,0,.08);">
         <div class="ed-lbl" style="margin-bottom:4px;font-size:11px;">텍스트 안쪽 여백 (px)</div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
@@ -1925,8 +1925,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-var-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','mixed')" style="display:none;font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
         <button class="fmt-btn" id="fmt-img-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','mixed')" title="이미지 삽입" style="font-size:13px;padding:4px 7px;">🖼</button>
       </div>
-      <div class="ced" id="ced-mixed" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="syncFmtBar('mixed')" onmouseup="syncFmtBar('mixed')"></div>
-      <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-mixed')" title="드래그하여 편집기 높이 조절"></div>
+      <div class="ced-wrap">
+        <div class="ced" id="ced-mixed" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="syncFmtBar('mixed')" onmouseup="syncFmtBar('mixed')"></div>
+        <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-mixed')" title="드래그하여 편집기 높이 조절"></div>
+      </div>
     </div>
     <!-- 스페이서 패널 -->
     <div id="bpanel-spacer" style="display:none;padding-bottom:4px;">
@@ -2011,6 +2013,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div id="blk-kc-check-text" style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;"></div>
           </div>
         </div>
+      </div>
+    </div>
+    <!-- 공통: 지연 로그인 잠금 -->
+    <div id="blk-require-auth-section" style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
+      <div class="switch-row">
+        <div class="switch" id="blk-require-auth-sw" onclick="this.classList.toggle('on');scheduleBmPreview()"></div>
+        <span class="switch-lbl">🔒 로그인 필요 <span style="font-weight:400;opacity:.6;">(지연 로그인 프로젝트에서 비로그인 사용자에게 잠금 표시)</span></span>
       </div>
     </div>
     <!-- 공통: 배경색 + 마진 -->
@@ -2994,11 +3003,22 @@ async function onWidgetToolTypeChange(preselect) {
   detailWrap.style.display = '';
   const sel = document.getElementById('p-widget-instance-id');
   sel.innerHTML = '<option value="">불러오는 중…</option>';
+  const lbl = document.getElementById('p-widget-instance-lbl');
+  const caWrap = document.getElementById('p-widget-click-action-wrap');
   if(toolType === 'booth') {
+    if(lbl) lbl.textContent = '꾸미기 인스턴스';
+    if(caWrap) caWrap.style.display = '';
     const snap = await db.collection('game_configs').get();
     const opts = [{ id: 'booth', name: '부스 꾸미기 (기본)' }];
     snap.docs.filter(d => d.id !== 'booth').forEach(d => opts.push({ id: d.id, name: d.data().name || d.id }));
     sel.innerHTML = opts.map(o => `<option value="${o.id}"${preselect===o.id?' selected':''}>${o.name}</option>`).join('');
+  }
+  if(toolType === 'guestbook') {
+    if(lbl) lbl.textContent = '방명록 인스턴스';
+    if(caWrap) caWrap.style.display = 'none';
+    const snap = await db.collection('cms_guestbook_configs').orderBy('createdAt','desc').get();
+    if(snap.empty) { sel.innerHTML = '<option value="">방명록이 없어요</option>'; return; }
+    sel.innerHTML = snap.docs.map(d => `<option value="${d.id}"${preselect===d.id?' selected':''}>${d.data().title||d.id}</option>`).join('');
   }
 }
 
@@ -3650,12 +3670,37 @@ function _colVisBar(items, hiddenSet, toggleFn){
 function _getHiddenSet(lsKey){ try{ return new Set(JSON.parse(localStorage.getItem(lsKey)||'[]')); }catch(e){ return new Set(); } }
 function _setHiddenSet(lsKey, set){ localStorage.setItem(lsKey, JSON.stringify([...set])); }
 
+/* 열 설정 Firestore 저장 (디바운스) */
+let _userColPrefsTimer=null;
+function _saveUserColPrefsDebounced(){
+  clearTimeout(_userColPrefsTimer);
+  _userColPrefsTimer=setTimeout(async()=>{
+    if(!curProjId) return;
+    try{ await db.collection('cms_projects').doc(curProjId).update({
+      'adminColPrefs.hiddenUser':[..._getHiddenSet(_userVisKey())],
+      'adminColPrefs.frozenUser':parseInt(localStorage.getItem('fc_user_'+curProjId)||'1'),
+    }); }catch(e){}
+  },800);
+}
+let _tfColPrefsTimer=null;
+function _saveTfColPrefsDebounced(){
+  clearTimeout(_tfColPrefsTimer);
+  _tfColPrefsTimer=setTimeout(async()=>{
+    if(!tfCurDocId) return;
+    try{ await db.collection('cms_form_configs').doc(tfCurDocId).update({
+      'adminColPrefs.hidden':[..._getHiddenSet(_tfVisKey())],
+      'adminColPrefs.frozen':parseInt(localStorage.getItem('fc_tf_'+tfCurDocId)||'1'),
+    }); }catch(e){}
+  },800);
+}
+
 /* 사용자 테이블 열 숨기기 */
 function _userVisKey(){ return 'hc_user_'+(curProjId||''); }
 function toggleUserColVis(key){
   const s=_getHiddenSet(_userVisKey());
   s.has(key)?s.delete(key):s.add(key);
   _setHiddenSet(_userVisKey(),s);
+  _saveUserColPrefsDebounced();
   renderUserTable();
 }
 /* 레거시 폼 응답 테이블 열 숨기기 */
@@ -3672,11 +3717,13 @@ function toggleTfColVis(key){
   const s=_getHiddenSet(_tfVisKey());
   s.has(key)?s.delete(key):s.add(key);
   _setHiddenSet(_tfVisKey(),s);
+  _saveTfColPrefsDebounced();
   renderTfRespTable();
 }
 function setUserFrozen(n){
   if(!curProjId) return;
   localStorage.setItem('fc_user_'+curProjId, n);
+  _saveUserColPrefsDebounced();
   renderUserTable();
 }
 function setRespFrozen(n){
@@ -3687,6 +3734,7 @@ function setRespFrozen(n){
 function setTfFrozen(n){
   const key='fc_tf_'+(tfCurDocId||'');
   localStorage.setItem(key, n);
+  _saveTfColPrefsDebounced();
   renderTfRespTable();
 }
 async function resetAllRespColWidths(){
@@ -4157,6 +4205,9 @@ async function editProject(id) {
     curStages = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
     customColWidths = d.userColumnWidths || {};
     curRespColWidths = d.formRespColWidths || {};
+    const _acp=d.adminColPrefs||{};
+    if(Array.isArray(_acp.hiddenUser))_setHiddenSet('hc_user_'+id,new Set(_acp.hiddenUser));
+    if(_acp.frozenUser!=null)localStorage.setItem('fc_user_'+id,String(_acp.frozenUser));
     const _legacyOvOp = d.bgOverlayOpacity ?? 0.38;
     const _legacyOvCl = d.bgOverlayColor || '#000000';
     curBgImages = (d.bgImages||[]).map(b => {
@@ -5481,13 +5532,15 @@ function openBlockModal(idx,insertAt){
     curBlkCompleteTrigger=b.completeTrigger||'tool-signal';
   }
   switchBlkTab(curBlkType);
-  document.getElementById('ced-text').innerHTML=b.type==='text'?(b.textContent||''):'';
+  const _cedT=document.getElementById('ced-text');
+  _cedT.innerHTML=b.type==='text'?(b.textContent||''):''; _cedT.style.height='';
   document.getElementById('text-link-url').value=b.type==='text'?(b.linkUrl||''):'';
   document.getElementById('img-url').value=b.type==='image'?(b.imageUrl||''):'';
   document.getElementById('img-link-url').value=b.type==='image'?(b.linkUrl||''):'';
   document.getElementById('mixed-img-url').value=b.type==='mixed'?(b.imageUrl||''):'';
   document.getElementById('mixed-img-link-url').value=b.type==='mixed'?(b.imageLinkUrl||''):'';
-  document.getElementById('ced-mixed').innerHTML=b.type==='mixed'?(b.textContent||''):'';
+  const _cedM=document.getElementById('ced-mixed');
+  _cedM.innerHTML=b.type==='mixed'?(b.textContent||''):''; _cedM.style.height='';
   document.getElementById('embed-url').value=b.type==='embed'?(b.embedUrl||''):'';
   const _isAutoH=b.type==='embed'&&(b.embedHeight===0);
   document.getElementById('embed-height-auto').checked=_isAutoH;
@@ -5581,6 +5634,7 @@ function openBlockModal(idx,insertAt){
   const chkTP=document.getElementById('blk-check-text-color'); if(chkTP) chkTP.value=curBlkCheckTextColor||'#ffffff';
   const chkTH=document.getElementById('blk-check-text-hex');   if(chkTH) chkTH.value=(curBlkCheckTextColor||'').toUpperCase();
   setCheckPos(b.checkPosition||'bottom-center');
+  const raSwEl=document.getElementById('blk-require-auth-sw'); if(raSwEl) raSwEl.classList.toggle('on',!!b.requireAuth);
   const bgH=document.getElementById('blk-bg-hex');  if(bgH) bgH.value=(curBlkBgColor||'').toUpperCase();
   const _sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
   // 하위호환: marginTop 없으면 marginV 기본값으로
@@ -5749,6 +5803,8 @@ function saveBlock(){
   if(curBlkCheckColor) b.checkColor=curBlkCheckColor; else delete b.checkColor;
   if(curBlkCheckTextColor) b.checkTextColor=curBlkCheckTextColor; else delete b.checkTextColor;
   if(b.checkable) b.checkPosition=curCheckPos; else delete b.checkPosition;
+  b.requireAuth=!!document.getElementById('blk-require-auth-sw')?.classList.contains('on');
+  if(!b.requireAuth) delete b.requireAuth;
   if(curBlkIdx!==null){
     // order만 보존하고 나머지는 새 b로 교체 — 스프레드 병합 시 삭제된 필드가 남는 버그 방지
     curBlocks[curBlkIdx]={order:curBlocks[curBlkIdx].order,...b};
@@ -5779,12 +5835,12 @@ function switchBlkTab(t){
   const txSec2=document.getElementById('blk-txtpadding-section');
   if(txSec2){
     if(t==='text'){
-      const cedT=document.getElementById('ced-text');
-      if(cedT&&cedT.nextSibling!==txSec2) cedT.insertAdjacentElement('afterend',txSec2);
+      const cedWrap=document.getElementById('ced-text')?.closest('.ced-wrap');
+      if(cedWrap&&cedWrap.nextSibling!==txSec2) cedWrap.insertAdjacentElement('afterend',txSec2);
       txSec2.style.display='';
     } else if(t==='mixed'){
-      const cedM=document.getElementById('ced-mixed');
-      if(cedM&&cedM.nextSibling!==txSec2) cedM.insertAdjacentElement('afterend',txSec2);
+      const cedWrap=document.getElementById('ced-mixed')?.closest('.ced-wrap');
+      if(cedWrap&&cedWrap.nextSibling!==txSec2) cedWrap.insertAdjacentElement('afterend',txSec2);
       txSec2.style.display='';
     } else {
       txSec2.style.display='none';
@@ -6036,12 +6092,12 @@ function fmtClr(ctx,clr){
 function prevImg(id,url){const el=document.getElementById(id);if(url&&url.startsWith('http')){el.src=url;el.style.display='block';}else el.style.display='none';}
 
 /* ── 포맷 드롭다운 팝업 ── */
-let _fmtPopCtx=null,_fmtPopType=null;
+let _fmtPopCtx=null,_fmtPopType=null,_fmtPopBtn=null;
 function openFmtDd(btn,type,ctx){
   const pop=document.getElementById('fmt-popup');
   if(pop.style.display!=='none'&&_fmtPopType===type&&_fmtPopCtx===ctx){closeFmtPopup();return;}
   const _ed=getEd(ctx);if(_ed)saveRange(_ed);
-  _fmtPopType=type;_fmtPopCtx=ctx;
+  _fmtPopType=type;_fmtPopCtx=ctx;_fmtPopBtn=btn;
   let html='';
   if(type==='sz'){
     const curPx=_detectSzRaw(ctx)||14;
@@ -6156,7 +6212,7 @@ function openFmtDd(btn,type,ctx){
       <button onpointerdown="epd(event)" onclick="insertHr('${ctx}')" style="width:100%;padding:7px 0;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">삽입</button>
     </div>`;
   } else if(type==='img'){
-    _fmtImgUrls=['','','']; _fmtImgWidths=[1,1,1];
+    _fmtImgUrls=['','','']; _fmtImgWidths=[50,50,50];
     const colBtns=[1,2,3].map(n=>`<button class="rte-itb-btn fmt-img-col-btn${_fmtImgCols===n?' on':''}" onpointerdown="epd(event)" onclick="setFmtImgCols('${ctx}',${n})">${n}열</button>`).join('');
     html=`<div style="padding:10px;min-width:240px;">
     <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:8px;">이미지 삽입</div>
@@ -6174,22 +6230,37 @@ function openFmtDd(btn,type,ctx){
 function closeFmtPopup(){document.getElementById('fmt-popup').style.display='none';_fmtPopType=null;_fmtPopCtx=null;}
 function applyFmtVar(ctx,key){focusEd(ctx);document.execCommand('insertText',false,`{{${key}}}`);closeFmtPopup();}
 let _fmtImgUploadCtx='', _fmtImgW='100%', _fmtImgAlign='center', _rteSelectedImg=null;
-let _fmtImgCols=1, _fmtImgGap=8, _fmtImgUrls=['','',''], _fmtImgWidths=[1,1,1], _fmtImgUploadSlot=0;
+let _fmtImgCols=1, _fmtImgGap=8, _fmtImgUrls=['','',''], _fmtImgWidths=[50,50,50], _fmtImgUploadSlot=0;
 function _fmtImgColsHtml(ctx){
   if(_fmtImgCols===1){
     const wPresets=['자동','25%','50%','75%','100%'];
-    const wBtns=wPresets.map(w=>`<button class="rte-itb-btn${_fmtImgW===w?' on':''}" onpointerdown="epd(event)" onclick="_fmtImgW='${w}';document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');document.getElementById('fmt-img-px-pop').value='';event.stopPropagation();">${w}</button>`).join('');
+    const wBtns=wPresets.map(w=>`<button class="rte-itb-btn${_fmtImgW===w?' on':''}" onpointerdown="epd(event)" onclick="_fmtImgSetW('${w}');event.stopPropagation();">${w}</button>`).join('');
     const alBtns=[['left','←좌'],['center','=중'],['right','우→']].map(([v,l])=>`<button class="rte-itb-btn${_fmtImgAlign===v?' on':''}" onpointerdown="epd(event)" onclick="_fmtImgAlign='${v}';document.querySelectorAll('#fmt-img-al-row .rte-itb-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');event.stopPropagation();">${l}</button>`).join('');
+    const _curPct=_fmtImgW&&_fmtImgW.endsWith('%')?parseInt(_fmtImgW):100;
+    const _curPx=_fmtImgW&&_fmtImgW.endsWith('px')?parseInt(_fmtImgW):'';
     return `<div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:4px;">이미지 URL</div>
       <input id="fmt-img-url-inp" class="fi-sm" type="url" placeholder="https://…" style="margin-bottom:8px;"
         onpointerdown="epd(event)"
         onkeydown="if(event.key==='Enter'){applyFmtImg('${ctx}',this.value.trim());closeFmtPopup();}">
       <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:4px;">가로 폭</div>
-      <div id="fmt-img-w-row" style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px;">${wBtns}
-        <input id="fmt-img-px-pop" type="number" min="10" max="2000" placeholder="직접(px)" onpointerdown="epd(event)"
+      <div id="fmt-img-w-row" style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:8px;">${wBtns}</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <input id="fmt-img-pct-range" type="range" min="1" max="100" value="${_curPct}"
+          style="flex:1;accent-color:#000;cursor:pointer;"
+          oninput="const v=parseInt(this.value);_fmtImgW=v+'%';document.getElementById('fmt-img-pct-num').value=v;document.getElementById('fmt-img-px-pop').value='';document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.toggle('on',b.textContent===v+'%'));">
+        <input id="fmt-img-pct-num" type="number" min="1" max="100" value="${_fmtImgW==='자동'?'':_curPct}" onpointerdown="epd(event)"
+          style="width:44px;padding:3px 5px;border:1.5px solid rgba(0,0,0,.25);font-size:12px;font-weight:700;font-family:inherit;outline:none;text-align:center;"
+          oninput="if(this.value){const v=Math.min(100,Math.max(1,parseInt(this.value)||1));_fmtImgW=v+'%';document.getElementById('fmt-img-pct-range').value=v;document.getElementById('fmt-img-px-pop').value='';document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.toggle('on',b.textContent===v+'%'));}">
+        <span style="font-size:12px;color:rgba(0,0,0,.5);font-weight:700;">%</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;">
+        <span style="font-size:10px;color:rgba(0,0,0,.4);white-space:nowrap;">또는</span>
+        <input id="fmt-img-px-pop" type="number" min="10" max="2000" placeholder="직접 px" onpointerdown="epd(event)"
           style="width:72px;padding:3px 5px;border:1.5px solid rgba(0,0,0,.25);font-size:11px;font-family:inherit;outline:none;"
-          oninput="if(this.value){_fmtImgW=this.value+'px';document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.remove('on'));}"
+          value="${_curPx}"
+          oninput="if(this.value){_fmtImgW=this.value+'px';document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.remove('on'));document.getElementById('fmt-img-pct-num').value='';}"
           onkeydown="if(event.key==='Enter'&&this.value){_fmtImgW=this.value+'px';}">
+        <span style="font-size:11px;color:rgba(0,0,0,.4);">px</span>
       </div>
       <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:4px;">정렬</div>
       <div id="fmt-img-al-row" style="display:flex;gap:3px;margin-bottom:8px;">${alBtns}</div>
@@ -6211,10 +6282,11 @@ function _fmtImgColsHtml(ctx){
             style="padding:4px 7px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;">📁</button>
         </div>
         <div style="display:flex;align-items:center;gap:4px;">
-          <span style="font-size:10px;color:rgba(0,0,0,.5);white-space:nowrap;">열 너비 비율</span>
-          <input id="fmt-img-colw-${i}" type="number" min="1" max="99" value="${_fmtImgWidths[i]||1}"
-            onpointerdown="epd(event)" oninput="_fmtImgWidths[${i}]=Math.max(1,parseInt(this.value)||1)"
+          <span style="font-size:10px;color:rgba(0,0,0,.5);white-space:nowrap;">너비</span>
+          <input id="fmt-img-colw-${i}" type="number" min="1" max="100" value="${_fmtImgWidths[i]||50}"
+            onpointerdown="epd(event)" oninput="_fmtImgWidths[${i}]=Math.max(1,parseInt(this.value)||50)"
             style="width:48px;padding:3px 5px;border:1.5px solid rgba(0,0,0,.35);font-size:12px;font-weight:700;font-family:inherit;outline:none;text-align:center;">
+          <span style="font-size:10px;color:rgba(0,0,0,.5);">%</span>
         </div>
         <img id="fmt-img-prev-${i}" src="${_fmtImgUrls[i]||''}" style="display:${_fmtImgUrls[i]?'block':'none'};width:100%;height:60px;object-fit:cover;margin-top:4px;border:1px solid rgba(0,0,0,.15);">
       </div>`).join('');
@@ -6231,9 +6303,20 @@ function _fmtImgColsHtml(ctx){
   }
 }
 function setFmtImgCols(ctx,n){
-  _fmtImgCols=n; _fmtImgWidths=[1,1,1];
+  _fmtImgCols=n; _fmtImgWidths=n===3?[34,33,33]:[50,50,50];
   document.getElementById('fmt-img-cols-content').innerHTML=_fmtImgColsHtml(ctx);
   document.querySelectorAll('.fmt-img-col-btn').forEach((b,i)=>b.classList.toggle('on',i+1===n));
+}
+function _fmtImgSetW(w){
+  _fmtImgW=w;
+  const pctVal=w&&w.endsWith('%')?parseInt(w):null;
+  const rangeEl=document.getElementById('fmt-img-pct-range');
+  const numEl=document.getElementById('fmt-img-pct-num');
+  const pxEl=document.getElementById('fmt-img-px-pop');
+  if(rangeEl) rangeEl.value=pctVal??100;
+  if(numEl) numEl.value=pctVal??'';
+  if(pxEl) pxEl.value=pctVal!=null?'':(w&&w.endsWith('px')?parseInt(w):'');
+  document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.toggle('on',b.textContent===w));
 }
 function applyFmtImgGrid(ctx){
   const urls=_fmtImgUrls.slice(0,_fmtImgCols);
@@ -6263,7 +6346,8 @@ function applyFmtImgGrid(ctx){
     }
   });
   const sel=window.getSelection();
-  if(sel.rangeCount){
+  const rangeOk=sel.rangeCount&&ed.contains(sel.getRangeAt(0).commonAncestorContainer);
+  if(rangeOk){
     const range=sel.getRangeAt(0);
     range.deleteContents();
     range.insertNode(grid);
@@ -7060,6 +7144,16 @@ function renderPreview() {
 
 window.addEventListener('load', () => {
   updatePATBtn();
+  const _bmBody=document.querySelector('.bm-body');
+  if(_bmBody) _bmBody.addEventListener('scroll',()=>{
+    const pop=document.getElementById('fmt-popup');
+    if(!_fmtPopBtn||pop.style.display==='none') return;
+    const r=_fmtPopBtn.getBoundingClientRect();
+    if(r.bottom<0||r.top>window.innerHeight){closeFmtPopup();return;}
+    pop.style.top=(r.bottom+3)+'px'; pop.style.left=r.left+'px';
+    const pr=pop.getBoundingClientRect();
+    if(pr.right>window.innerWidth-6) pop.style.left=(window.innerWidth-pr.width-6)+'px';
+  },{passive:true});
   const pev = document.getElementById('proj-edit-view');
   if (pev) {
     pev.addEventListener('input', e => {
@@ -7838,6 +7932,9 @@ async function toolFormEdit(docId){
   try{
     const snap=await db.collection('cms_form_configs').doc(docId).get();
     const d=snap.data()||{};
+    const _fcp=d.adminColPrefs||{};
+    if(Array.isArray(_fcp.hidden))_setHiddenSet('hc_tf_'+docId,new Set(_fcp.hidden));
+    if(_fcp.frozen!=null)localStorage.setItem('fc_tf_'+docId,String(_fcp.frozen));
     tfFields=JSON.parse(JSON.stringify(d.fields||[]));
     document.getElementById('tf-title').value=d.title||'';
     rteSet('tf-desc',d.desc||'');
@@ -9810,8 +9907,8 @@ async function gbkSaveConfig(e) {
       allowDuplicate: document.getElementById('gbk-allow-dup').checked,
       requireApproval: document.getElementById('gbk-require-approval').checked,
       allowAnonymous: document.getElementById('gbk-allow-anon').checked,
-      anonWords1: gbkState.curAnonWords1,
-      anonWords2: gbkState.curAnonWords2,
+      anonWords1: (() => { gbkSyncAnonWords(1); return gbkState.curAnonWords1; })(),
+      anonWords2: (() => { gbkSyncAnonWords(2); return gbkState.curAnonWords2; })(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     if (btn) _btnFlash(btn, '저장됨 ✓');
@@ -9885,33 +9982,18 @@ function gbkToggleAnonSection() {
   if (sect) sect.style.display = chk?.checked ? '' : 'none';
 }
 
-function gbkAddAnonWord(which) {
-  const inpId = which === 1 ? 'gbk-anon-w1-inp' : 'gbk-anon-w2-inp';
-  const inp = document.getElementById(inpId);
-  const val = inp?.value?.trim();
-  if (!val) return;
-  if (which === 1) gbkState.curAnonWords1.push(val);
-  else gbkState.curAnonWords2.push(val);
-  inp.value = '';
-  gbkRenderAnonWords();
-}
-
-function gbkRemoveAnonWord(which, idx) {
-  if (which === 1) gbkState.curAnonWords1.splice(idx, 1);
-  else gbkState.curAnonWords2.splice(idx, 1);
-  gbkRenderAnonWords();
+function gbkSyncAnonWords(which) {
+  const inp = document.getElementById(which === 1 ? 'gbk-anon-w1-inp' : 'gbk-anon-w2-inp');
+  const words = (inp?.value || '').split(',').map(w => w.trim()).filter(Boolean);
+  if (which === 1) gbkState.curAnonWords1 = words;
+  else gbkState.curAnonWords2 = words;
 }
 
 function gbkRenderAnonWords() {
-  const renderList = (words, which, containerId) => {
-    const el = document.getElementById(containerId);
-    if (!el) return;
-    el.innerHTML = words.map((w, i) => `<span style="display:inline-flex;align-items:center;gap:4px;background:#f0f0f0;padding:4px 8px;border-radius:4px;font-size:12px;">
-      ${escHtml(w)}<button onclick="gbkRemoveAnonWord(${which},${i})" style="background:none;border:none;cursor:pointer;font-size:13px;padding:0;color:rgba(0,0,0,.4);line-height:1;">×</button>
-    </span>`).join('');
-  };
-  renderList(gbkState.curAnonWords1, 1, 'gbk-anon-words1-list');
-  renderList(gbkState.curAnonWords2, 2, 'gbk-anon-words2-list');
+  const el1 = document.getElementById('gbk-anon-w1-inp');
+  const el2 = document.getElementById('gbk-anon-w2-inp');
+  if (el1) el1.value = gbkState.curAnonWords1.join(', ');
+  if (el2) el2.value = gbkState.curAnonWords2.join(', ');
 }
 
 async function gbkViewEntries() {

@@ -257,14 +257,15 @@ claude
    - Remote 세션(☁️): `git add [변경 파일] && git commit -m "..." && git push -u origin <현재 feature 브랜치>`
    - Local 세션(💻): main 직접 push 시도 → 403이면 feature 브랜치로 push 후 4번으로
    - ⚠️ `git add .` / `git add -A` 금지
-4. **main으로 머지 (Remote 세션 필수, Local에서 main push 실패 시):**
+4. **main으로 머지 — 세션당 딱 1번, 여기서만:**
    - `mcp__github__create_pull_request` (head: 현재 브랜치, base: main)
    - 사용자에게 PR URL 보여주고 확인
    - `mcp__github__merge_pull_request` (PR 번호, method: merge)
    - `git fetch origin main && git reset --hard origin/main` (로컬 동기화)
+   - ⚠️ 이 단계가 세션 전체에서 PR 머지가 일어나는 **유일한 시점**이다. 중간에 절대 하지 않는다.
 5. Vercel 자동 배포 안내 (~1분 후 Ctrl+Shift+R)
 6. CLAUDE.md 직접 갱신 (완료 단계 ✅, 다음 시작점 업데이트)
-7. CLAUDE.md 갱신분도 동일 절차로 push + PR 머지
+7. CLAUDE.md 갱신분도 동일 절차로 push + PR 머지 (CLAUDE.md 갱신 = 세션 마무리의 일부이므로 별도 PR 불필요 — 같은 PR에 포함하거나 바로 이어서 1번 더 머지)
 8. PAT 설정된 경우 현재 PAT 출력
 9. **다음 세션 시작 프롬프트 출력** — 아래 템플릿 사용:
 
@@ -296,11 +297,11 @@ PAT: ghp_xxx (만료됐으면 재발급 요청)
 
 **올바른 워크플로우:**
 1. 시스템이 만든 feature 브랜치에서 그대로 작업 (예: `claude/add-xxx-feature-yyy`)
-2. 커밋·push는 feature 브랜치로
+2. 커밋·push는 feature 브랜치로 (push 1회 = 배포 1회 소비)
    ```bash
    git push -u origin claude/...
    ```
-3. **세션 마무리(또는 사용자가 배포 요청) 시점에 GitHub MCP로 PR 생성 + 머지:**
+3. **세션 마무리 시점에 딱 1번만 PR 생성 + 머지:**
    ```
    mcp__github__create_pull_request  (head: claude/..., base: main)
    mcp__github__merge_pull_request   (방금 생성된 PR 번호, method: merge)
@@ -311,10 +312,19 @@ PAT: ghp_xxx (만료됐으면 재발급 요청)
    ```
 5. Vercel 자동 배포 시작 (~1분)
 
+**🔴 PR 머지 횟수 절대 원칙 — 어떤 상황에서도 예외 없음:**
+- **한 세션 = PR 머지 1번** (세션 마무리 시에만)
+- 사용자가 "확인해봐", "배포해봐", "라이브로 보고 싶어" 라고 해도 → **"세션 끝에 한번에 배포할게요"라고 안내하고 mid-session 머지 금지**
+- 작은 버그 수정이라도 중간에 PR을 만들지 않는다. 커밋만 쌓고 마지막에 한번에 머지
+- 이 규칙을 어기면 PR 1개당 최소 2회 배포 소비 → 10개면 20회 → 100회/일 한도 초과
+
+> 🔴 **실제 사고 사례**: 이전 세션에서 버그 수정마다 PR을 머지(#86~#95, 총 10회)해서 당일 Vercel 배포 100회 한도를 초과했다. 당일 오픈 예정인 기능이 배포 불가 상태가 됐다. 이 실수를 반복하지 않는다.
+
 **⚠️ 절대 하지 말 것:**
 - `git checkout main && git push origin main` ← 403으로 거부됨
 - `git push origin <feature>:main` ← cross-branch push도 403
 - local `main`이 origin/main과 갈라져 보여도 **함부로 force-push 금지** (과거 미push 잔재일 수 있음 — 먼저 `git log` 확인)
+- **mid-session PR 머지** ← Vercel 배포 한도 소진의 주범
 
 #### 💻 Local 세션 (터미널에서 직접)
 
@@ -361,6 +371,24 @@ PAT 인증이 있을 경우 `main` 직접 push가 가능할 수 있다. 단, 시
 
 ---
 
+### ⚠️ Vercel 배포 횟수 제한 (Free 플랜: 하루 100회)
+
+Vercel Free 플랜은 **하루 배포 100회 제한**이 있다. feature 브랜치 push 1회 + PR 머지 1회 = 최소 2회 소모. 세션 중 PR을 잘게 나누면 금방 소진된다.
+
+#### 예방 원칙 (필수)
+
+- **세션 중에는 feature 브랜치에 커밋·push만** 한다 (Preview 배포 1회 소모)
+- **PR 머지는 세션 마무리 시 딱 1번만** — 중간중간 머지 금지
+- 한 세션 = 커밋 여러 개 + **PR 1개** 원칙
+
+#### 제한 초과 시 대처
+
+1. **오늘 안에 배포가 꼭 필요한 경우**: Vercel 대시보드에서 플랜을 **Pro로 업그레이드** (월 $20) → Promote to Production → 필요 없으면 다시 Free로 다운그레이드
+2. **급하지 않은 경우**: 24시간 기다리면 자동 리셋 → Vercel 대시보드에서 최신 Preview 배포의 "Promote to Production" 클릭
+3. **제한 초과 여부 확인**: Vercel 배포 목록에서 Production(Current)이 오래된 커밋에 멈춰 있으면 의심
+
+---
+
 ### 현재 시스템 구조 (실제 코드 기준)
 
 #### 파일 구조
@@ -373,11 +401,12 @@ lmp-website/
 │   ├── form/              ← 폼 도구 (cms_form_configs 기반)
 │   ├── guide/             ← 계산기·가이드 도구
 │   ├── schedule/          ← 일정 잡기 도구 (Google Calendar 연동)
-│   ├── payment/           ← 결제 도구 (토스페이먼츠)
+│   ├── payment/           ← 결제 도구 (페이업 PayUp)
 │   ├── copy-gen/          ← 문구 생성기 (Claude AI)
 │   └── youtube-playlist/  ← 유튜브 뮤직 재생목록
 ├── api/
-│   ├── confirm-payment.js ← 토스페이먼츠 서버 검증 (Vercel function)
+│   ├── confirm-payup.js   ← 페이업 결제 승인 서버 엔드포인트 (Vercel function)
+│   ├── confirm-payment.js ← 구 토스페이먼츠 서버 검증 (미사용, 보존 중)
 │   └── generate-copy.js   ← 문구 생성 API (Vercel function, Anthropic)
 ├── apps-script/Code.gs    ← Google Apps Script 코드 (폼 응답 → 시트 저장용)
 ├── block-test-demo/       ← 테스트용 배포 프로젝트 (p/index.html 동기화 필요)
@@ -462,7 +491,8 @@ cms_admin_settings/github
   adminPreviewToken: string  ← 관리자 프리뷰 URL 토큰 (adm_ prefix)
 
 cms_admin_settings/payment
-  tossClientKey: string  ← 토스 클라이언트 키 (secret은 Vercel 환경변수 TOSS_SECRET_KEY)
+  payupMerchantId: string  ← 페이업 가맹점 ID (Vercel 환경변수 PAYUP_MERCHANT_ID와 동일값)
+  payupTestMode: boolean   ← 테스트 모드 여부 (Vercel 환경변수 PAYUP_TEST와 연동)
 
 cms_payment_configs/{configId}
   title, productName, amount, description, tier, successMessage
@@ -497,7 +527,7 @@ match /cms_copy_gen_usages/{document=**} { allow write: if true; }
 | **Google Apps Script** | 폼 응답 → Google Sheets 저장 전용 |
 | **GitHub API** | 관리자 저장+배포 (p/{id}/index.html 자동 생성) |
 | **Anthropic Claude API** | 문구 생성기 (claude-haiku-4-5-20251001) |
-| **토스페이먼츠** | 결제 도구 (v2 결제위젯) |
+| **페이업 (PayUp)** | 결제 도구 (`api/confirm-payup.js`, Vercel 환경변수: PAYUP_MERCHANT_ID / PAYUP_API_KEY / PAYUP_TEST) |
 | **YouTube Data API v3** | 유튜브 뮤직 검색 |
 | **Google Calendar (GAS)** | 일정 잡기 도구 |
 
@@ -643,7 +673,7 @@ closeHelpPanel();
 - 폼 도구 (`tools/form/`): cms_form_configs 기반, 글자 수 제한(min/max), 응답 관리 인라인 통합, 달력 위젯(single/range/multi), 파일 업로드 썸네일 뷰(72×72), 제출 내역 확인 및 수정 기능, 업로드 카운터 표시
 - 계산기·가이드 (`tools/guide/`): 조건부 계산식 엔진
 - 일정 잡기 (`tools/schedule/`): Google Calendar 연동 (GAS), 타임존, 슬롯 계산, Firestore 저장
-- 결제 (`tools/payment/`): 토스페이먼츠 v2, 서버 검증 (`api/confirm-payment.js`), `paidTiers` 누적
+- 결제 (`tools/payment/`): 페이업(PayUp), 서버 검증 (`api/confirm-payup.js`), `paidTiers` 누적
 - 문구 생성기 (`tools/copy-gen/`): Claude API (Haiku), 스타일 옵션, 사용 횟수 제한, RTE 변수 지원
 - 유튜브 뮤직 재생목록 (`tools/youtube-playlist/`): YouTube API v3 검색, 선택·제출
 
@@ -715,8 +745,8 @@ match /cms_form_responses/{document=**} { allow write: if true; allow read: if t
 
 현재 흐름의 문제:
 ```
-현재:  [결제 버튼 클릭] → 토스 결제창 → 완료
-필요:  [결제 버튼 클릭] → 최종 확인(상품/금액/환불조건 명시) → 청약철회 배제 동의 체크 → 토스 결제창 → 완료 → 영수증 발송
+현재:  [결제 버튼 클릭] → 페이업 결제창 → 완료
+필요:  [결제 버튼 클릭] → 최종 확인(상품/금액/환불조건 명시) → 청약철회 배제 동의 체크 → 페이업 결제창 → 완료 → 영수증 발송
 ```
 
 | 항목 | 현황 | 필요 이유 |
@@ -725,7 +755,7 @@ match /cms_form_responses/{document=**} { allow write: if true; allow read: if t
 | 디지털 콘텐츠 청약철회 배제 동의 체크박스 | ❌ 미구현 | 미고지 시 무조건 7일 환불 의무 |
 | 결제 완료 후 영수증·확인 발송 (이메일/문자) | ❌ 미구현 | 전자상거래법 제8조 거래 확인 의무 |
 | 에스크로 또는 대안 안전결제 | ❌ 미구현 | 30만 원 이상 거래 시 의무 (PG사 통해 처리 가능) |
-| 환불 처리 기능 (토스 환불 API) | ❌ 미구현 | 청약철회 의무 이행 수단 |
+| 환불 처리 기능 (페이업 환불 API) | ❌ 미구현 | 청약철회 의무 이행 수단 |
 
 ---
 
