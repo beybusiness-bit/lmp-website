@@ -257,14 +257,15 @@ claude
    - Remote 세션(☁️): `git add [변경 파일] && git commit -m "..." && git push -u origin <현재 feature 브랜치>`
    - Local 세션(💻): main 직접 push 시도 → 403이면 feature 브랜치로 push 후 4번으로
    - ⚠️ `git add .` / `git add -A` 금지
-4. **main으로 머지 (Remote 세션 필수, Local에서 main push 실패 시):**
+4. **main으로 머지 — 세션당 딱 1번, 여기서만:**
    - `mcp__github__create_pull_request` (head: 현재 브랜치, base: main)
    - 사용자에게 PR URL 보여주고 확인
    - `mcp__github__merge_pull_request` (PR 번호, method: merge)
    - `git fetch origin main && git reset --hard origin/main` (로컬 동기화)
+   - ⚠️ 이 단계가 세션 전체에서 PR 머지가 일어나는 **유일한 시점**이다. 중간에 절대 하지 않는다.
 5. Vercel 자동 배포 안내 (~1분 후 Ctrl+Shift+R)
 6. CLAUDE.md 직접 갱신 (완료 단계 ✅, 다음 시작점 업데이트)
-7. CLAUDE.md 갱신분도 동일 절차로 push + PR 머지
+7. CLAUDE.md 갱신분도 동일 절차로 push + PR 머지 (CLAUDE.md 갱신 = 세션 마무리의 일부이므로 별도 PR 불필요 — 같은 PR에 포함하거나 바로 이어서 1번 더 머지)
 8. PAT 설정된 경우 현재 PAT 출력
 9. **다음 세션 시작 프롬프트 출력** — 아래 템플릿 사용:
 
@@ -296,11 +297,11 @@ PAT: ghp_xxx (만료됐으면 재발급 요청)
 
 **올바른 워크플로우:**
 1. 시스템이 만든 feature 브랜치에서 그대로 작업 (예: `claude/add-xxx-feature-yyy`)
-2. 커밋·push는 feature 브랜치로
+2. 커밋·push는 feature 브랜치로 (push 1회 = 배포 1회 소비)
    ```bash
    git push -u origin claude/...
    ```
-3. **세션 마무리(또는 사용자가 배포 요청) 시점에 GitHub MCP로 PR 생성 + 머지:**
+3. **세션 마무리 시점에 딱 1번만 PR 생성 + 머지:**
    ```
    mcp__github__create_pull_request  (head: claude/..., base: main)
    mcp__github__merge_pull_request   (방금 생성된 PR 번호, method: merge)
@@ -311,10 +312,19 @@ PAT: ghp_xxx (만료됐으면 재발급 요청)
    ```
 5. Vercel 자동 배포 시작 (~1분)
 
+**🔴 PR 머지 횟수 절대 원칙 — 어떤 상황에서도 예외 없음:**
+- **한 세션 = PR 머지 1번** (세션 마무리 시에만)
+- 사용자가 "확인해봐", "배포해봐", "라이브로 보고 싶어" 라고 해도 → **"세션 끝에 한번에 배포할게요"라고 안내하고 mid-session 머지 금지**
+- 작은 버그 수정이라도 중간에 PR을 만들지 않는다. 커밋만 쌓고 마지막에 한번에 머지
+- 이 규칙을 어기면 PR 1개당 최소 2회 배포 소비 → 10개면 20회 → 100회/일 한도 초과
+
+> 🔴 **실제 사고 사례**: 이전 세션에서 버그 수정마다 PR을 머지(#86~#95, 총 10회)해서 당일 Vercel 배포 100회 한도를 초과했다. 당일 오픈 예정인 기능이 배포 불가 상태가 됐다. 이 실수를 반복하지 않는다.
+
 **⚠️ 절대 하지 말 것:**
 - `git checkout main && git push origin main` ← 403으로 거부됨
 - `git push origin <feature>:main` ← cross-branch push도 403
 - local `main`이 origin/main과 갈라져 보여도 **함부로 force-push 금지** (과거 미push 잔재일 수 있음 — 먼저 `git log` 확인)
+- **mid-session PR 머지** ← Vercel 배포 한도 소진의 주범
 
 #### 💻 Local 세션 (터미널에서 직접)
 
