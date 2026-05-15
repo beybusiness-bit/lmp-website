@@ -2030,25 +2030,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button onclick="clearBlkBgImage()" style="padding:4px 9px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">배경 이미지 제거</button>
       </div>
       <div class="ed-lbl" style="margin-top:12px;">마진 (px)</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
-          <span style="font-size:10px;color:rgba(0,0,0,.45);font-weight:700;">상하</span>
-          <input class="fi-sm" id="blk-margin-v" type="number" min="0" max="120" placeholder="0" style="margin-bottom:0;text-align:center;">
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
-          <span style="font-size:10px;color:rgba(0,0,0,.45);font-weight:700;">좌우</span>
-          <input class="fi-sm" id="blk-margin-h" type="number" min="0" max="120" placeholder="0" style="margin-bottom:0;text-align:center;">
-        </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:4px;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">위</span><input class="fi-sm" id="blk-margin-t" type="number" min="-200" max="400" placeholder="0" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">오</span><input class="fi-sm" id="blk-margin-r" type="number" min="-200" max="400" placeholder="0" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">아</span><input class="fi-sm" id="blk-margin-b" type="number" min="-200" max="400" placeholder="0" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">왼</span><input class="fi-sm" id="blk-margin-l" type="number" min="-200" max="400" placeholder="0" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
       </div>
-      <div class="ed-lbl" style="margin-top:10px;">패딩 (px) <span style="font-weight:400;opacity:.55;font-size:10px;">배경색·이미지 안쪽 여백</span></div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
-          <span style="font-size:10px;color:rgba(0,0,0,.45);font-weight:700;">상하</span>
-          <input class="fi-sm" id="blk-padding-v" type="number" min="0" max="120" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;">
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;">
-          <span style="font-size:10px;color:rgba(0,0,0,.45);font-weight:700;">좌우</span>
-          <input class="fi-sm" id="blk-padding-h" type="number" min="0" max="120" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;">
+      <div class="ed-lbl" style="margin-top:10px;">블록 패딩 (px) <span style="font-weight:400;opacity:.55;font-size:10px;">배경색·이미지 안쪽 여백</span></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:4px;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">위</span><input class="fi-sm" id="blk-padding-t" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">오</span><input class="fi-sm" id="blk-padding-r" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">아</span><input class="fi-sm" id="blk-padding-b" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">왼</span><input class="fi-sm" id="blk-padding-l" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
+      </div>
+      <div id="blk-txtpadding-section" style="display:none;">
+        <div class="ed-lbl" style="margin-top:10px;">텍스트박스 패딩 (px) <span style="font-weight:400;opacity:.55;font-size:10px;">텍스트 영역 안쪽 여백</span></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:4px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">위</span><input class="fi-sm" id="blk-txtpadding-t" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">오</span><input class="fi-sm" id="blk-txtpadding-r" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">아</span><input class="fi-sm" id="blk-txtpadding-b" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">왼</span><input class="fi-sm" id="blk-txtpadding-l" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
         </div>
       </div>
     </div>
@@ -5554,10 +5555,16 @@ function openBlockModal(idx,insertAt){
   const chkTH=document.getElementById('blk-check-text-hex');   if(chkTH) chkTH.value=(curBlkCheckTextColor||'').toUpperCase();
   setCheckPos(b.checkPosition||'bottom-center');
   const bgH=document.getElementById('blk-bg-hex');  if(bgH) bgH.value=(curBlkBgColor||'').toUpperCase();
-  const mv=document.getElementById('blk-margin-v'); if(mv) mv.value=b.marginV??'';
-  const mh=document.getElementById('blk-margin-h'); if(mh) mh.value=b.marginH??'';
-  const pv=document.getElementById('blk-padding-v'); if(pv) pv.value=b.paddingV??'';
-  const ph=document.getElementById('blk-padding-h'); if(ph) ph.value=b.paddingH??'';
+  const _sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
+  // 하위호환: marginTop 없으면 marginV 기본값으로
+  _sv('blk-margin-t',b.marginTop??b.marginV??''); _sv('blk-margin-r',b.marginRight??b.marginH??'');
+  _sv('blk-margin-b',b.marginBottom??b.marginV??''); _sv('blk-margin-l',b.marginLeft??b.marginH??'');
+  _sv('blk-padding-t',b.paddingTop??b.paddingV??''); _sv('blk-padding-r',b.paddingRight??b.paddingH??'');
+  _sv('blk-padding-b',b.paddingBottom??b.paddingV??''); _sv('blk-padding-l',b.paddingLeft??b.paddingH??'');
+  _sv('blk-txtpadding-t',b.txtPaddingTop??''); _sv('blk-txtpadding-r',b.txtPaddingRight??'');
+  _sv('blk-txtpadding-b',b.txtPaddingBottom??''); _sv('blk-txtpadding-l',b.txtPaddingLeft??'');
+  const txSec=document.getElementById('blk-txtpadding-section');
+  if(txSec) txSec.style.display=['text','mixed'].includes(b.type)?'':'none';
   setBlkVerticalAlign(b.verticalAlign||'center');
   renderBlkKeyColors();
   /* 변수 버튼: 인증 활성화 + 필드 있을 때만 표시 */
@@ -5609,12 +5616,13 @@ function _buildCurrentBlock(){
     b.dividerThickness=parseInt(document.getElementById('blk-div-thickness')?.value)||1;
     b.dividerFullWidth=!!document.getElementById('blk-div-fullwidth-sw')?.classList.contains('on');
   }
-  const _mv=parseInt(document.getElementById('blk-margin-v')?.value)||0;
-  const _mh=parseInt(document.getElementById('blk-margin-h')?.value)||0;
-  if(_mv) b.marginV=_mv; if(_mh) b.marginH=_mh;
-  const _pv=parseInt(document.getElementById('blk-padding-v')?.value)||0;
-  const _ph=parseInt(document.getElementById('blk-padding-h')?.value)||0;
-  if(_pv) b.paddingV=_pv; if(_ph) b.paddingH=_ph;
+  const _iv=id=>parseInt(document.getElementById(id)?.value)||0;
+  b.marginTop=_iv('blk-margin-t'); b.marginRight=_iv('blk-margin-r');
+  b.marginBottom=_iv('blk-margin-b'); b.marginLeft=_iv('blk-margin-l');
+  b.paddingTop=_iv('blk-padding-t'); b.paddingRight=_iv('blk-padding-r');
+  b.paddingBottom=_iv('blk-padding-b'); b.paddingLeft=_iv('blk-padding-l');
+  b.txtPaddingTop=_iv('blk-txtpadding-t'); b.txtPaddingRight=_iv('blk-txtpadding-r');
+  b.txtPaddingBottom=_iv('blk-txtpadding-b'); b.txtPaddingLeft=_iv('blk-txtpadding-l');
   // 체크 기능
   const _checkSw=document.getElementById('blk-checkable-sw');
   if(_checkSw?.classList.contains('on')){
@@ -5700,10 +5708,13 @@ function saveBlock(){
     const _oo=parseFloat(document.getElementById('blk-bg-ov-opacity')?.value)||0;
     b.bgImageOvColor=_oc; b.bgImageOvOpacity=_oo;
   } else { delete b.bgImageUrl; delete b.bgImageFit; delete b.bgImagePos; delete b.bgImageOvColor; delete b.bgImageOvOpacity; }
-  b.marginV=parseInt(document.getElementById('blk-margin-v')?.value)||0;
-  b.marginH=parseInt(document.getElementById('blk-margin-h')?.value)||0;
-  b.paddingV=parseInt(document.getElementById('blk-padding-v')?.value)||0;
-  b.paddingH=parseInt(document.getElementById('blk-padding-h')?.value)||0;
+  const _iv2=id=>parseInt(document.getElementById(id)?.value)||0;
+  b.marginTop=_iv2('blk-margin-t'); b.marginRight=_iv2('blk-margin-r');
+  b.marginBottom=_iv2('blk-margin-b'); b.marginLeft=_iv2('blk-margin-l');
+  b.paddingTop=_iv2('blk-padding-t'); b.paddingRight=_iv2('blk-padding-r');
+  b.paddingBottom=_iv2('blk-padding-b'); b.paddingLeft=_iv2('blk-padding-l');
+  b.txtPaddingTop=_iv2('blk-txtpadding-t'); b.txtPaddingRight=_iv2('blk-txtpadding-r');
+  b.txtPaddingBottom=_iv2('blk-txtpadding-b'); b.txtPaddingLeft=_iv2('blk-txtpadding-l');
   b.verticalAlign = curBlkVerticalAlign||'center';
   b.checkable=!!document.getElementById('blk-checkable-sw')?.classList.contains('on');
   b.checkBeforeText=document.getElementById('blk-check-before')?.value.trim()||'';
@@ -5738,6 +5749,8 @@ function switchBlkTab(t){
   });
   const chkSection=document.getElementById('blk-check-section');
   if(chkSection) chkSection.style.display=(t==='form'||t==='tool'||t==='spacer'||t==='divider')?'none':'';
+  const txSec2=document.getElementById('blk-txtpadding-section');
+  if(txSec2) txSec2.style.display=['text','mixed'].includes(t)?'':'none';
   if(t==='tool'){
     loadToolInstList(curBlkToolType);
     document.querySelectorAll('input[name="complete-trigger"]').forEach(r=>{
@@ -6545,12 +6558,14 @@ function _gBlockCore(b,S){
   const pad=`padding:${Math.round(10*S)}px`;
   const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
   const txS=b.txtColor?`color:${b.txtColor};`:'';
-  const mv=b.marginV?Math.round(b.marginV*S):0, mh=b.marginH?Math.round(b.marginH*S):0;
-  const mS=(mv||mh)?`margin:${mv}px ${mh}px;`:'';
+  const _m=k=>Math.round((b[k]??0)*S)|0;
+  const mS=(b.marginTop||b.marginRight||b.marginBottom||b.marginLeft||b.marginV||b.marginH)
+    ?`margin:${_m('marginTop')??_m('marginV')}px ${_m('marginRight')??_m('marginH')}px ${_m('marginBottom')??_m('marginV')}px ${_m('marginLeft')??_m('marginH')}px;`:'';
   const bgImgS=b.bgImageUrl?_buildBgImgStyle(b):'';
-  const pvr=Math.round((b.paddingV||0)*S), phr=Math.round((b.paddingH||0)*S);
-  const pS=`padding:${pvr}px ${phr}px;`;
-  if(b.type==='text') return `<div style="${mS}${bgS}${bgImgS}${pS};font-size:${Math.round(13*S)}px;line-height:1.6;word-break:break-word;overflow:hidden;box-sizing:border-box;width:calc(100% - ${mh*2}px);${txS}">${b.textContent||''}</div>`;
+  const pS=`padding:${_m('paddingTop')??_m('paddingV')}px ${_m('paddingRight')??_m('paddingH')}px ${_m('paddingBottom')??_m('paddingV')}px ${_m('paddingLeft')??_m('paddingH')}px;`;
+  const txpS=(b.txtPaddingTop||b.txtPaddingRight||b.txtPaddingBottom||b.txtPaddingLeft)
+    ?`padding:${_m('txtPaddingTop')}px ${_m('txtPaddingRight')}px ${_m('txtPaddingBottom')}px ${_m('txtPaddingLeft')}px;`:'';
+  if(b.type==='text') return `<div style="${mS}${bgS}${bgImgS}${pS}overflow:hidden;box-sizing:border-box;"><div style="${txS}${txpS}font-size:${Math.round(13*S)}px;line-height:1.6;word-break:break-word;">${b.textContent||''}</div></div>`;
   if(b.type==='image'){
     const fit=b.imageFit||'natural', pos=b.imagePosition||'center', ih=b.imageHeight?Math.round(b.imageHeight*S):0;
     const imgS=(fit==='natural'||!ih)?'width:100%;display:block;':`width:100%;height:${ih}px;object-fit:${fit};object-position:${pos};display:block;`;
@@ -6564,13 +6579,13 @@ function _gBlockCore(b,S){
     if(b.mixedLayout==='split'){
       const spS=(mfit==='natural'||!mih)?`width:100%;display:block;margin-bottom:${Math.round(6*S)}px;`:`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;margin-bottom:${Math.round(6*S)}px;`;
       const splitInner=b.imageOrder==='text-first'
-        ?`<div style="${txS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div><img src="${b.imageUrl||''}" style="${spS}" alt="">`
-        :`<img src="${b.imageUrl||''}" style="${spS}" alt=""><div style="${txS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div>`;
+        ?`<div style="${txS}${txpS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div><img src="${b.imageUrl||''}" style="${spS}" alt="">`
+        :`<img src="${b.imageUrl||''}" style="${spS}" alt=""><div style="${txS}${txpS}font-size:${Math.round(12*S)}px;line-height:1.5;">${b.textContent||''}</div>`;
       return `<div style="${mS}${bgS}${bgImgS}${pS}">${splitInner}</div>`;
     }
     const ovS=mfit==='natural'?'width:100%;display:block;':`width:100%;${mihCss}object-fit:${mfit};object-position:${mpos};display:block;`;
     const _ova=b.overlayTextVAlign||'bottom';const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};const _ai=_aiMap[_ova]||'flex-end';const _sha=b.overlayShadow??0.4;const _shclr=b.overlayColor||'#000000';const _shR=parseInt(_shclr.slice(1,3),16)||0,_shG=parseInt(_shclr.slice(3,5),16)||0,_shB=parseInt(_shclr.slice(5,7),16)||0;
-    return `<div style="${mS}position:relative;${bgS}${bgImgS}${pS}"><img src="${b.imageUrl||''}" style="${ovS}" alt=""><div style="position:absolute;inset:0;display:flex;align-items:${_ai};background:rgba(${_shR},${_shG},${_shB},${_sha});${pad}"><div style="${txS}font-size:${Math.round(13*S)}px;width:100%;">${b.textContent||''}</div></div></div>`;
+    return `<div style="${mS}position:relative;${bgS}${bgImgS}${pS}"><img src="${b.imageUrl||''}" style="${ovS}" alt=""><div style="position:absolute;inset:0;display:flex;align-items:${_ai};background:rgba(${_shR},${_shG},${_shB},${_sha});${pad}"><div style="${txS}${txpS}font-size:${Math.round(13*S)}px;width:100%;">${b.textContent||''}</div></div></div>`;
   }
   if(b.type==='embed'){
     if(!b.embedUrl) return `<div style="${mS}${bgS}${bgImgS}${pS||pad};text-align:center;font-size:${Math.round(11*S)}px;color:rgba(0,0,0,.4);">임베드 URL 없음</div>`;
