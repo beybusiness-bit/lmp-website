@@ -1472,6 +1472,13 @@ function _blkBgImgCss(b){
   if(fit==='natural') return `background-image:${ov}url('${b.bgImageUrl}');background-repeat:no-repeat;background-size:contain;background-position:${pos};`;
   return `background-image:${ov}url('${b.bgImageUrl}');background-size:${fit};background-position:${pos};background-repeat:no-repeat;`;
 }
+function _isBlockLocked(b){
+  if(!b.requireAuth) return false;
+  if(!AUTH_ENABLED || AUTH_MODE!=='on-demand' || IS_ADMIN_PREVIEW) return false;
+  if(USER_DOC_ID) return false;
+  const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  return saved.project!==PROJECT_ID;
+}
 function blockHtml(b){
   const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
   const bgImgS=_blkBgImgCss(b);
@@ -1486,6 +1493,16 @@ function blockHtml(b){
   // 텍스트박스 패딩
   const txpt=b.txtPaddingTop??0,txpr=b.txtPaddingRight??0,txpb=b.txtPaddingBottom??0,txpl=b.txtPaddingLeft??0;
   const txpS=(txpt||txpr||txpb||txpl)?`padding:${txpt}px ${txpr}px ${txpb}px ${txpl}px;`:'';
+  // 지연 로그인 잠금 — requireAuth=true이고 비로그인 상태일 때
+  if(_isBlockLocked(b)){
+    return `<div style="${mS}${bgS}min-height:120px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1.5px dashed rgba(0,0,0,.2);background:rgba(0,0,0,.03);" onclick="requireAuthOr(()=>location.reload())">
+      <div style="text-align:center;padding:20px 16px;">
+        <div style="font-size:26px;margin-bottom:6px;">🔒</div>
+        <div style="font-size:13px;font-weight:800;margin-bottom:3px;">로그인 후 볼 수 있어요</div>
+        <div style="font-size:11px;opacity:.55;line-height:1.5;">탭해서 로그인하기</div>
+      </div>
+    </div>`;
+  }
   if(b.type==='text'){
     const html=applyVars(b.textContent||'');
     const inner=`<div class="g-block-text" style="${mS}${bgS}${bgImgS}${pS}"><div class="g-block-text-inner" style="${txS}${txpS}">${html}</div></div>`;
@@ -1550,18 +1567,6 @@ function blockHtml(b){
     const wrapH=isFull?'':(isPx?'':`min-height:60vh;`);
     const trigger=b.completeTrigger||'tool-signal';
     const onloadAttr=trigger==='open'?` onload="if(this.src&&this.src!=='about:blank')autoCheckBlock('${b.id}')"`:'';
-    // 필요 시 로그인 모드 + 비로그인 → 잠금 오버레이 (iframe은 렌더링하지 않음)
-    const needsLogin=AUTH_ENABLED && AUTH_MODE==='on-demand' && !USER_DOC_ID && !IS_ADMIN_PREVIEW
-                     && !(JSON.parse(sessionStorage.getItem('userSession')||'{}').project===PROJECT_ID);
-    if(needsLogin){
-      return `<div class="g-block-embed g-tool-locked" style="${mS}${bgS}${wrapH}min-height:160px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1.5px dashed rgba(0,0,0,.25);background:rgba(0,0,0,.04);" onclick="requireAuthOr(()=>location.reload(),'이 도구를 사용하려면 로그인이 필요해요.')">
-        <div style="text-align:center;padding:24px 16px;">
-          <div style="font-size:28px;margin-bottom:8px;">🔒</div>
-          <div style="font-size:13px;font-weight:800;margin-bottom:4px;">로그인 후 사용 가능</div>
-          <div style="font-size:11px;opacity:.6;line-height:1.5;">탭해서 로그인하기</div>
-        </div>
-      </div>`;
-    }
     const wrapCls=isFull?'g-block-embed g-tool-full-wrap':'g-block-embed';
     return `<div class="${wrapCls}" style="${mS}${bgS}${bgImgS}${pS}${wrapH}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}" data-block-bg="${b.bgColor||''}" data-complete-trigger="${trigger}"${onloadAttr}></iframe></div>`;
   }

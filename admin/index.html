@@ -2014,6 +2014,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         </div>
       </div>
     </div>
+    <!-- 공통: 지연 로그인 잠금 -->
+    <div id="blk-require-auth-section" style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
+      <div class="switch-row">
+        <div class="switch" id="blk-require-auth-sw" onclick="this.classList.toggle('on');scheduleBmPreview()"></div>
+        <span class="switch-lbl">🔒 로그인 필요 <span style="font-weight:400;opacity:.6;">(지연 로그인 프로젝트에서 비로그인 사용자에게 잠금 표시)</span></span>
+      </div>
+    </div>
     <!-- 공통: 배경색 + 마진 -->
     <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
       <div class="ed-lbl">배경색</div>
@@ -5615,6 +5622,7 @@ function openBlockModal(idx,insertAt){
   const chkTP=document.getElementById('blk-check-text-color'); if(chkTP) chkTP.value=curBlkCheckTextColor||'#ffffff';
   const chkTH=document.getElementById('blk-check-text-hex');   if(chkTH) chkTH.value=(curBlkCheckTextColor||'').toUpperCase();
   setCheckPos(b.checkPosition||'bottom-center');
+  const raSwEl=document.getElementById('blk-require-auth-sw'); if(raSwEl) raSwEl.classList.toggle('on',!!b.requireAuth);
   const bgH=document.getElementById('blk-bg-hex');  if(bgH) bgH.value=(curBlkBgColor||'').toUpperCase();
   const _sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
   // 하위호환: marginTop 없으면 marginV 기본값으로
@@ -5783,6 +5791,8 @@ function saveBlock(){
   if(curBlkCheckColor) b.checkColor=curBlkCheckColor; else delete b.checkColor;
   if(curBlkCheckTextColor) b.checkTextColor=curBlkCheckTextColor; else delete b.checkTextColor;
   if(b.checkable) b.checkPosition=curCheckPos; else delete b.checkPosition;
+  b.requireAuth=!!document.getElementById('blk-require-auth-sw')?.classList.contains('on');
+  if(!b.requireAuth) delete b.requireAuth;
   if(curBlkIdx!==null){
     // order만 보존하고 나머지는 새 b로 교체 — 스프레드 병합 시 삭제된 필드가 남는 버그 방지
     curBlocks[curBlkIdx]={order:curBlocks[curBlkIdx].order,...b};
