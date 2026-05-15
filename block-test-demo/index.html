@@ -1413,11 +1413,17 @@ function blockHtml(b){
   const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
   const bgImgS=_blkBgImgCss(b);
   const txS=b.txtColor?`color:${b.txtColor};`:'';
-  const mS=(b.marginV||b.marginH)?`margin:${b.marginV||0}px ${b.marginH||0}px;`:'';
-  const pS=`padding:${b.paddingV||0}px ${b.paddingH||0}px;`;
+  const mt=b.marginTop??b.marginV??0, mr=b.marginRight??b.marginH??0;
+  const mb=b.marginBottom??b.marginV??0, ml=b.marginLeft??b.marginH??0;
+  const mS=(mt||mr||mb||ml)?`margin:${mt}px ${mr}px ${mb}px ${ml}px;`:'';
+  const pt=b.paddingTop??b.paddingV??0, pr=b.paddingRight??b.paddingH??0;
+  const pb=b.paddingBottom??b.paddingV??0, pl=b.paddingLeft??b.paddingH??0;
+  const pS=`padding:${pt}px ${pr}px ${pb}px ${pl}px;`;
+  const txpt=b.txtPaddingTop??0,txpr=b.txtPaddingRight??0,txpb=b.txtPaddingBottom??0,txpl=b.txtPaddingLeft??0;
+  const txpS=(txpt||txpr||txpb||txpl)?`padding:${txpt}px ${txpr}px ${txpb}px ${txpl}px;`:'';
   if(b.type==='text'){
     const html=applyVars(b.textContent||'');
-    const inner=`<div class="g-block-text" style="${mS}${bgS}${bgImgS}${pS}"><div class="g-block-text-inner" style="${txS}">${html}</div></div>`;
+    const inner=`<div class="g-block-text" style="${mS}${bgS}${bgImgS}${pS}"><div class="g-block-text-inner" style="${txS}${txpS}">${html}</div></div>`;
     return b.linkUrl?`<a href="${b.linkUrl}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit;">${inner}</a>`:inner;
   }
   if(b.type==='image'){
@@ -1440,8 +1446,8 @@ function blockHtml(b){
         ?`<a href="${b.imageLinkUrl}" target="_blank" rel="noopener" style="display:block;"><img src="${b.imageUrl||''}" alt="" loading="lazy" style="${spS}"></a>`
         :`<img src="${b.imageUrl||''}" alt="" loading="lazy" style="${spS}">`;
       const splitContent=b.imageOrder==='text-first'
-        ?`<div class="g-split-text" style="${txS}">${html}</div><div class="g-split-img">${imgEl}</div>`
-        :`<div class="g-split-img">${imgEl}</div><div class="g-split-text" style="${txS}">${html}</div>`;
+        ?`<div class="g-split-text" style="${txS}${txpS}">${html}</div><div class="g-split-img">${imgEl}</div>`
+        :`<div class="g-split-img">${imgEl}</div><div class="g-split-text" style="${txS}${txpS}">${html}</div>`;
       return `<div class="g-block-mixed-split" style="${mS}${bgS}${bgImgS}${pS}">${splitContent}</div>`;
     }
     const imgEl=b.imageLinkUrl
@@ -1451,7 +1457,7 @@ function blockHtml(b){
     const _aiMap={top:'flex-start',center:'center',bottom:'flex-end'};
     const _sha=b.overlayShadow??0.4;const _shclr=b.overlayColor||'#000000';const _shR=parseInt(_shclr.slice(1,3),16)||0,_shG=parseInt(_shclr.slice(3,5),16)||0,_shB=parseInt(_shclr.slice(5,7),16)||0;
     const _ovTextStyle=`align-items:${_aiMap[_ova]||'flex-end'};background:rgba(${_shR},${_shG},${_shB},${_sha});`;
-    return `<div class="g-block-mixed-overlay" style="${mS}${bgS}${bgImgS}${pS}">${imgEl}<div class="g-overlay-text" style="${_ovTextStyle}"><div class="g-overlay-text-inner" style="${txS}">${html}</div></div></div>`;
+    return `<div class="g-block-mixed-overlay" style="${mS}${bgS}${bgImgS}${pS}">${imgEl}<div class="g-overlay-text" style="${_ovTextStyle}"><div class="g-overlay-text-inner" style="${txS}${txpS}">${html}</div></div></div>`;
   }
   if(b.type==='embed' && b.embedUrl){
     const _eh=b.embedHeight===0?'100%':(b.embedHeight||500);
