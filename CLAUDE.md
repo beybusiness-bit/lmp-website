@@ -363,10 +363,25 @@ PAT 인증이 있을 경우 `main` 직접 push가 가능할 수 있다. 단, 시
 
 ### 🔵 수정 후 자동 배포
 
-수정 요청 → 코드 수정 → commit + push origin main → Vercel 자동 배포 → 안내:
+#### ⚠️ push 전 반드시 사용자 확인 (예외 없음)
+
+push는 Vercel 배포 횟수(하루 100회 한도)를 소모한다. **어떤 상황에서도 push 전에 반드시 사용자에게 확인을 받는다.**
+
+확인 방식:
 ```
-✅ 푸시 완료. Vercel 배포까지 ~1분 소요.
-브라우저에서 Ctrl+Shift+R (Mac: Cmd+Shift+R) 하드 리프레시 해주세요.
+📤 push할까요? (Vercel 배포 1회 소모)
+변경 파일: [파일 목록]
+```
+사용자가 승인하면 push 진행.
+
+#### push 후 안내 형식
+
+push 완료 후 아래 형식으로 안내한다. `N`은 이번 세션에서 push한 누적 횟수 (세션 시작 시 0부터 카운트):
+
+```
+✅ 푸시 완료 (이번 세션 N번째).
+오늘 전체 배포 횟수는 → https://vercel.com/beybusiness-bit/lmp-website/deployments 에서 확인
+Vercel 배포까지 ~1분 소요. Cmd+Shift+R 하드 리프레시 해주세요.
 ```
 
 ---
