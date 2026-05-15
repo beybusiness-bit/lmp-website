@@ -9,6 +9,7 @@
 <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com">
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 <style>
 :root{--lmp-block-bg:#fff;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -379,6 +380,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   <canvas id="export-canvas"></canvas>
   <div class="export-btns">
     <button class="exp-btn primary" onclick="downloadExport()">다운로드</button>
+    <button class="exp-btn" id="btn-save-gallery" onclick="saveToGallery()">저장하기</button>
     <button class="exp-btn" onclick="shareExport()">공유</button>
     <button class="exp-btn" onclick="closeExport()">닫기</button>
   </div>
@@ -396,6 +398,7 @@ const FB_CFG = {
 };
 firebase.initializeApp(FB_CFG);
 const db = firebase.firestore();
+const storage = firebase.storage();
 
 // ── 무료 배경 이미지 (picsum.photos — 안정적인 무료 이미지) ──
 // thumb: 그리드 미리보기용 (540×675), url: 실제 배경용 1080×1350 (인스타 4:5)
@@ -453,6 +456,8 @@ let strokeHistory = [];
 let keyColors = [];
 let userBoothType = '';
 let contextReceived = false; // 프로젝트에서 컨텍스트 수신 여부
+let ctxProjectId = '';
+let ctxUserId = '';
 let toolTitle = '내 부스 꾸미기'; // 설정에서 동적으로 업데이트됨
 let isDrawing = false;
 let lastX = 0, lastY = 0;
@@ -1547,6 +1552,37 @@ function downloadExport() {
   a.click();
 }
 
+async function saveToGallery() {
+  const btn = document.getElementById('btn-save-gallery');
+  const canvas = document.getElementById('export-canvas');
+  btn.disabled = true;
+  btn.textContent = '저장 중…';
+  try {
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    const ts = Date.now();
+    const uid = ctxUserId || 'anon';
+    const path = `booth_gallery/${CONFIG_ID}/${uid}_${ts}.png`;
+    const ref = storage.ref(path);
+    await ref.put(blob, { contentType: 'image/png' });
+    const imageUrl = await ref.getDownloadURL();
+    await db.collection('cms_booth_gallery').doc(CONFIG_ID)
+      .collection('images').add({
+        imageUrl,
+        userId: ctxUserId || '',
+        projectId: ctxProjectId || '',
+        approved: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    btn.textContent = '저장됨 ✓';
+    setTimeout(() => { btn.disabled = false; btn.textContent = '저장하기'; }, 3000);
+  } catch(e) {
+    console.error(e);
+    btn.disabled = false;
+    btn.textContent = '저장 실패';
+    setTimeout(() => { btn.textContent = '저장하기'; }, 2000);
+  }
+}
+
 async function shareExport() {
   const canvas = document.getElementById('export-canvas');
   canvas.toBlob(async blob => {
@@ -1566,6 +1602,8 @@ window.addEventListener('message', e => {
   const d = e.data;
   lastContextData = d; // fieldKey 확정 후 재처리를 위해 저장
   contextReceived = true;
+  ctxProjectId = d.projectId || '';
+  ctxUserId = d.userId || '';
   if(d.blockBg) document.documentElement.style.setProperty('--lmp-block-bg', d.blockBg);
   if(d.keyColors?.length) { keyColors = d.keyColors; renderKeyColorSwatches(); }
   // fieldKey 기반으로 사용자 필드값 추출 (기존 boothType 하위호환 포함)
