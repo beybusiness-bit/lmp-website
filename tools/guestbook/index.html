@@ -66,7 +66,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .card-meta{font-size:10px;color:rgba(0,0,0,.35);margin-top:10px;font-weight:600;}
 .gb-card.has-color .card-field-val{color:inherit;}
 /* Gallery & slide cards — uniform height with ellipsis */
-.cards-grid .gb-card,.slide-item .gb-card{height:var(--gallery-card-h,200px);}
+.cards-grid .gb-card,.slide-item .gb-card{height:var(--gallery-card-h,160px);}
 .cards-grid .card-field-val,.slide-item .card-field-val{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
 
 /* Write Modal — full screen */
@@ -286,7 +286,7 @@ async function init() {
     AUTO_SLIDE     = !!CONFIG.autoSlide;
     SLIDE_INTERVAL = Number(CONFIG.slideInterval) || 3000;
     PAGER_TYPE     = CONFIG.pagerType     || 'dots';
-    document.documentElement.style.setProperty('--gallery-card-h', (Number(CONFIG.cardHeight) || 200) + 'px');
+    document.documentElement.style.setProperty('--gallery-card-h', (Number(CONFIG.cardHeight) || 160) + 'px');
 
     renderWriteForm();
     updateWriteBtn();
