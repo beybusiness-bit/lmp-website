@@ -1507,9 +1507,10 @@ function blockHtml(b){
       const imgEl=b.imageLinkUrl
         ?`<a href="${b.imageLinkUrl}" target="_blank" rel="noopener" style="display:block;"><img src="${b.imageUrl||''}" alt="" loading="lazy" style="${spS}"></a>`
         :`<img src="${b.imageUrl||''}" alt="" loading="lazy" style="${spS}">`;
+      const stickyS=b.splitImgSticky?(b.imageOrder==='text-first'?'position:sticky;bottom:0;z-index:1;':'position:sticky;top:0;z-index:1;'):'';
       const splitContent=b.imageOrder==='text-first'
-        ?`<div class="g-split-text" style="${txS}${txpS}">${html}</div><div class="g-split-img">${imgEl}</div>`
-        :`<div class="g-split-img">${imgEl}</div><div class="g-split-text" style="${txS}${txpS}">${html}</div>`;
+        ?`<div class="g-split-text" style="${txS}${txpS}">${html}</div><div class="g-split-img" style="${stickyS}">${imgEl}</div>`
+        :`<div class="g-split-img" style="${stickyS}">${imgEl}</div><div class="g-split-text" style="${txS}${txpS}">${html}</div>`;
       return `<div class="g-block-mixed-split" style="${mS}${bgS}${bgImgS}${pS}">${splitContent}</div>`;
     }
     const imgEl=b.imageLinkUrl

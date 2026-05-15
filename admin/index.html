@@ -1844,10 +1844,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       </div>
       <div id="split-order-row" style="display:none;margin-top:8px;margin-bottom:10px;">
         <div class="ed-lbl" style="font-size:10px;margin-bottom:6px;">순서</div>
-        <div style="display:flex;gap:4px;">
+        <div style="display:flex;gap:4px;margin-bottom:8px;">
           <button class="img-fit-btn on" id="img-order-img-first" onpointerdown="epd(event)" onclick="setMixedImgOrder('img-first')" style="flex:1;">이미지→텍스트</button>
           <button class="img-fit-btn"    id="img-order-text-first" onpointerdown="epd(event)" onclick="setMixedImgOrder('text-first')" style="flex:1;">텍스트→이미지</button>
         </div>
+        <label style="display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;">
+          <input type="checkbox" id="split-img-sticky-chk" onchange="curSplitImgSticky=this.checked;scheduleBmPreview();" style="width:15px;height:15px;cursor:pointer;">
+          <span style="font-size:12px;font-weight:700;">이미지 스크롤 고정 <span style="font-weight:400;opacity:.55;font-size:11px;">(스크롤해도 이미지 고정)</span></span>
+        </label>
       </div>
       <div class="ed-lbl" style="margin-bottom:8px;">이미지</div>
       <input class="img-inp" id="mixed-img-url" type="url" placeholder="https://…" oninput="prevImg('mixed-img-prev',this.value);const _mft=document.getElementById('mixed-focal-thumb');if(_mft)_mft.src=this.value||'';">
@@ -5272,6 +5276,7 @@ let curBlkVerticalAlign='center';
 let curImgFit='natural',curImgPos='center';
 let curMixedImgFit='cover',curMixedImgPos='center',curMixedHeightFull=false;
 let curMixedImgOrder='img-first';
+let curSplitImgSticky=false;
 let curOverlayShadow=0.4;
 let curOverlayColor='#000000';
 function setMixedHeightFull(){
@@ -5520,6 +5525,8 @@ function openBlockModal(idx,insertAt){
   const _ocp=document.getElementById('overlay-color-picker');if(_ocp){_ocp.value=curOverlayColor;document.getElementById('overlay-color-hex').value=curOverlayColor.toUpperCase();}
   curMixedImgOrder=b.imageOrder||'img-first';
   setMixedImgOrder(curMixedImgOrder);
+  curSplitImgSticky=!!(b.splitImgSticky);
+  const _sischk=document.getElementById('split-img-sticky-chk');if(_sischk)_sischk.checked=curSplitImgSticky;
   setMixedLayout(curMixedLayout);savedRange=null;
   /* spacer 블록 */
   const _sh=document.getElementById('blk-spacer-height');
@@ -5592,7 +5599,7 @@ function _buildCurrentBlock(){
     b.imageUrl=document.getElementById('mixed-img-url')?.value||'';
     b.textContent=document.getElementById('ced-mixed')?.innerHTML||'';
     b.mixedLayout=curMixedLayout;
-    if(curMixedLayout==='split') b.imageOrder=curMixedImgOrder; else delete b.imageOrder;
+    if(curMixedLayout==='split'){b.imageOrder=curMixedImgOrder;b.splitImgSticky=curSplitImgSticky;}else{delete b.imageOrder;b.splitImgSticky=false;}
     b.imageFit=curMixedImgFit; b.imagePosition=curMixedImgPos;
     if(curMixedHeightFull){b.imageHeight='full';}else{const _mh=parseInt(document.getElementById('mixed-height-val')?.value)||0; if(_mh) b.imageHeight=_mh;}
     if(curMixedLayout==='overlay'){b.overlayTextVAlign=curOverlayVAlign||'bottom';b.overlayShadow=curOverlayShadow;b.overlayColor=curOverlayColor;}
@@ -5659,6 +5666,7 @@ function saveBlock(){
     b.textContent=document.getElementById('ced-mixed').innerHTML;
     b.mixedLayout=curMixedLayout;
     b.imageOrder=curMixedLayout==='split'?(curMixedImgOrder||'image-first'):'';
+    b.splitImgSticky=curMixedLayout==='split'?curSplitImgSticky:false;
     b.imageFit=curMixedImgFit||'cover'; b.imagePosition=curMixedImgPos||'center';
     if(curMixedHeightFull){b.imageHeight='full';}else{b.imageHeight=parseInt(document.getElementById('mixed-height-val')?.value)||0;}
     b.overlayTextVAlign=curMixedLayout==='overlay'?(curOverlayVAlign||'bottom'):'';
