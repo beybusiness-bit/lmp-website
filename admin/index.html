@@ -1681,6 +1681,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-img-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','text')" title="이미지 삽입" style="font-size:13px;padding:4px 7px;">🖼</button>
       </div>
       <div class="ced" id="ced-text" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="syncFmtBar('text')" onmouseup="syncFmtBar('text')"></div>
+      <div id="blk-txtpadding-section" style="margin-top:8px;padding:8px 10px;background:rgba(0,0,0,.03);border-radius:6px;border:1px solid rgba(0,0,0,.08);">
+        <div class="ed-lbl" style="margin-bottom:4px;font-size:11px;">텍스트 안쪽 여백 (px)</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">위</span><input class="fi-sm" id="blk-txtpadding-t" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">오</span><input class="fi-sm" id="blk-txtpadding-r" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">아</span><input class="fi-sm" id="blk-txtpadding-b" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">왼</span><input class="fi-sm" id="blk-txtpadding-l" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
+        </div>
+      </div>
       <div style="margin-top:10px;">
         <div class="ed-lbl" style="margin-bottom:4px;">링크 URL <span style="font-weight:400;opacity:.55;">(선택, 텍스트 전체를 링크로)</span></div>
         <input class="img-inp" id="text-link-url" type="url" placeholder="https://…" style="margin-bottom:0;">
@@ -2042,15 +2051,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">오</span><input class="fi-sm" id="blk-padding-r" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">아</span><input class="fi-sm" id="blk-padding-b" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">왼</span><input class="fi-sm" id="blk-padding-l" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
-      </div>
-      <div id="blk-txtpadding-section" style="display:none;">
-        <div class="ed-lbl" style="margin-top:10px;">텍스트박스 패딩 (px) <span style="font-weight:400;opacity:.55;font-size:10px;">텍스트 영역 안쪽 여백</span></div>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:4px;">
-          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">위</span><input class="fi-sm" id="blk-txtpadding-t" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">오</span><input class="fi-sm" id="blk-txtpadding-r" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">아</span><input class="fi-sm" id="blk-txtpadding-b" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">왼</span><input class="fi-sm" id="blk-txtpadding-l" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
-        </div>
       </div>
     </div>
     <!-- 공통: 슬라이드 세로 정렬 -->
@@ -5563,8 +5563,7 @@ function openBlockModal(idx,insertAt){
   _sv('blk-padding-b',b.paddingBottom??b.paddingV??''); _sv('blk-padding-l',b.paddingLeft??b.paddingH??'');
   _sv('blk-txtpadding-t',b.txtPaddingTop??''); _sv('blk-txtpadding-r',b.txtPaddingRight??'');
   _sv('blk-txtpadding-b',b.txtPaddingBottom??''); _sv('blk-txtpadding-l',b.txtPaddingLeft??'');
-  const txSec=document.getElementById('blk-txtpadding-section');
-  if(txSec) txSec.style.display=['text','mixed'].includes(b.type)?'':'none';
+  /* txtpadding 위치는 switchBlkTab에서 처리 — 여기선 건드리지 않음 */
   setBlkVerticalAlign(b.verticalAlign||'center');
   renderBlkKeyColors();
   /* 변수 버튼: 인증 활성화 + 필드 있을 때만 표시 */
@@ -5750,7 +5749,19 @@ function switchBlkTab(t){
   const chkSection=document.getElementById('blk-check-section');
   if(chkSection) chkSection.style.display=(t==='form'||t==='tool'||t==='spacer'||t==='divider')?'none':'';
   const txSec2=document.getElementById('blk-txtpadding-section');
-  if(txSec2) txSec2.style.display=['text','mixed'].includes(t)?'':'none';
+  if(txSec2){
+    if(t==='text'){
+      const cedT=document.getElementById('ced-text');
+      if(cedT&&cedT.nextSibling!==txSec2) cedT.insertAdjacentElement('afterend',txSec2);
+      txSec2.style.display='';
+    } else if(t==='mixed'){
+      const cedM=document.getElementById('ced-mixed');
+      if(cedM&&cedM.nextSibling!==txSec2) cedM.insertAdjacentElement('afterend',txSec2);
+      txSec2.style.display='';
+    } else {
+      txSec2.style.display='none';
+    }
+  }
   if(t==='tool'){
     loadToolInstList(curBlkToolType);
     document.querySelectorAll('input[name="complete-trigger"]').forEach(r=>{
