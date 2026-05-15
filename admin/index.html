@@ -1632,6 +1632,70 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       </div>
     </div>
 
+    <!-- Site settings panel -->
+    <div class="panel" id="panel-site">
+      <div class="sect-head ip-first-sect">사이트 설정</div>
+      <div style="padding:0 16px 20px;">
+        <div style="font-size:12px;color:rgba(0,0,0,.45);line-height:1.6;margin-bottom:16px;">푸터는 플레이어의 모든 프로젝트 하단에 동일하게 표시됩니다.</div>
+
+        <div class="sect-head">푸터 로고</div>
+        <div class="ed-lbl">로고 이미지 <span style="font-weight:400;opacity:.55;">(투명 PNG 권장)</span></div>
+        <input class="fi" id="site-footer-logo" placeholder="https://... 이미지 URL">
+        <button class="bg-up-btn" onclick="document.getElementById('site-footer-logo-file').click()" style="margin-top:4px;">📁 업로드</button>
+        <input type="file" id="site-footer-logo-file" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'site-footer-logo','site-assets/footer-logo',false)">
+
+        <div class="sect-head" style="margin-top:20px;">사업자 정보</div>
+        <div class="ed-lbl">상호명</div>
+        <input class="fi" id="site-biz-name" placeholder="예: 베이비즈니스">
+        <div class="ed-lbl">대표자 성명</div>
+        <input class="fi" id="site-rep-name" placeholder="예: 홍길동">
+        <div class="ed-lbl">사업자등록번호</div>
+        <input class="fi" id="site-biz-reg" placeholder="예: 123-45-67890">
+        <div class="ed-lbl">통신판매업 신고번호 <span style="font-weight:400;opacity:.55;">(신고 후 입력)</span></div>
+        <input class="fi" id="site-sales-reg" placeholder="예: 제2025-서울강남-0000호">
+        <div class="ed-lbl">사업장 주소</div>
+        <input class="fi" id="site-address" placeholder="서울특별시 ...">
+        <div class="ed-lbl">이메일</div>
+        <input class="fi" id="site-email" placeholder="hello@example.com" type="email">
+        <div class="ed-lbl">전화번호 <span style="font-weight:400;opacity:.55;">(없으면 공란)</span></div>
+        <input class="fi" id="site-phone" placeholder="010-0000-0000">
+
+        <div class="sect-head" style="margin-top:20px;">SNS</div>
+        <div class="ed-lbl">Instagram URL</div>
+        <input class="fi" id="site-instagram" placeholder="https://instagram.com/...">
+
+        <div class="sect-head" style="margin-top:20px;">저작권</div>
+        <div class="ed-lbl">브랜드명 <span style="font-weight:400;opacity:.55;">(© 연도 뒤에 표시)</span></div>
+        <input class="fi" id="site-copyright" placeholder="lazymaxpotential">
+        <div class="ed-lbl">표시 연도</div>
+        <input class="fi" id="site-copyright-year" placeholder="2025" type="number">
+
+        <div class="sect-head" style="margin-top:20px;">개인정보처리방침</div>
+        <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;line-height:1.6;">한국 개인정보보호법(PIPA)상 필수 공개 사항입니다. 수집 항목·목적·보유기간·파기 방법 등을 기재하세요.</div>
+        <div style="border:2px solid #000;min-height:120px;margin-bottom:6px;">
+          <div class="mini-rte-tb" style="border-bottom:2px solid #000;padding:4px 8px;display:flex;gap:4px;flex-wrap:wrap;">
+            <button onmousedown="event.preventDefault();rteCmd('rte-privacy','bold')"><b>B</b></button>
+            <button onmousedown="event.preventDefault();rteCmd('rte-privacy','italic')"><i>I</i></button>
+            <button onmousedown="event.preventDefault();rteLinkCmd('rte-privacy')">🔗</button>
+          </div>
+          <div class="mini-rte" id="rte-privacy" contenteditable="true" data-ph="개인정보처리방침 내용을 입력하세요" style="min-height:100px;padding:8px;"></div>
+        </div>
+
+        <div class="sect-head" style="margin-top:20px;">이용약관</div>
+        <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;line-height:1.6;">서비스 이용 조건·책임 한계·분쟁 해결 기준 등을 기재하세요.</div>
+        <div style="border:2px solid #000;min-height:120px;margin-bottom:6px;">
+          <div class="mini-rte-tb" style="border-bottom:2px solid #000;padding:4px 8px;display:flex;gap:4px;flex-wrap:wrap;">
+            <button onmousedown="event.preventDefault();rteCmd('rte-terms','bold')"><b>B</b></button>
+            <button onmousedown="event.preventDefault();rteCmd('rte-terms','italic')"><i>I</i></button>
+            <button onmousedown="event.preventDefault();rteLinkCmd('rte-terms')">🔗</button>
+          </div>
+          <div class="mini-rte" id="rte-terms" contenteditable="true" data-ph="이용약관 내용을 입력하세요" style="min-height:100px;padding:8px;"></div>
+        </div>
+
+        <button class="btn" id="site-save-btn" onclick="saveSiteSettings()" style="margin-top:20px;">저장</button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -2178,72 +2242,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <button class="pv-close-btn" onclick="togglePreviewPanel('bm-preview-panel')">닫기 ×</button>
   </div>
   </div><!-- /bm-layout -->
-
-    <!-- Site settings panel -->
-    <div class="panel" id="panel-site">
-      <div class="sect-head ip-first-sect">사이트 설정</div>
-      <div style="padding:0 16px 20px;">
-        <div style="font-size:12px;color:rgba(0,0,0,.45);line-height:1.6;margin-bottom:16px;">푸터는 플레이어의 모든 프로젝트 하단에 동일하게 표시됩니다.</div>
-
-        <div class="sect-head">푸터 로고</div>
-        <div class="ed-lbl">로고 이미지 <span style="font-weight:400;opacity:.55;">(투명 PNG 권장)</span></div>
-        <input class="fi" id="site-footer-logo" placeholder="https://... 이미지 URL">
-        <button class="bg-up-btn" onclick="document.getElementById('site-footer-logo-file').click()" style="margin-top:4px;">📁 업로드</button>
-        <input type="file" id="site-footer-logo-file" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'site-footer-logo','site-assets/footer-logo',false)">
-
-        <div class="sect-head" style="margin-top:20px;">사업자 정보</div>
-        <div class="ed-lbl">상호명</div>
-        <input class="fi" id="site-biz-name" placeholder="예: 베이비즈니스">
-        <div class="ed-lbl">대표자 성명</div>
-        <input class="fi" id="site-rep-name" placeholder="예: 홍길동">
-        <div class="ed-lbl">사업자등록번호</div>
-        <input class="fi" id="site-biz-reg" placeholder="예: 123-45-67890">
-        <div class="ed-lbl">통신판매업 신고번호 <span style="font-weight:400;opacity:.55;">(신고 후 입력)</span></div>
-        <input class="fi" id="site-sales-reg" placeholder="예: 제2025-서울강남-0000호">
-        <div class="ed-lbl">사업장 주소</div>
-        <input class="fi" id="site-address" placeholder="서울특별시 ...">
-        <div class="ed-lbl">이메일</div>
-        <input class="fi" id="site-email" placeholder="hello@example.com" type="email">
-        <div class="ed-lbl">전화번호 <span style="font-weight:400;opacity:.55;">(없으면 공란)</span></div>
-        <input class="fi" id="site-phone" placeholder="010-0000-0000">
-
-        <div class="sect-head" style="margin-top:20px;">SNS</div>
-        <div class="ed-lbl">Instagram URL</div>
-        <input class="fi" id="site-instagram" placeholder="https://instagram.com/...">
-
-        <div class="sect-head" style="margin-top:20px;">저작권</div>
-        <div class="ed-lbl">브랜드명 <span style="font-weight:400;opacity:.55;">(© 연도 뒤에 표시)</span></div>
-        <input class="fi" id="site-copyright" placeholder="lazymaxpotential">
-        <div class="ed-lbl">표시 연도</div>
-        <input class="fi" id="site-copyright-year" placeholder="2025" type="number">
-
-        <div class="sect-head" style="margin-top:20px;">개인정보처리방침</div>
-        <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;line-height:1.6;">한국 개인정보보호법(PIPA)상 필수 공개 사항입니다. 수집 항목·목적·보유기간·파기 방법 등을 기재하세요.</div>
-        <div style="border:2px solid #000;min-height:120px;margin-bottom:6px;">
-          <div class="mini-rte-tb" style="border-bottom:2px solid #000;padding:4px 8px;display:flex;gap:4px;flex-wrap:wrap;">
-            <button onmousedown="event.preventDefault();rteCmd('rte-privacy','bold')"><b>B</b></button>
-            <button onmousedown="event.preventDefault();rteCmd('rte-privacy','italic')"><i>I</i></button>
-            <button onmousedown="event.preventDefault();rteLinkCmd('rte-privacy')">🔗</button>
-          </div>
-          <div class="mini-rte" id="rte-privacy" contenteditable="true" data-ph="개인정보처리방침 내용을 입력하세요" style="min-height:100px;padding:8px;"></div>
-        </div>
-
-        <div class="sect-head" style="margin-top:20px;">이용약관</div>
-        <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;line-height:1.6;">서비스 이용 조건·책임 한계·분쟁 해결 기준 등을 기재하세요.</div>
-        <div style="border:2px solid #000;min-height:120px;margin-bottom:6px;">
-          <div class="mini-rte-tb" style="border-bottom:2px solid #000;padding:4px 8px;display:flex;gap:4px;flex-wrap:wrap;">
-            <button onmousedown="event.preventDefault();rteCmd('rte-terms','bold')"><b>B</b></button>
-            <button onmousedown="event.preventDefault();rteCmd('rte-terms','italic')"><i>I</i></button>
-            <button onmousedown="event.preventDefault();rteLinkCmd('rte-terms')">🔗</button>
-          </div>
-          <div class="mini-rte" id="rte-terms" contenteditable="true" data-ph="이용약관 내용을 입력하세요" style="min-height:100px;padding:8px;"></div>
-        </div>
-
-        <button class="btn" id="site-save-btn" onclick="saveSiteSettings()" style="margin-top:20px;">저장</button>
-      </div>
-    </div>
-
-</div>
 
 <!-- 필드 추가/편집 모달 -->
 <div class="modal-ov" id="field-modal">
