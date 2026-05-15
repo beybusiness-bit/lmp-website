@@ -6136,30 +6136,11 @@ function openFmtDd(btn,type,ctx){
       <button onpointerdown="epd(event)" onclick="insertHr('${ctx}')" style="width:100%;padding:7px 0;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">삽입</button>
     </div>`;
   } else if(type==='img'){
-    const wPresets=['자동','25%','50%','75%','100%'];
-    const wBtns=wPresets.map(w=>`<button class="rte-itb-btn${_fmtImgW===w?' on':''}" onpointerdown="epd(event)" onclick="_fmtImgW='${w}';document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');document.getElementById('fmt-img-px-pop').value='';event.stopPropagation();">${w}</button>`).join('');
-    const alBtns=[['left','←좌'],['center','=중'],['right','우→']].map(([v,l])=>`<button class="rte-itb-btn${_fmtImgAlign===v?' on':''}" onpointerdown="epd(event)" onclick="_fmtImgAlign='${v}';document.querySelectorAll('#fmt-img-al-row .rte-itb-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');event.stopPropagation();">${l}</button>`).join('');
-    html=`<div style="padding:10px 10px 10px;min-width:230px;">
+    const colBtns=[1,2,3].map(n=>`<button class="rte-itb-btn fmt-img-col-btn${_fmtImgCols===n?' on':''}" onpointerdown="epd(event)" onclick="setFmtImgCols('${ctx}',${n})">${n}열</button>`).join('');
+    html=`<div style="padding:10px;min-width:240px;">
     <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:8px;">이미지 삽입</div>
-    <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:4px;">이미지 URL</div>
-    <input id="fmt-img-url-inp" class="fi-sm" type="url" placeholder="https://…" style="margin-bottom:8px;"
-      onpointerdown="epd(event)"
-      onkeydown="if(event.key==='Enter'){applyFmtImg('${ctx}',this.value.trim());closeFmtPopup();}">
-    <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:4px;">가로 폭</div>
-    <div id="fmt-img-w-row" style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px;">${wBtns}
-      <input id="fmt-img-px-pop" type="number" min="10" max="2000" placeholder="직접(px)" onpointerdown="epd(event)"
-        style="width:72px;padding:3px 5px;border:1.5px solid rgba(0,0,0,.25);font-size:11px;font-family:inherit;outline:none;"
-        oninput="if(this.value){_fmtImgW=this.value+'px';document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.remove('on'));}"
-        onkeydown="if(event.key==='Enter'&&this.value){_fmtImgW=this.value+'px';}">
-    </div>
-    <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:4px;">정렬</div>
-    <div id="fmt-img-al-row" style="display:flex;gap:3px;margin-bottom:8px;">${alBtns}</div>
-    <div style="display:flex;gap:6px;margin-bottom:8px;">
-      <button onpointerdown="epd(event)" onclick="applyFmtImg('${ctx}',document.getElementById('fmt-img-url-inp').value.trim());closeFmtPopup();"
-        style="flex:1;padding:7px 0;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">삽입</button>
-    </div>
-    <button onpointerdown="epd(event)" onclick="triggerFmtImgUpload('${ctx}');"
-      style="width:100%;padding:7px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📁 파일 업로드</button>
+    <div style="display:flex;gap:3px;margin-bottom:10px;">${colBtns}</div>
+    <div id="fmt-img-cols-content">${_fmtImgColsHtml(ctx)}</div>
   </div>`;
   }
   document.getElementById('fmt-popup-inner').innerHTML=html;
@@ -6172,6 +6153,82 @@ function openFmtDd(btn,type,ctx){
 function closeFmtPopup(){document.getElementById('fmt-popup').style.display='none';_fmtPopType=null;_fmtPopCtx=null;}
 function applyFmtVar(ctx,key){focusEd(ctx);document.execCommand('insertText',false,`{{${key}}}`);closeFmtPopup();}
 let _fmtImgUploadCtx='', _fmtImgW='100%', _fmtImgAlign='center', _rteSelectedImg=null;
+let _fmtImgCols=1, _fmtImgGap=8, _fmtImgUrls=['','',''], _fmtImgUploadSlot=0;
+function _fmtImgColsHtml(ctx){
+  if(_fmtImgCols===1){
+    const wPresets=['자동','25%','50%','75%','100%'];
+    const wBtns=wPresets.map(w=>`<button class="rte-itb-btn${_fmtImgW===w?' on':''}" onpointerdown="epd(event)" onclick="_fmtImgW='${w}';document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');document.getElementById('fmt-img-px-pop').value='';event.stopPropagation();">${w}</button>`).join('');
+    const alBtns=[['left','←좌'],['center','=중'],['right','우→']].map(([v,l])=>`<button class="rte-itb-btn${_fmtImgAlign===v?' on':''}" onpointerdown="epd(event)" onclick="_fmtImgAlign='${v}';document.querySelectorAll('#fmt-img-al-row .rte-itb-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');event.stopPropagation();">${l}</button>`).join('');
+    return `<div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:4px;">이미지 URL</div>
+      <input id="fmt-img-url-inp" class="fi-sm" type="url" placeholder="https://…" style="margin-bottom:8px;"
+        onpointerdown="epd(event)"
+        onkeydown="if(event.key==='Enter'){applyFmtImg('${ctx}',this.value.trim());closeFmtPopup();}">
+      <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:4px;">가로 폭</div>
+      <div id="fmt-img-w-row" style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px;">${wBtns}
+        <input id="fmt-img-px-pop" type="number" min="10" max="2000" placeholder="직접(px)" onpointerdown="epd(event)"
+          style="width:72px;padding:3px 5px;border:1.5px solid rgba(0,0,0,.25);font-size:11px;font-family:inherit;outline:none;"
+          oninput="if(this.value){_fmtImgW=this.value+'px';document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.remove('on'));}"
+          onkeydown="if(event.key==='Enter'&&this.value){_fmtImgW=this.value+'px';}">
+      </div>
+      <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:4px;">정렬</div>
+      <div id="fmt-img-al-row" style="display:flex;gap:3px;margin-bottom:8px;">${alBtns}</div>
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <button onpointerdown="epd(event)" onclick="applyFmtImg('${ctx}',document.getElementById('fmt-img-url-inp').value.trim());closeFmtPopup();"
+          style="flex:1;padding:7px 0;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">삽입</button>
+      </div>
+      <button onpointerdown="epd(event)" onclick="triggerFmtImgUpload('${ctx}');"
+        style="width:100%;padding:7px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">📁 파일 업로드</button>`;
+  } else {
+    const slots=Array.from({length:_fmtImgCols},(_,i)=>`
+      <div style="margin-bottom:8px;">
+        <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:3px;">${i+1}번째 이미지</div>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <input id="fmt-img-url-${i}" class="fi-sm" type="url" placeholder="https://…" style="flex:1;margin-bottom:0;"
+            onpointerdown="epd(event)" value="${_fmtImgUrls[i]||''}"
+            oninput="_fmtImgUrls[${i}]=this.value.trim();">
+          <button onpointerdown="epd(event)" onclick="triggerFmtImgUploadSlot('${ctx}',${i});"
+            style="padding:4px 7px;background:transparent;border:1.5px solid #000;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;">📁</button>
+        </div>
+        <img id="fmt-img-prev-${i}" src="${_fmtImgUrls[i]||''}" style="display:${_fmtImgUrls[i]?'block':'none'};width:100%;height:60px;object-fit:cover;margin-top:4px;border:1px solid rgba(0,0,0,.15);">
+      </div>`).join('');
+    return `${slots}
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+        <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);white-space:nowrap;">열 간격</div>
+        <input id="fmt-img-gap-inp" type="number" min="0" max="100" value="${_fmtImgGap}"
+          onpointerdown="epd(event)" oninput="_fmtImgGap=parseInt(this.value)||0"
+          style="width:50px;padding:3px 5px;border:1.5px solid rgba(0,0,0,.25);font-size:11px;font-family:inherit;outline:none;">
+        <span style="font-size:10px;color:rgba(0,0,0,.4);">px</span>
+      </div>
+      <button onpointerdown="epd(event)" onclick="applyFmtImgGrid('${ctx}');closeFmtPopup();"
+        style="width:100%;padding:7px 0;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">삽입</button>`;
+  }
+}
+function setFmtImgCols(ctx,n){
+  _fmtImgCols=n;
+  _fmtImgUrls=['','',''];
+  document.getElementById('fmt-img-cols-content').innerHTML=_fmtImgColsHtml(ctx);
+  document.querySelectorAll('.fmt-img-col-btn').forEach((b,i)=>b.classList.toggle('on',i+1===n));
+}
+function applyFmtImgGrid(ctx){
+  const urls=_fmtImgUrls.slice(0,_fmtImgCols);
+  if(!urls.some(u=>u)) return;
+  focusEd(ctx);
+  const cols=Array(_fmtImgCols).fill('1fr').join(' ');
+  const gap=_fmtImgGap??8;
+  const imgs=Array.from({length:_fmtImgCols},(_,i)=>{
+    const url=_fmtImgUrls[i]||'';
+    return url
+      ?`<img src="${url}" style="width:100%;height:auto;display:block;" loading="lazy">`
+      :`<div style="width:100%;background:rgba(0,0,0,.06);aspect-ratio:1;"></div>`;
+  }).join('');
+  document.execCommand('insertHTML',false,`<div class="rte-img-grid" style="display:grid;grid-template-columns:${cols};gap:${gap}px;" data-gap="${gap}">${imgs}</div>`);
+  scheduleBmPreview();
+}
+function triggerFmtImgUploadSlot(ctx,slot){
+  _fmtImgUploadCtx=ctx;
+  _fmtImgUploadSlot=slot;
+  document.getElementById('fmt-img-file-inp').click();
+}
 function applyFmtImg(ctx,url){
   if(!url)return;
   focusEd(ctx);
@@ -6207,27 +6264,36 @@ document.addEventListener('paste', e=>{
 function _showRteImgTb(img){
   _rteSelectedImg=img;
   const tb=document.getElementById('rte-img-tb');
+  const inGrid=!!img.closest('.rte-img-grid');
+  if(inGrid){
+    const grid=img.closest('.rte-img-grid');
+    const gap=parseInt(grid.dataset.gap)||8;
+    tb.innerHTML=`<span style="font-size:9px;font-weight:800;color:rgba(0,0,0,.4);padding:0 2px;">간격</span>
+      <input id="rte-grid-gap-inp" type="number" min="0" max="100" value="${gap}"
+        style="width:40px;padding:2px 4px;border:1.5px solid rgba(0,0,0,.3);font-size:11px;font-family:inherit;outline:none;"
+        onkeydown="if(event.key==='Enter')setRteGridGap()">
+      <span style="font-size:10px;color:rgba(0,0,0,.4);">px</span>
+      <button class="rte-itb-btn" onclick="setRteGridGap()">적용</button>
+      <div style="width:1px;height:18px;background:rgba(0,0,0,.18);margin:0 1px;flex-shrink:0;"></div>
+      <button class="rte-itb-btn" onclick="deleteRteImg()" style="color:#c00;">이미지 삭제</button>
+      <button class="rte-itb-btn" onclick="deleteRteImgGrid()" style="color:#c00;font-weight:900;">✕ 그리드 삭제</button>`;
+  } else {
+    const curW=img.style.width||'';
+    const wrap=img.closest('div');
+    const curAl=(wrap?.style.textAlign)||'left';
+    const wBtns=['자동','25%','50%','75%','100%'].map(w=>`<button class="rte-itb-btn${(w==='자동'&&!curW)||(w===curW)?' on':''}" onclick="setRteImgW('${w}')">${w}</button>`).join('');
+    const alBtns=[['left','←좌'],['center','=중'],['right','우→']].map(([v,l])=>`<button class="rte-itb-btn${(curAl===v||(v==='left'&&!wrap?.style.textAlign))?' on':''}" id="rte-img-al-${v}" onclick="setRteImgAlign('${v}')">${l}</button>`).join('');
+    tb.innerHTML=`<span style="font-size:9px;font-weight:800;color:rgba(0,0,0,.4);padding:0 2px;">폭</span>
+      ${wBtns}
+      <input id="rte-img-px-inp" type="number" min="10" max="2000" placeholder="px" style="width:48px;padding:2px 4px;border:1.5px solid rgba(0,0,0,.3);font-size:11px;font-family:inherit;outline:none;" onkeydown="if(event.key==='Enter')setRteImgWPx()">
+      <button class="rte-itb-btn" onclick="setRteImgWPx()">적용</button>
+      <div style="width:1px;height:18px;background:rgba(0,0,0,.18);margin:0 1px;flex-shrink:0;"></div>
+      <span style="font-size:9px;font-weight:800;color:rgba(0,0,0,.4);padding:0 2px;">정렬</span>
+      ${alBtns}
+      <div style="width:1px;height:18px;background:rgba(0,0,0,.18);margin:0 1px;flex-shrink:0;"></div>
+      <button class="rte-itb-btn" onclick="deleteRteImg()" style="color:#c00;font-weight:900;">✕ 삭제</button>`;
+  }
   tb.style.display='flex';
-  // 현재 폭 감지해서 폭 버튼 활성화
-  const curW=img.style.width||'';
-  ['자동','25%','50%','75%','100%'].forEach(w=>{
-    const wMap={'자동':!curW,'25%':curW==='25%','50%':curW==='50%','75%':curW==='75%','100%':curW==='100%'};
-    // 폭 버튼은 textContent로 매칭 (정렬 버튼과 구분)
-  });
-  tb.querySelectorAll('.rte-itb-btn').forEach(b=>{
-    const txt=b.textContent.trim();
-    if(['←좌','=중','우→'].includes(txt)) return; // 정렬 버튼은 아래서 처리
-    b.classList.toggle('on', txt===curW||(txt==='자동'&&!curW));
-  });
-  // 현재 정렬 감지
-  const wrap=img.closest('div');
-  const curAl=(wrap?.style.textAlign)||'left';
-  ['left','center','right'].forEach(al=>{
-    const btn=document.getElementById('rte-img-al-'+al);
-    if(btn) btn.classList.toggle('on',curAl===al||(al==='left'&&!wrap?.style.textAlign));
-  });
-  const inp=document.getElementById('rte-img-px-inp');
-  if(inp) inp.value='';
   _positionRteImgTb(img);
 }
 function _positionRteImgTb(img){
@@ -6274,8 +6340,28 @@ function setRteImgWPx(){
 }
 function deleteRteImg(){
   if(!_rteSelectedImg) return;
+  const grid=_rteSelectedImg.closest('.rte-img-grid');
   _rteSelectedImg.remove();
+  if(grid&&grid.querySelectorAll('img').length===0) grid.remove();
   _hideRteImgTb();
+  scheduleBmPreview();
+}
+function deleteRteImgGrid(){
+  if(!_rteSelectedImg) return;
+  const grid=_rteSelectedImg.closest('.rte-img-grid');
+  if(grid) grid.remove();
+  _hideRteImgTb();
+  scheduleBmPreview();
+}
+function setRteGridGap(){
+  if(!_rteSelectedImg) return;
+  const grid=_rteSelectedImg.closest('.rte-img-grid');
+  if(!grid) return;
+  const v=document.getElementById('rte-grid-gap-inp')?.value;
+  if(v===''||v===null) return;
+  const gap=parseInt(v)||0;
+  grid.style.gap=gap+'px';
+  grid.dataset.gap=gap;
   scheduleBmPreview();
 }
 // contenteditable 클릭 이벤트 위임 — 이미지 감지
@@ -6304,7 +6390,16 @@ async function uploadFmtImg(event){
     const ref=storage.ref(`blocks/inline/${ts}_${safe}`);
     await ref.put(file,{contentType:file.type});
     const url=await ref.getDownloadURL();
-    applyFmtImg(ctx,url);
+    if(_fmtImgCols===1){
+      applyFmtImg(ctx,url);
+    } else {
+      const slot=_fmtImgUploadSlot;
+      _fmtImgUrls[slot]=url;
+      const inp=document.getElementById('fmt-img-url-'+slot);
+      if(inp) inp.value=url;
+      const prev=document.getElementById('fmt-img-prev-'+slot);
+      if(prev){prev.src=url;prev.style.display='block';}
+    }
   }catch(e){alert('이미지 업로드 실패: '+e.message);}
 }
 
@@ -9793,22 +9888,6 @@ async function deleteGbkEntry(configId, entryId) {
 }
 </script>
 <div id="fmt-popup" style="display:none;position:fixed;background:#fff;border:2px solid #000;z-index:600;box-shadow:3px 3px 0 rgba(0,0,0,.1);min-width:110px;"><div id="fmt-popup-inner"></div></div>
-<div id="rte-img-tb" style="display:none;position:fixed;z-index:700;background:#fff;border:1.5px solid #000;box-shadow:2px 2px 0 rgba(0,0,0,.12);padding:3px 4px;gap:3px;align-items:center;flex-wrap:wrap;">
-  <span style="font-size:9px;font-weight:800;color:rgba(0,0,0,.4);padding:0 2px;">폭</span>
-  <button class="rte-itb-btn" onclick="setRteImgW('auto')">자동</button>
-  <button class="rte-itb-btn" onclick="setRteImgW('25%')">25%</button>
-  <button class="rte-itb-btn" onclick="setRteImgW('50%')">50%</button>
-  <button class="rte-itb-btn" onclick="setRteImgW('75%')">75%</button>
-  <button class="rte-itb-btn" onclick="setRteImgW('100%')">100%</button>
-  <input id="rte-img-px-inp" type="number" min="10" max="2000" placeholder="px" style="width:48px;padding:2px 4px;border:1.5px solid rgba(0,0,0,.3);font-size:11px;font-family:inherit;outline:none;" onkeydown="if(event.key==='Enter')setRteImgWPx()">
-  <button class="rte-itb-btn" onclick="setRteImgWPx()">적용</button>
-  <div style="width:1px;height:18px;background:rgba(0,0,0,.18);margin:0 1px;flex-shrink:0;"></div>
-  <span style="font-size:9px;font-weight:800;color:rgba(0,0,0,.4);padding:0 2px;">정렬</span>
-  <button class="rte-itb-btn" id="rte-img-al-left"  onclick="setRteImgAlign('left')">←좌</button>
-  <button class="rte-itb-btn" id="rte-img-al-center" onclick="setRteImgAlign('center')">=중</button>
-  <button class="rte-itb-btn" id="rte-img-al-right" onclick="setRteImgAlign('right')">우→</button>
-  <div style="width:1px;height:18px;background:rgba(0,0,0,.18);margin:0 1px;flex-shrink:0;"></div>
-  <button class="rte-itb-btn" onclick="deleteRteImg()" style="color:#c00;font-weight:900;">✕ 삭제</button>
-</div>
+<div id="rte-img-tb" style="display:none;position:fixed;z-index:700;background:#fff;border:1.5px solid #000;box-shadow:2px 2px 0 rgba(0,0,0,.12);padding:3px 4px;gap:3px;align-items:center;flex-wrap:wrap;"></div>
 </body>
 </html>
