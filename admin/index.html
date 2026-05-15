@@ -6018,7 +6018,7 @@ function openFmtDd(btn,type,ctx){
   if(type==='sz'){
     const curPx=_detectSzRaw(ctx)||14;
     const presets=[8,10,12,14,16,18,20,24,28,32,40,48];
-    const presetBtns=presets.map(px=>`<button onpointerdown="epd(event)" onclick="applyFmtSzPx('${ctx}',${px})" style="padding:4px 7px;border:1.5px solid ${curPx===px?'#000':'rgba(0,0,0,.22)'};background:${curPx===px?'#000':'transparent'};color:${curPx===px?'#fff':'#000'};font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">${px}</button>`).join('');
+    const presetBtns=presets.map(px=>`<button class="rte-itb-btn sz-preset-btn${curPx===px?' on':''}" onpointerdown="epd(event)" onclick="applyFmtSzPx('${ctx}',${px})">${px}</button>`).join('');
     html=`<div style="padding:10px 12px 12px;min-width:190px;">
       <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:8px;">폰트 크기 (px)</div>
       <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;">
@@ -6047,7 +6047,8 @@ function openFmtDd(btn,type,ctx){
     const cur=_detectClr();
     const kc=curKeyColors.length?curKeyColors.map(k=>k.color||k):['#00CE6B','#FFF100','#F95548','#0BC6FF'];
     const sw=kc.map(c=>{const b=c.toLowerCase()==='#ffffff'?'#ccc':'#000';
-      return `<div onpointerdown="epd(event)" onclick="applyFmtClr('${ctx}','${c}')" title="${c}" style="width:20px;height:20px;background:${c};border:2px solid ${b};cursor:pointer;border-radius:2px;flex-shrink:0;"></div>`;
+      const sel=cur&&c.toLowerCase()===cur.toLowerCase()?'outline:3px solid #333;outline-offset:2px;':'';
+      return `<div onpointerdown="epd(event)" onclick="applyFmtClr('${ctx}','${c}')" title="${c}" style="width:20px;height:20px;background:${c};border:2px solid ${b};cursor:pointer;border-radius:2px;flex-shrink:0;${sel}"></div>`;
     }).join('');
     html=`<div style="padding:10px 10px 8px;">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
@@ -6062,7 +6063,8 @@ function openFmtDd(btn,type,ctx){
     const cur=_detectBgClr();
     const kc=curKeyColors.length?curKeyColors.map(k=>k.color||k):['#00CE6B','#FFF100','#F95548','#0BC6FF'];
     const sw=kc.map(c=>{const b=c.toLowerCase()==='#ffffff'?'#ccc':'#000';
-      return `<div onpointerdown="epd(event)" onclick="applyFmtBg('${ctx}','${c}')" title="${c}" style="width:20px;height:20px;background:${c};border:2px solid ${b};cursor:pointer;border-radius:2px;flex-shrink:0;"></div>`;
+      const sel=cur&&c.toLowerCase()===cur.toLowerCase()?'outline:3px solid #333;outline-offset:2px;':'';
+      return `<div onpointerdown="epd(event)" onclick="applyFmtBg('${ctx}','${c}')" title="${c}" style="width:20px;height:20px;background:${c};border:2px solid ${b};cursor:pointer;border-radius:2px;flex-shrink:0;${sel}"></div>`;
     }).join('');
     html=`<div style="padding:10px 10px 8px;min-width:190px;">
       <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:8px;">텍스트 배경색</div>
@@ -6342,6 +6344,10 @@ function applyFmtSzPx(ctx,px){
   if(!px||isNaN(px)||px<1)return;
   fmtSz(ctx,px);
   const btn=document.getElementById('fmt-sz-'+ctx);if(btn)btn.textContent=px+'px';
+  // 팝업 안 프리셋 버튼 선택 상태 업데이트
+  document.querySelectorAll('.sz-preset-btn').forEach(b=>b.classList.toggle('on',parseInt(b.textContent)===px));
+  // 숫자 입력 필드 동기화
+  const inp=document.getElementById('fmt-sz-inp');if(inp&&document.activeElement!==inp)inp.value=px;
 }
 function applyFmtSz(ctx,px){ applyFmtSzPx(ctx,px); closeFmtPopup(); }
 function applyFmtAlign(ctx,dir){
@@ -6365,25 +6371,9 @@ function applyFmtBg(ctx,clr){
     }
   } else {
     document.execCommand('backColor',false,clr);
-    const ed=getEd(ctx);
-    if(ed) _syncBgFontSize(ed);
   }
   const dot=document.getElementById('fmt-bg-dot-'+ctx);
   if(dot) dot.style.background=(clr==='rgba(0,0,0,0)'||clr==='transparent')?'rgba(0,0,0,.18)':clr;
-}
-/* 배경색 span 안에 명시적 font-size 자식이 있으면 그 크기를 span 자신에도 적용.
-   배경색 span의 font-size가 내용보다 작으면 텍스트가 배경 위아래로 삐져나오는 버그 방지. */
-function _syncBgFontSize(ed){
-  ed.querySelectorAll('span[style]').forEach(bgSpan=>{
-    if(!bgSpan.style.backgroundColor) return;
-    let maxFs=0;
-    bgSpan.querySelectorAll('[style*="font-size"]').forEach(el=>{
-      const fs=parseFloat(el.style.fontSize);
-      if(!isNaN(fs)&&fs>maxFs) maxFs=fs;
-    });
-    if(maxFs>0) bgSpan.style.fontSize=maxFs+'px';
-    else bgSpan.style.removeProperty('font-size');
-  });
 }
 function applyFmtLink(ctx,url,newText){
   if(!url||!url.trim())return;
