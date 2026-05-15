@@ -6136,6 +6136,7 @@ function openFmtDd(btn,type,ctx){
       <button onpointerdown="epd(event)" onclick="insertHr('${ctx}')" style="width:100%;padding:7px 0;background:#000;color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">삽입</button>
     </div>`;
   } else if(type==='img'){
+    _fmtImgUrls=['','',''];
     const colBtns=[1,2,3].map(n=>`<button class="rte-itb-btn fmt-img-col-btn${_fmtImgCols===n?' on':''}" onpointerdown="epd(event)" onclick="setFmtImgCols('${ctx}',${n})">${n}열</button>`).join('');
     html=`<div style="padding:10px;min-width:240px;">
     <div style="font-size:10px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:8px;">이미지 삽입</div>
@@ -6205,7 +6206,6 @@ function _fmtImgColsHtml(ctx){
 }
 function setFmtImgCols(ctx,n){
   _fmtImgCols=n;
-  _fmtImgUrls=['','',''];
   document.getElementById('fmt-img-cols-content').innerHTML=_fmtImgColsHtml(ctx);
   document.querySelectorAll('.fmt-img-col-btn').forEach((b,i)=>b.classList.toggle('on',i+1===n));
 }
@@ -6383,6 +6383,8 @@ function triggerFmtImgUpload(ctx){
 async function uploadFmtImg(event){
   const file=event.target.files?.[0];if(!file)return;
   const ctx=_fmtImgUploadCtx;
+  const slot=_fmtImgUploadSlot;
+  const cols=_fmtImgCols;
   event.target.value='';
   try{
     const ts=Date.now();
@@ -6390,10 +6392,9 @@ async function uploadFmtImg(event){
     const ref=storage.ref(`blocks/inline/${ts}_${safe}`);
     await ref.put(file,{contentType:file.type});
     const url=await ref.getDownloadURL();
-    if(_fmtImgCols===1){
+    if(cols===1){
       applyFmtImg(ctx,url);
     } else {
-      const slot=_fmtImgUploadSlot;
       _fmtImgUrls[slot]=url;
       const inp=document.getElementById('fmt-img-url-'+slot);
       if(inp) inp.value=url;
