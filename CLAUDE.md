@@ -682,6 +682,17 @@ closeHelpPanel();
 - 테이블 컬럼 드래그 리사이즈 + 열 고정 범위 선택 (사용자·폼응답·도구응답 테이블)
 - admin RTE 헬퍼: 도구 설명·완료메시지 필드에 서식 지원 + `{{변수}}` 삽입 버튼
 - 도구 플레이어(form, schedule, youtube-playlist, payment)에 `applyVars()` 적용
+- 블록 에디터: 이미지 열너비 % 입력 (슬라이더 + 숫자 직접 입력)
+- 테이블 열 설정(숨기기·고정) Firestore 영구 저장 (`adminColPrefs` 필드)
+
+**플레이어 UX**
+- 이미지 클릭 시 라이트박스 확대 — 블록 이미지, 혼합 블록 이미지, RTE 텍스트 내 이미지 모두 지원
+- 블록별 지연 로그인 요구 설정 (`requireAuth` 토글) — on 시 비로그인 사용자에게 🔒 잠금 표시
+- 지연 로그인 기준: 도구 블록 자동잠금 폐지 → 전 블록 타입에 `requireAuth` opt-in 방식으로 통일
+
+**방명록 도구 (`tools/guestbook/`)**
+- 익명 닉네임 단어 입력 → 콤마 구분 textarea (한 번에 여러 개 입력)
+- 위젯 타입으로 방명록 추가 — 카드 슬라이더(작성자·텍스트·날짜, 승인된 항목만 표시)
 
 ---
 
@@ -704,6 +715,22 @@ match /cms_form_responses/{document=**} { allow write: if true; allow read: if t
 
 - 사용자가 직접 지정할 예정
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
+
+#### Firestore 스키마 추가 (이번 세션)
+```
+cms_projects/{projectId}
+  adminColPrefs: {
+    hiddenUser: string[],   ← 사용자 테이블 숨긴 컬럼 키 목록
+    frozenUser: number,     ← 사용자 테이블 고정 열 수
+  }
+cms_form_configs/{formId}
+  adminColPrefs: {
+    hidden: string[],       ← 폼 응답 테이블 숨긴 컬럼 키 목록
+    frozen: number,         ← 폼 응답 테이블 고정 열 수
+  }
+stage_content/{stageId}/blocks/{blockId}
+  requireAuth: boolean      ← 지연 로그인 프로젝트에서 비로그인 차단 여부 (기본 미설정=공개)
+```
 
 ---
 
