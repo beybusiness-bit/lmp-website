@@ -6240,18 +6240,40 @@ function setFmtImgCols(ctx,n){
 function applyFmtImgGrid(ctx){
   const urls=_fmtImgUrls.slice(0,_fmtImgCols);
   if(!urls.some(u=>u)) return;
-  focusEd(ctx);
+  const ed=getEd(ctx);
+  ed.focus();
+  if(savedRange&&savedRange.el===ed){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}
   const widths=Array.from({length:_fmtImgCols},(_,i)=>Math.max(1,_fmtImgWidths[i]||1));
-  const cols=widths.map(w=>w+'fr').join(' ');
   const gap=_fmtImgGap??8;
-  const imgs=Array.from({length:_fmtImgCols},(_,i)=>{
+  // execCommand('insertHTML')은 class/data 속성을 제거할 수 있어 직접 DOM 삽입
+  const grid=document.createElement('div');
+  grid.className='rte-img-grid';
+  grid.style.cssText=`display:grid;grid-template-columns:${widths.map(w=>w+'fr').join(' ')};gap:${gap}px;`;
+  grid.dataset.gap=String(gap);
+  grid.dataset.widths=widths.join(',');
+  Array.from({length:_fmtImgCols},(_,i)=>{
     const url=_fmtImgUrls[i]||'';
-    return url
-      ?`<img src="${url}" style="width:100%;height:auto;display:block;" loading="lazy">`
-      :`<div style="width:100%;background:rgba(0,0,0,.06);aspect-ratio:1;"></div>`;
-  }).join('');
-  const dataWidths=widths.join(',');
-  document.execCommand('insertHTML',false,`<div class="rte-img-grid" style="display:grid;grid-template-columns:${cols};gap:${gap}px;" data-gap="${gap}" data-widths="${dataWidths}">${imgs}</div>`);
+    if(url){
+      const img=document.createElement('img');
+      img.src=url; img.loading='lazy';
+      img.style.cssText='width:100%;height:auto;display:inline-block;vertical-align:top;';
+      grid.appendChild(img);
+    } else {
+      const ph=document.createElement('div');
+      ph.style.cssText='width:100%;background:rgba(0,0,0,.06);aspect-ratio:1;';
+      grid.appendChild(ph);
+    }
+  });
+  const sel=window.getSelection();
+  if(sel.rangeCount){
+    const range=sel.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(grid);
+    range.setStartAfter(grid); range.collapse(true);
+    sel.removeAllRanges(); sel.addRange(range);
+  } else {
+    ed.appendChild(grid);
+  }
   scheduleBmPreview();
 }
 function triggerFmtImgUploadSlot(ctx,slot){
@@ -6420,16 +6442,23 @@ function setRteGridColW(){
   grid.style.gridTemplateColumns=savedWidths.map(w=>w+'fr').join(' ');
   scheduleBmPreview();
 }
-// contenteditable 클릭 이벤트 위임 — 이미지 감지
-document.addEventListener('click',e=>{
+// contenteditable 이미지 클릭 감지 — capture + click 두 번 걸어 display:block 이미지도 처리
+function _onImgClick(e){
   const tb=document.getElementById('rte-img-tb');
   if(tb&&tb.contains(e.target)) return;
-  if(e.target.tagName==='IMG'&&e.target.closest('[contenteditable]')){
+  if(e.target.tagName==='IMG'&&e.target.closest('.ced')){
     e.preventDefault();
     _showRteImgTb(e.target);
     return;
   }
-  _hideRteImgTb();
+  if(!tb?.contains(e.target)) _hideRteImgTb();
+}
+document.addEventListener('click',_onImgClick);
+document.addEventListener('mousedown',e=>{
+  if(e.target.tagName==='IMG'&&e.target.closest('.ced')){
+    // block 이미지의 경우 click이 발생하지 않을 수 있으므로 mousedown에서도 처리
+    setTimeout(()=>{ if(_rteSelectedImg!==e.target) _showRteImgTb(e.target); },0);
+  }
 });
 function triggerFmtImgUpload(ctx){
   _fmtImgUploadCtx=ctx;
