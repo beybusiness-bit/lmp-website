@@ -6218,18 +6218,33 @@ let _fmtImgCols=1, _fmtImgGap=8, _fmtImgUrls=['','',''], _fmtImgWidths=[50,50,50
 function _fmtImgColsHtml(ctx){
   if(_fmtImgCols===1){
     const wPresets=['자동','25%','50%','75%','100%'];
-    const wBtns=wPresets.map(w=>`<button class="rte-itb-btn${_fmtImgW===w?' on':''}" onpointerdown="epd(event)" onclick="_fmtImgW='${w}';document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');document.getElementById('fmt-img-px-pop').value='';event.stopPropagation();">${w}</button>`).join('');
+    const wBtns=wPresets.map(w=>`<button class="rte-itb-btn${_fmtImgW===w?' on':''}" onpointerdown="epd(event)" onclick="_fmtImgSetW('${w}');event.stopPropagation();">${w}</button>`).join('');
     const alBtns=[['left','←좌'],['center','=중'],['right','우→']].map(([v,l])=>`<button class="rte-itb-btn${_fmtImgAlign===v?' on':''}" onpointerdown="epd(event)" onclick="_fmtImgAlign='${v}';document.querySelectorAll('#fmt-img-al-row .rte-itb-btn').forEach(b=>b.classList.remove('on'));this.classList.add('on');event.stopPropagation();">${l}</button>`).join('');
+    const _curPct=_fmtImgW&&_fmtImgW.endsWith('%')?parseInt(_fmtImgW):100;
+    const _curPx=_fmtImgW&&_fmtImgW.endsWith('px')?parseInt(_fmtImgW):'';
     return `<div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:4px;">이미지 URL</div>
       <input id="fmt-img-url-inp" class="fi-sm" type="url" placeholder="https://…" style="margin-bottom:8px;"
         onpointerdown="epd(event)"
         onkeydown="if(event.key==='Enter'){applyFmtImg('${ctx}',this.value.trim());closeFmtPopup();}">
       <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:4px;">가로 폭</div>
-      <div id="fmt-img-w-row" style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px;">${wBtns}
-        <input id="fmt-img-px-pop" type="number" min="10" max="2000" placeholder="직접(px)" onpointerdown="epd(event)"
+      <div id="fmt-img-w-row" style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:8px;">${wBtns}</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <input id="fmt-img-pct-range" type="range" min="1" max="100" value="${_curPct}"
+          style="flex:1;accent-color:#000;cursor:pointer;"
+          oninput="const v=parseInt(this.value);_fmtImgW=v+'%';document.getElementById('fmt-img-pct-num').value=v;document.getElementById('fmt-img-px-pop').value='';document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.toggle('on',b.textContent===v+'%'));">
+        <input id="fmt-img-pct-num" type="number" min="1" max="100" value="${_fmtImgW==='자동'?'':_curPct}" onpointerdown="epd(event)"
+          style="width:44px;padding:3px 5px;border:1.5px solid rgba(0,0,0,.25);font-size:12px;font-weight:700;font-family:inherit;outline:none;text-align:center;"
+          oninput="if(this.value){const v=Math.min(100,Math.max(1,parseInt(this.value)||1));_fmtImgW=v+'%';document.getElementById('fmt-img-pct-range').value=v;document.getElementById('fmt-img-px-pop').value='';document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.toggle('on',b.textContent===v+'%'));}">
+        <span style="font-size:12px;color:rgba(0,0,0,.5);font-weight:700;">%</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;margin-bottom:8px;">
+        <span style="font-size:10px;color:rgba(0,0,0,.4);white-space:nowrap;">또는</span>
+        <input id="fmt-img-px-pop" type="number" min="10" max="2000" placeholder="직접 px" onpointerdown="epd(event)"
           style="width:72px;padding:3px 5px;border:1.5px solid rgba(0,0,0,.25);font-size:11px;font-family:inherit;outline:none;"
-          oninput="if(this.value){_fmtImgW=this.value+'px';document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.remove('on'));}"
+          value="${_curPx}"
+          oninput="if(this.value){_fmtImgW=this.value+'px';document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.remove('on'));document.getElementById('fmt-img-pct-num').value='';}"
           onkeydown="if(event.key==='Enter'&&this.value){_fmtImgW=this.value+'px';}">
+        <span style="font-size:11px;color:rgba(0,0,0,.4);">px</span>
       </div>
       <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:4px;">정렬</div>
       <div id="fmt-img-al-row" style="display:flex;gap:3px;margin-bottom:8px;">${alBtns}</div>
@@ -6275,6 +6290,17 @@ function setFmtImgCols(ctx,n){
   _fmtImgCols=n; _fmtImgWidths=n===3?[34,33,33]:[50,50,50];
   document.getElementById('fmt-img-cols-content').innerHTML=_fmtImgColsHtml(ctx);
   document.querySelectorAll('.fmt-img-col-btn').forEach((b,i)=>b.classList.toggle('on',i+1===n));
+}
+function _fmtImgSetW(w){
+  _fmtImgW=w;
+  const pctVal=w&&w.endsWith('%')?parseInt(w):null;
+  const rangeEl=document.getElementById('fmt-img-pct-range');
+  const numEl=document.getElementById('fmt-img-pct-num');
+  const pxEl=document.getElementById('fmt-img-px-pop');
+  if(rangeEl) rangeEl.value=pctVal??100;
+  if(numEl) numEl.value=pctVal??'';
+  if(pxEl) pxEl.value=pctVal!=null?'':(w&&w.endsWith('px')?parseInt(w):'');
+  document.querySelectorAll('#fmt-img-w-row .rte-itb-btn').forEach(b=>b.classList.toggle('on',b.textContent===w));
 }
 function applyFmtImgGrid(ctx){
   const urls=_fmtImgUrls.slice(0,_fmtImgCols);
