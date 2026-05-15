@@ -1613,7 +1613,7 @@ function blockHtml(b){
     const trigger=b.completeTrigger||'tool-signal';
     const onloadAttr=trigger==='open'?` onload="if(this.src&&this.src!=='about:blank')autoCheckBlock('${b.id}')"`:'';
     const wrapCls=isFull?'g-block-embed g-tool-full-wrap':'g-block-embed';
-    return `<div class="${wrapCls}" style="${mS}${bgS}${bgImgS}${pS}${wrapH}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}" data-block-bg="${b.bgColor||''}" data-complete-trigger="${trigger}"${onloadAttr}></iframe></div>`;
+    return `<div class="${wrapCls}" style="${mS}${bgS}${bgImgS}${pS}${wrapH}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}" data-block-bg="${b.bgColor||''}" data-block-bg-image="${b.bgImageUrl||''}" data-block-bg-fit="${b.bgImageFit||'cover'}" data-block-bg-pos="${b.bgImagePos||'center'}" data-complete-trigger="${trigger}"${onloadAttr}></iframe></div>`;
   }
   if(b.type==='spacer'){
     const h=b.spacerHeight||40;
@@ -1657,7 +1657,10 @@ function _effectivePageBg(){
   return (cs.getPropertyValue('--prep-bg')||cs.getPropertyValue('--body-bg')||cs.getPropertyValue('--c')||'').trim();
 }
 function _lmpContext(iframeEl){
-  let bb = iframeEl ? (iframeEl.getAttribute('data-block-bg')||'') : '';
+  let bb   = iframeEl ? (iframeEl.getAttribute('data-block-bg')||'') : '';
+  let bbi  = iframeEl ? (iframeEl.getAttribute('data-block-bg-image')||'') : '';
+  let bbf  = iframeEl ? (iframeEl.getAttribute('data-block-bg-fit')||'cover') : 'cover';
+  let bbp  = iframeEl ? (iframeEl.getAttribute('data-block-bg-pos')||'center') : 'center';
   const _session = JSON.parse(sessionStorage.getItem('userSession')||'{}');
   const _authKeys = typeof AUTH_FIELDS!=='undefined' ? AUTH_FIELDS.map(f=>f.key) : null;
   const _userFields = _authKeys
@@ -1672,6 +1675,9 @@ function _lmpContext(iframeEl){
     prepBg: typeof prepBg!=='undefined' ? prepBg : '',
     userFields: _userFields,
     blockBg: bb,
+    blockBgImage: bbi,
+    blockBgFit: bbf,
+    blockBgPos: bbp,
     stageDisplayType: (typeof curStageId!=='undefined'&&curStageId&&typeof STAGES!=='undefined') ? (STAGES.find(s=>s.id===curStageId)?.displayType||'scroll') : 'scroll'
   };
 }
