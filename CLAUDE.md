@@ -784,6 +784,8 @@ match /cms_payment_records/{doc} { allow read: if true; }
 **미완료 항목:**
 - 재고 잔량 표시: `stockRemaining ?? stockTotal` fallback 적용 완료 — 실제 테스트 재확인 필요
 - 블록 숨기기: `tierLockMode: 'hide'` 구현 완료 — admin에서 설정 후 플레이어에서 확인 필요
+- **폼 필드 추가 모달**: z-index 600 배포됨. 여전히 안 열리면 콘솔 오류 확인 (try-catch로 alert 표시 추가됨)
+- **PayUp 결제**: 오류코드 8002 = merchantId 문제. admin → 결제 설정 → 페이업 가맹점 ID를 `standard_test`(테스트) 또는 실제 가맹점 ID로 수정 필요
 
 **기타:**
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
@@ -796,6 +798,10 @@ match /cms_payment_records/{doc} { allow read: if true; }
 - **사이드바 피드백 수정** ✅: 버튼 radius 0·검정색, 활동 글씨 크기·스테이지 제목·클릭 네비게이션, 결제 orderBy 제거
 - **재고 잔량 표시 버그 수정** ✅: `stockRemaining ?? stockTotal` fallback (표시·품절판단·재고차감 모두)
 - **블록 완전 숨기기 옵션** ✅: admin `tierLockMode: 'cover'|'hide'` 라디오, player renderGuideScroll/Slide 필터링 (4파일)
+- **PayUp 결제창 오픈** ✅: SDK 컨테이너 ID `payup_layer`/`bg_layer` 교체 — 오류코드 8002(merchantId)까지 도달
+- **admin 폼 필드 모달 z-index** ✅: `.modal-ov` 400→600 (preview 백드롭 449 위로)
+- **폼 필드 모달 JS 오류 감지** ✅: try-catch + alert 추가
+- **결제 게이트 다중 tier 지원** ✅: `requiredTier` 쉼표 구분 파싱 (4파일 동기화), gmbf-03 `_isTierLocked` 누락 추가
 
 #### Firestore 스키마 추가 (누적)
 ```
