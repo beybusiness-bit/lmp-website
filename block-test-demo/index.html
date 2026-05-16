@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>준비 포털</title>
 <!-- OG_META -->
 <style>
@@ -22,7 +22,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .slide.on{opacity:1;}
 .slide::after{content:'';position:absolute;inset:0;background:var(--sl-ov,rgba(0,0,0,.38));}
 /* ── SEPARATE layout: main content ── */
-#main-content{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:40px 32px 60px;}
+#main-content{position:relative;z-index:10;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:40px 32px calc(60px + env(safe-area-inset-bottom, 0px));}
 .top-group{display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;}
 .bottom-group{display:flex;flex-direction:column;align-items:center;gap:6px;}
 .edition-text{font-size:18px;font-weight:900;color:var(--edition-tc,var(--c));letter-spacing:-.3px;transition:color 1s ease;margin-bottom:-14px;}
@@ -38,7 +38,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 #cta-text{color:var(--cta-tc,var(--c));}
 #reg-cta-text{color:var(--reg-tc,var(--c));}
 /* ── MERGED layout ── */
-#merged-content{display:none;position:relative;z-index:10;min-height:100vh;flex-direction:column;}
+#merged-content{display:none;position:relative;z-index:10;min-height:100vh;min-height:100dvh;flex-direction:column;}
 #merged-topbar{flex-shrink:0;display:flex;align-items:center;padding:14px 20px;border-bottom:2px solid rgba(255,255,255,.3);background:rgba(0,0,0,.25);backdrop-filter:blur(4px);}
 #merged-topbar .topbar-left{cursor:pointer;-webkit-tap-highlight-color:transparent;}
 #merged-topbar .topbar-center{flex:1;text-align:center;font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px;}
@@ -1670,6 +1670,7 @@ async function loadMyActivity(){
   try{
     await _preloadStageBlocks();
     const formIds=new Set(), gbIds=new Set();
+    let ytplBlock=null;
     Object.values(_stageBlocksCache).forEach(blocks=>{
       (blocks||[]).forEach(b=>{
         if(b.type==='tool'&&b.toolConfig?.formId) formIds.add(b.toolConfig.formId);
@@ -1677,6 +1678,11 @@ async function loadMyActivity(){
         if(b.type==='tool'&&b.toolType==='guestbook'&&b.toolConfig?.guestbookId) gbIds.add(b.toolConfig.guestbookId);
       });
     });
+    for(let i=0;i<STAGES.length&&!ytplBlock;i++){
+      const blocks=_stageBlocksCache[STAGES[i].id]||[];
+      const b=blocks.find(b=>b.type==='tool'&&b.toolType==='youtube-playlist');
+      if(b) ytplBlock={stageIdx:i,blockId:b.id,toolNickname:b.toolNickname||'',playlistId:b.toolConfig?.youtubePlaylistId||''};
+    }
     // 인스턴스 제목 병렬 로드
     const formTitles={}, gbTitles={};
     const items=[];
@@ -1710,7 +1716,16 @@ async function loadMyActivity(){
             items.push({type:'guestbook',configId,ts,d});
           });
         }catch(e){}
-      })
+      }),
+      ...(ytplBlock&&ytplBlock.playlistId?[db.collection('cms_youtube_submissions').doc(ytplBlock.playlistId)
+        .collection('songs').where('userId','==',USER_DOC_ID).limit(20).get()
+        .then(snap=>{
+          snap.docs.forEach(doc=>{
+            const d=doc.data();
+            const ts=d.submittedAt?.toMillis?.()??0;
+            items.push({type:'youtube',ts,d});
+          });
+        }).catch(()=>{})]:[])
     ]);
     items.sort((a,b)=>b.ts-a.ts);
     if(!items.length){ el.innerHTML='<div class="mi-empty">활동 내역이 없어요.</div>'; return; }
@@ -1728,6 +1743,20 @@ async function loadMyActivity(){
           <div class="mi-act-type">${label}</div>
           ${stageTitle?`<div class="mi-act-sub">${stageTitle}</div>`:''}
           <div class="mi-act-status">제출 완료</div>
+          <div class="mi-act-date">${dt}</div>
+        </div>`;
+      } else if(item.type==='youtube'){
+        const dt=item.d.submittedAt?.toDate?.()?.toLocaleDateString('ko-KR')||'';
+        const found=ytplBlock;
+        const songTitle=esc(item.d.title||'음악 신청');
+        const artist=esc(item.d.channelTitle||'');
+        const stageTitle=found?esc(STAGES[found.stageIdx]?.title||''):'';
+        const navJson=found?JSON.stringify({stageIdx:found.stageIdx,blockId:found.blockId}).replace(/"/g,"'"):'';
+        const clickAttr=found?` onclick="_navToBlock(${navJson})"`:' onclick="closeMenu();"';
+        return `<div class="mi-act-item"${clickAttr}>
+          <div class="mi-act-type">${songTitle}</div>
+          ${artist?`<div class="mi-act-sub">${artist}</div>`:''}
+          <div class="mi-act-status">곡 신청</div>
           <div class="mi-act-date">${dt}</div>
         </div>`;
       } else {
