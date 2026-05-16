@@ -6090,10 +6090,35 @@ function rteInsertVar(id){
 function rteInsertImg(id){
   const el=document.getElementById('rte-'+id);
   if(!el)return;
-  const url=prompt('이미지 URL을 입력하세요:');
-  if(!url)return;
-  el.focus();
-  document.execCommand('insertHTML',false,`<img src="${url.replace(/"/g,'&quot;')}" style="max-width:100%;height:auto;display:block;margin:4px 0;">`);
+  const useFile=confirm('파일로 업로드하겠습니까?\n\n확인 = 파일 업로드\n취소 = URL 직접 입력');
+  if(useFile){
+    let inp=document.getElementById('_rte-img-file-inp');
+    if(!inp){
+      inp=document.createElement('input');
+      inp.type='file'; inp.id='_rte-img-file-inp'; inp.accept='image/*'; inp.style.display='none';
+      document.body.appendChild(inp);
+    }
+    inp.value='';
+    inp.onchange=async function(){
+      const file=inp.files[0];
+      if(!file)return;
+      const ts=Date.now();
+      const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+      try{
+        const ref=storage.ref(`rte-images/${ts}_${safe}`);
+        await ref.put(file,{contentType:file.type});
+        const url=await ref.getDownloadURL();
+        el.focus();
+        document.execCommand('insertHTML',false,`<img src="${url.replace(/"/g,'&quot;')}" style="max-width:100%;height:auto;display:block;margin:4px 0;">`);
+      }catch(e){ alert('업로드 실패: '+e.message); }
+    };
+    inp.click();
+  } else {
+    const url=prompt('이미지 URL을 입력하세요:');
+    if(!url)return;
+    el.focus();
+    document.execCommand('insertHTML',false,`<img src="${url.replace(/"/g,'&quot;')}" style="max-width:100%;height:auto;display:block;margin:4px 0;">`);
+  }
 }
 function saveRange(el){if(_fmtPopType)return;const sel=window.getSelection();if(sel.rangeCount)savedRange={el,range:sel.getRangeAt(0).cloneRange()};}
 function cedResizeStart(e,cedId){
@@ -6953,7 +6978,7 @@ function fmtCmd(ctx,cmd){
     }
     scheduleBmPreview();return;
   }
-  document.execCommand(cmd,false,null);scheduleBmPreview();syncFmtBar(ctx);
+  document.execCommand(cmd,false,null);saveRange(getEd(ctx));scheduleBmPreview();syncFmtBar(ctx);
 }
 function fmtSz(ctx,px){
   focusEd(ctx);
@@ -6963,7 +6988,7 @@ function fmtSz(ctx,px){
   const ed=getEd(ctx);
   document.execCommand('fontSize',false,'7');
   ed.querySelectorAll('font[size="7"]').forEach(el=>{el.removeAttribute('size');el.style.fontSize=px+'px';});
-  _syncBgFontSize(ed); // 배경색 span 안에 글씨 크기가 바뀐 경우 배경도 맞춤
+  saveRange(ed);
 }
 function fmtAlign(ctx,dir){
   focusEd(ctx);
