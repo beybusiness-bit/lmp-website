@@ -4514,6 +4514,12 @@ function renderStageList() {
           <button class="tgl-btn${s.displayType==='image'?' on':''}" onclick="curStages[${i}].displayType='image';renderStageList();" style="font-size:11px;padding:5px 0;">이미지형</button>
         </div>
       </div>
+      <div style="display:flex;gap:6px;align-items:center;margin-top:6px;">
+        <div style="font-size:10px;font-weight:700;color:rgba(0,0,0,.45);white-space:nowrap;">제목 정렬</div>
+        <div style="display:flex;gap:0;border:1.5px solid #000;border-radius:3px;overflow:hidden;">
+          ${['left','center','right'].map((a,ai)=>{const on=(s.titleAlign||'left')===a;const icons=['←','↔','→'];return `<button onpointerdown="epd(event)" onclick="curStages[${i}].titleAlign='${a}';renderStageList();schedulePreviewUpdate();projDirty=true;" style="padding:3px 9px;border:none;${ai>0?'border-left:1.5px solid #000;':''}background:${on?'#000':'#fff'};color:${on?'#fff':'#000'};font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">${icons[ai]}</button>`;}).join('')}
+        </div>
+      </div>
       ${s.displayType==='image'?`<div style="display:flex;gap:4px;margin-top:5px;align-items:center;"><input class="fi-sm" style="flex:1;margin-bottom:0;" placeholder="카드 배경 이미지 URL" value="${(s.stageImageUrl||'').replace(/"/g,'&quot;')}" oninput="curStages[${i}].stageImageUrl=this.value"><button class="bg-up-btn" onclick="openStageImageUpload(${i},this)" style="flex-shrink:0;">📁 업로드</button></div>`:''
       }
       <div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;">
