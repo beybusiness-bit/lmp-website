@@ -322,7 +322,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
           <span class="back-btn" onclick="backToProjects()">←</span>
           <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">프로젝트 편집</span>
-          <div style="flex:1;"></div>
+          <div style="flex:1;min-width:0;text-align:center;padding:0 8px;">
+            <span id="proj-edit-name" style="font-size:13px;font-weight:800;color:#000;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;"></span>
+          </div>
           <button class="prev-btn" onclick="togglePreviewPanel('proj-preview-panel')" id="proj-pv-btn" style="font-size:12px;">미리보기</button>
           <button class="save-btn" id="save-btn" onclick="saveProject(false,event)">저장</button>
           <button class="save-btn" onclick="saveProject(true,event)" id="deploy-btn">배포</button>
@@ -348,7 +350,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           </div>
           <div class="ed-sect">
             <div class="ed-lbl">프로젝트 이름</div>
-            <input class="fi" id="p-name" placeholder="예: GMBF 플리마켓">
+            <input class="fi" id="p-name" placeholder="예: GMBF 플리마켓" oninput="const _en=document.getElementById('proj-edit-name');if(_en)_en.textContent=this.value;">
           </div>
           <div class="ed-sect">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
@@ -4757,6 +4759,7 @@ async function editProject(id) {
 
     document.getElementById('p-id').value         = id;
     document.getElementById('p-name').value       = d.name||'';
+    const _en=document.getElementById('proj-edit-name'); if(_en) _en.textContent=d.name||id||'';
     document.getElementById('p-edition').value    = d.editionText||'';
     const _efs = d.elemFontSizes || {};
     const _efEdEl = document.getElementById('p-edition-font-size'); if(_efEdEl) _efEdEl.value = _efs.edition || 18;
