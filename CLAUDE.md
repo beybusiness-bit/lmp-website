@@ -774,19 +774,14 @@ match /cms_payment_records/{doc} { allow read: if true; }
 #### 다음 세션 시작점 🔲
 
 - 재고 잔량 표시 확인: admin에서 결제 상품 열고 "재고 잔량 표시" 체크 후 저장 → 플레이어에서 표시되는지 확인
-- Firebase Storage 규칙 확인: `guestbook_entries` 블록이 `match /b/{bucket}/o { }` 안에 들어가 있는지 확인 (밖에 있으면 무효)
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 
 #### 이번 세션 완료 항목
-- 모달 z-index 수정: `.modal-ov` z-index 300→500 (4파일 동기화)
-  - 도구 링크 모달(z-index 400) 뒤로 숨던 인증·등록 모달 수정
-  - 결제 모달 열린 상태에서 비로그인 시 로그인 팝업 정상 표시
-  - 등록하기 무반응, 사이드바 내정보/로그아웃 미표시 문제 해결
-- 방명록 배경이미지 컨트롤 교체: 블록 이미지 설정과 동일한 UI로 통일
-  - 꽉 채우기/비율 유지/원본 (fit 3버튼), 상단/중앙/하단 (pos 3버튼)
-  - 오버레이 색상 컬러 피커 (`<input type=color>`), 농도 슬라이더 (0~1, step=0.05)
-  - `bgImageFit` Firestore 저장 및 카드·상세 모달 렌더링 반영
-- (이전 세션 누적) Stop hook 재제거, selfReg CTA 버그, 사이드바 footer 버그, 결제 무한 로딩, 비로그인 차단, context 전파, 옵션 즉시 표시, 옵션별 썸네일, 재고 관리 기능
+- iOS 자동 포커스 제거: `openAuthModal()` 내 `auth-key-input` auto-focus 제거 → 등록하기 버튼 가림 문제 해결 (p/ 포함 4파일)
+- 방명록 위젯 배경이미지 렌더링 수정: `loadWidget()` gbCards에 bgImg/ovColor/ovOp 추가 → 이미지+오버레이 실제 표시 (4파일 동기화)
+- 방명록 도구 컨트롤 완전 제거: fit/pos/색상/투명도 선택 UI 삭제 → cover+center+40% 고정 상수 처리
+  - `submitEntry()` / `resetForm()` / `onBgImageSelect()` 상수 참조로 정리
+- Firebase Storage 규칙 수정 완료: `guestbook_entries` 블록을 `match /b/{bucket}/o { }` 안으로 이동 (사용자가 직접 적용)
 
 #### Firestore 스키마 추가 (이번 세션)
 ```
