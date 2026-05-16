@@ -14,14 +14,23 @@ export default async function handler(req, res) {
 
   // Vercel이 form body를 자동 파싱하지 않을 수 있으므로 직접 파싱
   let body = req.body || {};
-  if (req.method === 'POST' && typeof body === 'string') {
-    body = Object.fromEntries(new URLSearchParams(body));
+  if (req.method === 'POST') {
+    if (typeof body === 'string' && body) {
+      body = Object.fromEntries(new URLSearchParams(body));
+    } else if (Buffer.isBuffer(body)) {
+      body = Object.fromEntries(new URLSearchParams(body.toString('utf8')));
+    }
   }
-  // body가 이미 객체여도 그대로 사용
 
-  const transactionId = body.transactionId || query.transactionId || '';
-  const orderNumber   = body.orderNumber   || query.orderNumber   || '';
-  const amount        = body.amount        || query.amount        || '';
+  // PayUp이 보내는 파라미터 이름 (tid / transaction_id 등 대안 포함)
+  const transactionId = body.transactionId || query.transactionId ||
+                        body.tid           || query.tid           ||
+                        body.transaction_id|| query.transaction_id|| '';
+  const orderNumber   = body.orderNumber   || query.orderNumber   ||
+                        body.orderId       || query.orderId       ||
+                        body.order_id      || query.order_id      || '';
+  const amount        = body.amount        || query.amount        ||
+                        body.amt           || query.amt           || '';
   const configId      = body.configId      || query.id            || '';
   const projectId     = body.projectId     || query.projectId     || '';
   const userId        = body.userId        || query.userId        || '';
@@ -31,7 +40,13 @@ export default async function handler(req, res) {
     res.redirect(`${toolBase}&result=fail&message=${encodeURIComponent(msg)}&projectId=${encodeURIComponent(projectId)}&userId=${encodeURIComponent(userId)}`);
 
   if (!transactionId || !orderNumber || !amount) {
-    return fail('결제 정보가 전달되지 않았어요.');
+    const dbg = JSON.stringify({
+      qKeys: Object.keys(query),
+      bKeys: Object.keys(body),
+      method: req.method,
+      ct: (req.headers['content-type'] || '').split(';')[0],
+    });
+    return fail('결제 정보 누락: ' + dbg);
   }
 
   try {

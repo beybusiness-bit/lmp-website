@@ -2356,15 +2356,46 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             </label>
           </div>
           <div id="blk-tier-replace-section" style="display:none;margin-top:10px;border:1.5px dashed rgba(0,0,0,.25);border-radius:6px;padding:10px;">
-            <div style="font-size:11px;font-weight:700;margin-bottom:6px;">대체 블록 내용</div>
-            <div id="rte-blk-replace-text" contenteditable="true" class="mini-rte" style="min-height:72px;margin-bottom:6px;" oninput="scheduleBmPreview()" data-ph="대체 블록에 표시할 내용을 입력하세요"></div>
-            <div style="display:flex;gap:4px;margin-bottom:8px;">
-              <button class="prev-btn" onclick="rteCmd('blk-replace-text','bold')" style="font-weight:700;">B</button>
-              <button class="prev-btn" onclick="rteCmd('blk-replace-text','italic')" style="font-style:italic;">I</button>
-              <button class="prev-btn" onclick="rteCmd('blk-replace-text','underline')" style="text-decoration:underline;">U</button>
-              <button class="prev-btn" onclick="rteLinkCmd('blk-replace-text')">🔗</button>
+            <div style="font-size:11px;font-weight:700;margin-bottom:8px;">대체 블록</div>
+            <div style="display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap;">
+              <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="radio" name="blk-rep-type" value="text" checked onchange="_onRepTypeChange()"> 텍스트</label>
+              <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="radio" name="blk-rep-type" value="image" onchange="_onRepTypeChange()"> 이미지</label>
+              <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;"><input type="radio" name="blk-rep-type" value="embed" onchange="_onRepTypeChange()"> 임베드</label>
             </div>
-            <div class="ed-lbl">배경색</div>
+            <!-- 텍스트 -->
+            <div id="blk-rep-text-sec">
+              <div id="rte-blk-replace-text" contenteditable="true" class="mini-rte" style="min-height:72px;margin-bottom:6px;" oninput="scheduleBmPreview()" data-ph="대체 블록에 표시할 내용을 입력하세요"></div>
+              <div style="display:flex;gap:4px;margin-bottom:8px;">
+                <button class="prev-btn" onclick="rteCmd('blk-replace-text','bold')" style="font-weight:700;">B</button>
+                <button class="prev-btn" onclick="rteCmd('blk-replace-text','italic')" style="font-style:italic;">I</button>
+                <button class="prev-btn" onclick="rteCmd('blk-replace-text','underline')" style="text-decoration:underline;">U</button>
+                <button class="prev-btn" onclick="rteLinkCmd('blk-replace-text')">🔗</button>
+              </div>
+            </div>
+            <!-- 이미지 -->
+            <div id="blk-rep-img-sec" style="display:none;">
+              <div class="ed-lbl">이미지 URL</div>
+              <input class="fi" id="blk-rep-img-url" placeholder="https://..." oninput="scheduleBmPreview()" style="margin-bottom:6px;">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <div><div class="ed-lbl">피팅</div>
+                  <select class="fi-sm" id="blk-rep-img-fit" onchange="scheduleBmPreview()">
+                    <option value="cover">cover</option><option value="contain">contain</option><option value="fill">fill</option>
+                  </select>
+                </div>
+                <div><div class="ed-lbl">높이 (px)</div>
+                  <input class="fi-sm" id="blk-rep-img-height" type="number" placeholder="200" style="width:70px;" oninput="scheduleBmPreview()">
+                </div>
+              </div>
+            </div>
+            <!-- 임베드 -->
+            <div id="blk-rep-embed-sec" style="display:none;">
+              <div class="ed-lbl">임베드 URL</div>
+              <input class="fi" id="blk-rep-embed-url" placeholder="https://..." oninput="scheduleBmPreview()" style="margin-bottom:6px;">
+              <div class="ed-lbl">높이 (px)</div>
+              <input class="fi-sm" id="blk-rep-embed-h" type="number" placeholder="300" style="width:80px;" oninput="scheduleBmPreview()">
+            </div>
+            <!-- 배경색 공통 -->
+            <div class="ed-lbl" style="margin-top:8px;">배경색</div>
             <div style="display:flex;align-items:center;gap:6px;">
               <input type="color" id="blk-replace-bg-color" value="#f8f8f8" oninput="document.getElementById('blk-replace-bg-hex').value=this.value;scheduleBmPreview()" style="width:36px;height:28px;border:1px solid #000;padding:1px;cursor:pointer;border-radius:3px;">
               <input class="fi-sm" id="blk-replace-bg-hex" placeholder="#f8f8f8" value="#f8f8f8" style="width:90px;" oninput="document.getElementById('blk-replace-bg-color').value=this.value||'#f8f8f8';scheduleBmPreview()">
@@ -6127,7 +6158,14 @@ function openBlockModal(idx,insertAt){
   const repSec=document.getElementById('blk-tier-replace-section');
   if(repSec) repSec.style.display=tlm==='replace'?'block':'none';
   const rb=b.tierReplaceBlock||{};
+  const repType=rb.type||'text';
+  document.querySelectorAll('input[name="blk-rep-type"]').forEach(r=>{r.checked=(r.value===repType);});
+  _onRepTypeChange();
   rteSet('blk-replace-text',rb.textContent||'');
+  const _rsi=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  _rsi('blk-rep-img-url',rb.imageUrl);_rsi('blk-rep-img-height',rb.imageHeight||'');
+  const fitEl=document.getElementById('blk-rep-img-fit');if(fitEl)fitEl.value=rb.imageFit||'cover';
+  _rsi('blk-rep-embed-url',rb.embedUrl);_rsi('blk-rep-embed-h',rb.embedHeight||'');
   const repBgColor=rb.bgColor||'#f8f8f8';
   const repBgColorEl=document.getElementById('blk-replace-bg-color');if(repBgColorEl)repBgColorEl.value=repBgColor;
   const repBgHexEl=document.getElementById('blk-replace-bg-hex');if(repBgHexEl)repBgHexEl.value=repBgColor;
@@ -6179,6 +6217,13 @@ function _onTierModeChange(){
   const mode=document.querySelector('input[name="blk-tier-mode"]:checked')?.value||'cover';
   const sec=document.getElementById('blk-tier-replace-section');
   if(sec) sec.style.display=mode==='replace'?'block':'none';
+  scheduleBmPreview();
+}
+function _onRepTypeChange(){
+  const t=document.querySelector('input[name="blk-rep-type"]:checked')?.value||'text';
+  document.getElementById('blk-rep-text-sec').style.display=t==='text'?'block':'none';
+  document.getElementById('blk-rep-img-sec').style.display=t==='image'?'block':'none';
+  document.getElementById('blk-rep-embed-sec').style.display=t==='embed'?'block':'none';
   scheduleBmPreview();
 }
 function _buildCurrentBlock(){
@@ -6243,7 +6288,11 @@ function _buildCurrentBlock(){
     b.requiredTier=_rt;
     b.tierLockMode=document.querySelector('input[name="blk-tier-mode"]:checked')?.value||'cover';
     if(b.tierLockMode==='replace'){
-      b.tierReplaceBlock={textContent:rteGet('blk-replace-text'),bgColor:document.getElementById('blk-replace-bg-hex')?.value||'#f8f8f8'};
+      const _repT=document.querySelector('input[name="blk-rep-type"]:checked')?.value||'text';
+      const _repBg=document.getElementById('blk-replace-bg-hex')?.value||'#f8f8f8';
+      if(_repT==='image') b.tierReplaceBlock={type:'image',imageUrl:document.getElementById('blk-rep-img-url')?.value||'',imageFit:document.getElementById('blk-rep-img-fit')?.value||'cover',imageHeight:parseInt(document.getElementById('blk-rep-img-height')?.value)||200,bgColor:_repBg};
+      else if(_repT==='embed') b.tierReplaceBlock={type:'embed',embedUrl:document.getElementById('blk-rep-embed-url')?.value||'',embedHeight:parseInt(document.getElementById('blk-rep-embed-h')?.value)||300};
+      else b.tierReplaceBlock={type:'text',textContent:rteGet('blk-replace-text'),bgColor:_repBg};
     }
   }
   return b;
@@ -6342,10 +6391,11 @@ function saveBlock(){
   if(b.requiredTier){
     b.tierLockMode=document.querySelector('input[name="blk-tier-mode"]:checked')?.value||'cover';
     if(b.tierLockMode==='replace'){
-      b.tierReplaceBlock={
-        textContent:rteGet('blk-replace-text'),
-        bgColor:document.getElementById('blk-replace-bg-hex')?.value||'#f8f8f8'
-      };
+      const _repT=document.querySelector('input[name="blk-rep-type"]:checked')?.value||'text';
+      const _repBg=document.getElementById('blk-replace-bg-hex')?.value||'#f8f8f8';
+      if(_repT==='image') b.tierReplaceBlock={type:'image',imageUrl:document.getElementById('blk-rep-img-url')?.value||'',imageFit:document.getElementById('blk-rep-img-fit')?.value||'cover',imageHeight:parseInt(document.getElementById('blk-rep-img-height')?.value)||200,bgColor:_repBg};
+      else if(_repT==='embed') b.tierReplaceBlock={type:'embed',embedUrl:document.getElementById('blk-rep-embed-url')?.value||'',embedHeight:parseInt(document.getElementById('blk-rep-embed-h')?.value)||300};
+      else b.tierReplaceBlock={type:'text',textContent:rteGet('blk-replace-text'),bgColor:_repBg};
     } else {
       delete b.tierReplaceBlock;
     }
@@ -7449,11 +7499,14 @@ function _gBlockCore(b,S){
   const txS=b.txtColor?`color:${b.txtColor};`:'';
   const _m=k=>Math.round((b[k]??0)*S)|0;
   // tier 잠금 미리보기 (admin에서는 실제 블록 위에 오버레이로 표시)
-  if(b.requiredTier&&b.tierLockMode==='replace'&&b.tierReplaceBlock?.textContent){
-    const rb=b.tierReplaceBlock;const repBg=rb.bgColor||'#f8f8f8';
+  if(b.requiredTier&&b.tierLockMode==='replace'&&b.tierReplaceBlock){
+    const rb=b.tierReplaceBlock;const repType=rb.type||'text';
     const _mm=k=>Math.round((b[k]??0)*S)|0;
     const repMarg=(_mm('marginTop')||_mm('marginRight')||_mm('marginBottom')||_mm('marginLeft'))?`margin:${_mm('marginTop')}px ${_mm('marginRight')}px ${_mm('marginBottom')}px ${_mm('marginLeft')}px;`:'';
-    return `<div style="${repMarg}background:${repBg};padding:${Math.round(16*S)}px ${Math.round(20*S)}px;font-size:${Math.round(13*S)}px;line-height:1.6;">${rb.textContent}</div>`;
+    if(repType==='image'&&rb.imageUrl){const h=Math.round((rb.imageHeight||200)*S);return `<div style="${repMarg}${rb.bgColor?'background:'+rb.bgColor+';':''}overflow:hidden;"><div style="background-image:url(${JSON.stringify(rb.imageUrl)});background-size:${rb.imageFit||'cover'};background-position:center;height:${h}px;"></div></div>`;}
+    if(repType==='embed'&&rb.embedUrl){const h=Math.round((rb.embedHeight||300)*S);return `<div style="${repMarg}"><iframe src="${rb.embedUrl.replace(/"/g,'&quot;')}" width="100%" height="${h}" frameborder="0" style="display:block;border:none;"></iframe></div>`;}
+    const repBg=rb.bgColor||'#f8f8f8';
+    return `<div style="${repMarg}background:${repBg};padding:${Math.round(16*S)}px ${Math.round(20*S)}px;font-size:${Math.round(13*S)}px;line-height:1.6;">${rb.textContent||''}</div>`;
   }
   const mS=(b.marginTop||b.marginRight||b.marginBottom||b.marginLeft||b.marginV||b.marginH)
     ?`margin:${_m('marginTop')??_m('marginV')}px ${_m('marginRight')??_m('marginH')}px ${_m('marginBottom')??_m('marginV')}px ${_m('marginLeft')??_m('marginH')}px;`:'';

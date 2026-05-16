@@ -1917,10 +1917,11 @@ function blockHtml(b){
   // 결제 게이트 — requiredTier가 있고 사용자가 해당 tier를 구매하지 않은 경우
   // 결제 게이트 — requiredTier가 있고 사용자가 해당 tier를 구매하지 않은 경우
   if(_isTierLocked(b)){
-    if(b.tierLockMode==='replace'&&b.tierReplaceBlock?.textContent){
-      const rb=b.tierReplaceBlock;
-      const repBg=rb.bgColor?`background:${rb.bgColor};`:'background:#f8f8f8;';
-      return `<div style="${mS}${repBg}padding:16px 20px;">${rb.textContent}</div>`;
+    if(b.tierLockMode==='replace'&&b.tierReplaceBlock){
+      const rb=b.tierReplaceBlock;const repType=rb.type||'text';
+      if(repType==='image'&&rb.imageUrl){const h=rb.imageHeight||200;return `<div style="${mS}${rb.bgColor?'background:'+rb.bgColor+';':''}overflow:hidden;"><div style="background-image:url(${JSON.stringify(rb.imageUrl)});background-size:${rb.imageFit||'cover'};background-position:center;height:${h}px;"></div></div>`;}
+      if(repType==='embed'&&rb.embedUrl){const h=rb.embedHeight||300;return `<div style="${mS}"><iframe src="${rb.embedUrl.replace(/"/g,'&quot;')}" width="100%" height="${h}" frameborder="0" allowfullscreen style="display:block;border:none;"></iframe></div>`;}
+      if(rb.textContent){const repBg=rb.bgColor?`background:${rb.bgColor};`:'background:#f8f8f8;';return `<div style="${mS}${repBg}padding:16px 20px;">${rb.textContent}</div>`;}
     }
     return `<div style="${mS}${bgS}min-height:120px;display:flex;align-items:center;justify-content:center;border:1.5px dashed rgba(0,0,0,.2);background:rgba(0,0,0,.03);">
       <div style="text-align:center;padding:20px 16px;">

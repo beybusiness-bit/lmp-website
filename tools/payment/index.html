@@ -170,7 +170,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <div class="pay-result-msg" id="r-msg"></div>
     <div class="pay-receipt" id="r-receipt" style="display:none;"></div>
     <button class="hist-link-btn" id="r-hist-btn" style="display:none;" onclick="showHistory()">내 결제 내역 보기</button>
-    <button class="hist-link-btn" id="r-retry-btn" style="display:none;" onclick="retryPayment()">↩ 처음으로 돌아가기</button>
+    <button class="hist-link-btn" id="r-retry-btn" style="display:none;" onclick="retryPayment()">↩ 프로젝트로 돌아가기</button>
   </div>
 
   <!-- 결제 내역 화면 -->
@@ -878,10 +878,11 @@ function fireSmsWebhook(amount, productName, qty) {
 }
 
 function retryPayment() {
-  const base = location.pathname + '?id=' + encodeURIComponent(CONFIG_ID);
-  const extra = (ctxUserId ? '&userId=' + encodeURIComponent(ctxUserId) : '') +
-                (ctxProjectId ? '&projectId=' + encodeURIComponent(ctxProjectId) : '');
-  location.href = base + extra;
+  if (ctxProjectId) {
+    location.href = '/' + ctxProjectId + '/';
+    return;
+  }
+  location.href = location.pathname + '?id=' + encodeURIComponent(CONFIG_ID);
 }
 
 async function showHistory() {
