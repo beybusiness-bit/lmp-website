@@ -99,9 +99,9 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .menu-tab.active{color:#000;border-bottom-color:#000;}
 #menu-activity-panel,#menu-payment-panel{display:none;flex:1;overflow-y:auto;padding:0 20px 32px;}
 #menu-login-prompt{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px 24px;}
-.menu-enter-btn{width:100%;padding:14px 0;background:#000;color:#fff;border:none;border-radius:0;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;}
+.menu-enter-btn{width:100%;padding:14px 0;background:#000;color:#fff;border:2px solid #000;border-radius:0;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;}
 .menu-enter-btn:active{opacity:.7;}
-.menu-sreg-btn{width:100%;padding:12px 0;background:transparent;color:#000;border:1.5px solid rgba(0,0,0,.3);border-radius:0;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;}
+.menu-sreg-btn{width:100%;padding:12px 0;background:transparent;color:#000;border:2px solid #000;border-radius:0;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;}
 .menu-sreg-btn:active{opacity:.6;}
 #menu-footer{flex-shrink:0;display:none;padding:12px 28px 28px;border-top:1px solid rgba(0,0,0,.12);}
 #menu-logout{display:inline-block;font-size:13px;font-weight:600;color:rgba(0,0,0,.45);cursor:pointer;-webkit-tap-highlight-color:transparent;padding:6px 0;letter-spacing:-.2px;}
@@ -118,6 +118,8 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .mi-act-type{font-size:14px;font-weight:700;color:#000;letter-spacing:-.2px;margin-bottom:4px;}
 .mi-act-preview{font-size:13px;color:rgba(0,0,0,.6);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .mi-act-date{font-size:12px;color:rgba(0,0,0,.4);}
+.mi-act-sub{font-size:12px;color:rgba(0,0,0,.45);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mi-act-status{font-size:12px;color:rgba(0,140,60,.9);font-weight:700;margin-bottom:3px;}
 .menu-dot{width:36px;height:36px;border-radius:50%;background:#000;color:var(--menu-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;text-align:center;line-height:1.3;}
 /* user greeting */
 #menu-greeting{display:none;padding:14px 20px 12px;border-bottom:1px solid rgba(0,0,0,.12);font-size:13px;font-weight:700;line-height:1.65;letter-spacing:-.2px;color:var(--menu-bg);background:#000;word-break:keep-all;}
@@ -1348,7 +1350,7 @@ function openRegModal(){
         setTimeout(()=>_calInit(calFid,{mode:pickMode,dateMin:f.dateMin||'',dateMax:f.dateMax||'',maxDays:f.dateMaxDays||0}),0);
       }
     } else if(t==='number'){
-      inp=`<input class="inp" type="number" data-reg-key="${f.key}" data-reg-type="${t}" placeholder="${f.label}" style="margin-bottom:0;">`;
+      inp=`<input class="inp" type="text" inputmode="numeric" data-reg-key="${f.key}" data-reg-type="${t}" placeholder="${f.label}" style="margin-bottom:0;">`;
     } else {
       inp=`<input class="inp" data-reg-key="${f.key}" data-reg-type="${t}" placeholder="${f.label}" style="margin-bottom:0;">`;
     }
@@ -1391,7 +1393,7 @@ async function submitRegistration(){
       val=el?(el.value||'').trim():'';
     }
     if(!val&&f.required){ document.getElementById('reg-err').textContent=`'${f.label}'을(를) 입력해주세요.`; const el=document.querySelector(`#reg-fields [data-reg-key="${key}"]`); if(el) el.focus(); return; }
-    data[key]=t==='number'?(parseFloat(val)||0):val;
+    data[key]=val;
   }
   const btn=document.getElementById('reg-ok');
   btn.textContent='등록 중…'; btn.disabled=true;
@@ -1422,8 +1424,7 @@ async function submitRegistration(){
     loadUserProgress(data);
     applyGreeting(data);
     const _regMsg=(SELF_REG_SUCCESS_MSG||'등록 완료!').replace(/\{\{(\w+)\}\}/g,(_,k)=>data[k]??`{{${k}}}`);
-    document.getElementById('reg-box').innerHTML=`<div style="text-align:center;padding:24px 0;"><div style="font-size:28px;margin-bottom:12px;">✅</div><div style="font-size:16px;font-weight:900;margin-bottom:8px;white-space:pre-wrap;">${_regMsg}</div><div style="font-size:13px;opacity:.7;">잠시 후 입장합니다…</div></div>`;
-    setTimeout(()=>{
+    window._proceedAfterReg=()=>{
       closeModal('reg-modal');
       _sendContextToEmbeds();
       renderMenu();
@@ -1434,7 +1435,8 @@ async function submitRegistration(){
         return;
       }
       if(LAYOUT_TYPE==='merged') renderMergedStages(); else openPrep();
-    }, 1800);
+    };
+    document.getElementById('reg-box').innerHTML=`<div style="position:relative;padding:24px 16px 24px;"><button onclick="window._proceedAfterReg&&window._proceedAfterReg()" style="position:absolute;top:0;right:0;background:none;border:none;font-size:22px;line-height:1;cursor:pointer;padding:8px;color:#000;">×</button><div style="font-size:16px;font-weight:900;margin-bottom:8px;white-space:pre-wrap;text-align:center;">${_regMsg}</div></div>`;
   }catch(e){ document.getElementById('reg-err').textContent='등록 실패. 다시 시도해주세요.'; btn.textContent='등록'; btn.disabled=false; }
 }
 /* ── Single-session (active session) helpers ── */
@@ -1499,8 +1501,10 @@ async function confirmAuth(){
   btn.textContent='확인 중…'; btn.disabled=true;
   try{
     const keyField=AUTH_FIELDS.find(f=>f.key===AUTH_KEY_FIELD);
-    const queryVal=keyField?.type==='number'?(parseFloat(val)||0):val;
-    const snap=await db.collection(AUTH_COLLECTION).where(AUTH_KEY_FIELD,'==',queryVal).limit(1).get();
+    let snap=await db.collection(AUTH_COLLECTION).where(AUTH_KEY_FIELD,'==',val).limit(1).get();
+    if(snap.empty && keyField?.type==='number' && val!=='' && !isNaN(Number(val))){
+      snap=await db.collection(AUTH_COLLECTION).where(AUTH_KEY_FIELD,'==',parseFloat(val)).limit(1).get();
+    }
     btn.textContent='확인'; btn.disabled=false;
     if(snap.empty){ errEl.textContent='인증 정보를 찾을 수 없어요.'; return; }
     const u=snap.docs[0].data();
@@ -1638,7 +1642,7 @@ function _findBlockByFormId(formId){
   for(let i=0;i<STAGES.length;i++){
     const blocks=_stageBlocksCache[STAGES[i].id]||[];
     const b=blocks.find(b=>(b.type==='tool'&&b.toolConfig?.formId===formId)||(b.type==='form'&&b.formId===formId));
-    if(b) return {stageIdx:i,blockId:b.id};
+    if(b) return {stageIdx:i,blockId:b.id,toolNickname:b.toolNickname||''};
   }
   return null;
 }
@@ -1647,15 +1651,15 @@ function _findBlockByToolConfig(configId, toolType){
   for(let i=0;i<STAGES.length;i++){
     const blocks=_stageBlocksCache[STAGES[i].id]||[];
     const b=blocks.find(b=>b.type==='tool'&&b.toolType===toolType&&b.toolConfig?.[toolKey]===configId);
-    if(b) return {stageIdx:i,blockId:b.id};
+    if(b) return {stageIdx:i,blockId:b.id,toolNickname:b.toolNickname||''};
   }
   return null;
 }
-function _navToBlock(found){
+async function _navToBlock(found){
   closeMenu();
   if(!found) return;
-  goToStage(found.stageIdx);
-  setTimeout(()=>{ document.getElementById('block-'+found.blockId)?.scrollIntoView({behavior:'smooth',block:'center'}); },450);
+  await goToStage(found.stageIdx);
+  setTimeout(()=>{ document.getElementById('block-'+found.blockId)?.scrollIntoView({behavior:'smooth',block:'center'}); },100);
 }
 async function loadMyActivity(){
   const el=document.getElementById('menu-activity-panel');
@@ -1672,12 +1676,18 @@ async function loadMyActivity(){
         if(b.type==='tool'&&b.toolType==='guestbook'&&b.toolConfig?.guestbookId) gbIds.add(b.toolConfig.guestbookId);
       });
     });
+    // 인스턴스 제목 병렬 로드
+    const formTitles={}, gbTitles={};
     const items=[];
     await Promise.all([
       ...[...formIds].map(async formId=>{
         try{
-          const snap=await db.collection('cms_form_responses').doc(formId)
-            .collection('responses').where('_userId','==',USER_DOC_ID).limit(10).get();
+          const [cfgDoc,snap]=await Promise.all([
+            db.collection('cms_form_configs').doc(formId).get(),
+            db.collection('cms_form_responses').doc(formId)
+              .collection('responses').where('_userId','==',USER_DOC_ID).limit(10).get()
+          ]);
+          formTitles[formId]=cfgDoc.data()?.title||'';
           snap.docs.forEach(doc=>{
             const d=doc.data();
             const ts=d.submittedAt?.toMillis?.()??d.updatedAt?.toMillis?.()??0;
@@ -1687,8 +1697,12 @@ async function loadMyActivity(){
       }),
       ...[...gbIds].map(async configId=>{
         try{
-          const snap=await db.collection('cms_guestbook_entries').doc(configId)
-            .collection('entries').where('userId','==',USER_DOC_ID).limit(10).get();
+          const [cfgDoc,snap]=await Promise.all([
+            db.collection('cms_guestbook_configs').doc(configId).get(),
+            db.collection('cms_guestbook_entries').doc(configId)
+              .collection('entries').where('userId','==',USER_DOC_ID).limit(10).get()
+          ]);
+          gbTitles[configId]=cfgDoc.data()?.title||'';
           snap.docs.forEach(doc=>{
             const d=doc.data();
             const ts=d.createdAt?.toMillis?.()??0;
@@ -1703,23 +1717,31 @@ async function loadMyActivity(){
       if(item.type==='form'){
         const dt=item.d.submittedAt?.toDate?.()?.toLocaleDateString('ko-KR')||item.d.updatedAt?.toDate?.()?.toLocaleDateString('ko-KR')||'';
         const found=_findBlockByFormId(item.formId);
+        const nickname=found?.toolNickname||'';
+        const instTitle=esc(formTitles[item.formId]||'');
+        const label=nickname?(esc(nickname)+(instTitle?' · '+instTitle:'')):instTitle||'폼 응답';
         const stageTitle=found?esc(STAGES[found.stageIdx]?.title||''):'';
-        const navJson=found?JSON.stringify(found).replace(/"/g,"'"):'';
+        const navJson=found?JSON.stringify({stageIdx:found.stageIdx,blockId:found.blockId}).replace(/"/g,"'"):'';
         const clickAttr=found?` onclick="_navToBlock(${navJson})"`:' onclick="closeMenu();"';
         return `<div class="mi-act-item"${clickAttr}>
-          <div class="mi-act-type">폼 응답${stageTitle?' · '+stageTitle:''}</div>
+          <div class="mi-act-type">${label}</div>
+          ${stageTitle?`<div class="mi-act-sub">${stageTitle}</div>`:''}
+          <div class="mi-act-status">제출 완료</div>
           <div class="mi-act-date">${dt}</div>
         </div>`;
       } else {
         const dt=item.d.createdAt?.toDate?.()?.toLocaleDateString('ko-KR')||'';
-        const txt=esc((item.d.text||'').replace(/<[^>]+>/g,'').slice(0,40));
         const found=_findBlockByToolConfig(item.configId,'guestbook');
+        const nickname=found?.toolNickname||'';
+        const instTitle=esc(gbTitles[item.configId]||'');
+        const label=nickname?(esc(nickname)+(instTitle?' · '+instTitle:'')):instTitle||'방명록';
         const stageTitle=found?esc(STAGES[found.stageIdx]?.title||''):'';
-        const navJson=found?JSON.stringify(found).replace(/"/g,"'"):'';
+        const navJson=found?JSON.stringify({stageIdx:found.stageIdx,blockId:found.blockId}).replace(/"/g,"'"):'';
         const clickAttr=found?` onclick="_navToBlock(${navJson})"`:' onclick="closeMenu();"';
         return `<div class="mi-act-item"${clickAttr}>
-          <div class="mi-act-type">방명록${stageTitle?' · '+stageTitle:''}</div>
-          ${txt?`<div class="mi-act-preview">${txt}</div>`:''}
+          <div class="mi-act-type">${label}</div>
+          ${stageTitle?`<div class="mi-act-sub">${stageTitle}</div>`:''}
+          <div class="mi-act-status">작성 완료</div>
           <div class="mi-act-date">${dt}</div>
         </div>`;
       }
@@ -1794,7 +1816,7 @@ function goToStage(i){
   curStageIdx=i; curStageId=stage.id;
   if(LAYOUT_TYPE!=='merged') document.getElementById('topbar-title').textContent=stage.title;
   closeMenu();
-  openStageContent(stage);
+  return openStageContent(stage);
 }
 
 /* ── Guide viewer ── */
@@ -1865,7 +1887,8 @@ function _isTierLocked(b){
   if(!b.requiredTier || IS_ADMIN_PREVIEW) return false;
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
   const tiers=Array.isArray(saved.paidTiers)?saved.paidTiers:[];
-  return !tiers.includes(b.requiredTier);
+  const required=b.requiredTier.split(',').map(t=>t.trim()).filter(Boolean);
+  return !required.some(r=>tiers.includes(r));
 }
 function blockHtml(b){
   const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
@@ -2113,7 +2136,7 @@ function renderGuideScroll(blocks){
     const mS=(b.marginV||b.marginH)?`margin:${b.marginV||0}px ${b.marginH||0}px;`:'';
     const bStripped={...b,bgColor:'',marginV:0,marginH:0};
     const inner=attachCheck(blockHtml(bStripped),b);
-    return (bgS||mS)?`<div style="${bgS}${mS}">${inner}</div>`:inner;
+    return `<div id="block-${b.id}"${(bgS||mS)?` style="${bgS}${mS}"`:''}>${inner}</div>`;
   }).join('');
   document.getElementById('guide-scroll-body').style.display='block';
   _sendContextToEmbeds();
@@ -2134,7 +2157,7 @@ function renderGuideSlide(blocks){
     const va=scrollable||fullH?'':(b.verticalAlign||'');
     const jc=scrollable||fullH?'flex-start':(vaMap[b.verticalAlign]||'center');
     const scrollS=scrollable?'overflow-y:auto;':'';
-    return `<div class="guide-slide-item"${va?` data-valign="${va}"`:''}  style="width:${100/N}%;justify-content:${jc};${bgS}${mS}${scrollS}">${inner}</div>`;
+    return `<div id="block-${b.id}" class="guide-slide-item"${va?` data-valign="${va}"`:''}  style="width:${100/N}%;justify-content:${jc};${bgS}${mS}${scrollS}">${inner}</div>`;
   }).join('');
   track.style.width=(N*100)+'%';
   track.style.transform='translateX(0)';

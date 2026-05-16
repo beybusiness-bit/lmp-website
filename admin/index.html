@@ -121,7 +121,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .prog-summary-name{font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .prog-summary-stat{color:rgba(0,0,0,.6);white-space:nowrap;font-variant-numeric:tabular-nums;}
 /* modals */
-.modal-ov{display:none;position:fixed;inset:0;z-index:400;justify-content:center;align-items:flex-end;background:rgba(0,0,0,.45);}
+.modal-ov{display:none;position:fixed;inset:0;z-index:600;justify-content:center;align-items:flex-end;background:rgba(0,0,0,.45);}
 .modal-ov.on{display:flex;}
 .modal-box{background:#fff;border:2px solid #000;border-bottom:none;width:100%;max-width:600px;padding:24px 20px 20px;max-height:88vh;display:flex;flex-direction:column;}
 .modal-ttl{font-size:16px;font-weight:900;margin-bottom:14px;flex-shrink:0;}
@@ -836,6 +836,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button onmousedown="event.preventDefault()" onclick="rteCmd('gbk-desc','bold')"><b>B</b></button>
                   <button onmousedown="event.preventDefault()" onclick="rteCmd('gbk-desc','italic')"><i>I</i></button>
                   <button onmousedown="event.preventDefault()" onclick="rteCmd('gbk-desc','underline')"><u>U</u></button>
+                  <div class="rte-sep"></div>
+                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('gbk-desc')">🔗</button>
                 </div>
                 <div class="mini-rte" id="rte-gbk-desc" contenteditable="true" data-ph="사용자에게 보여줄 설명을 입력하세요"></div>
               </div>
@@ -1276,9 +1278,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               </div>
             </div>
             <div class="ed-sect">
-              <div class="switch-row" style="margin-bottom:0;">
+              <div class="switch-row" style="margin-bottom:8px;">
                 <div class="switch" id="tf-no-resubmit-sw" onclick="this.classList.toggle('on')"></div>
                 <span class="switch-lbl">중복 제출 방지</span>
+              </div>
+              <div class="switch-row" style="margin-bottom:0;">
+                <div class="switch" id="tf-allow-edit-sw" onclick="this.classList.toggle('on')"></div>
+                <span class="switch-lbl">응답 수정 허용 <span style="font-weight:400;opacity:.55;">(제출자가 이전 내역 확인·수정 가능)</span></span>
               </div>
             </div>
             <div class="sect-head" style="margin-top:24px;margin-bottom:8px;">응답 관리</div>
@@ -1481,9 +1487,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <input class="fi" id="cg-title" placeholder="예: 행사 홍보 문구 생성기" style="margin-bottom:0;">
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
-              <input class="fi-sm" id="cg-desc" placeholder="사용자에게 표시될 설명" style="margin-bottom:4px;">
-              <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 <code>{{key}}</code>로 변수 삽입 가능</div>
+              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">설명 <span style="font-weight:400;opacity:.55;">(선택)</span><button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('cg-desc')">{x} 변수</button></div>
+              <div class="mini-rte-wrap">
+                <div class="mini-rte-tb">
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-desc','bold')"><b>B</b></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-desc','italic')"><i>I</i></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-desc','underline')"><u>U</u></button>
+                  <div class="rte-sep"></div>
+                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('cg-desc')">🔗</button>
+                </div>
+                <div class="mini-rte" id="rte-cg-desc" contenteditable="true" data-ph="사용자에게 표시될 설명"></div>
+              </div>
             </div>
             <!-- 입력 필드 -->
             <div class="sect-head">입력 필드</div>
@@ -1527,6 +1541,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-ai-context','bold')"><b>B</b></button>
                   <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-ai-context','italic')"><i>I</i></button>
                   <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-ai-context','underline')"><u>U</u></button>
+                  <div class="rte-sep"></div>
+                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('cg-ai-context')">🔗</button>
                 </div>
                 <div class="mini-rte" id="rte-cg-ai-context" contenteditable="true" data-ph="예: 이 문구는 인스타그램 신메뉴 런칭에 사용됩니다. 브랜드 키워드는 '느림', '건강', '지속가능성'입니다." style="min-height:80px;"></div>
               </div>
@@ -2015,6 +2031,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       </div>
       <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:14px;">
         <a id="tool-manage-link" href="#" onclick="openToolManageLink(event)" style="color:rgba(0,0,0,.5);text-decoration:underline;">도구 탭에서 관리하기 →</a>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div class="ed-lbl" style="margin-bottom:6px;">도구 별명 <span style="font-weight:400;opacity:.55;">(사이드바 활동 내역에 표시)</span></div>
+        <input class="fi" id="blk-tool-nickname" placeholder="예: 참가 신청서, 신청 완료 등" style="margin-bottom:0;">
       </div>
       <div style="margin-top:4px;">
         <div class="ed-lbl" style="margin-bottom:6px;">높이</div>
@@ -4420,7 +4440,7 @@ function openUserModal(userId) {
     <div style="margin-bottom:12px;">
       <div class="ed-lbl">${f.label}${f.required?' *':''}</div>
       <input class="fi-sm" id="um-${f.key}" value="${(user[f.key]||'').toString().replace(/"/g,'&quot;')}"
-             type="${f.type==='number'?'number':'text'}" placeholder="${f.label}" style="margin-bottom:0;">
+             type="text" ${f.type==='number'?'inputmode="numeric"':''} placeholder="${f.label}" style="margin-bottom:0;">
     </div>`).join('');
   document.getElementById('user-modal').classList.add('on');
 }
@@ -4430,7 +4450,7 @@ async function saveUser() {
   for (const f of curAuthFields) {
     const val = document.getElementById('um-'+f.key).value.trim();
     if (f.required && !val) { alert(f.label+'을(를) 입력해주세요.'); return; }
-    data[f.key] = f.type==='number' ? (parseFloat(val)||0) : val;
+    data[f.key] = val;
   }
   try {
     if (curEditingUserId) {
@@ -4475,7 +4495,7 @@ async function saveBulkUsers() {
     const data = {};
     Object.entries(fieldMap).forEach(([idx,f]) => {
       const v = vals[idx]||'';
-      data[f.key] = f.type==='number' ? (parseFloat(v)||0) : v;
+      data[f.key] = v;
     });
     if (!data[curAuthFields[0]?.key]) continue;
     try { await db.collection(col).add(data); count++; } catch(e) {}
@@ -5479,6 +5499,7 @@ function renderFormFields() {
 function mvFormField(i,d){const j=i+d;if(j<0||j>=curFormFields.length)return;[curFormFields[i],curFormFields[j]]=[curFormFields[j],curFormFields[i]];renderFormFields();}
 function rmFormField(i){if(!confirm('이 필드를 삭제할까요?'))return;curFormFields.splice(i,1);renderFormFields();}
 function openFormFieldModal(idx, insertAt) {
+  try {
   curEditingFormFieldIdx = idx;
   curFieldInsertAt = (idx===null && insertAt!=null) ? insertAt : null;
   document.getElementById('form-field-modal-ttl').textContent = idx===null ? '필드 추가' : '필드 편집';
@@ -5515,6 +5536,7 @@ function openFormFieldModal(idx, insertAt) {
   document.getElementById('ff-date-max-days').value = f.dateMaxDays!=null ? f.dateMaxDays : '';
   onFfTypeChange();
   document.getElementById('form-field-modal').classList.add('on');
+  } catch(e) { alert('[필드 추가 오류] ' + e.message); console.error(e); }
 }
 function autoFfKey(label) {
   const keyEl = document.getElementById('ff-key');
@@ -6130,6 +6152,8 @@ function openBlockModal(idx,insertAt){
     document.querySelectorAll('input[name="complete-trigger"]').forEach(r=>{
       r.checked=r.value===curBlkCompleteTrigger;
     });
+    const _nickEl=document.getElementById('blk-tool-nickname');
+    if(_nickEl) _nickEl.value=b.toolNickname||'';
   }
   /* form — 항상 UI 초기화 후 기존 값 로드 */
   curFormFields = b.type==='form' ? JSON.parse(JSON.stringify(b.formFields||[])) : [];
@@ -6257,6 +6281,8 @@ function _buildCurrentBlock(){
     b.toolConfig=curBlkToolConfig;
     b.height=curToolHeightMode==='full'?'full':(curToolHeightMode==='px'?parseInt(document.getElementById('tool-height')?.value)||0:0);
     b.completeTrigger=curBlkCompleteTrigger||'tool-signal';
+    const _nick=(document.getElementById('blk-tool-nickname')?.value||'').trim();
+    if(_nick) b.toolNickname=_nick; else delete b.toolNickname;
   } else if(curBlkType==='form'){
     b.formFields=curFormFields||[];
     b.formConfig={submitBtnText:document.getElementById('form-submit-text')?.value||'제출하기'};
@@ -6335,6 +6361,8 @@ function saveBlock(){
     b.toolType=curBlkToolType;
     b.toolConfig=tc;
     b.height=curToolHeightMode==='full'?'full':(curToolHeightMode==='px'?parseInt(document.getElementById('tool-height')?.value)||0:0);
+    const _nick2=(document.getElementById('blk-tool-nickname')?.value||'').trim();
+    if(_nick2) b.toolNickname=_nick2; else delete b.toolNickname;
   } else if(curBlkType==='form'){
     curFormConfig.formTitle       = document.getElementById('form-title-inp').value.trim();
     curFormConfig.submitBtnText   = document.getElementById('form-submit-text').value.trim()||'제출하기';
@@ -8536,6 +8564,7 @@ async function toolFormEdit(docId){
     document.getElementById('tf-submit-text').value=d.submitBtnText||'제출하기';
     rteSet('tf-submit-msg',d.submitMsg||'');
     document.getElementById('tf-no-resubmit-sw').classList.toggle('on',!!d.noResubmit);
+    document.getElementById('tf-allow-edit-sw').classList.toggle('on',!!d.allowEdit);
     tfRespFormConfig={sheetId:d.sheetId||'',sheetTab:d.sheetTab||'응답',sheetUrl:d.sheetUrl||''};
     renderTfFieldList();
     loadTfInlineResponses();
@@ -8581,10 +8610,11 @@ async function toolFormSave(e=null){
   const submitBtnText=document.getElementById('tf-submit-text')?.value.trim()||'제출하기';
   const submitMsg=rteGet('tf-submit-msg');
   const noResubmit=document.getElementById('tf-no-resubmit-sw')?.classList.contains('on')||false;
+  const allowEdit=document.getElementById('tf-allow-edit-sw')?.classList.contains('on')||false;
   if(!title){alert('폼 이름을 입력해주세요.');return;}
   try{
     await db.collection('cms_form_configs').doc(tfCurDocId).update({
-      title,desc,fields:tfFields,submitBtnText,submitMsg,noResubmit,
+      title,desc,fields:tfFields,submitBtnText,submitMsg,noResubmit,allowEdit,
       sheetId:tfRespFormConfig.sheetId||'',
       sheetTab:tfRespFormConfig.sheetTab||'응답',
       sheetUrl:tfRespFormConfig.sheetUrl||'',
@@ -10002,7 +10032,7 @@ async function cgEdit(docId){
       cgMaxSelect[s.key]=s.maxSelect||2;
     });
     document.getElementById('cg-title').value=d.title||'';
-    document.getElementById('cg-desc').value=d.description||'';
+    rteSet('cg-desc',d.description||'');
     document.getElementById('cg-count').value=d.outputConfig?.count||5;
     document.getElementById('cg-min-chars').value=d.outputConfig?.minChars||'';
     document.getElementById('cg-max-chars').value=d.outputConfig?.maxChars||'';
@@ -10118,7 +10148,7 @@ async function cgSave(e=null){
   };
   try{
     await db.collection('cms_copy_gen_configs').doc(cgCurDocId).update({
-      title, description:document.getElementById('cg-desc')?.value.trim()||'',
+      title, description:rteGet('cg-desc'),
       speakerDesc:document.getElementById('cg-speaker-desc')?.value.trim()||'',
       aiContext:rteGet('cg-ai-context'),
       fields:cgFields, styleOptions, outputConfig, references:cgRefs, referenceRole:cgReferenceRole,

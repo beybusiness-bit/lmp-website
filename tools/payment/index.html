@@ -98,6 +98,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 </style>
 </head>
 <body>
+<div id="payup_layer"></div>
+<div id="bg_layer"></div>
 <div id="loading">불러오는 중…</div>
 <div id="err-screen"></div>
 <div id="status-msg"></div>
@@ -119,9 +121,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         </div>
       </div>
       <div id="qty-unit-price"></div>
-      <div id="stock-remaining-info" style="display:none;font-size:12px;color:rgba(0,0,0,.55);font-weight:600;margin-top:6px;">⚡ <span id="stock-remaining-text"></span></div>
+      <div id="stock-remaining-info" style="display:none;font-size:12px;color:rgba(0,0,0,.55);font-weight:600;margin-top:6px;"><span id="stock-remaining-text"></span></div>
     </div>
-    <div id="stock-info-no-qty" style="display:none;font-size:12px;color:rgba(0,0,0,.55);font-weight:600;margin-bottom:12px;">⚡ <span id="stock-info-no-qty-text"></span></div>
+    <div id="stock-info-no-qty" style="display:none;font-size:12px;color:rgba(0,0,0,.55);font-weight:600;margin-bottom:12px;"><span id="stock-info-no-qty-text"></span></div>
     <button class="lmp-btn" id="pay-btn">결제하기</button>
   </div>
 
@@ -326,6 +328,8 @@ async function init() {
     });
     fireSmsWebhook(AMOUNT_FROM_URL, CONFIG.productName || CONFIG.title || '', selectedQty);
     window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+    // 팝업으로 열린 경우 opener(플레이어 최상위)에도 신호 전달
+    try { if (window.opener) window.opener.postMessage({ type: 'lmp-tool-complete' }, '*'); } catch(e) {}
     showResult('success', '결제가 완료되었어요',
       CONFIG.successMessage || '결제하신 권한이 부여되었어요.',
       { amount: AMOUNT_FROM_URL, orderName: CONFIG.productName, method: CARD_NAME,
@@ -460,7 +464,7 @@ function renderInlineOptions(opts) {
     const stockLabel = CONFIG.stockEnabled && !soldOut && optRemaining != null
       && CONFIG.stockDisplayEnabled
       && (CONFIG.stockDisplayThreshold == null || optRemaining <= CONFIG.stockDisplayThreshold)
-      ? `<span style="font-size:10px;color:rgba(200,60,0,.85);margin-left:6px;font-weight:700;">⚡ ${optRemaining}개 남음</span>` : '';
+      ? `<span style="font-size:10px;color:rgba(200,60,0,.85);margin-left:6px;font-weight:700;">${optRemaining}개 남음</span>` : '';
     const soldOutLabel = soldOut ? `<span style="font-size:11px;color:rgba(0,0,0,.35);margin-left:6px;">품절</span>` : '';
     const dimStyle = soldOut ? 'opacity:.4;pointer-events:none;' : '';
     return `<div class="opt-item${isSel?' sel':''}" data-idx="${i}" onclick="${soldOut?'':('selectInlineOption('+i+')')}" style="margin-bottom:10px;${dimStyle}">
@@ -715,25 +719,28 @@ async function onPayClick() {
   window._payupConfirmUrl  = confirmBase.toString();
   window._payupOrderNumber = orderNumber;
 
+  window._payupSubmitCalled = false;
   try {
     goPayupPay(data);
   } catch (e) {
     btn.disabled = false;
     btn.textContent = '결제 진행하기';
     alert('결제 요청 실패: ' + (e?.message || e));
+    return;
   }
+  setTimeout(() => {
+    if (!window._payupSubmitCalled && btn.disabled) {
+      btn.disabled = false;
+      btn.textContent = '결제 진행하기';
+      alert('결제창을 열지 못했어요. 잠시 후 다시 시도해 주세요.');
+    }
+  }, 5000);
 }
 
 function payupPaymentSubmit(payForm) {
+  window._payupSubmitCalled = true;
   const form = document.getElementById(payForm) || document.getElementById('PayupPaymentStandardForm');
   if (!form) return;
-  [['configId', CONFIG_ID], ['projectId', ctxProjectId], ['userId', ctxUserId]].forEach(([n, v]) => {
-    const inp = document.createElement('input');
-    inp.type = 'hidden'; inp.name = n; inp.value = v || '';
-    form.appendChild(inp);
-  });
-  form.method = 'POST';
-  form.action = window._payupConfirmUrl || ('/api/confirm-payup?id=' + CONFIG_ID);
   form.submit();
 }
 
