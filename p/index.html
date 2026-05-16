@@ -2251,11 +2251,6 @@ function refreshStageProgress(){
   if(html) card.insertAdjacentHTML('beforeend',html);
 }
 async function toggleBlockCheck(blockId){
-  // 필요 시 로그인 모드: 비로그인 사용자는 로그인 요청 후 재시도
-  if(AUTH_ENABLED && AUTH_MODE==='on-demand' && !USER_DOC_ID && !IS_ADMIN_PREVIEW){
-    requireAuthOr(()=>toggleBlockCheck(blockId), '진행률을 체크하려면 로그인이 필요해요.');
-    return;
-  }
   const stageId=curStageId;
   if(!userProgress[stageId]) userProgress[stageId]=new Set();
   const prog=userProgress[stageId];
