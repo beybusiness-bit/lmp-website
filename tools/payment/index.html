@@ -98,6 +98,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 </style>
 </head>
 <body>
+<!-- PayUp SDK 오버레이 컨테이너 (SDK가 이 요소 안에 결제 UI를 렌더링함) -->
+<div id="PayupPaymentLayer"></div>
 <div id="loading">불러오는 중…</div>
 <div id="err-screen"></div>
 <div id="status-msg"></div>
@@ -717,16 +719,6 @@ async function onPayClick() {
   window._payupConfirmUrl  = confirmBase.toString();
   window._payupOrderNumber = orderNumber;
 
-  // iframe 안에서 SDK의 window.open이 차단되므로, top-level 컨텍스트에서 팝업을 열도록 우회
-  if (window !== window.top) {
-    const _origOpen = window.open;
-    window.open = function(url, name, features) {
-      let popup = null;
-      try { popup = window.top.open(url, name, features); } catch(e) {}
-      return popup || _origOpen.call(this, url, name, features);
-    };
-  }
-
   window._payupSubmitCalled = false;
   try {
     goPayupPay(data);
@@ -740,7 +732,7 @@ async function onPayClick() {
     if (!window._payupSubmitCalled && btn.disabled) {
       btn.disabled = false;
       btn.textContent = '결제 진행하기';
-      alert('결제창을 열지 못했어요. 브라우저의 팝업 차단을 해제하거나, 다른 브라우저로 시도해 주세요.');
+      alert('결제창을 열지 못했어요. 잠시 후 다시 시도해 주세요.');
     }
   }, 5000);
 }
