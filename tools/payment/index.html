@@ -232,6 +232,7 @@ window.addEventListener('message', e => {
   ctxUserId     = e.data.userId     || ctxUserId;
   ctxUserFields = e.data.userFields || {};
   if (e.data.blockBg) { document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg); document.documentElement.style.setProperty('--lmp-input-bg', e.data.blockBg); }
+  if (e.data.blockBgImage) { const _f=e.data.blockBgFit||'cover',_p=e.data.blockBgPos||'center'; document.body.style.backgroundImage=`url('${e.data.blockBgImage}')`; document.body.style.backgroundSize=_f==='natural'?'contain':_f; document.body.style.backgroundPosition=_p; document.body.style.backgroundRepeat='no-repeat'; }
   if (!ctxReceived) { ctxReceived = true; resolveCtx(); }
   if (_waitingForLogin && ctxUserId) { _waitingForLogin = false; onPayClick(); }
 });
@@ -749,6 +750,12 @@ function payupPaymentSubmit(formId) {
   window._payupSubmitCalled = true;
   const form = document.getElementById(formId) || document.getElementById('PayupPaymentStandardForm');
   if (form) {
+    // SDK가 form.action을 설정하지 못했을 때 직접 보완
+    const curHref = location.href.split('?')[0];
+    if (!form.action || form.action === curHref || form.action === '') {
+      form.action = window._payupConfirmUrl;
+      if (!form.method) form.method = 'POST';
+    }
     form.submit();
   }
 }
