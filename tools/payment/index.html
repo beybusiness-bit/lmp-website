@@ -98,8 +98,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 </style>
 </head>
 <body>
-<!-- PayUp SDK 오버레이 컨테이너 (SDK가 이 요소 안에 결제 UI를 렌더링함) -->
-<div id="PayupPaymentLayer"></div>
+<div id="payup_layer"></div>
+<div id="bg_layer"></div>
 <div id="loading">불러오는 중…</div>
 <div id="err-screen"></div>
 <div id="status-msg"></div>
@@ -720,17 +720,9 @@ async function onPayClick() {
   window._payupOrderNumber = orderNumber;
 
   window._payupSubmitCalled = false;
-  // [DEBUG] SDK가 찾는 null 요소 ID 추적 — 원인 파악 후 제거 예정
-  const _dbgOrigGetById = document.getElementById.bind(document);
-  document.getElementById = function(id) {
-    const el = _dbgOrigGetById(id);
-    if (!el) console.warn('[PayupDebug] getElementById null:', id);
-    return el;
-  };
   try {
     goPayupPay(data);
   } catch (e) {
-    document.getElementById = _dbgOrigGetById;
     btn.disabled = false;
     btn.textContent = '결제 진행하기';
     alert('결제 요청 실패: ' + (e?.message || e));
