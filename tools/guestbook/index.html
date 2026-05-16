@@ -99,15 +99,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 #done-banner.on{display:block;}
 
 /* Bg image controls */
-.anchor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:108px;}
-.anchor-btn{width:32px;height:32px;border:2px solid rgba(0,0,0,.25);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(0,0,0,.4);transition:all .1s;}
-.anchor-btn.on{border-color:#000;background:#000;color:#fff;}
-.anchor-btn:hover:not(.on){border-color:#000;}
-.ov-toggle{display:flex;gap:0;}
-.ov-toggle-btn{flex:1;padding:8px;border:2px solid #000;background:#fff;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;transition:background .1s,color .1s;}
-.ov-toggle-btn.on{background:#000;color:#fff;}
-.ov-toggle-btn:first-child{border-right:1px solid #000;}
-.ov-toggle-btn:last-child{border-left:1px solid #000;}
+.img-ctrl-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+.img-ctrl-btn{flex:1;padding:5px 0;font-size:11px;font-weight:700;border:2px solid #000;cursor:pointer;font-family:inherit;background:transparent;min-width:60px;}
+.img-ctrl-btn.on{background:#000;color:#fff;}
 .range-row{display:flex;align-items:center;gap:10px;}
 .range-row input[type=range]{flex:1;-webkit-appearance:none;height:6px;background:rgba(0,0,0,.15);border-radius:3px;outline:none;}
 .range-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:#000;border-radius:50%;cursor:pointer;}
@@ -201,21 +195,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
       <!-- 이미지 선택 후 나타나는 컨트롤 -->
       <div id="bg-img-controls" style="display:none;margin-top:14px;">
-        <div style="margin-bottom:14px;">
-          <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:8px;">이미지 위치</div>
-          <div class="anchor-grid" id="anchor-grid"></div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:6px;">이미지 맞춤</div>
+          <div class="img-ctrl-row">
+            <button class="img-ctrl-btn on" data-fit="cover"   onclick="setBgFit('cover')">꽉 채우기</button>
+            <button class="img-ctrl-btn"    data-fit="contain" onclick="setBgFit('contain')">비율 유지</button>
+            <button class="img-ctrl-btn"    data-fit="natural" onclick="setBgFit('natural')">원본</button>
+          </div>
         </div>
-        <div style="margin-bottom:14px;">
-          <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:8px;">오버레이 색상</div>
-          <div class="ov-toggle">
-            <button class="ov-toggle-btn on" id="ov-black" onclick="setOverlayColor('black')">검정</button>
-            <button class="ov-toggle-btn" id="ov-white" onclick="setOverlayColor('white')">흰색</button>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:6px;">이미지 위치</div>
+          <div class="img-ctrl-row">
+            <button class="img-ctrl-btn"    data-pos="top"    onclick="setBgPos('top')">상단</button>
+            <button class="img-ctrl-btn on" data-pos="center" onclick="setBgPos('center')">중앙</button>
+            <button class="img-ctrl-btn"    data-pos="bottom" onclick="setBgPos('bottom')">하단</button>
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:6px;">오버레이 색상</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="color" id="ov-color" value="#000000" oninput="setBgOverlayColor(this.value)" style="width:32px;height:32px;border:2px solid #000;padding:0;cursor:pointer;flex-shrink:0;">
+            <span style="font-size:12px;color:rgba(0,0,0,.5);">오버레이 색상 선택</span>
           </div>
         </div>
         <div>
-          <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:8px;">오버레이 농도</div>
+          <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:6px;">오버레이 농도</div>
           <div class="range-row">
-            <input type="range" id="ov-opacity" min="0" max="100" value="45" oninput="setOverlayOpacity(this.value)">
+            <input type="range" id="ov-opacity" min="0" max="1" step="0.05" value="0.45" oninput="setBgOpacity(this.value)">
             <span class="range-val" id="ov-opacity-val">45%</span>
           </div>
         </div>
@@ -296,8 +302,9 @@ let pendingImageUrl  = '';
 // Bg image state
 let bgImgFile = null;
 let bgImgLocalUrl = '';
-let bgImgPosition = 'center';
-let bgOverlayColor = 'black';
+let bgImgFit = 'cover';
+let bgImgPos = 'center';
+let bgOverlayColorHex = '#000000';
 let bgOverlayOpacity = 0.45;
 
 let DISPLAY_MODE   = 'scroll';
@@ -313,11 +320,6 @@ let slideIdx = 0;
 let slideTimer = null;
 let infiniteObserver = null;
 
-const ANCHOR_POSITIONS = [
-  {label:'↖', pos:'top left'},    {label:'↑', pos:'top center'},    {label:'↗', pos:'top right'},
-  {label:'←', pos:'center left'}, {label:'·', pos:'center'},         {label:'→', pos:'center right'},
-  {label:'↙', pos:'bottom left'}, {label:'↓', pos:'bottom center'}, {label:'↘', pos:'bottom right'},
-];
 
 function hasImageField() {
   return !!(CONFIG && (CONFIG.fields || []).some(f => f.type === 'image'));
@@ -372,7 +374,6 @@ async function init() {
     PAGER_TYPE     = CONFIG.pagerType     || 'dots';
     document.documentElement.style.setProperty('--gallery-card-h', (Number(CONFIG.cardHeight) || 160) + 'px');
 
-    buildAnchorGrid();
     renderWriteForm();
     updateWriteBtn();
     await loadEntries();
@@ -472,30 +473,27 @@ function pickColor(c) {
   updatePreview();
 }
 
-function buildAnchorGrid() {
-  const grid = document.getElementById('anchor-grid');
-  if (!grid) return;
-  grid.innerHTML = ANCHOR_POSITIONS.map(a =>
-    `<button class="anchor-btn${a.pos===bgImgPosition?' on':''}" data-pos="${a.pos}" onclick="setAnchorPos('${a.pos}')" title="${a.pos}">${a.label}</button>`
-  ).join('');
-}
-
-function setAnchorPos(pos) {
-  bgImgPosition = pos;
-  document.querySelectorAll('.anchor-btn').forEach(b => b.classList.toggle('on', b.dataset.pos === pos));
+function setBgFit(fit) {
+  bgImgFit = fit;
+  document.querySelectorAll('[data-fit]').forEach(b => b.classList.toggle('on', b.dataset.fit === fit));
   updatePreview();
 }
 
-function setOverlayColor(color) {
-  bgOverlayColor = color;
-  document.getElementById('ov-black').classList.toggle('on', color === 'black');
-  document.getElementById('ov-white').classList.toggle('on', color === 'white');
+function setBgPos(pos) {
+  bgImgPos = pos;
+  document.querySelectorAll('[data-pos]').forEach(b => b.classList.toggle('on', b.dataset.pos === pos));
   updatePreview();
 }
 
-function setOverlayOpacity(val) {
-  bgOverlayOpacity = Number(val) / 100;
-  document.getElementById('ov-opacity-val').textContent = val + '%';
+function setBgOverlayColor(hex) {
+  bgOverlayColorHex = hex;
+  updatePreview();
+}
+
+function setBgOpacity(val) {
+  bgOverlayOpacity = Number(val);
+  const pct = Math.round(Number(val) * 100);
+  document.getElementById('ov-opacity-val').textContent = pct + '%';
   updatePreview();
 }
 
@@ -556,12 +554,12 @@ function updatePreview() {
   }).filter(Boolean).join(' · ') || '미리보기';
 
   if (bgImgLocalUrl) {
+    const bgSize = bgImgFit === 'contain' ? 'contain' : bgImgFit === 'natural' ? 'auto' : 'cover';
     card.style.backgroundImage = `url('${bgImgLocalUrl}')`;
-    card.style.backgroundSize = 'cover';
-    card.style.backgroundPosition = bgImgPosition;
+    card.style.backgroundSize = bgSize;
+    card.style.backgroundPosition = bgImgPos;
     card.style.backgroundRepeat = 'no-repeat';
-    const ovRgb = bgOverlayColor === 'white' ? '#fff' : '#000';
-    overlay.style.background = ovRgb;
+    overlay.style.background = bgOverlayColorHex;
     overlay.style.opacity = bgOverlayOpacity;
     overlay.style.display = '';
     const textColor = selectedColor || '#fff';
@@ -645,8 +643,9 @@ async function submitEntry() {
       approved: !(CONFIG.requireApproval), pinned: false,
       bgColor: selectedColor,
       bgImageUrl: finalBgImageUrl,
-      bgImagePosition: finalBgImageUrl ? bgImgPosition : '',
-      overlayColor: finalBgImageUrl ? bgOverlayColor : '',
+      bgImageFit: finalBgImageUrl ? bgImgFit : '',
+      bgImagePosition: finalBgImageUrl ? bgImgPos : '',
+      overlayColor: finalBgImageUrl ? bgOverlayColorHex : '',
       overlayOpacity: finalBgImageUrl ? bgOverlayOpacity : 0,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     };
@@ -688,8 +687,9 @@ function resetForm() {
   // Reset bg image state
   bgImgFile = null;
   if (bgImgLocalUrl) { URL.revokeObjectURL(bgImgLocalUrl); bgImgLocalUrl = ''; }
-  bgImgPosition = 'center';
-  bgOverlayColor = 'black';
+  bgImgFit = 'cover';
+  bgImgPos = 'center';
+  bgOverlayColorHex = '#000000';
   bgOverlayOpacity = 0.45;
   const bgPrev = document.getElementById('bg-img-prev');
   const bgIcon = document.getElementById('bg-img-icon');
@@ -703,13 +703,15 @@ function resetForm() {
   if (bgArea)  bgArea.classList.remove('has-img');
   if (bgCtrl)  bgCtrl.style.display = 'none';
   if (bgInp)   bgInp.value = '';
-  // Reset overlay controls
+  // Reset controls
   const ovRange = document.getElementById('ov-opacity');
   const ovVal   = document.getElementById('ov-opacity-val');
-  if (ovRange) ovRange.value = '45';
+  const ovColor = document.getElementById('ov-color');
+  if (ovRange) ovRange.value = '0.45';
   if (ovVal)   ovVal.textContent = '45%';
-  setOverlayColor('black');
-  buildAnchorGrid();
+  if (ovColor) ovColor.value = '#000000';
+  document.querySelectorAll('[data-fit]').forEach(b => b.classList.toggle('on', b.dataset.fit === 'cover'));
+  document.querySelectorAll('[data-pos]').forEach(b => b.classList.toggle('on', b.dataset.pos === 'center'));
   // Rebuild swatches to reset label
   buildColorSwatches();
   // Reset anon
@@ -878,13 +880,15 @@ function buildCardHtml(entry) {
   const metaText = parts.join(' · ');
 
   if (bgImageUrl) {
+    const bgFit = entry.bgImageFit || 'cover';
+    const bgSize = bgFit === 'contain' ? 'contain' : bgFit === 'natural' ? 'auto' : 'cover';
     const pos = entry.bgImagePosition || 'center';
-    const ovRgb = entry.overlayColor === 'white' ? '#fff' : '#000';
+    const ovRgb = entry.overlayColor || '#000000';
     const ovOp  = entry.overlayOpacity ?? 0.45;
     const textColor = bgColor || '#ffffff';
     const metaColor = bgColor ? bgColor + 'aa' : 'rgba(255,255,255,.65)';
     return `<div class="gb-card has-img-bg" onclick="openDetail('${entry.id}')"
-      style="background-image:url('${esc(bgImageUrl)}');background-size:cover;background-position:${pos};background-repeat:no-repeat;">
+      style="background-image:url('${esc(bgImageUrl)}');background-size:${bgSize};background-position:${pos};background-repeat:no-repeat;">
       <div class="card-overlay" style="background:${ovRgb};opacity:${ovOp};"></div>
       <div class="card-body" style="position:relative;z-index:1;color:${textColor};">
         ${fieldsHtml}
@@ -935,11 +939,13 @@ function openDetail(entryId) {
 
   let html = '';
   if (bgImageUrl) {
+    const bgFit = entry.bgImageFit || 'cover';
+    const bgSize = bgFit === 'contain' ? 'contain' : bgFit === 'natural' ? 'auto' : 'cover';
     const pos = entry.bgImagePosition || 'center';
-    const ovRgb = entry.overlayColor === 'white' ? '#fff' : '#000';
+    const ovRgb = entry.overlayColor || '#000000';
     const ovOp  = entry.overlayOpacity ?? 0.45;
     const textColor = bgColor || '#ffffff';
-    html = `<div class="gb-lightbox-img-bg" style="background-image:url('${esc(bgImageUrl)}');background-position:${pos};">
+    html = `<div class="gb-lightbox-img-bg" style="background-image:url('${esc(bgImageUrl)}');background-size:${bgSize};background-position:${pos};">
       <div class="card-overlay" style="background:${ovRgb};opacity:${ovOp};"></div>
       <div class="gb-lightbox-body" style="color:${textColor};">
         ${fieldsHtml}
