@@ -335,6 +335,10 @@ async function init() {
       CONFIG.successMessage || '결제하신 권한이 부여되었어요.',
       { amount: AMOUNT_FROM_URL, orderName: CONFIG.productName, method: CARD_NAME,
         approvedAt: AUTH_DATETIME, selectedOption: selectedOption?.label || '' });
+    // 스탠드얼론(iframe 밖) 환경에서는 3초 후 플레이어로 자동 이동
+    if (ctxProjectId && window.parent === window) {
+      setTimeout(() => { location.href = '/' + ctxProjectId + '/'; }, 3000);
+    }
     return;
   }
 
@@ -732,73 +736,36 @@ async function onPayClick() {
     alert('결제 요청 실패: ' + (e?.message || e));
     return;
   }
+  // 60초 후에도 콜백이 없으면 조용히 버튼 복원 (결제창 열기 실패 감지)
   setTimeout(() => {
     if (!window._payupSubmitCalled && btn.disabled) {
       btn.disabled = false;
       btn.textContent = '결제 진행하기';
-      alert('결제창을 열지 못했어요. 잠시 후 다시 시도해 주세요.');
     }
-  }, 5000);
+  }, 60000);
 }
 
-async function payupPaymentSubmit(payForm) {
+function payupPaymentSubmit(formId) {
   window._payupSubmitCalled = true;
-  const form = document.getElementById(payForm) || document.getElementById('PayupPaymentStandardForm');
-  if (!form) {
-    showResult('fail', '결제 처리 오류', '결제 폼을 찾을 수 없어요 (form not found).', null);
-    return;
-  }
-
-  // Extract ALL form fields PayUp injected
-  const fields = {};
-  try { new FormData(form).forEach((v, k) => fields[k] = v); } catch(e) {}
-
-  // Try to find payment identifiers (PayUp may use various field names)
-  const tid = fields.transactionId || fields.tid || fields.transaction_id || fields.TID || '';
-  const orderNo = fields.orderNumber || fields.orderNo || fields.orderId || fields.order_id || fields.ORDER_NO || window._payupOrderNumber || '';
-  const amt = fields.amount || fields.amt || fields.AMOUNT || sessionStorage.getItem('py_amount') || '';
-
-  if (tid || (orderNo && amt)) {
-    // Form has payment data — verify via fetch, skip form.submit()
-    try {
-      const resp = await fetch('/api/confirm-payup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...fields, id: CONFIG_ID, projectId: ctxProjectId, userId: ctxUserId }),
-      });
-      const result = await resp.json();
-      if (result.success) {
-        const d = result.data;
-        try { selectedOption  = JSON.parse(sessionStorage.getItem('py_selectedOption') || 'null'); } catch(e) {}
-        try { questionAnswers = JSON.parse(sessionStorage.getItem('py_questionAnswers') || '{}'); } catch(e) {}
-        try { selectedQty     = parseInt(sessionStorage.getItem('py_selectedQty') || '1') || 1; } catch(e) {}
-        await recordPayment(d);
-        fireSmsWebhook(d.amount, CONFIG.productName || CONFIG.title || '', selectedQty);
-        window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
-        try { if (window.opener) window.opener.postMessage({ type: 'lmp-tool-complete' }, '*'); } catch(e) {}
-        showResult('success', '결제가 완료되었어요',
-          CONFIG.successMessage || '결제하신 권한이 부여되었어요.',
-          { amount: d.amount, orderName: CONFIG.productName, method: d.cardName || d.issueCompanyName || '',
-            approvedAt: d.authDatetime, selectedOption: selectedOption?.label || '' });
-      } else {
-        showResult('fail', '결제가 실패했어요', result.message || '결제를 처리하지 못했어요.', null);
-      }
-    } catch(e) {
-      showResult('fail', '결제 오류', e.message || '결제 처리 중 오류가 발생했어요.', null);
-    }
-  } else {
-    // Form has no payment data — submit normally (browser redirect fallback)
-    // PayUp will redirect to returnUrl; confirm-payup.js handles GET
+  const form = document.getElementById(formId) || document.getElementById('PayupPaymentStandardForm');
+  if (form) {
     form.submit();
   }
 }
 
 function payupPaymentClose() {
+  // PayUp 결제창이 닫혔을 때 (취소 또는 오류)
   const btn = document.getElementById('pc-ok-btn');
   if (btn) {
-    btn.disabled = !document.getElementById('pc-agree')?.checked;
+    btn.disabled = false;
     btn.textContent = '결제 진행하기';
   }
+  // 동의 체크박스 초기화 후 최종확인 화면으로 복원 (재시도 가능)
+  const agree = document.getElementById('pc-agree');
+  if (agree) agree.checked = false;
+  if (btn) btn.disabled = true;
+  document.getElementById('pay-confirm').classList.remove('on');
+  document.getElementById('pay-screen').style.display = 'block';
 }
 
 async function recordPayment(d) {
