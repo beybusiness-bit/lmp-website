@@ -94,25 +94,30 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 #side-menu.open{transform:translateX(0);}
 .menu-header{flex-shrink:0;display:flex;justify-content:flex-end;padding:16px 20px;border-bottom:1px solid rgba(0,0,0,.12);}
 .menu-close{font-size:24px;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:4px 4px 4px 16px;line-height:1;}
-#menu-list{flex:1;overflow-y:auto;padding:8px 28px 24px;}
-.menu-item{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid rgba(0,0,0,.18);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s;}
-.menu-item:last-child{border-bottom:none;}
-.menu-item:active{opacity:.6;}
-#menu-footer{flex-shrink:0;display:none;padding:14px 28px 28px;border-top:1px solid rgba(0,0,0,.18);}
-#menu-logout{display:inline-block;font-size:13px;font-weight:600;color:rgba(0,0,0,.55);cursor:pointer;-webkit-tap-highlight-color:transparent;padding:6px 0;letter-spacing:-.2px;}
+#menu-tabs-bar{flex-shrink:0;display:none;border-bottom:1.5px solid rgba(0,0,0,.1);}
+.menu-tab{flex:1;text-align:center;padding:13px 0;font-size:13px;font-weight:700;cursor:pointer;border-bottom:2.5px solid transparent;color:rgba(0,0,0,.4);-webkit-tap-highlight-color:transparent;transition:color .15s,border-color .15s;letter-spacing:-.2px;}
+.menu-tab.active{color:#000;border-bottom-color:#000;}
+#menu-activity-panel,#menu-payment-panel{display:none;flex:1;overflow-y:auto;padding:0 20px 32px;}
+#menu-login-prompt{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 24px;}
+.menu-enter-btn{width:100%;padding:14px 0;background:#000;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;}
+.menu-enter-btn:active{opacity:.7;}
+.menu-sreg-btn{width:100%;padding:12px 0;background:transparent;color:#000;border:1.5px solid rgba(0,0,0,.2);border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;}
+.menu-sreg-btn:active{opacity:.6;}
+#menu-footer{flex-shrink:0;display:none;padding:12px 28px 28px;border-top:1px solid rgba(0,0,0,.12);}
+#menu-logout{display:inline-block;font-size:13px;font-weight:600;color:rgba(0,0,0,.45);cursor:pointer;-webkit-tap-highlight-color:transparent;padding:6px 0;letter-spacing:-.2px;}
 #menu-logout:active{opacity:.55;}
-#menu-my-info{display:block;font-size:14px;font-weight:800;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:6px 0 12px;letter-spacing:-.2px;}
-#menu-my-info:active{opacity:.6;}
-#my-info-panel{position:absolute;top:0;bottom:0;left:0;right:0;background:#fff;z-index:85;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);}
-#my-info-panel.open{transform:translateX(0);}
-.mi-head{display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid rgba(0,0,0,.1);flex-shrink:0;}
-.mi-back{font-size:22px;font-weight:900;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:4px 8px 4px 0;color:#000;}
-.mi-title{font-size:16px;font-weight:800;letter-spacing:-.3px;}
-.mi-body{flex:1;overflow-y:auto;padding:4px 20px 32px;}
-.mi-empty{padding:40px 0;text-align:center;font-size:14px;color:rgba(0,0,0,.4);}
-.mi-record{border:1px solid rgba(0,0,0,.12);border-radius:8px;padding:14px 16px;margin-bottom:12px;}
-.mi-record-name{font-size:14px;font-weight:800;margin-bottom:4px;}
-.mi-record-meta{font-size:12px;color:rgba(0,0,0,.5);line-height:1.6;}
+.mi-pay-item{padding:14px 0;border-bottom:1px solid rgba(0,0,0,.1);}
+.mi-pay-item:last-child{border-bottom:none;}
+.mi-pay-name{font-size:14px;font-weight:700;margin-bottom:3px;}
+.mi-pay-amount{font-size:20px;font-weight:900;letter-spacing:-.3px;margin-bottom:4px;}
+.mi-pay-meta{font-size:11px;color:rgba(0,0,0,.45);line-height:1.6;}
+.mi-empty{text-align:center;padding:48px 0;font-size:13px;color:rgba(0,0,0,.4);font-weight:600;}
+.mi-act-item{padding:12px 0;border-bottom:1px solid rgba(0,0,0,.08);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.mi-act-item:last-child{border-bottom:none;}
+.mi-act-item:active{opacity:.6;}
+.mi-act-type{font-size:10px;font-weight:800;color:rgba(0,0,0,.35);letter-spacing:.3px;text-transform:uppercase;margin-bottom:3px;}
+.mi-act-preview{font-size:13px;font-weight:600;color:#000;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mi-act-date{font-size:11px;color:rgba(0,0,0,.4);}
 .menu-dot{width:36px;height:36px;border-radius:50%;background:#000;color:var(--menu-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;text-align:center;line-height:1.3;}
 /* user greeting */
 #menu-greeting{display:none;padding:14px 20px 12px;border-bottom:1px solid rgba(0,0,0,.12);font-size:13px;font-weight:700;line-height:1.65;letter-spacing:-.2px;color:var(--menu-bg);background:#000;word-break:keep-all;}
@@ -317,20 +322,23 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
   <div id="side-menu">
     <div class="menu-header"><div class="menu-close" onclick="closeMenu()">✕</div></div>
     <div id="menu-greeting"></div>
-    <div id="menu-list"></div>
+    <!-- 로그인 상태: 나의 활동 / 나의 구매 탭 -->
+    <div id="menu-tabs-bar">
+      <div style="display:flex;">
+        <div class="menu-tab active" id="menu-tab-activity" onclick="switchSideTab('activity')">나의 활동</div>
+        <div class="menu-tab" id="menu-tab-payment" onclick="switchSideTab('payment')">나의 구매</div>
+      </div>
+    </div>
+    <div id="menu-activity-panel"></div>
+    <div id="menu-payment-panel"></div>
+    <!-- 비로그인 상태: 입장하기 -->
+    <div id="menu-login-prompt">
+      <button class="menu-enter-btn" onclick="closeMenu();openAuthModal();">입장하기</button>
+      <button class="menu-sreg-btn" id="menu-sreg-cta" onclick="closeMenu();openRegModal();" style="display:none;">등록하기</button>
+    </div>
     <div id="menu-footer">
-      <span id="menu-my-info" onclick="openMyInfo()">내 정보</span>
       <span id="menu-logout" onclick="logout()">로그아웃</span>
     </div>
-  </div>
-
-  <!-- 내 정보 패널 (side-menu 밖, #app 직하위) -->
-  <div id="my-info-panel">
-    <div class="mi-head">
-      <div class="mi-back" onclick="closeMyInfo()">←</div>
-      <div class="mi-title">내 정보</div>
-    </div>
-    <div class="mi-body" id="mi-body"></div>
   </div>
 
   <!-- SEPARATE layout main -->

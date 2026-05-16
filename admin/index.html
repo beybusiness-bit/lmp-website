@@ -721,17 +721,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <div class="sect-head ip-first-sect">스테이지 목록</div>
           <div class="ed-sect">
             <div id="stage-list"></div>
-            <button class="add-btn" onclick="addStage()">+ 스테이지 추가</button>
-          </div>
-        </div>
-
-        <!-- 홈 화면 구성 -->
-        <div class="inner-panel" id="ip-home-blocks">
-          <div class="sect-head">홈 화면 구성</div>
-          <div class="ed-sect">
-            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:8px;">스테이지 카드 사이에 텍스트·이미지 블록을 자유롭게 배치할 수 있어요.</div>
-            <div id="home-order-list"></div>
-            <button class="add-btn" onclick="addHomeBlockItem()">+ 홈 블록 추가</button>
+            <div style="margin-top:16px;">
+              <div class="ed-lbl" style="margin-bottom:4px;">홈 화면 배치 순서</div>
+              <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:8px;">스테이지 카드 사이에 블록을 끼워 넣을 수 있어요. ↑↓으로 순서 조정.</div>
+              <div id="home-order-list"></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px;">
+              <button class="add-btn" style="flex:1;" onclick="addStage()">+ 스테이지 추가</button>
+              <button class="add-btn" style="flex:1;" onclick="addHomeBlockItem()">+ 블록 추가</button>
+            </div>
           </div>
         </div>
         </div><!-- /ed-inner -->
@@ -4538,7 +4536,7 @@ function renderStageList() {
 function renderHomeOrderList(){
   const el=document.getElementById('home-order-list');
   if(!el) return;
-  if(!curHomeItemOrder.length){ el.innerHTML='<div class="empty-msg" style="padding:8px 0;font-size:11px;color:rgba(0,0,0,.4);">스테이지나 홈 블록을 추가하면 여기에 순서가 표시돼요.</div>'; return; }
+  if(!curHomeItemOrder.length){ el.innerHTML='<div class="empty-msg" style="padding:8px 0;font-size:11px;color:rgba(0,0,0,.4);">스테이지나 블록을 추가하면 순서가 표시돼요.</div>'; return; }
   const stageMap={};
   curStages.forEach(s=>{ stageMap[s.id]=s; });
   const hbMap={};
@@ -4552,7 +4550,7 @@ function renderHomeOrderList(){
       const label=s?s.title||'(제목 없음)':'(삭제된 스테이지)';
       return `<div style="display:flex;align-items:center;gap:4px;padding:5px 8px;background:#f9f9f9;border:1px solid rgba(0,0,0,.1);border-radius:6px;margin-bottom:4px;">
         <span style="font-size:10px;font-weight:700;color:rgba(0,0,0,.35);min-width:34px;flex-shrink:0;">스테이지</span>
-        <span style="flex:1;font-size:11px;color:#000;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(label)}</span>
+        <span style="flex:1;font-size:11px;color:#000;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(label)}</span>
         ${mvUp}${mvDn}
       </div>`;
     } else {
@@ -4561,7 +4559,7 @@ function renderHomeOrderList(){
       const preview=hb?_hbPreview(hb):'';
       return `<div style="display:flex;align-items:center;gap:4px;padding:5px 8px;background:#fff;border:1.5px solid rgba(0,0,0,.15);border-radius:6px;margin-bottom:4px;">
         <span style="font-size:10px;font-weight:700;color:#0BC6FF;min-width:34px;flex-shrink:0;">블록</span>
-        <span style="flex:1;font-size:11px;color:rgba(0,0,0,.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">[${typeLabel}] ${esc(preview)}</span>
+        <span style="flex:1;font-size:11px;color:rgba(0,0,0,.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">[${typeLabel}] ${escHtml(preview)}</span>
         <button class="s-btn" onclick="openHomeBlockModal('${item.id}')" style="font-size:10px;width:28px;" title="편집">✏</button>
         <button class="s-btn" onclick="rmHomeBlock('${item.id}')" style="font-size:10px;width:24px;" title="삭제">✕</button>
         ${mvUp}${mvDn}
@@ -4592,7 +4590,7 @@ function openHomeBlockModal(id){
   openBlockModal(null,null);
 }
 function rmHomeBlock(id){
-  if(!confirm('이 홈 블록을 삭제할까요?')) return;
+  if(!confirm('이 블록을 삭제할까요?')) return;
   curHomeBlocks=curHomeBlocks.filter(hb=>hb.id!==id);
   curHomeItemOrder=curHomeItemOrder.filter(o=>!(o.type==='homeBlock'&&o.id===id));
   renderHomeOrderList();
@@ -6069,7 +6067,7 @@ function openBlockModal(idx,insertAt){
   const _isHb=_hbMode;
   curBlkIdx=_isHb?null:idx;
   curBlkInsertAt=_isHb?null:((idx===null&&insertAt!==undefined&&insertAt!==null)?insertAt:null);
-  document.getElementById('bm-title').textContent=_isHb?(_hbEditId?'홈 블록 편집':'홈 블록 추가'):(idx===null?'블록 추가':'블록 편집');
+  document.getElementById('bm-title').textContent=_isHb?(_hbEditId?'블록 편집':'블록 추가'):(idx===null?'블록 추가':'블록 편집');
   const b=_isHb?(curHomeBlocks.find(hb=>hb.id===_hbEditId)||{type:'text',textContent:'',imageUrl:'',mixedLayout:'overlay'}):(idx!==null?curBlocks[idx]:{type:'text',textContent:'',imageUrl:'',mixedLayout:'overlay'});
   curBlkType=b.type||'text';curMixedLayout=b.mixedLayout||'overlay';
   /* tool 블록 상태는 switchBlkTab 전에 미리 세팅 — loadToolInstList가 올바른 toolType/Config로 호출되도록 */
