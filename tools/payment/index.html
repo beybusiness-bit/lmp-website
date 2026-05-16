@@ -300,7 +300,11 @@ function loadSdk() {
 }
 
 async function init() {
-  await Promise.race([ctxPromise, new Promise(r => setTimeout(r, 1500))]);
+  // 결제 완료/실패 결과 화면은 lmp-context 필요 없으므로 최소 대기만
+  const ctxWait = (RESULT === 'success' || RESULT === 'fail')
+    ? 200
+    : 1500;
+  await Promise.race([ctxPromise, new Promise(r => setTimeout(r, ctxWait))]);
 
   const ok = await loadConfig();
   if (!ok) return;
@@ -330,16 +334,12 @@ async function init() {
     });
     fireSmsWebhook(AMOUNT_FROM_URL, CONFIG.productName || CONFIG.title || '', selectedQty);
     window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
-    // 팝업으로 열린 경우 opener(플레이어 최상위)에도 신호 전달
     try { if (window.opener) window.opener.postMessage({ type: 'lmp-tool-complete' }, '*'); } catch(e) {}
     showResult('success', '결제가 완료되었어요',
       CONFIG.successMessage || '결제하신 권한이 부여되었어요.',
       { amount: AMOUNT_FROM_URL, orderName: CONFIG.productName, method: CARD_NAME,
         approvedAt: AUTH_DATETIME, selectedOption: selectedOption?.label || '' });
-    // 스탠드얼론(iframe 밖) 환경에서는 3초 후 플레이어로 자동 이동
-    if (ctxProjectId && window.parent === window) {
-      setTimeout(() => { location.href = '/' + ctxProjectId + '/'; }, 3000);
-    }
+    // 자동 이동 제거 — 사용자가 직접 버튼을 눌러야 이동
     return;
   }
 
@@ -729,21 +729,47 @@ async function onPayClick() {
   window._payupOrderNumber = orderNumber;
 
   window._payupSubmitCalled = false;
+
+  // PayUp SDK 런타임 에러를 캐치해 버튼 즉시 복원
+  const _origOnError = window.onerror;
+  window._payupErrorCaught = false;
+  window.onerror = (msg, src, line, col, err) => {
+    if (src && src.includes('payup_standard') && !window._payupSubmitCalled && !window._payupErrorCaught) {
+      window._payupErrorCaught = true;
+      window.onerror = _origOnError;
+      btn.disabled = false;
+      btn.textContent = '결제 진행하기';
+      // PC 환경에서 PayUp SDK 오류 → 안내 메시지
+      const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+      if (!isMobile) {
+        alert('PC 환경에서는 결제창이 열리지 않을 수 있어요.\n모바일 기기에서 다시 시도해주세요.');
+      }
+    }
+    return _origOnError ? _origOnError(msg, src, line, col, err) : false;
+  };
+
   try {
     goPayupPay(data);
   } catch (e) {
+    window.onerror = _origOnError;
     btn.disabled = false;
     btn.textContent = '결제 진행하기';
-    alert('결제 요청 실패: ' + (e?.message || e));
+    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    if (!isMobile) {
+      alert('PC 환경에서는 결제창이 열리지 않을 수 있어요.\n모바일 기기에서 다시 시도해주세요.');
+    } else {
+      alert('결제 요청 실패: ' + (e?.message || e));
+    }
     return;
   }
-  // 60초 후에도 콜백이 없으면 조용히 버튼 복원 (결제창 열기 실패 감지)
+  // 8초 후에도 콜백이 없으면 버튼 복원 (결제창 열기 실패 or 취소 감지)
   setTimeout(() => {
+    window.onerror = _origOnError;
     if (!window._payupSubmitCalled && btn.disabled) {
       btn.disabled = false;
       btn.textContent = '결제 진행하기';
     }
-  }, 60000);
+  }, 8000);
 }
 
 function payupPaymentSubmit(formId) {

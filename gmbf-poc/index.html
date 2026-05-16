@@ -106,10 +106,11 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 #menu-footer{flex-shrink:0;display:none;padding:12px 28px 28px;border-top:1px solid rgba(0,0,0,.12);}
 #menu-logout{display:inline-block;font-size:13px;font-weight:600;color:rgba(0,0,0,.45);cursor:pointer;-webkit-tap-highlight-color:transparent;padding:6px 0;letter-spacing:-.2px;}
 #menu-logout:active{opacity:.55;}
-.mi-pay-item{padding:14px 0;border-bottom:1px solid rgba(0,0,0,.1);}
+.mi-pay-item{padding:14px 0;border-bottom:1px solid rgba(0,0,0,.1);cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .mi-pay-item:last-child{border-bottom:none;}
-.mi-pay-name{font-size:14px;font-weight:700;margin-bottom:3px;}
-.mi-pay-amount{font-size:20px;font-weight:900;letter-spacing:-.3px;margin-bottom:4px;}
+.mi-pay-item:active{opacity:.6;}
+.mi-pay-name{font-size:15px;font-weight:800;letter-spacing:-.2px;margin-bottom:3px;}
+.mi-pay-amount{font-size:13px;font-weight:600;color:rgba(0,0,0,.6);margin-bottom:3px;}
 .mi-pay-meta{font-size:11px;color:rgba(0,0,0,.45);line-height:1.6;}
 .mi-empty{text-align:center;padding:48px 0;font-size:13px;color:rgba(0,0,0,.4);font-weight:600;}
 .mi-act-item{padding:14px 0;border-bottom:1px solid rgba(0,0,0,.1);cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -1750,6 +1751,13 @@ async function loadMyActivity(){
     el.innerHTML=`<div class="mi-empty">불러오기 실패<br><span style="font-size:11px;font-weight:400;">${esc(e.message||'')}</span></div>`;
   }
 }
+async function _navToPaymentStage(configId){
+  if(!configId) return;
+  await _preloadStageBlocks();
+  const found=_findBlockByToolConfig(configId,'payment');
+  if(found){ closeMenu(); await _navToBlock(found); }
+  else closeMenu();
+}
 async function loadMyPayments(){
   const body=document.getElementById('menu-payment-panel');
   if(!body) return;
@@ -1766,12 +1774,13 @@ async function loadMyPayments(){
     body.innerHTML=sortedDocs.map(doc=>{
       const r=doc.data();
       const dt=r.createdAt?.toDate?r.createdAt.toDate().toLocaleDateString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit'}):'';
-      const opt=r.selectedOption?.label?`<div>옵션: ${esc(r.selectedOption.label)}</div>`:'';
-      const qty=(r.qty||1)>1?`<div>수량: ${r.qty}개</div>`:'';
-      return `<div class="mi-pay-item">
+      const opt=r.selectedOption?.label?`<span>옵션: ${esc(r.selectedOption.label)} · </span>`:'';
+      const qty=(r.qty||1)>1?`<span>수량: ${r.qty}개 · </span>`:'';
+      const configId=JSON.stringify(r.configId||'');
+      return `<div class="mi-pay-item" onclick="_navToPaymentStage(${configId})">
         <div class="mi-pay-name">${esc(r.orderName||r.configTitle||'-')}</div>
         <div class="mi-pay-amount">${Number(r.amount).toLocaleString()}원</div>
-        <div class="mi-pay-meta">${opt}${qty}<div>${esc(r.cardName||'')}${dt?' · '+dt:''}</div></div>
+        <div class="mi-pay-meta">${opt}${qty}${esc(r.cardName||'')}${dt?' · '+dt:''}</div>
       </div>`;
     }).join('');
   }catch(e){
