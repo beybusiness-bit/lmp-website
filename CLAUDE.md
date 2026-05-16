@@ -773,40 +773,29 @@ match /cms_payment_records/{doc} { allow read: if true; }
 
 #### 다음 세션 시작점 🔲
 
-- 결제 테스트 피드백 반영 (테스트 완료 후 사용자가 지정)
+- 결제 기능 end-to-end 테스트 완료 후 피드백 반영
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 
 #### 이번 세션 완료 항목
-- 결제 선택 옵션 (옵션별 금액 다름) / 주관식 질문 / 구매 수량 (1회 min·max + 누적 per-user 제한)
-- SNS 다중 입력 (Simple Icons CDN 아이콘 + 커스텀 업로드)
-- 개인정보처리방침·이용약관 한국어 템플릿 "기본 내용 채우기"
-- 결제 전 최종 확인 화면 + 청약철회 배제 동의 체크박스
-- 플레이어 푸터 가운데 정렬 + 정책 링크 → 작은 밑줄 텍스트로 변경 (4파일 동기화)
-- 정책 모달 → 앱 내 팝업 모달로 변경 (4파일 동기화)
-- 내 정보 패널 CSS transform 중첩 버그 수정 (`#my-info-panel`을 `#side-menu` 밖으로 이동)
-- admin 결제 게이트 입력란 → 블록 에디터 맨 아래로 이동
-- 셀프 등록 모달 개인정보 동의 체크박스 추가 (4파일 동기화)
-- Stop hook 제거 (`/root/.claude/settings.json`)
-- CLAUDE.md 기생성 프로젝트 탐지 → git ls-files 자동 탐지로 변경
-- Make webhook (관리자 Gmail 알림용) — 코드 준비, 실제 시나리오 설정은 사용자가
-- 사이드바 "내 정보" 패널 — 결제 내역 조회 (로그인 사용자만)
-- 결제 게이트 (`requiredTier`) — 블록별 결제 상품 tier 잠금/해제
-- 배포 전략 변경: 세션 중 커밋만 → 마무리 시 push+머지 1회 (총 2회)
+- Stop hook 재제거 (`/root/.claude/settings.json` — 이전 세션에서 제거했으나 재등장)
+- selfReg CTA 클릭 안 되던 버그 수정: `showReg` 조건에서 `AUTH_ENABLED&&` 제거 (4파일 동기화)
+- 사이드바 로그아웃·내정보 사라지던 버그 수정: footer 표시 조건 `AUTH_ENABLED→AUTH_ENABLED||SELF_REG_ENABLED` (4파일 동기화)
+- 결제 무한 로딩 수정: `returnUrl` 항상 설정해 redirect 방식 강제 (iframe 팝업 차단 문제 해결)
+- 결제 비로그인 차단: 결제 진행하기 클릭 시 로그인 체크 → `lmp-request-login` 메시지로 플레이어 로그인 모달 트리거 → 로그인 후 자동 결제 재개
+- 로그인/등록 완료 후 `_sendContextToEmbeds()` 추가 → 모든 iframe에 최신 userId 전송 (4파일 동기화)
+- 결제 도구: 옵션형 상품 진입 시 옵션 즉시 표시 (기존 "옵션선택하기" 버튼 제거)
+- 결제 도구: 옵션별 사진 URL → 플레이어에서 썸네일 표시
+- 결제 도구: 상세 설명 RTE에 🖼 이미지 URL 삽입 버튼 추가
+- 결제 도구: 재고 관리 기능 (stockEnabled/stockTotal/stockRemaining · 품절 표시 · 결제 후 Firestore 트랜잭션 차감)
+- Vercel 프리뷰 URL 정책: 세션 중 push 요청 시에만 /admin 포함 프리뷰 URL 제공 (세션 마무리 시는 main 머지만)
 
 #### Firestore 스키마 추가 (이번 세션)
 ```
-cms_projects/{projectId}
-  adminColPrefs: {
-    hiddenUser: string[],   ← 사용자 테이블 숨긴 컬럼 키 목록
-    frozenUser: number,     ← 사용자 테이블 고정 열 수
-  }
-cms_form_configs/{formId}
-  adminColPrefs: {
-    hidden: string[],       ← 폼 응답 테이블 숨긴 컬럼 키 목록
-    frozen: number,         ← 폼 응답 테이블 고정 열 수
-  }
-stage_content/{stageId}/blocks/{blockId}
-  requireAuth: boolean      ← 지연 로그인 프로젝트에서 비로그인 차단 여부 (기본 미설정=공개)
+cms_payment_configs/{configId}
+  stockEnabled: boolean      ← 재고 관리 사용 여부
+  stockTotal: number         ← 총 재고 수량
+  stockRemaining: number     ← 현재 남은 재고 (결제 후 트랜잭션으로 차감)
+  options[].imageUrl: string ← 옵션별 썸네일 이미지 URL (선택)
 ```
 
 ---
