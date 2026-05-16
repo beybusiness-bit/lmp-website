@@ -702,9 +702,12 @@ async function onPayClick() {
   sessionStorage.setItem('py_selectedOption',  JSON.stringify(selectedOption));
   sessionStorage.setItem('py_questionAnswers', JSON.stringify(questionAnswers));
   sessionStorage.setItem('py_selectedQty',     String(selectedQty));
+  sessionStorage.setItem('py_orderNumber',     orderNumber);
+  sessionStorage.setItem('py_amount',          String(effectiveAmount));
 
   const confirmBase = new URL('/api/confirm-payup', location.origin);
-  confirmBase.searchParams.set('id', CONFIG_ID);
+  confirmBase.searchParams.set('id',          CONFIG_ID);
+  confirmBase.searchParams.set('orderNumber', orderNumber);
   if (ctxProjectId) confirmBase.searchParams.set('projectId', ctxProjectId);
   if (ctxUserId)    confirmBase.searchParams.set('userId',    ctxUserId);
 
@@ -738,11 +741,56 @@ async function onPayClick() {
   }, 5000);
 }
 
-function payupPaymentSubmit(payForm) {
+async function payupPaymentSubmit(payForm) {
   window._payupSubmitCalled = true;
   const form = document.getElementById(payForm) || document.getElementById('PayupPaymentStandardForm');
-  if (!form) return;
-  form.submit();
+  if (!form) {
+    showResult('fail', '결제 처리 오류', '결제 폼을 찾을 수 없어요 (form not found).', null);
+    return;
+  }
+
+  // Extract ALL form fields PayUp injected
+  const fields = {};
+  try { new FormData(form).forEach((v, k) => fields[k] = v); } catch(e) {}
+
+  // Try to find payment identifiers (PayUp may use various field names)
+  const tid = fields.transactionId || fields.tid || fields.transaction_id || fields.TID || '';
+  const orderNo = fields.orderNumber || fields.orderNo || fields.orderId || fields.order_id || fields.ORDER_NO || window._payupOrderNumber || '';
+  const amt = fields.amount || fields.amt || fields.AMOUNT || sessionStorage.getItem('py_amount') || '';
+
+  if (tid || (orderNo && amt)) {
+    // Form has payment data — verify via fetch, skip form.submit()
+    try {
+      const resp = await fetch('/api/confirm-payup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...fields, id: CONFIG_ID, projectId: ctxProjectId, userId: ctxUserId }),
+      });
+      const result = await resp.json();
+      if (result.success) {
+        const d = result.data;
+        try { selectedOption  = JSON.parse(sessionStorage.getItem('py_selectedOption') || 'null'); } catch(e) {}
+        try { questionAnswers = JSON.parse(sessionStorage.getItem('py_questionAnswers') || '{}'); } catch(e) {}
+        try { selectedQty     = parseInt(sessionStorage.getItem('py_selectedQty') || '1') || 1; } catch(e) {}
+        await recordPayment(d);
+        fireSmsWebhook(d.amount, CONFIG.productName || CONFIG.title || '', selectedQty);
+        window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+        try { if (window.opener) window.opener.postMessage({ type: 'lmp-tool-complete' }, '*'); } catch(e) {}
+        showResult('success', '결제가 완료되었어요',
+          CONFIG.successMessage || '결제하신 권한이 부여되었어요.',
+          { amount: d.amount, orderName: CONFIG.productName, method: d.cardName || d.issueCompanyName || '',
+            approvedAt: d.authDatetime, selectedOption: selectedOption?.label || '' });
+      } else {
+        showResult('fail', '결제가 실패했어요', result.message || '결제를 처리하지 못했어요.', null);
+      }
+    } catch(e) {
+      showResult('fail', '결제 오류', e.message || '결제 처리 중 오류가 발생했어요.', null);
+    }
+  } else {
+    // Form has no payment data — submit normally (browser redirect fallback)
+    // PayUp will redirect to returnUrl; confirm-payup.js handles GET
+    form.submit();
+  }
 }
 
 function payupPaymentClose() {
