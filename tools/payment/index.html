@@ -837,9 +837,9 @@ function showResult(kind, title, msg, receipt) {
   document.getElementById('r-title').textContent = title;
   document.getElementById('r-msg').innerHTML     = applyVars(msg);
   const histBtn = document.getElementById('r-hist-btn');
-  if (histBtn) histBtn.style.display = (kind !== 'fail' && ctxUserId && ctxProjectId) ? 'block' : 'none';
+  if (histBtn) histBtn.style.display = (kind !== 'fail' && ctxProjectId) ? 'block' : 'none';
   const retryBtn = document.getElementById('r-retry-btn');
-  if (retryBtn) retryBtn.style.display = kind === 'fail' ? 'block' : 'none';
+  if (retryBtn) retryBtn.style.display = (kind === 'fail' || kind === 'success') ? 'block' : 'none';
   if (receipt) {
     const r = document.getElementById('r-receipt');
     const lines = [];
@@ -888,6 +888,10 @@ async function showHistory() {
   document.getElementById('pay-result').classList.remove('on');
   document.getElementById('pay-history').classList.add('on');
   const listEl = document.getElementById('hist-list');
+  if (!ctxUserId) {
+    listEl.innerHTML = '<div class="hist-empty">로그인 후 내역을 확인할 수 있어요.</div>';
+    return;
+  }
   listEl.innerHTML = '<div class="hist-empty">불러오는 중…</div>';
   try {
     const snap = await db.collection('cms_payment_records')
