@@ -260,9 +260,9 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 /* Site footer */
 #site-footer{padding:28px 20px 48px;}
 .footer-logo{max-height:36px;max-width:160px;object-fit:contain;display:block;margin-bottom:18px;}
-.footer-policy-row{display:flex;gap:8px;margin-bottom:16px;}
-.footer-policy-btn{background:none;border:2px solid #000;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.2px;-webkit-tap-highlight-color:transparent;}
-.footer-policy-btn:active{background:#000;color:#fff;}
+.footer-policy-row{display:flex;gap:16px;margin-bottom:10px;justify-content:center;}
+.footer-policy-link{font-size:11px;color:rgba(0,0,0,.45);text-decoration:underline;cursor:pointer;font-weight:500;letter-spacing:-.1px;-webkit-tap-highlight-color:transparent;}
+.footer-policy-link:active{opacity:.6;}
 .footer-biz{font-size:11px;color:rgba(0,0,0,.55);line-height:1.8;margin-bottom:14px;word-break:keep-all;}
 .footer-sns-row{display:flex;gap:14px;margin-bottom:14px;align-items:center;}
 .footer-sns-link{text-decoration:none;font-size:20px;opacity:.6;}
@@ -271,8 +271,9 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .footer-hint{position:absolute;bottom:6px;left:0;right:0;text-align:center;font-size:22px;color:rgba(0,0,0,.18);pointer-events:none;display:none;animation:hint-bounce 1.8s ease infinite;}
 @keyframes hint-bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(5px);}}
 /* Policy modal */
-#policy-modal{display:none;position:fixed;inset:0;z-index:600;flex-direction:column;background:#fff;}
+#policy-modal{display:none;position:fixed;inset:0;z-index:600;align-items:center;justify-content:center;background:rgba(0,0,0,.45);}
 #policy-modal.on{display:flex;}
+.pm-box{width:90%;max-width:390px;max-height:80vh;background:#fff;border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.28);}
 .pm-head{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:2px solid #000;flex-shrink:0;}
 .pm-back{background:none;border:2px solid #000;width:32px;height:32px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;font-weight:900;line-height:1;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
 .pm-back:active{background:#000;color:#fff;}
@@ -420,6 +421,12 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
     <div class="modal-ttl" id="reg-title">등록하기</div>
     <div class="modal-desc" id="reg-desc" style="margin-bottom:16px;">정보를 입력하고 등록해주세요.</div>
     <div id="reg-fields"></div>
+    <div id="reg-privacy-wrap" style="display:none;margin:10px 0 2px;">
+      <label style="display:flex;align-items:flex-start;gap:7px;cursor:pointer;font-size:12px;color:rgba(0,0,0,.7);line-height:1.5;">
+        <input type="checkbox" id="reg-privacy-chk" style="margin-top:2px;flex-shrink:0;accent-color:#000;">
+        <span><span onclick="openPolicyModal('privacy');event.stopPropagation();" style="text-decoration:underline;cursor:pointer;">개인정보처리방침</span>에 동의합니다 <span style="color:#c00;">(필수)</span></span>
+      </label>
+    </div>
     <div class="modal-err" id="reg-err"></div>
     <div class="modal-btns">
       <button class="modal-btn" onclick="closeModal('reg-modal')">취소</button>
@@ -446,12 +453,14 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 </div>
 
 <!-- Policy modal -->
-<div id="policy-modal">
-  <div class="pm-head">
-    <button class="pm-back" onclick="closePolicyModal()">‹</button>
-    <span class="pm-title" id="policy-modal-title"></span>
+<div id="policy-modal" onclick="if(event.target===this)closePolicyModal()">
+  <div class="pm-box">
+    <div class="pm-head">
+      <button class="pm-back" onclick="closePolicyModal()">‹</button>
+      <span class="pm-title" id="policy-modal-title"></span>
+    </div>
+    <div class="pm-body" id="policy-modal-body"></div>
   </div>
-  <div class="pm-body" id="policy-modal-body"></div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -1254,6 +1263,10 @@ function openRegModal(){
     return `<div style="margin-bottom:12px;">${lbl}${desc}${inp}</div>`;
   }).join('');
   document.getElementById('reg-fields').innerHTML=fieldsHtml;
+  const privWrap=document.getElementById('reg-privacy-wrap');
+  const privChk=document.getElementById('reg-privacy-chk');
+  if(_siteSettings&&_siteSettings.privacyHtml){ privWrap.style.display=''; privChk.checked=false; }
+  else { privWrap.style.display='none'; }
   document.getElementById('reg-modal').classList.add('on');
   setTimeout(()=>{ const first=document.querySelector('#reg-fields input,#reg-fields select,#reg-fields textarea'); if(first) first.focus(); },200);
 }
@@ -1265,6 +1278,10 @@ function toggleRegOptBtn(btn, key){
   else { wrap.dataset.regVal=val; wrap.querySelectorAll('.reg-opt-btn').forEach(b=>{ b.style.background='transparent'; b.style.color=''; }); btn.style.background='#000'; btn.style.color='#fff'; }
 }
 async function submitRegistration(){
+  const privWrap=document.getElementById('reg-privacy-wrap');
+  if(privWrap.style.display!=='none'&&!document.getElementById('reg-privacy-chk').checked){
+    document.getElementById('reg-err').textContent='개인정보처리방침에 동의해주세요.'; return;
+  }
   const data={};
   for(const f of AUTH_FIELDS){
     const key=f.key;
@@ -2256,13 +2273,6 @@ function renderFooter() {
   if (hint) hint.style.display = 'block';
   let html = '';
   if (s.footerLogoUrl) html += `<img class="footer-logo" src="${esc(s.footerLogoUrl)}" alt="">`;
-  const hasPolicies = s.privacyHtml || s.termsHtml;
-  if (hasPolicies) {
-    html += '<div class="footer-policy-row">';
-    if (s.privacyHtml) html += `<button class="footer-policy-btn" onclick="openPolicyModal('privacy')">개인정보처리방침</button>`;
-    if (s.termsHtml) html += `<button class="footer-policy-btn" onclick="openPolicyModal('terms')">이용약관</button>`;
-    html += '</div>';
-  }
   const bizParts = [];
   if (s.footerBizName) bizParts.push(`상호: ${esc(s.footerBizName)}`);
   if (s.footerRepName) bizParts.push(`대표자: ${esc(s.footerRepName)}`);
@@ -2274,6 +2284,13 @@ function renderFooter() {
   if (bizParts.length) html += `<div class="footer-biz">${bizParts.join('<br>')}</div>`;
   if (s.footerInstagram) {
     html += `<div class="footer-sns-row"><a class="footer-sns-link" href="${esc(s.footerInstagram)}" target="_blank" rel="noopener">📷</a></div>`;
+  }
+  const hasPolicies = s.privacyHtml || s.termsHtml;
+  if (hasPolicies) {
+    html += '<div class="footer-policy-row">';
+    if (s.privacyHtml) html += `<span class="footer-policy-link" onclick="openPolicyModal('privacy')">개인정보처리방침</span>`;
+    if (s.termsHtml) html += `<span class="footer-policy-link" onclick="openPolicyModal('terms')">이용약관</span>`;
+    html += '</div>';
   }
   const yr = s.footerCopyrightYear || new Date().getFullYear();
   const brand = s.footerCopyright || 'lazymaxpotential';
@@ -2287,11 +2304,9 @@ function openPolicyModal(type) {
   document.getElementById('policy-modal-title').textContent = isPrivacy ? '개인정보처리방침' : '이용약관';
   document.getElementById('policy-modal-body').innerHTML = isPrivacy ? (s.privacyHtml || '') : (s.termsHtml || '');
   document.getElementById('policy-modal').classList.add('on');
-  document.body.style.overflow = 'hidden';
 }
 function closePolicyModal() {
   document.getElementById('policy-modal').classList.remove('on');
-  document.body.style.overflow = '';
 }
 
 function _calHtml(fid){

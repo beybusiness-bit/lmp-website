@@ -2216,17 +2216,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         </div>
       </div>
     </div>
-    <!-- 공통: 지연 로그인 잠금 -->
-    <div id="blk-require-auth-section" style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
-      <div class="switch-row">
-        <div class="switch" id="blk-require-auth-sw" onclick="this.classList.toggle('on');scheduleBmPreview()"></div>
-        <span class="switch-lbl">🔒 로그인 필요 <span style="font-weight:400;opacity:.6;">(지연 로그인 프로젝트에서 비로그인 사용자에게 잠금 표시)</span></span>
-      </div>
-      <div style="margin-top:10px;">
-        <div class="ed-lbl" style="font-size:11px;font-weight:700;margin-bottom:4px;">💳 결제 게이트 <span style="font-weight:400;opacity:.6;">(결제 상품의 tier 이름 입력 → 해당 tier 구매자만 볼 수 있음)</span></div>
-        <input class="fi-sm" id="blk-required-tier" placeholder="tier 이름 (예: vip, premium)" oninput="scheduleBmPreview()" style="margin-bottom:0;width:100%;">
-      </div>
-    </div>
     <!-- 공통: 배경색 + 마진 -->
     <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
       <div class="ed-lbl">배경색</div>
@@ -2282,6 +2271,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button id="valign-btn-top"    class="valign-btn" onclick="setBlkVerticalAlign('top')"    style="flex:1;padding:7px 0;background:transparent;border:2px solid #000;border-right:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">상단</button>
         <button id="valign-btn-center" class="valign-btn on" onclick="setBlkVerticalAlign('center')" style="flex:1;padding:7px 0;background:#000;color:#fff;border:2px solid #000;border-right:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">중앙</button>
         <button id="valign-btn-bottom" class="valign-btn" onclick="setBlkVerticalAlign('bottom')" style="flex:1;padding:7px 0;background:transparent;border:2px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">하단</button>
+      </div>
+    </div>
+    <!-- 공통: 지연 로그인 잠금 + 결제 게이트 (맨 아래) -->
+    <div id="blk-require-auth-section" style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
+      <div class="switch-row">
+        <div class="switch" id="blk-require-auth-sw" onclick="this.classList.toggle('on');scheduleBmPreview()"></div>
+        <span class="switch-lbl">🔒 로그인 필요 <span style="font-weight:400;opacity:.6;">(지연 로그인 프로젝트에서 비로그인 사용자에게 잠금 표시)</span></span>
+      </div>
+      <div style="margin-top:10px;">
+        <div class="ed-lbl" style="font-size:11px;font-weight:700;margin-bottom:4px;">💳 결제 게이트 <span style="font-weight:400;opacity:.6;">(결제 상품의 tier 이름 입력 → 해당 tier 구매자만 볼 수 있음)</span></div>
+        <input class="fi-sm" id="blk-required-tier" placeholder="tier 이름 (예: vip, premium)" oninput="scheduleBmPreview()" style="margin-bottom:0;width:100%;">
       </div>
     </div>
     </div><!-- /ed-inner -->
