@@ -1887,7 +1887,8 @@ function _isTierLocked(b){
   if(!b.requiredTier || IS_ADMIN_PREVIEW) return false;
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
   const tiers=Array.isArray(saved.paidTiers)?saved.paidTiers:[];
-  return !tiers.includes(b.requiredTier);
+  const required=b.requiredTier.split(',').map(t=>t.trim()).filter(Boolean);
+  return !required.some(r=>tiers.includes(r));
 }
 function blockHtml(b){
   const bgS=b.bgColor?`background-color:${b.bgColor};`:'';

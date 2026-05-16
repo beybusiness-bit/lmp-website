@@ -5499,6 +5499,7 @@ function renderFormFields() {
 function mvFormField(i,d){const j=i+d;if(j<0||j>=curFormFields.length)return;[curFormFields[i],curFormFields[j]]=[curFormFields[j],curFormFields[i]];renderFormFields();}
 function rmFormField(i){if(!confirm('이 필드를 삭제할까요?'))return;curFormFields.splice(i,1);renderFormFields();}
 function openFormFieldModal(idx, insertAt) {
+  try {
   curEditingFormFieldIdx = idx;
   curFieldInsertAt = (idx===null && insertAt!=null) ? insertAt : null;
   document.getElementById('form-field-modal-ttl').textContent = idx===null ? '필드 추가' : '필드 편집';
@@ -5535,6 +5536,7 @@ function openFormFieldModal(idx, insertAt) {
   document.getElementById('ff-date-max-days').value = f.dateMaxDays!=null ? f.dateMaxDays : '';
   onFfTypeChange();
   document.getElementById('form-field-modal').classList.add('on');
+  } catch(e) { alert('[필드 추가 오류] ' + e.message); console.error(e); }
 }
 function autoFfKey(label) {
   const keyEl = document.getElementById('ff-key');
