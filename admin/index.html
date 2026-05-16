@@ -1361,6 +1361,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div class="proj-item" onclick="decoOpenConfig('booth')" style="cursor:pointer;">
               <div class="pi-name">부스 꾸미기</div>
               <div class="pi-meta">기본 꾸미기 도구 · /tools/booth</div>
+              <div class="blk-acts" style="margin-top:6px;" onclick="event.stopPropagation()">
+                <button class="b-btn" onclick="copyToolUrl('booth','',this)" title="URL 복사">🔗</button>
+              </div>
             </div>
           </div>
           <button class="add-btn" style="margin-top:14px;" onclick="decoCreateConfig()">+ 새 꾸미기 만들기</button>
@@ -8428,7 +8431,9 @@ async function ytLoadPlaylists() {
           <div style="font-weight:800;font-size:14px;">${escHtml(p.title||'(이름 없음)')}</div>
           <div style="font-size:11px;color:rgba(0,0,0,.45);margin-top:3px;">ID: ${escHtml(p.id)}${p.desc?(' · '+escHtml(p.desc.slice(0,30))+(p.desc.length>30?'…':'')):''}</div>
         </div>
-        <span style="font-size:18px;color:rgba(0,0,0,.3);">›</span>
+        <div onclick="event.stopPropagation()">
+          <button class="b-btn" onclick="copyToolUrl('youtube-playlist','${escHtml(p.id)}',this)" title="URL 복사">🔗</button>
+        </div>
       </div>
     `).join('');
   } catch(e) {
@@ -9067,7 +9072,8 @@ async function loadDecoCustomList() {
       div.style.cursor = 'pointer';
       div.onclick = () => decoOpenConfig(doc.id);
       div.innerHTML = `<div class="pi-name">${data.name || doc.id}</div>
-        <div class="pi-meta">/tools/booth?config=${doc.id}</div>`;
+        <div class="pi-meta">/tools/booth?config=${doc.id}</div>
+        <div class="blk-acts" style="margin-top:6px;" onclick="event.stopPropagation()"><button class="b-btn" onclick="copyToolUrl('booth-config','${doc.id}',this)" title="URL 복사">🔗</button></div>`;
       listEl.appendChild(div);
     });
   } catch(e) { /* 커스텀 항목 없으면 무시 */ }
@@ -9177,6 +9183,7 @@ async function gbShowList() {
           <div class="pi-meta">블록 ${(f.blocks||[]).length}개</div>
         </div>
         <div style="display:flex;gap:6px;" onclick="event.stopPropagation()">
+          <button class="b-btn" onclick="copyToolUrl('guide','${d.id}',this)" title="URL 복사">🔗</button>
           <a href="/tools/guide?id=${d.id}" target="_blank" class="prev-btn" style="text-decoration:none;font-size:11px;">미리보기 ↗</a>
         </div>
       </div>`;
@@ -10074,7 +10081,17 @@ async function cgLoadList(){
   }catch(e){ el.innerHTML='<div class="empty-msg">불러오기 실패</div>'; }
 }
 function copyToolUrl(toolType, docId, btn){
-  const urlMap={'copy-gen':'/tools/copy-gen/?id=','form':'/tools/form/?id=','schedule':'/tools/schedule/?id='};
+  const urlMap={
+    'copy-gen':'/tools/copy-gen/?id=',
+    'form':'/tools/form/?id=',
+    'schedule':'/tools/schedule/?id=',
+    'payment':'/tools/payment/?id=',
+    'guestbook':'/tools/guestbook/?id=',
+    'guide':'/tools/guide/?id=',
+    'booth':'/tools/booth/',
+    'booth-config':'/tools/booth/?config=',
+    'youtube-playlist':'/tools/youtube-playlist/?id=',
+  };
   const url=(urlMap[toolType]||'')+docId;
   navigator.clipboard.writeText(url).then(()=>{
     const orig=btn.textContent; btn.textContent='✓ 복사됨';
@@ -10409,6 +10426,9 @@ async function pyLoadList(){
       return `<div class="proj-item" onclick="pyEdit('${d.id}')" style="cursor:pointer;">
         <div class="pi-name">${escHtml(r.title || '(제목 없음)')}${tier}</div>
         <div class="pi-meta">${escHtml(r.productName || '')} · ${Number(r.amount||0).toLocaleString()}원</div>
+        <div class="blk-acts" style="margin-top:6px;">
+          <button class="b-btn" onclick="event.stopPropagation();copyToolUrl('payment','${d.id}',this)" title="URL 복사">🔗</button>
+        </div>
       </div>`;
     }).join('');
   }catch(e){ el.innerHTML = '<div class="empty-msg">불러오기 실패: '+escHtml(e.message)+'</div>'; }
@@ -10727,6 +10747,9 @@ async function gbkLoadList() {
       return `<div class="proj-item" onclick="gbkOpenConfig('${d.id}')" style="cursor:pointer;">
         <div class="pi-name">${escHtml(data.title || '(제목 없음)')}</div>
         <div class="pi-meta">${escHtml(data.entryLabel || '방명록')} · 필드 ${(data.fields||[]).length}개${data.bgImageEnabled?' · 배경 이미지 허용':''}</div>
+        <div class="blk-acts" style="margin-top:6px;">
+          <button class="b-btn" onclick="event.stopPropagation();copyToolUrl('guestbook','${d.id}',this)" title="URL 복사">🔗</button>
+        </div>
       </div>`;
     }).join('');
   } catch(e) { listEl.innerHTML = `<div class="empty-msg">불러오기 실패: ${escHtml(e.message)}</div>`; }
