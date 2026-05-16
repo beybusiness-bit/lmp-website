@@ -773,65 +773,42 @@ match /cms_payment_records/{doc} { allow read: if true; }
 
 #### 다음 세션 시작점 🔲
 
-**다음 세션: 사이드바 리뉴얼**
+**다음 세션: 자유 작업 (피드백 기반)**
 
-현재 사이드바(`#side-menu`)는 스테이지 목록 + 내 정보 버튼 형태. 이를 완전히 리뉴얼한다.
+특별히 예정된 큰 기능은 없음. 사용 중 발견되는 버그·피드백 수정 위주.
 
-**사이드바 구조 변경:**
-- 최상단: 인사말(greetingText + 변수 치환) — 로그인 시에만 표시
-- 중앙 영역 (로그인 시): "나의 활동" + "나의 구매" 2탭
-  - **나의 활동**: 폼 응답 + 방명록 제출 내역을 최신순으로 나열 (userId + projectId로 Firestore collection group query)
-    - 각 항목 클릭 시 → 해당 스테이지 열고 해당 블록 위치까지 스크롤 (`scrollIntoView` 사용)
-    - 폼: `cms_form_responses/{formId}/responses` (userId 필터)
-    - 방명록: `cms_guestbook_entries/{configId}/entries` (userId 필터)
-  - **나의 구매**: 기존 `loadMyPayments()` 내용 그대로 (결제 내역 카드 + 상세 모달)
-    - 클릭 시 결제 상세 정보 모달 표시 (기존 로직 유지)
-- 중앙 영역 (비로그인 시):
-  - 중앙에 "입장하기" 버튼 → 클릭 시 `openAuthModal()` 호출
-  - 하단에 selfReg CTA 버튼 (admin에서 설정한 라벨) → 클릭 시 `openRegModal()` 호출 (selfRegEnabled일 때만 표시)
-- 로그아웃 버튼: 하단에 항상 표시 (로그인 시에만 실질적 의미, 비로그인은 숨김 처리)
-
-**제거:**
-- 기존 스테이지 목록 (`#side-stage-list` 류)
-- 기존 "내 정보" 버튼
-
-**활동 내역 → 블록 위치 스크롤 방식:**
-1. 응답에서 `projectId`, `stageId`, `blockId` (또는 formId) 를 가져옴
-2. `goToStage(stageIdx)` 호출로 스테이지 화면 열기
-3. `setTimeout(() => { document.getElementById('block-'+blockId)?.scrollIntoView({behavior:'smooth'}) }, 400)` 로 블록 위치 스크롤
-4. formId 기준으로 블록을 찾으려면 curBlocks에서 formId 매칭하거나, 응답 저장 시 blockId를 함께 저장하는 방식 사용
+**미완료 항목:**
+- 재고 잔량 표시: `stockRemaining ?? stockTotal` fallback 적용 완료 — 실제 테스트 재확인 필요
+- 블록 숨기기: `tierLockMode: 'hide'` 구현 완료 — admin에서 설정 후 플레이어에서 확인 필요
 
 **기타:**
-- 재고 잔량 표시 확인: admin에서 결제 상품 열고 "재고 잔량 표시" 체크 후 저장 → 플레이어에서 표시되는지 확인
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 
 #### 이번 세션 완료 항목
-- iOS 자동 포커스 제거: `openAuthModal()` 내 `auth-key-input` auto-focus 제거 → 등록하기 버튼 가림 문제 해결 (p/ 포함 4파일)
-- 방명록 위젯 배경이미지 렌더링 수정: `loadWidget()` gbCards에 bgImg/ovColor/ovOp 추가 → 이미지+오버레이 실제 표시 (4파일 동기화)
-- 방명록 도구 컨트롤 완전 제거: fit/pos/색상/투명도 선택 UI 삭제 → cover+center+40% 고정 상수 처리
-- Firebase Storage 규칙 수정 완료 (사용자 직접 적용)
-- 등록하기 모달 안 열리는 버그 수정: `_siteSettings` 변수 미선언 → `openRegModal()`에서 ReferenceError 발생하던 것 수정 (4파일)
-- **홈 블록 기능 추가 (이번 세션)**: 스테이지 카드 사이에 텍스트·이미지·혼합·임베드 블록 자유 배치
-  - admin: 홈 화면 구성 패널 (`#ip-home-blocks`) + 순서 관리 UI
-  - admin: 블록 모달 _hbMode (tool/form/spacer/divider 탭 숨김, 체크 섹션 숨김)
-  - admin: `curHomeBlocks` / `curHomeItemOrder` 저장·로드 (homeBlocks/homeItemOrder 필드)
-  - player 4파일: HOME_BLOCKS / HOME_ITEM_ORDER 로드·렌더링, _buildSepStageHtml / _buildMergedStageHtml 헬퍼 분리
+- iOS 자동 포커스 제거, 방명록 위젯 배경이미지 수정, 등록하기 모달 버그 수정 (이전 세션)
+- 홈 블록 기능 추가 (이전 세션)
+- **사이드바 전면 리뉴얼** ✅: 나의 활동/나의 구매 2탭, 비로그인 입장하기 버튼 (4파일 동기화)
+- **admin 편집 상단바 프로젝트 이름 표시** ✅
+- **사이드바 피드백 수정** ✅: 버튼 radius 0·검정색, 활동 글씨 크기·스테이지 제목·클릭 네비게이션, 결제 orderBy 제거
+- **재고 잔량 표시 버그 수정** ✅: `stockRemaining ?? stockTotal` fallback (표시·품절판단·재고차감 모두)
+- **블록 완전 숨기기 옵션** ✅: admin `tierLockMode: 'cover'|'hide'` 라디오, player renderGuideScroll/Slide 필터링 (4파일)
 
-#### Firestore 스키마 추가 (이번 세션)
+#### Firestore 스키마 추가 (누적)
 ```
 cms_payment_configs/{configId}
-  stockEnabled: boolean      ← 재고 관리 사용 여부
-  stockTotal: number         ← 총 재고 수량
-  stockRemaining: number     ← 현재 남은 재고 (결제 후 트랜잭션으로 차감)
-  options[].imageUrl: string ← 옵션별 썸네일 이미지 URL (선택)
-
-cms_guestbook_entries/{configId}/entries/{entryId}
-  bgImageFit: string         ← 'cover'|'contain'|'natural' (이전 세션 추가)
-  overlayColor: string       ← 오버레이 hex 색상
+  stockEnabled: boolean
+  stockTotal: number
+  stockRemaining: number     ← 결제 후 트랜잭션 차감; null이면 stockTotal로 fallback
+  stockDisplayEnabled: boolean
+  stockDisplayThreshold: number
+  options[].imageUrl: string
 
 cms_projects/{projectId}
-  homeBlocks: Block[]        ← 홈 화면 삽입 블록 (이번 세션 추가)
-  homeItemOrder: [{type:'stage'|'homeBlock', id:string}]  ← 통합 순서 배열 (이번 세션 추가)
+  homeBlocks: Block[]
+  homeItemOrder: [{type:'stage'|'homeBlock', id:string}]
+
+stage_content/{stageId}/blocks[*]
+  tierLockMode: 'cover'|'hide'  ← requiredTier 있을 때만 유효
 ```
 
 ---
