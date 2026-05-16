@@ -170,6 +170,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <div class="pay-result-msg" id="r-msg"></div>
     <div class="pay-receipt" id="r-receipt" style="display:none;"></div>
     <button class="hist-link-btn" id="r-hist-btn" style="display:none;" onclick="showHistory()">내 결제 내역 보기</button>
+    <button class="hist-link-btn" id="r-retry-btn" style="display:none;" onclick="retryPayment()">↩ 처음으로 돌아가기</button>
   </div>
 
   <!-- 결제 내역 화면 -->
@@ -836,7 +837,9 @@ function showResult(kind, title, msg, receipt) {
   document.getElementById('r-title').textContent = title;
   document.getElementById('r-msg').innerHTML     = applyVars(msg);
   const histBtn = document.getElementById('r-hist-btn');
-  if (histBtn) histBtn.style.display = ctxUserId && ctxProjectId ? 'block' : 'none';
+  if (histBtn) histBtn.style.display = (kind !== 'fail' && ctxUserId && ctxProjectId) ? 'block' : 'none';
+  const retryBtn = document.getElementById('r-retry-btn');
+  if (retryBtn) retryBtn.style.display = kind === 'fail' ? 'block' : 'none';
   if (receipt) {
     const r = document.getElementById('r-receipt');
     const lines = [];
@@ -874,6 +877,13 @@ function fireSmsWebhook(amount, productName, qty) {
   }).catch(e => console.warn('webhook:', e));
 }
 
+function retryPayment() {
+  const base = location.pathname + '?id=' + encodeURIComponent(CONFIG_ID);
+  const extra = (ctxUserId ? '&userId=' + encodeURIComponent(ctxUserId) : '') +
+                (ctxProjectId ? '&projectId=' + encodeURIComponent(ctxProjectId) : '');
+  location.href = base + extra;
+}
+
 async function showHistory() {
   document.getElementById('pay-result').classList.remove('on');
   document.getElementById('pay-history').classList.add('on');
@@ -883,14 +893,18 @@ async function showHistory() {
     const snap = await db.collection('cms_payment_records')
       .where('projectId', '==', ctxProjectId)
       .where('userId', '==', ctxUserId)
-      .orderBy('createdAt', 'desc')
       .limit(20)
       .get();
-    if (snap.empty) {
+    const docs = [...snap.docs].sort((a, b) => {
+      const at = a.data().createdAt?.toMillis?.() || 0;
+      const bt = b.data().createdAt?.toMillis?.() || 0;
+      return bt - at;
+    });
+    if (docs.length === 0) {
       listEl.innerHTML = '<div class="hist-empty">결제 내역이 없어요.</div>';
       return;
     }
-    listEl.innerHTML = snap.docs.map(doc => {
+    listEl.innerHTML = docs.map(doc => {
       const r = doc.data();
       const dt = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit' }) : '';
       const optLine = r.selectedOption?.label ? `<div>옵션: ${esc(r.selectedOption.label)}</div>` : '';

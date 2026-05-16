@@ -5500,6 +5500,9 @@ function mvFormField(i,d){const j=i+d;if(j<0||j>=curFormFields.length)return;[cu
 function rmFormField(i){if(!confirm('이 필드를 삭제할까요?'))return;curFormFields.splice(i,1);renderFormFields();}
 function openFormFieldModal(idx, insertAt) {
   try {
+  closeFmtPopup();
+  const _ffModal = document.getElementById('form-field-modal');
+  document.body.appendChild(_ffModal);
   curEditingFormFieldIdx = idx;
   curFieldInsertAt = (idx===null && insertAt!=null) ? insertAt : null;
   document.getElementById('form-field-modal-ttl').textContent = idx===null ? '필드 추가' : '필드 편집';
@@ -6245,7 +6248,7 @@ function openBlockModal(idx,insertAt){
   if (!_isHb && !_navRestore) history.pushState({v:'block', blkIdx:idx, insertAt:insertAt??null, projId:curProjId, stageIdx:curEditingStageIdx}, '', '#edit/'+curProjId+'/stages/'+(curEditingStageIdx??0)+'/block');
   updateBmPreview();
 }
-function closeBlockModal(){document.getElementById('block-modal').classList.remove('on');_hbMode=false;_hbEditId=null;['tool','form','spacer','divider'].forEach(k=>{const btn=document.getElementById('btab-'+k);if(btn)btn.style.display='';});const _cs=document.getElementById('blk-check-section');if(_cs)_cs.style.display='';}
+function closeBlockModal(){closeModal('form-field-modal');document.getElementById('block-modal').classList.remove('on');_hbMode=false;_hbEditId=null;['tool','form','spacer','divider'].forEach(k=>{const btn=document.getElementById('btab-'+k);if(btn)btn.style.display='';});const _cs=document.getElementById('blk-check-section');if(_cs)_cs.style.display='';}
 /* ── 블록 모달 실시간 미리보기 ── */
 let bmPreviewTimer=null;
 function scheduleBmPreview(){
