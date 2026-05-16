@@ -119,7 +119,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         </div>
       </div>
       <div id="qty-unit-price"></div>
+      <div id="stock-remaining-info" style="display:none;font-size:12px;color:rgba(0,0,0,.55);font-weight:600;margin-top:6px;">⚡ <span id="stock-remaining-text"></span></div>
     </div>
+    <div id="stock-info-no-qty" style="display:none;font-size:12px;color:rgba(0,0,0,.55);font-weight:600;margin-bottom:12px;">⚡ <span id="stock-info-no-qty-text"></span></div>
     <button class="lmp-btn" id="pay-btn">결제하기</button>
   </div>
 
@@ -215,7 +217,7 @@ let ctxReceived = false;
 let resolveCtx;
 const ctxPromise = new Promise(res => { resolveCtx = res; });
 
-let selectedOption = null;  // { label, price } | null
+let selectedOption = null;  // { label, price, tier?, stockRemaining? } | null
 let questionAnswers = {};   // { [label]: answer }
 let selectedQty = 1;
 let qtyMaxAllowed = null;   // per-user remaining (null = unlimited)
@@ -331,13 +333,14 @@ async function init() {
     return;
   }
 
-  // 품절 체크
-  if (CONFIG.stockEnabled && CONFIG.stockRemaining != null && CONFIG.stockRemaining <= 0) {
+  // 글로벌 품절 체크 (옵션 없는 상품만 — 옵션 있으면 옵션별로 처리)
+  const hasOpts = (CONFIG.options || []).length > 0;
+  if (CONFIG.stockEnabled && !hasOpts && CONFIG.stockRemaining != null && CONFIG.stockRemaining <= 0) {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     document.getElementById('pay-screen').style.display = 'block';
     document.getElementById('p-title').textContent = CONFIG.title || '결제';
-    document.getElementById('p-amount').textContent = '품절';
+    document.getElementById('p-amount').textContent = '0';
     const btn = document.getElementById('pay-btn');
     btn.textContent = '품절되었습니다';
     btn.disabled = true;
@@ -389,7 +392,7 @@ async function renderPayScreen() {
 
   const opts = CONFIG.options || [];
   if (opts.length) {
-    document.getElementById('p-amount').textContent = '옵션을 선택해주세요';
+    document.getElementById('p-amount').textContent = '0';
     document.getElementById('pay-opts-hint').style.display = 'none';
     renderInlineOptions(opts);
     document.getElementById('pay-btn').textContent = '결제하기';
@@ -428,12 +431,17 @@ async function renderPayScreen() {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('pay-btn').onclick = onPayBtnClick;
+  updateStockDisplay();
 
   const agree = document.getElementById('pc-agree');
   const okBtn = document.getElementById('pc-ok-btn');
   agree.onchange = () => { okBtn.disabled = !agree.checked; };
   okBtn.onclick  = onPayClick;
   document.getElementById('pc-back-btn').onclick = goBackFromConfirm;
+}
+
+function isOptSoldOut(o) {
+  return CONFIG.stockEnabled && o.stockRemaining != null && o.stockRemaining <= 0;
 }
 
 function renderInlineOptions(opts) {
@@ -446,9 +454,16 @@ function renderInlineOptions(opts) {
     const price = o.price != null ? o.price : CONFIG.amount;
     const imgHtml = o.imageUrl ? `<img class="opt-item-img" src="${esc(o.imageUrl)}">` : '';
     const isSel = selectedOption?.label === o.label;
-    return `<div class="opt-item${isSel?' sel':''}" data-idx="${i}" onclick="selectInlineOption(${i})" style="margin-bottom:10px;">
+    const soldOut = isOptSoldOut(o);
+    const stockLabel = CONFIG.stockEnabled && !soldOut && o.stockRemaining != null
+      && CONFIG.stockDisplayEnabled
+      && (CONFIG.stockDisplayThreshold == null || o.stockRemaining <= CONFIG.stockDisplayThreshold)
+      ? `<span style="font-size:10px;color:rgba(200,60,0,.85);margin-left:6px;font-weight:700;">⚡ ${o.stockRemaining}개 남음</span>` : '';
+    const soldOutLabel = soldOut ? `<span style="font-size:11px;color:rgba(0,0,0,.35);margin-left:6px;">품절</span>` : '';
+    const dimStyle = soldOut ? 'opacity:.4;pointer-events:none;' : '';
+    return `<div class="opt-item${isSel?' sel':''}" data-idx="${i}" onclick="${soldOut?'':('selectInlineOption('+i+')')}" style="margin-bottom:10px;${dimStyle}">
       ${imgHtml}<div class="opt-sel-mark">${isSel?'✓':''}</div>
-      <span class="opt-item-label">${esc(o.label || ('옵션 ' + (i + 1)))}</span>
+      <div style="flex:1;min-width:0;"><span class="opt-item-label">${esc(o.label || ('옵션 ' + (i + 1)))}</span>${soldOutLabel}${stockLabel}</div>
       <span class="opt-item-price">${Number(price).toLocaleString()}원</span>
     </div>`;
   }).join('');
@@ -458,7 +473,8 @@ function renderInlineOptions(opts) {
 
 function selectInlineOption(idx) {
   const o = CONFIG.options[idx];
-  selectedOption = { label: o.label, price: o.price != null ? o.price : CONFIG.amount };
+  if (isOptSoldOut(o)) return;
+  selectedOption = { label: o.label, price: o.price != null ? o.price : CONFIG.amount, tier: o.tier || '', stockRemaining: o.stockRemaining };
   document.querySelectorAll('#inline-opts-container .opt-item').forEach((el, i) => {
     el.classList.toggle('sel', i === idx);
     const mark = el.querySelector('.opt-sel-mark');
@@ -468,6 +484,7 @@ function selectInlineOption(idx) {
   document.getElementById('pay-opts-hint').style.display = 'none';
   document.getElementById('pay-btn').disabled = false;
   if (CONFIG.qtyEnabled) updateQtyUnitPrice();
+  updateStockDisplay();
 }
 
 function changeQty(delta) {
@@ -479,6 +496,7 @@ function changeQty(delta) {
   document.getElementById('qty-display').textContent = selectedQty;
   updateQtyButtons(qMin, qMax);
   updateQtyUnitPrice();
+  updateStockDisplay();
 }
 function updateQtyButtons(qMin, qMax) {
   document.getElementById('qty-minus').disabled = selectedQty <= qMin;
@@ -490,6 +508,39 @@ function updateQtyUnitPrice() {
   const unitPrice = selectedOption ? selectedOption.price : CONFIG.amount;
   const total = unitPrice * selectedQty;
   unitEl.textContent = `단가 ${Number(unitPrice).toLocaleString()}원 × ${selectedQty} = 합계 ${Number(total).toLocaleString()}원`;
+}
+function updateStockDisplay() {
+  if (!CONFIG.stockEnabled || !CONFIG.stockDisplayEnabled) {
+    document.getElementById('stock-remaining-info').style.display = 'none';
+    document.getElementById('stock-info-no-qty').style.display = 'none';
+    return;
+  }
+  const opts = CONFIG.options || [];
+  let remaining = null;
+  if (opts.length) {
+    remaining = selectedOption?.stockRemaining ?? null;
+  } else {
+    remaining = CONFIG.stockRemaining ?? null;
+  }
+  if (remaining === null) {
+    document.getElementById('stock-remaining-info').style.display = 'none';
+    document.getElementById('stock-info-no-qty').style.display = 'none';
+    return;
+  }
+  const threshold = CONFIG.stockDisplayThreshold;
+  const shouldShow = threshold == null || remaining <= threshold;
+  const txt = `${remaining}개 남음`;
+  if (CONFIG.qtyEnabled) {
+    const el = document.getElementById('stock-remaining-info');
+    const textEl = document.getElementById('stock-remaining-text');
+    if (el && textEl) { textEl.textContent = txt; el.style.display = shouldShow ? '' : 'none'; }
+    document.getElementById('stock-info-no-qty').style.display = 'none';
+  } else {
+    const el = document.getElementById('stock-info-no-qty');
+    const textEl = document.getElementById('stock-info-no-qty-text');
+    if (el && textEl) { textEl.textContent = txt; el.style.display = shouldShow ? '' : 'none'; }
+    document.getElementById('stock-remaining-info').style.display = 'none';
+  }
 }
 
 function goBackFromConfirm() {
@@ -703,7 +754,7 @@ async function recordPayment(d) {
       authDatetime:    d.authDatetime || '',
       configId:        CONFIG_ID,
       configTitle:     CONFIG.title || '',
-      tier:            CONFIG.tier  || '',
+      tier:            selectedOption?.tier || CONFIG.tier || '',
       projectId:       ctxProjectId,
       userId:          ctxUserId,
       userFields:      ctxUserFields || {},
@@ -721,14 +772,15 @@ async function recordPayment(d) {
       const update = {
         [`${p}.paidAt`]:          firebase.firestore.FieldValue.serverTimestamp(),
         [`${p}.amount`]:          Number(d.amount),
-        [`${p}.tier`]:            CONFIG.tier || '',
+        [`${p}.tier`]:            selectedOption?.tier || CONFIG.tier || '',
         [`${p}.transactionId`]:   d.transactionId,
         [`${p}.selectedOption`]:  selectedOption?.label || '',
         [`${p}.questionAnswers`]: questionAnswers || {},
         [`${p}.lastQty`]:         selectedQty,
         [`${p}.totalQty`]:        firebase.firestore.FieldValue.increment(selectedQty),
       };
-      if (CONFIG.tier) update.paidTiers = firebase.firestore.FieldValue.arrayUnion(CONFIG.tier);
+      const effectiveTier = selectedOption?.tier || CONFIG.tier || '';
+      if (effectiveTier) update.paidTiers = firebase.firestore.FieldValue.arrayUnion(effectiveTier);
       await db.collection('cms_users_' + ctxProjectId).doc(ctxUserId).update(update);
     } catch (e) { console.error('user update failed:', e); }
   }
@@ -737,11 +789,25 @@ async function recordPayment(d) {
   if (CONFIG.stockEnabled) {
     try {
       const configRef = db.collection('cms_payment_configs').doc(CONFIG_ID);
-      await db.runTransaction(async tx => {
-        const snap = await tx.get(configRef);
-        const rem = snap.data()?.stockRemaining ?? 0;
-        tx.update(configRef, { stockRemaining: Math.max(0, rem - selectedQty) });
-      });
+      if (selectedOption) {
+        // 옵션별 재고 차감
+        await db.runTransaction(async tx => {
+          const snap = await tx.get(configRef);
+          const options = [...(snap.data()?.options || [])];
+          const idx = options.findIndex(o => o.label === selectedOption.label);
+          if (idx >= 0 && options[idx].stockRemaining != null) {
+            options[idx].stockRemaining = Math.max(0, options[idx].stockRemaining - selectedQty);
+            tx.update(configRef, { options });
+          }
+        });
+      } else {
+        // 글로벌 재고 차감
+        await db.runTransaction(async tx => {
+          const snap = await tx.get(configRef);
+          const rem = snap.data()?.stockRemaining ?? 0;
+          tx.update(configRef, { stockRemaining: Math.max(0, rem - selectedQty) });
+        });
+      }
     } catch(e) { console.error('stock decrement error:', e); }
   }
 }
