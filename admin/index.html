@@ -1940,7 +1940,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-img-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','text')" title="이미지 삽입" style="font-size:13px;padding:4px 7px;">🖼</button>
       </div>
       <div class="ced-wrap">
-        <div class="ced" id="ced-text" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="syncFmtBar('text')" onmouseup="syncFmtBar('text')"></div>
+        <div class="ced" id="ced-text" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="saveRange(this);syncFmtBar('text')" onmouseup="saveRange(this);syncFmtBar('text')"></div>
         <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-text')" title="드래그하여 편집기 높이 조절"></div>
       </div>
       <div id="blk-txtpadding-section" style="margin-top:8px;padding:8px 10px;background:rgba(0,0,0,.03);border-radius:6px;border:1px solid rgba(0,0,0,.08);">
@@ -2094,7 +2094,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <button class="fmt-btn" id="fmt-clr-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','formpost')" style="padding:5px 7px;"><span id="fmt-clr-dot-formpost" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
           <button class="fmt-btn" id="fmt-bg-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','formpost')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-formpost" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
         </div>
-        <div class="ced" id="ced-formpost" contenteditable="true" data-ph="제출 완료 후 표시할 메시지를 입력하세요…" onblur="saveRange(this)" style="min-height:80px;"></div>
+        <div class="ced" id="ced-formpost" contenteditable="true" data-ph="제출 완료 후 표시할 메시지를 입력하세요…" onblur="saveRange(this)" onkeyup="saveRange(this)" onmouseup="saveRange(this)" style="min-height:80px;"></div>
       </div>
       <div id="form-dup-wrap" style="margin-top:10px;display:none;">
         <div class="switch-row">
@@ -2190,7 +2190,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-img-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','mixed')" title="이미지 삽입" style="font-size:13px;padding:4px 7px;">🖼</button>
       </div>
       <div class="ced-wrap">
-        <div class="ced" id="ced-mixed" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="syncFmtBar('mixed')" onmouseup="syncFmtBar('mixed')"></div>
+        <div class="ced" id="ced-mixed" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="saveRange(this);syncFmtBar('mixed')" onmouseup="saveRange(this);syncFmtBar('mixed')"></div>
         <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-mixed')" title="드래그하여 편집기 높이 조절"></div>
       </div>
     </div>
@@ -2379,7 +2379,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','rep-txt')" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
                 <div class="ced-wrap">
-                  <div class="ced" id="ced-rep-txt" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="syncFmtBar('rep-txt')" onmouseup="syncFmtBar('rep-txt')"></div>
+                  <div class="ced" id="ced-rep-txt" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="saveRange(this);syncFmtBar('rep-txt')" onmouseup="saveRange(this);syncFmtBar('rep-txt')"></div>
                   <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-rep-txt')" title="드래그하여 편집기 높이 조절"></div>
                 </div>
               </div>
@@ -2439,7 +2439,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','rep-mixed-txt')" style="font-size:13px;padding:4px 7px;">🔗</button>
                 </div>
                 <div class="ced-wrap">
-                  <div class="ced" id="ced-rep-mixed-txt" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="syncFmtBar('rep-mixed-txt')" onmouseup="syncFmtBar('rep-mixed-txt')"></div>
+                  <div class="ced" id="ced-rep-mixed-txt" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="saveRange(this);syncFmtBar('rep-mixed-txt')" onmouseup="saveRange(this);syncFmtBar('rep-mixed-txt')"></div>
                   <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-rep-mixed-txt')" title="드래그하여 편집기 높이 조절"></div>
                 </div>
               </div>
@@ -6769,7 +6769,7 @@ function fmtCmd(ctx,cmd){
     }
     scheduleBmPreview();return;
   }
-  document.execCommand(cmd,false,null);scheduleBmPreview();
+  document.execCommand(cmd,false,null);scheduleBmPreview();syncFmtBar(ctx);
 }
 function fmtSz(ctx,px){
   focusEd(ctx);
@@ -6960,7 +6960,19 @@ function openFmtDd(btn,type,ctx){
   const pr=pop.getBoundingClientRect();
   if(pr.right>window.innerWidth-6) pop.style.left=(window.innerWidth-pr.width-6)+'px';
 }
-function closeFmtPopup(){document.getElementById('fmt-popup').style.display='none';_fmtPopType=null;_fmtPopCtx=null;}
+function closeFmtPopup(){
+  document.getElementById('fmt-popup').style.display='none';
+  const _prevCtx=_fmtPopCtx;
+  _fmtPopType=null;_fmtPopCtx=null;
+  if(_prevCtx){
+    const ed=getEd(_prevCtx);
+    if(ed&&savedRange&&savedRange.el===ed){
+      ed.focus();
+      try{const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range.cloneRange());}catch(_){}
+      syncFmtBar(_prevCtx);
+    }
+  }
+}
 function applyFmtVar(ctx,key){focusEd(ctx);document.execCommand('insertText',false,`{{${key}}}`);closeFmtPopup();}
 let _fmtImgUploadCtx='', _fmtImgW='100%', _fmtImgAlign='center', _rteSelectedImg=null;
 let _fmtImgCols=1, _fmtImgGap=8, _fmtImgUrls=['','',''], _fmtImgWidths=[50,50,50], _fmtImgUploadSlot=0;

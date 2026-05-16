@@ -124,6 +124,7 @@ const FORM_ID = params.get('id');
 window.addEventListener('message', e => {
   if (e.data?.type !== 'lmp-context') return;
   if (e.data.blockBg) { document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg); document.documentElement.style.setProperty('--lmp-input-bg', e.data.blockBg); }
+  if (e.data.blockBgImage) { const _f=e.data.blockBgFit||'cover',_p=e.data.blockBgPos||'center'; document.body.style.backgroundImage=`url('${e.data.blockBgImage}')`; document.body.style.backgroundSize=_f==='natural'?'contain':_f; document.body.style.backgroundPosition=_p; document.body.style.backgroundRepeat='no-repeat'; }
 });
 window.parent.postMessage({ type: 'lmp-ready' }, '*');
 
