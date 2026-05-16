@@ -1573,6 +1573,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             📌 가맹점 ID도 Vercel 환경변수 <code>PAYUP_MERCHANT_ID</code>에 동일하게 입력해주세요.<br>
             📌 테스트 모드일 때도 Vercel 환경변수 <code>PAYUP_TEST=true</code>로 설정해야 해요.
           </div>
+          <div style="border-top:1.5px solid rgba(0,0,0,.1);margin-top:16px;padding-top:16px;">
+            <div class="ed-lbl" style="margin-bottom:10px;">📱 SMS 결제 알림 (Make → Solapi)</div>
+            <div class="ed-lbl" style="font-size:11px;font-weight:600;margin-bottom:4px;">Make Webhook URL</div>
+            <input class="fi" id="py-sms-webhook" placeholder="https://hook.make.com/..." style="margin-bottom:10px;font-family:monospace;font-size:11px;">
+            <div class="ed-lbl" style="font-size:11px;font-weight:600;margin-bottom:4px;">연락처 필드 키 <span style="font-weight:400;opacity:.55;">(사용자 데이터의 전화번호 필드 이름)</span></div>
+            <input class="fi" id="py-sms-phone-field" placeholder="예: 연락처, phone, 전화번호" style="margin-bottom:4px;font-size:13px;">
+            <div style="font-size:10px;color:rgba(0,0,0,.45);line-height:1.6;margin-top:6px;">
+              📌 Make 시나리오: Webhook 수신 → Solapi HTTP 모듈 → SMS 발송<br>
+              📌 전달 데이터: <code>phone</code>, <code>name</code>, <code>amount</code>, <code>productName</code>, <code>qty</code>, <code>projectId</code>
+            </div>
+          </div>
         </div>
         <!-- 편집 화면 -->
         <div id="py-edit-screen" style="display:none;flex-direction:column;overflow:hidden;">
@@ -1594,8 +1605,45 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <input class="fi" id="py-product" placeholder="예: 베이비즈니스 프로 1개월" style="margin-bottom:0;">
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl">금액 (원) <span style="font-weight:400;opacity:.55;">(최소 100원)</span></div>
+              <div class="ed-lbl">금액 (원) <span style="font-weight:400;opacity:.55;">(최소 100원 · 옵션 없을 때 기본 결제 금액)</span></div>
               <input class="fi" id="py-amount" type="number" min="100" step="100" placeholder="9900" style="margin-bottom:0;">
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">선택 옵션 <span style="font-weight:400;opacity:.55;">(없으면 바로 결제 · 옵션별 금액 지정 가능)</span></div>
+              <div id="py-options-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+              <button class="prev-btn" onclick="pyAddOption()" style="font-size:11px;">+ 옵션 추가</button>
+              <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:6px;line-height:1.5;">옵션 금액을 비워두면 위의 기본 금액으로 결제돼요.</div>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">주관식 질문 <span style="font-weight:400;opacity:.55;">(결제 전 사용자에게 입력 요청)</span></div>
+              <div id="py-questions-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
+              <button class="prev-btn" onclick="pyAddQuestion()" style="font-size:11px;">+ 질문 추가</button>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">구매 수량</div>
+              <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;margin-bottom:8px;">
+                <input type="checkbox" id="py-qty-enabled" onchange="document.getElementById('py-qty-opts').style.display=this.checked?'block':'none';"> 수량 선택 기능 사용
+              </label>
+              <div id="py-qty-opts" style="display:none;">
+                <div style="display:flex;gap:8px;margin-bottom:8px;">
+                  <div style="flex:1;">
+                    <div style="font-size:11px;font-weight:600;margin-bottom:4px;">1회 최소 수량</div>
+                    <input class="fi" id="py-qty-min" type="number" min="1" placeholder="1" style="margin:0;">
+                  </div>
+                  <div style="flex:1;">
+                    <div style="font-size:11px;font-weight:600;margin-bottom:4px;">1회 최대 수량 <span style="font-weight:400;opacity:.5;">(비우면 제한없음)</span></div>
+                    <input class="fi" id="py-qty-max" type="number" min="1" placeholder="제한없음" style="margin:0;">
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <div style="flex:1;">
+                    <div style="font-size:11px;font-weight:600;margin-bottom:4px;">1인당 최대 수량 <span style="font-weight:400;opacity:.5;">(누적 합산 · 비우면 제한없음)</span></div>
+                    <input class="fi" id="py-qty-per-user" type="number" min="1" placeholder="제한없음" style="margin:0;">
+                  </div>
+                  <div style="flex:1;"></div>
+                </div>
+                <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:6px;line-height:1.5;">1인당 최대는 한 사람이 이 상품을 구매할 수 있는 총 수량이에요.</div>
+              </div>
             </div>
             <div class="ed-sect">
               <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">상세 설명 <span style="font-weight:400;opacity:.55;">(선택 · 결제창에 표시)</span><button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('py-desc')">{x} 변수</button></div>
@@ -1667,9 +1715,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div class="ed-lbl">전화번호 <span style="font-weight:400;opacity:.55;">(없으면 공란)</span></div>
         <input class="fi" id="site-phone" placeholder="010-0000-0000">
 
-        <div class="sect-head" style="margin-top:20px;">SNS</div>
-        <div class="ed-lbl">Instagram URL</div>
-        <input class="fi" id="site-instagram" placeholder="https://instagram.com/...">
+        <div class="sect-head" style="margin-top:20px;">SNS 링크</div>
+        <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;line-height:1.5;">아이콘을 선택하고 URL을 입력하세요. 직접 업로드를 선택하면 이미지 파일을 올릴 수 있어요.</div>
+        <div id="site-sns-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
+        <button class="prev-btn" onclick="snsAddItem()" style="font-size:11px;">+ SNS 추가</button>
 
         <div class="sect-head" style="margin-top:20px;">저작권</div>
         <div class="ed-lbl">브랜드명 <span style="font-weight:400;opacity:.55;">(© 연도 뒤에 표시)</span></div>
@@ -1677,7 +1726,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div class="ed-lbl">표시 연도</div>
         <input class="fi" id="site-copyright-year" placeholder="2025" type="number">
 
-        <div class="sect-head" style="margin-top:20px;">개인정보처리방침</div>
+        <div class="sect-head" style="margin-top:20px;display:flex;align-items:center;gap:8px;">개인정보처리방침 <button class="prev-btn" onclick="fillPrivacyTemplate()" style="font-size:10px;padding:2px 8px;margin-left:auto;">기본 내용 채우기</button></div>
         <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;line-height:1.6;">한국 개인정보보호법(PIPA)상 필수 공개 사항입니다. 수집 항목·목적·보유기간·파기 방법 등을 기재하세요.</div>
         <div style="border:2px solid #000;min-height:120px;margin-bottom:6px;">
           <div class="mini-rte-tb" style="border-bottom:2px solid #000;padding:4px 8px;display:flex;gap:4px;flex-wrap:wrap;">
@@ -1688,7 +1737,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <div class="mini-rte" id="rte-privacy" contenteditable="true" data-ph="개인정보처리방침 내용을 입력하세요" style="min-height:100px;padding:8px;"></div>
         </div>
 
-        <div class="sect-head" style="margin-top:20px;">이용약관</div>
+        <div class="sect-head" style="margin-top:20px;display:flex;align-items:center;gap:8px;">이용약관 <button class="prev-btn" onclick="fillTermsTemplate()" style="font-size:10px;padding:2px 8px;margin-left:auto;">기본 내용 채우기</button></div>
         <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;line-height:1.6;">서비스 이용 조건·책임 한계·분쟁 해결 기준 등을 기재하세요.</div>
         <div style="border:2px solid #000;min-height:120px;margin-bottom:6px;">
           <div class="mini-rte-tb" style="border-bottom:2px solid #000;padding:4px 8px;display:flex;gap:4px;flex-wrap:wrap;">
@@ -2173,6 +2222,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div class="switch" id="blk-require-auth-sw" onclick="this.classList.toggle('on');scheduleBmPreview()"></div>
         <span class="switch-lbl">🔒 로그인 필요 <span style="font-weight:400;opacity:.6;">(지연 로그인 프로젝트에서 비로그인 사용자에게 잠금 표시)</span></span>
       </div>
+      <div style="margin-top:10px;">
+        <div class="ed-lbl" style="font-size:11px;font-weight:700;margin-bottom:4px;">💳 결제 게이트 <span style="font-weight:400;opacity:.6;">(결제 상품의 tier 이름 입력 → 해당 tier 구매자만 볼 수 있음)</span></div>
+        <input class="fi-sm" id="blk-required-tier" placeholder="tier 이름 (예: vip, premium)" oninput="scheduleBmPreview()" style="margin-bottom:0;width:100%;">
+      </div>
     </div>
     <!-- 공통: 배경색 + 마진 -->
     <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
@@ -2632,7 +2685,9 @@ async function loadSiteSettings() {
     document.getElementById('site-address').value = s.footerAddress || '';
     document.getElementById('site-email').value = s.footerEmail || '';
     document.getElementById('site-phone').value = s.footerPhone || '';
-    document.getElementById('site-instagram').value = s.footerInstagram || '';
+    let snsLinks = s.snsLinks || [];
+    if (!snsLinks.length && s.footerInstagram) snsLinks = [{type:'instagram', url:s.footerInstagram}];
+    snsRenderList(snsLinks);
     document.getElementById('site-copyright').value = s.footerCopyright || '';
     document.getElementById('site-copyright-year').value = s.footerCopyrightYear || new Date().getFullYear();
     rteSet('privacy', s.privacyHtml || '');
@@ -2656,7 +2711,7 @@ async function saveSiteSettings() {
     footerAddress: document.getElementById('site-address').value.trim(),
     footerEmail: document.getElementById('site-email').value.trim(),
     footerPhone: document.getElementById('site-phone').value.trim(),
-    footerInstagram: document.getElementById('site-instagram').value.trim(),
+    snsLinks: snsGetLinks(),
     footerCopyright: document.getElementById('site-copyright').value.trim(),
     footerCopyrightYear: document.getElementById('site-copyright-year').value.trim(),
     privacyHtml: rteGet('privacy'),
@@ -2671,6 +2726,146 @@ async function saveSiteSettings() {
     alert('저장 실패: ' + e.message);
     if (btn) btn.textContent = '저장';
   }
+}
+
+/* ── SNS 링크 관리 ── */
+const SNS_TYPES = [
+  {v:'instagram',  l:'Instagram'},
+  {v:'youtube',    l:'YouTube'},
+  {v:'tiktok',     l:'TikTok'},
+  {v:'facebook',   l:'Facebook'},
+  {v:'x',          l:'X (트위터)'},
+  {v:'threads',    l:'Threads'},
+  {v:'linkedin',   l:'LinkedIn'},
+  {v:'naver',      l:'네이버 블로그'},
+  {v:'kakaotalk',  l:'카카오톡채널'},
+  {v:'pinterest',  l:'Pinterest'},
+  {v:'custom',     l:'직접 업로드'},
+];
+const SNS_CDN = t => t && t !== 'custom' ? `https://cdn.simpleicons.org/${t}/000000` : '';
+
+function snsTypeOpts(cur){
+  return SNS_TYPES.map(o=>`<option value="${o.v}"${o.v===cur?' selected':''}>${o.l}</option>`).join('');
+}
+
+function snsAddItem(item={}) {
+  const list = document.getElementById('site-sns-list');
+  const type = item.type || 'instagram';
+  const isCustom = type === 'custom';
+  const iconPreviewSrc = isCustom ? (item.iconUrl||'') : SNS_CDN(type);
+  const div = document.createElement('div');
+  div.className = 'sns-item-row';
+  div.style.cssText = 'border:1.5px solid rgba(0,0,0,.12);padding:10px;';
+  div.innerHTML = `<div style="display:flex;gap:6px;align-items:center;margin-bottom:${isCustom?'8px':'0'};">
+    <img class="sns-icon-prev" src="${iconPreviewSrc}" width="20" height="20" style="${iconPreviewSrc?'':'display:none;'}opacity:.7;">
+    <select class="sns-type-sel fi" style="flex:0 0 auto;width:auto;margin:0;padding:6px 8px;font-size:12px;" onchange="snsTypeChange(this)">${snsTypeOpts(type)}</select>
+    <input class="fi sns-url-inp" placeholder="https://..." value="${escHtml(item.url||'')}" style="flex:1;margin:0;">
+    <button onclick="this.closest('.sns-item-row').remove()" style="border:none;background:transparent;font-size:18px;cursor:pointer;padding:2px 6px;color:rgba(0,0,0,.35);flex-shrink:0;">✕</button>
+  </div>
+  <div class="sns-custom-row" style="display:${isCustom?'flex':'none'};gap:6px;align-items:center;">
+    <input class="fi sns-icon-url" placeholder="아이콘 이미지 URL" value="${escHtml(item.iconUrl||'')}" style="flex:1;margin:0;font-size:11px;" oninput="this.closest('.sns-item-row').querySelector('.sns-icon-prev').src=this.value;this.closest('.sns-item-row').querySelector('.sns-icon-prev').style.display=this.value?'':'none';">
+    <button class="prev-btn" onclick="this.nextElementSibling.click()" style="font-size:10px;white-space:nowrap;">📁 업로드</button>
+    <input type="file" accept="image/*" style="display:none;" onchange="uploadSnsIconFile(event,this)">
+  </div>`;
+  list.appendChild(div);
+}
+
+function snsTypeChange(sel) {
+  const row = sel.closest('.sns-item-row');
+  const type = sel.value;
+  const isCustom = type === 'custom';
+  const prev = row.querySelector('.sns-icon-prev');
+  const customRow = row.querySelector('.sns-custom-row');
+  customRow.style.display = isCustom ? 'flex' : 'none';
+  if (!isCustom) {
+    prev.src = SNS_CDN(type);
+    prev.style.display = '';
+  } else {
+    const iconUrl = row.querySelector('.sns-icon-url')?.value;
+    prev.src = iconUrl || '';
+    prev.style.display = iconUrl ? '' : 'none';
+  }
+}
+
+async function uploadSnsIconFile(event, fileInput) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  event.target.value = '';
+  const row = fileInput.closest('.sns-item-row');
+  const iconUrlInp = row?.querySelector('.sns-icon-url');
+  const iconPrev   = row?.querySelector('.sns-icon-prev');
+  const btn = fileInput.previousElementSibling;
+  if (btn) { btn.textContent = '⏳…'; btn.disabled = true; }
+  try {
+    const ref = storage.ref(`site-assets/sns-icon-${Date.now()}.${file.name.split('.').pop()}`);
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
+    if (iconUrlInp) iconUrlInp.value = url;
+    if (iconPrev)   { iconPrev.src = url; iconPrev.style.display = ''; }
+  } catch(e) { alert('아이콘 업로드 실패: ' + (e.message||'')); }
+  if (btn) { btn.textContent = '📁 업로드'; btn.disabled = false; }
+}
+
+function snsRenderList(links) {
+  const list = document.getElementById('site-sns-list');
+  if (!list) return;
+  list.innerHTML = '';
+  (links || []).forEach(item => snsAddItem(item));
+}
+
+function snsGetLinks() {
+  return Array.from(document.querySelectorAll('#site-sns-list .sns-item-row')).map(row => {
+    const type    = row.querySelector('.sns-type-sel')?.value || 'instagram';
+    const url     = row.querySelector('.sns-url-inp')?.value.trim()    || '';
+    const iconUrl = row.querySelector('.sns-icon-url')?.value.trim()   || '';
+    return type === 'custom' ? {type, url, iconUrl} : {type, url};
+  }).filter(o => o.url);
+}
+
+/* ── 개인정보처리방침 / 이용약관 템플릿 ── */
+function fillPrivacyTemplate() {
+  if (document.getElementById('rte-privacy').textContent.trim() &&
+      !confirm('현재 입력된 내용을 기본 템플릿으로 덮어쓸까요?')) return;
+  rteSet('privacy', `<p><strong>개인정보처리방침</strong></p>
+<p>베이비즈니스(이하 "회사")는 이용자의 개인정보를 소중히 여기며, 개인정보보호법을 준수합니다.</p>
+<p><br></p>
+<p><strong>1. 수집하는 개인정보 항목</strong><br>이름, 연락처(전화번호). 결제 시 결제 관련 정보(결제 대행사 처리).</p>
+<p><br></p>
+<p><strong>2. 수집 목적</strong><br>서비스 이용자 인증 및 관리 / 결제 처리 및 구매 내역 관리 / 고객 문의 응대</p>
+<p><br></p>
+<p><strong>3. 보유 및 이용 기간</strong><br>서비스 탈퇴 또는 이용 목적 달성 시까지. 단, 관계 법령에 따라 보관이 필요한 경우 해당 기간 보유.</p>
+<p><br></p>
+<p><strong>4. 제3자 제공</strong><br>원칙적으로 제3자에게 제공하지 않습니다. 다만, 결제 처리를 위해 결제 대행사(페이업)에 최소한의 정보를 제공합니다. 데이터는 Firebase(Google)에 저장됩니다.</p>
+<p><br></p>
+<p><strong>5. 개인정보 파기</strong><br>보유 기간 경과 또는 처리 목적 달성 시 지체 없이 파기합니다. 전자 파일은 복구 불가능한 방법으로 삭제합니다.</p>
+<p><br></p>
+<p><strong>6. 이용자 권리</strong><br>이용자는 언제든지 개인정보 열람·수정·삭제·처리 정지를 요청할 수 있습니다.</p>
+<p><br></p>
+<p><strong>7. 개인정보 보호 책임자</strong><br>운영사: 베이비즈니스 | 서비스: lazymaxpotential.kr<br>문의: <strong>[이메일 입력]</strong></p>
+<p><br></p>
+<p>본 방침은 2025년 5월 1일부터 시행됩니다.</p>`);
+}
+
+function fillTermsTemplate() {
+  if (document.getElementById('rte-terms').textContent.trim() &&
+      !confirm('현재 입력된 내용을 기본 템플릿으로 덮어쓸까요?')) return;
+  rteSet('terms', `<p><strong>이용약관</strong></p>
+<p><br></p>
+<p><strong>제1조 (목적)</strong><br>이 약관은 베이비즈니스(이하 "회사")가 운영하는 lazymaxpotential.kr(이하 "서비스") 이용에 관한 권리·의무 및 책임 사항을 규정합니다.</p>
+<p><br></p>
+<p><strong>제2조 (서비스 제공)</strong><br>회사는 플리마켓·행사 관련 디지털 콘텐츠 및 정보 서비스, 결제를 통한 유료 콘텐츠 이용 서비스를 제공합니다.</p>
+<p><br></p>
+<p><strong>제3조 (이용 계약 성립)</strong><br>서비스 이용 계약은 이용자가 이용약관에 동의하고 서비스를 이용하는 시점에 성립됩니다.</p>
+<p><br></p>
+<p><strong>제4조 (결제 및 청약철회)</strong><br>① 유료 서비스는 제공된 결제 수단으로 이용 요금을 지불하여 이용할 수 있습니다.<br>② 디지털 콘텐츠는 결제 완료 및 서비스 이용 즉시 전자상거래법 제17조에 따라 청약철회가 제한될 수 있습니다.<br>③ 청약철회 관련 문의: <strong>[이메일 입력]</strong></p>
+<p><br></p>
+<p><strong>제5조 (면책)</strong><br>① 천재지변·서비스 설비 장애 등 불가항력적 사유로 인한 서비스 중단에 대해 회사는 책임을 지지 않습니다.<br>② 이용자의 귀책 사유로 인한 서비스 이용 장애에 대해서도 회사는 책임을 지지 않습니다.</p>
+<p><br></p>
+<p><strong>제6조 (분쟁 해결)</strong><br>서비스 이용 관련 분쟁은 대한민국 법률에 따르며, 서울중앙지방법원을 관할 법원으로 합니다.</p>
+<p><br></p>
+<p><strong>제7조 (연락처)</strong><br>운영사: 베이비즈니스 | 이메일: <strong>[이메일 입력]</strong></p>
+<p><br></p>
+<p>본 약관은 2025년 5월 1일부터 시행됩니다.</p>`);
 }
 
 /* ── Util ── */
@@ -5867,6 +6062,7 @@ function openBlockModal(idx,insertAt){
   const chkTH=document.getElementById('blk-check-text-hex');   if(chkTH) chkTH.value=(curBlkCheckTextColor||'').toUpperCase();
   setCheckPos(b.checkPosition||'bottom-center');
   const raSwEl=document.getElementById('blk-require-auth-sw'); if(raSwEl) raSwEl.classList.toggle('on',!!b.requireAuth);
+  const rtEl=document.getElementById('blk-required-tier'); if(rtEl) rtEl.value=b.requiredTier||'';
   const bgH=document.getElementById('blk-bg-hex');  if(bgH) bgH.value=(curBlkBgColor||'').toUpperCase();
   const _sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
   // 하위호환: marginTop 없으면 marginV 기본값으로
@@ -6037,6 +6233,8 @@ function saveBlock(){
   if(b.checkable) b.checkPosition=curCheckPos; else delete b.checkPosition;
   b.requireAuth=!!document.getElementById('blk-require-auth-sw')?.classList.contains('on');
   if(!b.requireAuth) delete b.requireAuth;
+  b.requiredTier=(document.getElementById('blk-required-tier')?.value||'').trim();
+  if(!b.requiredTier) delete b.requiredTier;
   if(curBlkIdx!==null){
     // order만 보존하고 나머지는 새 b로 교체 — 스프레드 병합 시 삭제된 필드가 남는 버그 방지
     curBlocks[curBlkIdx]={order:curBlocks[curBlkIdx].order,...b};
@@ -9879,20 +10077,29 @@ function pyBack(){ closeTool(); }
 async function pyLoadSettings(){
   try{
     const doc = await db.collection('cms_admin_settings').doc('payment').get();
-    const mid  = doc.exists ? (doc.data().payupMerchantId || '') : '';
-    const test = doc.exists ? !!(doc.data().payupTestMode)        : false;
+    const d = doc.exists ? doc.data() : {};
     const inp  = document.getElementById('py-merchant-id');
     const chk  = document.getElementById('py-test-mode');
-    if(inp) inp.value   = mid;
-    if(chk) chk.checked = test;
+    const wh   = document.getElementById('py-sms-webhook');
+    const pf   = document.getElementById('py-sms-phone-field');
+    if(inp) inp.value   = d.payupMerchantId || '';
+    if(chk) chk.checked = !!(d.payupTestMode);
+    if(wh)  wh.value    = d.smsWebhookUrl  || '';
+    if(pf)  pf.value    = d.smsPhoneField  || '';
   }catch(e){ console.error('[pyLoadSettings]',e); }
 }
 async function pySaveSettings(e=null){
   const _btn=e?.currentTarget;
   const mid  = (document.getElementById('py-merchant-id')?.value || '').trim();
   const test = !!(document.getElementById('py-test-mode')?.checked);
+  const wh   = (document.getElementById('py-sms-webhook')?.value || '').trim();
+  const pf   = (document.getElementById('py-sms-phone-field')?.value || '').trim();
   try{
-    await db.collection('cms_admin_settings').doc('payment').set({ payupMerchantId: mid, payupTestMode: test, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+    await db.collection('cms_admin_settings').doc('payment').set({
+      payupMerchantId: mid, payupTestMode: test,
+      smsWebhookUrl: wh, smsPhoneField: pf,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge:true });
     _btnFlash(_btn,'저장됨 ✓');
   }catch(e){ alert('저장 실패: '+e.message); }
 }
@@ -9952,6 +10159,14 @@ async function pyEdit(id){
     rteSet('py-desc', r.description || '');
     document.getElementById('py-tier').value      = r.tier || '';
     rteSet('py-success', r.successMessage || '');
+    pyRenderOptions(r.options || []);
+    pyRenderQuestions(r.questions || []);
+    const qtyEnabled = !!(r.qtyEnabled);
+    document.getElementById('py-qty-enabled').checked = qtyEnabled;
+    document.getElementById('py-qty-opts').style.display = qtyEnabled ? 'block' : 'none';
+    document.getElementById('py-qty-min').value = r.qtyMin || '';
+    document.getElementById('py-qty-max').value = r.qtyMax || '';
+    document.getElementById('py-qty-per-user').value = r.qtyPerUser || '';
   }catch(e){ alert('불러오기 실패: '+e.message); }
 }
 
@@ -9984,10 +10199,81 @@ async function pySave(e=null){
       description:    rteGet('py-desc'),
       tier:           tier,
       successMessage: rteGet('py-success'),
+      options:        pyGetOptions(),
+      questions:      pyGetQuestions(),
+      qtyEnabled:     !!(document.getElementById('py-qty-enabled')?.checked),
+      qtyMin:         parseInt(document.getElementById('py-qty-min')?.value) || 1,
+      qtyMax:         parseInt(document.getElementById('py-qty-max')?.value) || null,
+      qtyPerUser:     parseInt(document.getElementById('py-qty-per-user')?.value) || null,
       updatedAt:      firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge:true });
     _btnFlash(_btn,'저장됨 ✓');
   }catch(e){ alert('저장 실패: '+e.message); }
+}
+
+function pyAddOption(){
+  const list = document.getElementById('py-options-list');
+  const row = document.createElement('div');
+  row.className = 'py-opt-row';
+  row.style.cssText = 'display:flex;gap:6px;align-items:center;';
+  row.innerHTML = `<input class="fi py-opt-label" placeholder="옵션 이름 (예: 일반석)" style="flex:2;margin:0;"><input class="fi py-opt-price" type="number" min="100" step="100" placeholder="금액 (선택)" style="flex:1;margin:0;"><button onclick="this.closest('.py-opt-row').remove()" style="flex:0 0 auto;border:none;background:transparent;font-size:18px;cursor:pointer;padding:2px 6px;color:rgba(0,0,0,.35);">✕</button>`;
+  list.appendChild(row);
+}
+
+function pyAddQuestion(){
+  const list = document.getElementById('py-questions-list');
+  const row = document.createElement('div');
+  row.className = 'py-q-row';
+  row.style.cssText = 'border:1.5px solid rgba(0,0,0,.12);padding:10px;';
+  row.innerHTML = `<input class="fi py-q-label" placeholder="질문 내용 (예: T셔츠 사이즈를 알려주세요)" style="margin-bottom:8px;"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;"><label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="py-q-required" checked> 필수 입력</label><select class="py-q-type" style="font-size:12px;padding:3px 6px;border:1.5px solid rgba(0,0,0,.2);background:#fff;font-family:inherit;"><option value="text">한 줄 입력</option><option value="textarea">여러 줄 입력</option></select><button onclick="this.closest('.py-q-row').remove()" style="margin-left:auto;border:none;background:transparent;font-size:12px;cursor:pointer;padding:4px 6px;color:rgba(0,0,0,.4);">✕ 삭제</button></div>`;
+  list.appendChild(row);
+}
+
+function pyGetOptions(){
+  return Array.from(document.querySelectorAll('#py-options-list .py-opt-row')).map(row => {
+    const label = row.querySelector('.py-opt-label')?.value.trim() || '';
+    const priceRaw = row.querySelector('.py-opt-price')?.value;
+    const price = priceRaw ? (parseInt(priceRaw) || null) : null;
+    return { label, price };
+  }).filter(o => o.label);
+}
+
+function pyGetQuestions(){
+  return Array.from(document.querySelectorAll('#py-questions-list .py-q-row')).map(row => {
+    const label    = row.querySelector('.py-q-label')?.value.trim() || '';
+    const required = row.querySelector('.py-q-required')?.checked ?? true;
+    const type     = row.querySelector('.py-q-type')?.value || 'text';
+    return { label, required, type };
+  }).filter(q => q.label);
+}
+
+function pyRenderOptions(options){
+  const list = document.getElementById('py-options-list');
+  if (!list) return;
+  list.innerHTML = '';
+  (options || []).forEach(o => {
+    const row = document.createElement('div');
+    row.className = 'py-opt-row';
+    row.style.cssText = 'display:flex;gap:6px;align-items:center;';
+    row.innerHTML = `<input class="fi py-opt-label" placeholder="옵션 이름 (예: 일반석)" style="flex:2;margin:0;" value="${escHtml(o.label||'')}"><input class="fi py-opt-price" type="number" min="100" step="100" placeholder="금액 (선택)" style="flex:1;margin:0;" value="${o.price!=null?o.price:''}"><button onclick="this.closest('.py-opt-row').remove()" style="flex:0 0 auto;border:none;background:transparent;font-size:18px;cursor:pointer;padding:2px 6px;color:rgba(0,0,0,.35);">✕</button>`;
+    list.appendChild(row);
+  });
+}
+
+function pyRenderQuestions(questions){
+  const list = document.getElementById('py-questions-list');
+  if (!list) return;
+  list.innerHTML = '';
+  (questions || []).forEach(q => {
+    const row = document.createElement('div');
+    row.className = 'py-q-row';
+    row.style.cssText = 'border:1.5px solid rgba(0,0,0,.12);padding:10px;';
+    const chk  = q.required !== false ? ' checked' : '';
+    const selT = q.type === 'textarea' ? ' selected' : '';
+    const selS = q.type !== 'textarea' ? ' selected' : '';
+    row.innerHTML = `<input class="fi py-q-label" placeholder="질문 내용" style="margin-bottom:8px;" value="${escHtml(q.label||'')}"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;"><label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;"><input type="checkbox" class="py-q-required"${chk}> 필수 입력</label><select class="py-q-type" style="font-size:12px;padding:3px 6px;border:1.5px solid rgba(0,0,0,.2);background:#fff;font-family:inherit;"><option value="text"${selS}>한 줄 입력</option><option value="textarea"${selT}>여러 줄 입력</option></select><button onclick="this.closest('.py-q-row').remove()" style="margin-left:auto;border:none;background:transparent;font-size:12px;cursor:pointer;padding:4px 6px;color:rgba(0,0,0,.4);">✕ 삭제</button></div>`;
+    list.appendChild(row);
+  });
 }
 
 async function pyDelete(){
@@ -10018,16 +10304,20 @@ async function pyViewRecords(){
     const total = docs.reduce((s,d)=> s + (Number(d.data().amount)||0), 0);
     summary.textContent = `총 ${docs.length}건 · ${total.toLocaleString()}원`;
     list.innerHTML = `<div class="user-table-wrap"><table class="user-table">
-      <thead><tr><th>주문번호</th><th>사용자</th><th>금액</th><th>결제수단</th><th>승인</th></tr></thead>
+      <thead><tr><th>주문번호</th><th>사용자</th><th>옵션·답변</th><th>금액</th><th>결제수단</th><th>승인</th></tr></thead>
       <tbody>${docs.map(d=>{
         const r = d.data();
         const userName = r.userFields?.name || r.userFields?.이름 || r.userId || '(비로그인)';
         const phone    = r.userFields?.phone || r.userFields?.연락처 || '';
         const userCell = phone ? `${escHtml(userName)}<br><span style="font-size:10px;opacity:.55;">${escHtml(phone)}</span>` : escHtml(userName);
         const approvedAt = (r.approvedAt || '').replace('T',' ').slice(0,16);
+        const optStr = r.selectedOption?.label ? escHtml(r.selectedOption.label) : '';
+        const ansStr = r.questionAnswers ? Object.entries(r.questionAnswers).filter(([,v])=>v).map(([k,v])=>`${escHtml(k)}: ${escHtml(v)}`).join('<br>') : '';
+        const optAns = [optStr, ansStr].filter(Boolean).join('<br>') || '<span style="opacity:.3;">-</span>';
         return `<tr>
           <td style="font-family:monospace;font-size:10px;word-break:break-all;">${escHtml(r.orderId||'')}</td>
           <td>${userCell}</td>
+          <td style="font-size:12px;line-height:1.5;">${optAns}</td>
           <td style="white-space:nowrap;text-align:right;">${Number(r.amount||0).toLocaleString()}원</td>
           <td>${escHtml(r.method||'')}</td>
           <td style="white-space:nowrap;font-size:11px;">${escHtml(approvedAt)}</td>

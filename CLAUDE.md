@@ -1,5 +1,11 @@
 ## 플리마켓 셀러·방문객 포털 — CLAUDE.md
 
+> 🔴 **[최우선 규칙] 세션 중 push 금지 — 커밋만 쌓고, 세션 마무리 시 push+머지 1회**
+> - 세션 중에는 `git commit`만 한다. `git push`는 절대 하지 않는다.
+> - 세션 마무리 시: push 1회(feature 브랜치) + PR 머지 1회(main) = Vercel 배포 2회 소모.
+> - 세션 전체가 길어져도 배포 소모는 딱 2회. 이것이 최소·최적이다.
+> - 사용자가 "라이브로 확인하고 싶어"라고 해도 → 세션 마무리 시점까지 커밋만 쌓는다.
+
 ### 앱 기본 정보
 
 ```javascript
@@ -253,10 +259,11 @@ claude
 
 1. `git status` — 변경된 파일 목록 확인
 2. 변경 목록 + 제안 커밋 메시지를 사용자에게 보여주고 승인 받기
-3. 승인 후 커밋 + push:
+3. 승인 후 커밋 + push (세션 마무리 시 처음이자 마지막 push):
    - Remote 세션(☁️): `git add [변경 파일] && git commit -m "..." && git push -u origin <현재 feature 브랜치>`
    - Local 세션(💻): main 직접 push 시도 → 403이면 feature 브랜치로 push 후 4번으로
    - ⚠️ `git add .` / `git add -A` 금지
+   - ⚠️ 세션 중 이미 push한 커밋이 있어도 괜찮음 — 마무리 시 남은 커밋 push + PR 머지
 4. **main으로 머지 — 세션당 딱 1번, 여기서만:**
    - `mcp__github__create_pull_request` (head: 현재 브랜치, base: main)
    - 사용자에게 PR URL 보여주고 확인
@@ -297,11 +304,14 @@ PAT: ghp_xxx (만료됐으면 재발급 요청)
 
 **올바른 워크플로우:**
 1. 시스템이 만든 feature 브랜치에서 그대로 작업 (예: `claude/add-xxx-feature-yyy`)
-2. 커밋·push는 feature 브랜치로 (push 1회 = 배포 1회 소비)
+2. 세션 중에는 **커밋만 쌓기** — push 하지 않음 (push = Preview 배포 1회 소모)
    ```bash
-   git push -u origin claude/...
+   git add [파일] && git commit -m "..."   # push는 아직 안 함
    ```
-3. **세션 마무리 시점에 딱 1번만 PR 생성 + 머지:**
+3. **세션 마무리 시점에 딱 1번: push → PR 생성 → 머지:**
+   ```bash
+   git push -u origin claude/...   # 이 시점에 처음 push (Preview 배포 1회)
+   ```
    ```
    mcp__github__create_pull_request  (head: claude/..., base: main)
    mcp__github__merge_pull_request   (방금 생성된 PR 번호, method: merge)
@@ -312,11 +322,11 @@ PAT: ghp_xxx (만료됐으면 재발급 요청)
    ```
 5. Vercel 자동 배포 시작 (~1분)
 
-**🔴 PR 머지 횟수 절대 원칙 — 어떤 상황에서도 예외 없음:**
-- **한 세션 = PR 머지 1번** (세션 마무리 시에만)
-- 사용자가 "확인해봐", "배포해봐", "라이브로 보고 싶어" 라고 해도 → **"세션 끝에 한번에 배포할게요"라고 안내하고 mid-session 머지 금지**
-- 작은 버그 수정이라도 중간에 PR을 만들지 않는다. 커밋만 쌓고 마지막에 한번에 머지
-- 이 규칙을 어기면 PR 1개당 최소 2회 배포 소비 → 10개면 20회 → 100회/일 한도 초과
+**🔴 배포 횟수 절약 원칙 — 어떤 상황에서도 예외 없음:**
+- **한 세션 = push 1번 + PR 머지 1번** (세션 마무리 시에만)
+- 세션 중에는 push도, PR 머지도 하지 않는다. 커밋만 쌓는다.
+- 사용자가 "확인해봐", "배포해봐", "라이브로 보고 싶어" 라고 해도 → **"세션 끝에 push+머지할게요"라고 안내**
+- 이 규칙을 어기면 중간 push마다 Preview 배포 1회 + 머지마다 Production 배포 1회 추가 소모
 
 > 🔴 **실제 사고 사례**: 이전 세션에서 버그 수정마다 PR을 머지(#86~#95, 총 10회)해서 당일 Vercel 배포 100회 한도를 초과했다. 당일 오픈 예정인 기능이 배포 불가 상태가 됐다. 이 실수를 반복하지 않는다.
 
@@ -361,26 +371,22 @@ PAT 인증이 있을 경우 `main` 직접 push가 가능할 수 있다. 단, 시
 
 ---
 
-### 🔵 수정 후 자동 배포
+### 🔵 배포 전략
 
-#### ⚠️ push 전 반드시 사용자 확인 (예외 없음)
+세션 중에는 **커밋만** 쌓는다. push·PR 머지는 세션 마무리 시 딱 1번.
 
-push는 Vercel 배포 횟수(하루 100회 한도)를 소모한다. **어떤 상황에서도 push 전에 반드시 사용자에게 확인을 받는다.**
+| 시점 | 할 것 | Vercel 소모 |
+|------|-------|------------|
+| 세션 중 | `git commit` (push ❌) | 0회 |
+| 세션 마무리 | `git push` | 1회 (Preview) |
+| 세션 마무리 | PR 머지 → main | 1회 (Production) |
+| **합계** | | **2회/세션** |
 
-확인 방식:
-```
-📤 push할까요? (Vercel 배포 1회 소모)
-변경 파일: [파일 목록]
-```
-사용자가 승인하면 push 진행.
-
-#### push 후 안내 형식
-
-push 완료 후 아래 형식으로 안내한다. `N`은 이번 세션에서 push한 누적 횟수 (세션 시작 시 0부터 카운트):
+#### 세션 마무리 push 후 안내 형식
 
 ```
-✅ 푸시 완료 (이번 세션 N번째).
-오늘 전체 배포 횟수는 → https://vercel.com/beybusiness-bit/lmp-website/deployments 에서 확인
+✅ push + PR 머지 완료. Vercel 배포 2회 소모.
+오늘 전체 배포 횟수 → https://vercel.com/beybusiness-bit/lmp-website/deployments
 Vercel 배포까지 ~1분 소요. Cmd+Shift+R 하드 리프레시 해주세요.
 ```
 
@@ -392,9 +398,9 @@ Vercel Free 플랜은 **하루 배포 100회 제한**이 있다. feature 브랜�
 
 #### 예방 원칙 (필수)
 
-- **세션 중에는 feature 브랜치에 커밋·push만** 한다 (Preview 배포 1회 소모)
-- **PR 머지는 세션 마무리 시 딱 1번만** — 중간중간 머지 금지
-- 한 세션 = 커밋 여러 개 + **PR 1개** 원칙
+- **세션 중에는 커밋만** — push 하지 않음 (push 자체가 Preview 배포 1회 소모)
+- **세션 마무리 시 딱 1번만**: push(1회) + PR 머지(1회) = 세션당 총 2회
+- 한 세션 = 커밋 여러 개 + **push 1번 + PR 1개** 원칙
 
 #### 제한 초과 시 대처
 
@@ -511,7 +517,19 @@ cms_admin_settings/payment
 
 cms_payment_configs/{configId}
   title, productName, amount, description, tier, successMessage
+  options: [{label, price}]          ← 선택 옵션 (price 없으면 기본 amount 사용)
+  questions: [{text, required, multiline}]  ← 주관식 질문
+  qtyEnabled: boolean                ← 수량 선택 활성화 여부
+  qtyMin: number                     ← 1회 최소 구매 수량
+  qtyMax: number                     ← 1회 최대 구매 수량
+  qtyPerUser: number                 ← 사용자당 누적 최대 구매 수량 (0=무제한)
   createdAt, updatedAt
+
+cms_payment_records/{paymentKey}
+  ...기존 필드...
+  selectedOption: {label, price}     ← 선택된 옵션
+  questionAnswers: [{question, answer}]  ← 주관식 질문 응답
+  qty: number                        ← 구매 수량
 
 cms_payment_records/{paymentKey}
   paymentKey, orderId, orderName, amount, method, status, approvedAt
@@ -715,11 +733,20 @@ closeHelpPanel();
 - `switchTab('site')` 호출 시 `showProjView('list')` 먼저 호출 → proj-edit-view 오버레이 닫힘
 - `loadSiteSettings()` 에러 시 화면에 메시지 표시 + 재시도 가능 (`_siteLoaded` 플래그 위치 수정)
 
-**결제 도구 UX 개선**
+**결제 도구 고도화**
 - 결제 전 최종 확인 화면: 상품명·금액 표시 + 청약철회 불가 동의 체크박스 (전자상거래법 제17조)
 - 결제 화면에서 상품명 중복 제거 (제목만 표시, 상품명은 영수증·확인 화면에서만)
 - admin 결제 탭 내부 분리: "결제 상품" | "결제 설정" 탭 (가맹점 ID는 "결제 설정"으로 이동)
 - 결제 도구가 `cms_admin_settings/site`에서 문의 이메일 자동 로드 (`window._siteEmail`)
+- 선택 옵션: 옵션마다 다른 금액 설정, 옵션 없으면 기본 금액 사용
+- 주관식 질문: 필수/선택, 단답형/장문형 설정 가능
+- 구매 수량: 관리자가 1회 최소·최대 + 사용자당 누적 최대 설정, Firestore `FieldValue.increment`로 수량 추적
+- 결제 흐름: 메인 → 옵션 선택 → 질문 답변 → 최종 확인 → 결제, sessionStorage로 리다이렉트 후 복원
+
+**사이트 설정 / 푸터**
+- SNS 다중 입력: Simple Icons CDN 기반 아이콘 선택 + 사용자 정의 이미지 업로드
+- 개인정보처리방침·이용약관: 베이비즈니스 정보 기반 한국어 템플릿 "기본 내용 채우기" 버튼 추가
+- 플레이어 푸터 중앙 정렬 (p/, block-test-demo/, gmbf-poc/ 동기화)
 
 ---
 
@@ -729,13 +756,14 @@ closeHelpPanel();
 - **GAS 재배포 필요** (updateFormRow + bulkAppend + Calendar 액션 코드는 추가됐으나 GAS 편집기에서 "새 버전" 배포 안 됨)
   → script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
 - **일정 잡기 도구 end-to-end 테스트**: GAS 재배포 후 실제 캘린더 연동 확인 필요
-- **결제 후 권한 분기(잠금 게이트)**: `paidTiers` 데이터는 저장되나 블록/스테이지/프로젝트 잠금 로직 미구현
+- **환불 처리 기능**: 페이업 환불 API 연동 미구현 — 현재 수동 처리 (페이업 대시보드에서 직접)
 
-#### Firestore 보안 규칙 (이전 세션에서 변경됨)
+#### Firestore 보안 규칙 (적용 완료)
 ```
 match /cms_form_responses/{document=**} { allow write: if true; allow read: if true; }
+match /cms_payment_records/{doc} { allow read: if true; }
 ```
-→ 제출 내역 조회를 위해 read를 `if true`로 변경 (이미 Firebase Console에서 적용 완료)
+→ `cms_payment_records` read 허용: 사이드바 "내 정보" 결제 내역 조회 + payment 도구 내역 조회에 필요 (Firebase Console에서 적용 완료)
 
 ---
 
@@ -743,6 +771,17 @@ match /cms_form_responses/{document=**} { allow write: if true; allow read: if t
 
 - 사용자가 직접 지정할 예정
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
+
+#### 이번 세션 완료 항목
+- 결제 선택 옵션 (옵션별 금액 다름) / 주관식 질문 / 구매 수량 (1회 min·max + 누적 per-user 제한)
+- SNS 다중 입력 (Simple Icons CDN 아이콘 + 커스텀 업로드)
+- 개인정보처리방침·이용약관 한국어 템플릿 "기본 내용 채우기"
+- 결제 전 최종 확인 화면 + 청약철회 배제 동의 체크박스
+- 플레이어 푸터 중앙 정렬 (3파일 동기화)
+- Make webhook (관리자 Gmail 알림용) — 코드 준비, 실제 시나리오 설정은 사용자가
+- 사이드바 "내 정보" 패널 — 결제 내역 조회 (로그인 사용자만)
+- 결제 게이트 (`requiredTier`) — 블록별 결제 상품 tier 잠금/해제
+- 배포 전략 변경: 세션 중 커밋만 → 마무리 시 push+머지 1회 (총 2회)
 
 #### Firestore 스키마 추가 (이번 세션)
 ```
@@ -778,21 +817,20 @@ stage_content/{stageId}/blocks/{blockId}
 - 표시 필수 항목: 상호, 대표자 성명, 사업자등록번호, 통신판매업 신고번호, 사업장 주소, 연락처(이메일 필수·전화번호)
 - 위치: 푸터에 항시 노출
 
-**3. 청약철회권 고지** *(전자상거래법 제17조)*
+**3. 청약철회권 고지** *(전자상거래법 제17조)* ✅
 - 디지털 콘텐츠는 수신 즉시 이용 가능할 경우 청약철회 배제 가능
 - 단, 그 사실을 **결제 전에 명확히 고지하고 소비자가 동의**해야 배제 효력 발생
-- 미고지 시 → 무조건 7일 이내 환불 의무 발생
-- 현재: `successMessage` 필드만 있고 결제 전 고지 화면 없음 → 미구현
+- **현재: 구현 완료** — 결제 전 최종 확인 화면 + 청약철회 배제 동의 체크박스
 
-**4. 개인정보처리방침 게시** *(개인정보보호법 제30조)*
+**4. 개인정보처리방침 게시** *(개인정보보호법 제30조)* ✅
 - 필수 기재: 수집 항목, 수집 목적, 보유 기간, 제3자 제공 여부, 파기 절차 및 방법, 개인정보 보호책임자 연락처
 - 운영 방법: 별도 페이지로 운영, 푸터에 링크 노출
-- 현재: 미구현
+- **현재: 구현 완료** — admin 사이트 설정 탭에 템플릿 입력됨. ⚠️ [이메일 입력] 플레이스홀더 실제 이메일로 교체 필요
 
-**5. 이용약관** *(전자상거래법 제11조)*
+**5. 이용약관** *(전자상거래법 제11조)* ✅
 - 필수 기재: 서비스 이용 조건, 책임 한계, 분쟁 해결 기준
 - 결제 전 약관 동의 절차 필요
-- 현재: 미구현
+- **현재: 구현 완료** — admin 사이트 설정 탭에 템플릿 입력됨. ⚠️ [이메일 입력] 플레이스홀더 실제 이메일로 교체 필요
 
 ---
 
@@ -806,10 +844,10 @@ stage_content/{stageId}/blocks/{blockId}
 
 | 항목 | 현황 | 필요 이유 |
 |------|------|-----------|
-| 결제 전 최종 확인 화면 (상품명·금액 명시) | ❌ 미구현 | 전자상거래법: 계약 내용 확인 의무 |
-| 디지털 콘텐츠 청약철회 배제 동의 체크박스 | ❌ 미구현 | 미고지 시 무조건 7일 환불 의무 |
+| 결제 전 최종 확인 화면 (상품명·금액 명시) | ✅ 완료 | 전자상거래법: 계약 내용 확인 의무 |
+| 디지털 콘텐츠 청약철회 배제 동의 체크박스 | ✅ 완료 | 미고지 시 무조건 7일 환불 의무 |
 | 결제 완료 후 영수증·확인 발송 (이메일/문자) | ❌ 미구현 | 전자상거래법 제8조 거래 확인 의무 |
-| 에스크로 또는 대안 안전결제 | ❌ 미구현 | 30만 원 이상 거래 시 의무 (PG사 통해 처리 가능) |
+| 에스크로 또는 대안 안전결제 | ❌ (PG사 위임) | 30만 원 이상 거래 시 의무 — 페이업이 PG사로서 처리 |
 | 환불 처리 기능 (페이업 환불 API) | ❌ 미구현 | 청약철회 의무 이행 수단 |
 
 ---
@@ -825,17 +863,19 @@ stage_content/{stageId}/blocks/{blockId}
 #### 📌 우선순위 구현 순서
 
 **결제 오픈 전 필수:**
-1. 푸터 — 사업자 정보 표시 + 정책 링크
-2. 개인정보처리방침 페이지
-3. 이용약관 페이지
-4. 결제 전 최종 확인 화면 + 청약철회 배제 동의 체크박스
-5. 통신판매업 신고 *(행정 절차, 직접 처리)*
+1. ✅ 푸터 — 사업자 정보 표시 + 정책 링크
+2. ✅ 개인정보처리방침 — admin에 템플릿 입력됨 (⚠️ 이메일 교체 필요)
+3. ✅ 이용약관 — admin에 템플릿 입력됨 (⚠️ 이메일 교체 필요)
+4. ✅ 결제 전 최종 확인 화면 + 청약철회 배제 동의 체크박스
+5. ✅ 통신판매업 신고 — 신고번호 푸터 표시 완료
 
 **결제 오픈 후 빠르게:**
-6. 환불 처리 기능 (토스 환불 API 연동)
-7. 결제 완료 알림 (이메일 또는 문자)
+6. 🔲 환불 처리 기능 (페이업 환불 API → admin 환불 버튼) — 현재 수동 처리
+7. ~~결제 완료 알림~~ — 결제 완료 화면 + 내 정보 내역 조회로 대체 결정 (법적 문제 없음)
+8. ✅ 결제 내역 조회 — 사이드바 "내 정보" 패널 구현 완료
+9. ✅ 결제 후 권한 분기 — `_isTierLocked()` 블록 잠금 구현 완료
 
-> 1~4, 6~7번은 코드로 구현 가능. 5번은 오프라인 행정 절차.
+> 1~5, 8~9번 완료. 6번(환불)은 현재 수동 처리 중.
 
 ---
 

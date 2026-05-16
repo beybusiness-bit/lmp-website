@@ -21,12 +21,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 #err-screen{display:none;color:#c00;}
 #err-screen.on{display:block;}
 
-.pay-head{margin-bottom:24px;}
+.pay-head{margin-bottom:20px;}
 .pay-title{font-size:17px;font-weight:800;letter-spacing:-.3px;line-height:1.4;margin-bottom:6px;}
-.pay-product{font-size:14px;font-weight:600;color:rgba(0,0,0,.7);line-height:1.5;margin-bottom:12px;}
-.pay-amount{font-size:28px;font-weight:900;letter-spacing:-.5px;margin-bottom:6px;}
+.pay-amount{font-size:28px;font-weight:900;letter-spacing:-.5px;margin-bottom:4px;}
 .pay-amount .won{font-size:18px;font-weight:700;margin-left:2px;}
 .pay-desc{font-size:13px;line-height:1.7;color:rgba(0,0,0,.6);margin-top:14px;padding:12px 14px;border:1.5px solid rgba(0,0,0,.12);background:rgba(0,0,0,.02);}
+
+/* 옵션 선택 */
+.opt-item{border:2px solid rgba(0,0,0,.15);padding:14px 16px;display:flex;align-items:center;cursor:pointer;transition:border-color .15s,background .15s;}
+.opt-item+.opt-item{margin-top:10px;}
+.opt-item:active{border-color:rgba(0,0,0,.5);}
+.opt-item.sel{border-color:#000;background:rgba(0,0,0,.04);}
+.opt-sel-mark{width:18px;height:18px;border-radius:50%;border:2px solid rgba(0,0,0,.2);flex-shrink:0;margin-right:12px;display:flex;align-items:center;justify-content:center;font-size:10px;transition:border-color .15s,background .15s;}
+.opt-item.sel .opt-sel-mark{border-color:#000;background:#000;color:#fff;}
+.opt-item-label{font-size:15px;font-weight:700;letter-spacing:-.2px;flex:1;}
+.opt-item-price{font-size:15px;font-weight:900;white-space:nowrap;margin-left:8px;color:rgba(0,0,0,.75);}
+
+/* 주관식 질문 */
+.qs-field{margin-bottom:16px;}
+.qs-field-label{font-size:13px;font-weight:700;margin-bottom:6px;letter-spacing:-.2px;display:block;}
+.qs-field input,.qs-field textarea{width:100%;padding:10px 12px;border:2px solid rgba(0,0,0,.15);font-size:14px;font-family:inherit;background:var(--lmp-input-bg,transparent);outline:none;}
+.qs-field input:focus,.qs-field textarea:focus{border-color:#000;}
+.qs-field textarea{resize:vertical;min-height:72px;line-height:1.5;}
 
 #pay-result{display:none;text-align:center;padding:30px 16px;}
 #pay-result.on{display:block;}
@@ -43,15 +59,40 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 #pay-confirm{display:none;padding:0;}
 #pay-confirm.on{display:block;}
 .pc-summary{border:2px solid #000;padding:16px;margin-bottom:18px;}
-.pc-summary-row{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.08);}
+.pc-summary-row{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;padding:4px 0;border-bottom:1px solid rgba(0,0,0,.08);gap:12px;}
 .pc-summary-row:last-child{border-bottom:none;padding-top:10px;font-weight:900;font-size:16px;}
-.pc-summary-label{color:rgba(0,0,0,.55);font-weight:600;}
+.pc-summary-label{color:rgba(0,0,0,.55);font-weight:600;flex-shrink:0;}
+.pc-summary-value{text-align:right;word-break:break-all;}
 .pc-notice{background:rgba(0,0,0,.04);border-left:3px solid #000;padding:12px 14px;font-size:12px;line-height:1.7;color:rgba(0,0,0,.65);margin-bottom:18px;}
 .pc-agree-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;cursor:pointer;}
 .pc-agree-row input[type=checkbox]{width:18px;height:18px;flex-shrink:0;margin-top:1px;cursor:pointer;accent-color:#000;}
 .pc-agree-label{font-size:13px;font-weight:600;line-height:1.5;color:#000;}
 .pc-back{background:transparent;border:2px solid rgba(0,0,0,.25);color:rgba(0,0,0,.55);width:100%;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;}
 .pc-back:active{background:rgba(0,0,0,.05);}
+
+/* 수량 선택 */
+#qty-row{display:none;border:1.5px solid rgba(0,0,0,.15);padding:12px 16px;margin-bottom:16px;}
+.qty-inner{display:flex;align-items:center;justify-content:space-between;}
+.qty-label{font-size:14px;font-weight:700;}
+.qty-ctrl{display:flex;align-items:center;gap:10px;}
+.qty-btn{width:32px;height:32px;border:2px solid #000;background:none;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;font-family:inherit;}
+.qty-btn:disabled{opacity:.25;cursor:default;}
+#qty-display{font-size:20px;font-weight:900;min-width:32px;text-align:center;}
+#qty-unit-price{font-size:11px;color:rgba(0,0,0,.45);margin-top:4px;}
+
+/* 결제 내역 */
+#pay-history{display:none;padding:0;}
+#pay-history.on{display:block;}
+.hist-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.hist-head-title{font-size:16px;font-weight:800;letter-spacing:-.3px;}
+.hist-back{background:none;border:none;font-size:13px;font-weight:700;cursor:pointer;color:rgba(0,0,0,.5);padding:0;}
+.hist-item{border:1.5px solid rgba(0,0,0,.12);padding:14px;margin-bottom:10px;}
+.hist-item-name{font-size:14px;font-weight:700;margin-bottom:4px;}
+.hist-item-amount{font-size:20px;font-weight:900;letter-spacing:-.3px;margin-bottom:6px;}
+.hist-item-meta{font-size:11px;color:rgba(0,0,0,.45);line-height:1.6;}
+.hist-empty{text-align:center;padding:40px 0;font-size:13px;color:rgba(0,0,0,.4);font-weight:600;}
+.hist-link-btn{display:block;width:100%;margin-top:16px;padding:12px;border:2px solid rgba(0,0,0,.2);background:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.6);}
+.hist-link-btn:active{background:rgba(0,0,0,.04);}
 </style>
 </head>
 <body>
@@ -63,9 +104,43 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <div class="pay-head">
       <div class="pay-title" id="p-title"></div>
       <div class="pay-amount"><span id="p-amount">0</span><span class="won">원</span></div>
+      <div id="pay-opts-hint" style="display:none;font-size:11px;color:rgba(0,0,0,.45);margin-top:2px;margin-bottom:4px;">선택 옵션에 따라 금액이 결정됩니다</div>
       <div class="pay-desc" id="p-desc" style="display:none;"></div>
     </div>
+    <div id="qty-row">
+      <div class="qty-inner">
+        <span class="qty-label">수량</span>
+        <div class="qty-ctrl">
+          <button class="qty-btn" id="qty-minus" onclick="changeQty(-1)">−</button>
+          <span id="qty-display">1</span>
+          <button class="qty-btn" id="qty-plus"  onclick="changeQty(1)">+</button>
+        </div>
+      </div>
+      <div id="qty-unit-price"></div>
+    </div>
     <button class="lmp-btn" id="pay-btn">결제하기</button>
+  </div>
+
+  <!-- 옵션 선택 화면 -->
+  <div id="pay-options" style="display:none;">
+    <div class="pay-head">
+      <div class="pay-title" id="opts-title"></div>
+      <div style="font-size:13px;color:rgba(0,0,0,.5);margin-top:2px;">원하는 옵션을 선택해주세요</div>
+    </div>
+    <div id="opts-list" style="margin-bottom:20px;"></div>
+    <button class="lmp-btn" id="opts-next-btn" disabled>선택 완료</button>
+    <button class="pc-back" id="opts-back-btn">← 돌아가기</button>
+  </div>
+
+  <!-- 주관식 질문 화면 -->
+  <div id="pay-questions" style="display:none;">
+    <div class="pay-head">
+      <div class="pay-title">추가 정보 입력</div>
+      <div style="font-size:13px;color:rgba(0,0,0,.5);margin-top:2px;">결제 전 아래 내용을 알려주세요</div>
+    </div>
+    <div id="qs-form" style="margin-bottom:20px;"></div>
+    <button class="lmp-btn" id="qs-next-btn">다음</button>
+    <button class="pc-back" id="qs-back-btn">← 돌아가기</button>
   </div>
 
   <!-- 결제 전 최종 확인 화면 -->
@@ -88,6 +163,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <div class="pay-result-title" id="r-title"></div>
     <div class="pay-result-msg" id="r-msg"></div>
     <div class="pay-receipt" id="r-receipt" style="display:none;"></div>
+    <button class="hist-link-btn" id="r-hist-btn" style="display:none;" onclick="showHistory()">내 결제 내역 보기</button>
+  </div>
+
+  <!-- 결제 내역 화면 -->
+  <div id="pay-history">
+    <div class="hist-head">
+      <div class="hist-head-title">내 결제 내역</div>
+      <button class="hist-back" onclick="hideHistory()">← 닫기</button>
+    </div>
+    <div id="hist-list"></div>
   </div>
 </div>
 
@@ -112,13 +197,14 @@ const CARD_NAME       = urlParams.get('cardName') || '';
 const AUTH_DATETIME   = urlParams.get('authDatetime') || '';
 const AUTH_NUMBER     = urlParams.get('authNumber') || '';
 const FAIL_MSG        = urlParams.get('message') || '';
-// projectId/userId relayed back from server after payment confirmation
 const URL_PROJECT_ID  = urlParams.get('projectId') || '';
 const URL_USER_ID     = urlParams.get('userId') || '';
 
 let CONFIG = null;
 let MERCHANT_ID = '';
 let IS_TEST = false;
+let SMS_WEBHOOK_URL = '';
+let SMS_PHONE_FIELD = '';
 let ctxProjectId = URL_PROJECT_ID;
 let ctxUserId    = URL_USER_ID;
 let ctxUserFields = {};
@@ -126,6 +212,11 @@ let ctxUserFields = {};
 let ctxReceived = false;
 let resolveCtx;
 const ctxPromise = new Promise(res => { resolveCtx = res; });
+
+let selectedOption = null;  // { label, price } | null
+let questionAnswers = {};   // { [label]: answer }
+let selectedQty = 1;
+let qtyMaxAllowed = null;   // per-user remaining (null = unlimited)
 
 window.addEventListener('message', e => {
   if (e.data?.type !== 'lmp-context') return;
@@ -169,8 +260,11 @@ async function loadConfig() {
       db.collection('cms_admin_settings').doc('site').get(),
     ]);
     if (paySettings.exists) {
-      MERCHANT_ID = paySettings.data().payupMerchantId || '';
-      IS_TEST     = !!(paySettings.data().payupTestMode);
+      const ps = paySettings.data();
+      MERCHANT_ID     = ps.payupMerchantId || '';
+      IS_TEST         = !!(ps.payupTestMode);
+      SMS_WEBHOOK_URL = ps.smsWebhookUrl   || '';
+      SMS_PHONE_FIELD = ps.smsPhoneField   || '';
     }
     if (siteSettings.exists) {
       window._siteEmail = siteSettings.data().footerEmail || '';
@@ -201,45 +295,67 @@ async function init() {
   const ok = await loadConfig();
   if (!ok) return;
 
-  // 결제 실패 결과
   if (RESULT === 'fail') {
     showResult('fail', '결제가 실패했어요', FAIL_MSG || '결제를 다시 시도해주세요.', null);
     return;
   }
 
-  // 서버 승인 완료 후 리다이렉트 돌아온 경우 — Firestore 기록 후 성공 화면 표시
   if (RESULT === 'success' && TRANSACTION_ID) {
+    try {
+      selectedOption  = JSON.parse(sessionStorage.getItem('py_selectedOption') || 'null');
+      questionAnswers = JSON.parse(sessionStorage.getItem('py_questionAnswers') || '{}');
+      selectedQty     = parseInt(sessionStorage.getItem('py_selectedQty') || '1') || 1;
+      sessionStorage.removeItem('py_selectedOption');
+      sessionStorage.removeItem('py_questionAnswers');
+      sessionStorage.removeItem('py_selectedQty');
+    } catch(e) {}
+
     setStatus('결제 완료 처리 중…');
     await recordPayment({
       transactionId: TRANSACTION_ID,
-      amount: AMOUNT_FROM_URL,
-      cardName: CARD_NAME,
-      authDatetime: AUTH_DATETIME,
-      authNumber: AUTH_NUMBER,
+      amount:        AMOUNT_FROM_URL,
+      cardName:      CARD_NAME,
+      authDatetime:  AUTH_DATETIME,
+      authNumber:    AUTH_NUMBER,
     });
+    fireSmsWebhook(AMOUNT_FROM_URL, CONFIG.productName || CONFIG.title || '', selectedQty);
     window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
     showResult('success', '결제가 완료되었어요',
       CONFIG.successMessage || '결제하신 권한이 부여되었어요.',
-      { amount: AMOUNT_FROM_URL, orderName: CONFIG.productName, method: CARD_NAME, approvedAt: AUTH_DATETIME });
+      { amount: AMOUNT_FROM_URL, orderName: CONFIG.productName, method: CARD_NAME,
+        approvedAt: AUTH_DATETIME, selectedOption: selectedOption?.label || '' });
     return;
   }
 
-  // 이미 결제했는지 확인 (로그인된 사용자만)
   if (ctxUserId && ctxProjectId) {
     try {
       const u = await db.collection('cms_users_' + ctxProjectId).doc(ctxUserId).get();
       const paidConfigs = u.exists ? (u.data().paidConfigs || {}) : {};
       if (paidConfigs[CONFIG_ID]) {
-        showResult('already', '이미 결제 완료된 상품이에요',
-          CONFIG.successMessage || '결제하신 권한이 이미 부여되어 있어요.',
-          { amount: paidConfigs[CONFIG_ID].amount, orderName: CONFIG.productName });
-        window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
-        return;
+        if (!CONFIG.qtyEnabled) {
+          showResult('already', '이미 결제 완료된 상품이에요',
+            CONFIG.successMessage || '결제하신 권한이 이미 부여되어 있어요.',
+            { amount: paidConfigs[CONFIG_ID].amount, orderName: CONFIG.productName,
+              selectedOption: paidConfigs[CONFIG_ID].selectedOption || '' });
+          window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+          return;
+        }
+        if (CONFIG.qtyPerUser) {
+          const alreadyBought = paidConfigs[CONFIG_ID].totalQty || 0;
+          const remaining = CONFIG.qtyPerUser - alreadyBought;
+          if (remaining <= 0) {
+            showResult('already', '구매 한도에 도달했어요',
+              `이 상품은 1인당 최대 ${CONFIG.qtyPerUser}개까지 구매할 수 있어요. (이미 ${alreadyBought}개 구매)`,
+              null);
+            window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+            return;
+          }
+          qtyMaxAllowed = remaining;
+        }
       }
     } catch (e) { console.warn('paid check failed:', e); }
   }
 
-  // 결제창 렌더
   await renderPayScreen();
 }
 
@@ -247,8 +363,22 @@ async function renderPayScreen() {
   if (!MERCHANT_ID) { showError('관리자가 페이업 가맹점 ID를 설정해야 해요.'); return; }
   if (!CONFIG.amount || CONFIG.amount < 100) { showError('결제 금액이 올바르지 않아요. (최소 100원)'); return; }
 
-  document.getElementById('p-title').textContent   = applyVars(CONFIG.title || '결제');
-  document.getElementById('p-amount').textContent  = Number(CONFIG.amount).toLocaleString();
+  document.getElementById('p-title').textContent = applyVars(CONFIG.title || '결제');
+
+  const opts = CONFIG.options || [];
+  if (opts.length) {
+    const prices = opts.map(o => o.price != null ? o.price : CONFIG.amount);
+    const minP = Math.min(...prices);
+    const maxP = Math.max(...prices);
+    document.getElementById('p-amount').textContent = minP === maxP
+      ? Number(minP).toLocaleString()
+      : `${Number(minP).toLocaleString()} ~ ${Number(maxP).toLocaleString()}`;
+    document.getElementById('pay-opts-hint').style.display = 'block';
+    document.getElementById('pay-btn').textContent = '옵션 선택하기';
+  } else {
+    document.getElementById('p-amount').textContent = Number(CONFIG.amount).toLocaleString();
+  }
+
   if (CONFIG.description) {
     const d = document.getElementById('p-desc');
     d.innerHTML = applyVars(CONFIG.description);
@@ -262,19 +392,152 @@ async function renderPayScreen() {
     return;
   }
 
+  if (CONFIG.qtyEnabled) {
+    const qMin = CONFIG.qtyMin || 1;
+    const qMax = qtyMaxAllowed !== null
+      ? (CONFIG.qtyMax ? Math.min(CONFIG.qtyMax, qtyMaxAllowed) : qtyMaxAllowed)
+      : (CONFIG.qtyMax || null);
+    selectedQty = qMin;
+    document.getElementById('qty-display').textContent = selectedQty;
+    document.getElementById('qty-row').style.display = 'block';
+    updateQtyButtons(qMin, qMax);
+    updateQtyUnitPrice();
+    document.getElementById('qty-row').dataset.min = qMin;
+    document.getElementById('qty-row').dataset.max = qMax || '';
+  }
+
   document.getElementById('loading').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   document.getElementById('pay-btn').onclick = onPayBtnClick;
 
-  // 확인 화면 이벤트
   const agree = document.getElementById('pc-agree');
   const okBtn = document.getElementById('pc-ok-btn');
   agree.onchange = () => { okBtn.disabled = !agree.checked; };
   okBtn.onclick  = onPayClick;
-  document.getElementById('pc-back-btn').onclick = () => {
+  document.getElementById('pc-back-btn').onclick = goBackFromConfirm;
+}
+
+function changeQty(delta) {
+  const row = document.getElementById('qty-row');
+  const qMin = parseInt(row.dataset.min) || 1;
+  const qMax = row.dataset.max ? parseInt(row.dataset.max) : null;
+  selectedQty = Math.max(qMin, selectedQty + delta);
+  if (qMax) selectedQty = Math.min(qMax, selectedQty);
+  document.getElementById('qty-display').textContent = selectedQty;
+  updateQtyButtons(qMin, qMax);
+  updateQtyUnitPrice();
+}
+function updateQtyButtons(qMin, qMax) {
+  document.getElementById('qty-minus').disabled = selectedQty <= qMin;
+  document.getElementById('qty-plus').disabled  = qMax !== null && selectedQty >= qMax;
+}
+function updateQtyUnitPrice() {
+  const unitEl = document.getElementById('qty-unit-price');
+  if (!unitEl || selectedQty <= 1) { if(unitEl) unitEl.textContent = ''; return; }
+  const unitPrice = selectedOption ? selectedOption.price : CONFIG.amount;
+  const total = unitPrice * selectedQty;
+  unitEl.textContent = `단가 ${Number(unitPrice).toLocaleString()}원 × ${selectedQty} = 합계 ${Number(total).toLocaleString()}원`;
+}
+
+function goBackFromConfirm() {
+  document.getElementById('pay-confirm').classList.remove('on');
+  const qs   = CONFIG.questions || [];
+  const opts = CONFIG.options   || [];
+  if (qs.length) {
+    renderQuestionsScreen(opts.length ? 'from-options' : 'from-screen');
+  } else if (opts.length) {
+    renderOptionsScreen();
+  } else {
     document.getElementById('pay-screen').style.display = 'block';
-    document.getElementById('pay-confirm').classList.remove('on');
+  }
+}
+
+function renderOptionsScreen() {
+  const opts = CONFIG.options || [];
+  document.getElementById('opts-title').textContent = applyVars(CONFIG.title || '옵션 선택');
+
+  const listEl = document.getElementById('opts-list');
+  listEl.innerHTML = opts.map((o, i) => {
+    const price = o.price != null ? o.price : CONFIG.amount;
+    return `<div class="opt-item" data-idx="${i}" onclick="selectOption(${i})">
+      <div class="opt-sel-mark">✓</div>
+      <span class="opt-item-label">${esc(o.label || ('옵션 ' + (i + 1)))}</span>
+      <span class="opt-item-price">${Number(price).toLocaleString()}원</span>
+    </div>`;
+  }).join('');
+
+  if (selectedOption) {
+    const idx = opts.findIndex(o => o.label === selectedOption.label);
+    if (idx >= 0) {
+      listEl.querySelectorAll('.opt-item')[idx]?.classList.add('sel');
+      document.getElementById('opts-next-btn').disabled = false;
+    }
+  } else {
+    document.getElementById('opts-next-btn').disabled = true;
+  }
+
+  document.getElementById('opts-next-btn').onclick = () => {
+    if (!selectedOption) return;
+    if ((CONFIG.questions || []).length) {
+      renderQuestionsScreen('from-options');
+    } else {
+      onPayBtnClick();
+    }
   };
+  document.getElementById('opts-back-btn').onclick = () => {
+    document.getElementById('pay-options').style.display = 'none';
+    document.getElementById('pay-screen').style.display = 'block';
+  };
+
+  document.getElementById('pay-screen').style.display = 'none';
+  document.getElementById('pay-questions').style.display = 'none';
+  document.getElementById('pay-confirm').classList.remove('on');
+  document.getElementById('pay-options').style.display = 'block';
+}
+
+function selectOption(idx) {
+  const o = CONFIG.options[idx];
+  selectedOption = { label: o.label, price: o.price != null ? o.price : CONFIG.amount };
+  document.querySelectorAll('.opt-item').forEach((el, i) => el.classList.toggle('sel', i === idx));
+  document.getElementById('opts-next-btn').disabled = false;
+}
+
+function renderQuestionsScreen(from) {
+  const qs = CONFIG.questions || [];
+  const form = document.getElementById('qs-form');
+  form.innerHTML = qs.map((q, i) => {
+    const reqMark = q.required !== false ? '<span style="color:#c00;margin-left:2px;">*</span>' : '';
+    const existingVal = questionAnswers[q.label] || '';
+    const inp = q.type === 'textarea'
+      ? `<textarea class="qs-input" data-idx="${i}" rows="3">${esc(existingVal)}</textarea>`
+      : `<input class="qs-input" data-idx="${i}" type="text" value="${esc(existingVal)}">`;
+    return `<div class="qs-field"><span class="qs-field-label">${esc(q.label)}${reqMark}</span>${inp}</div>`;
+  }).join('');
+
+  document.getElementById('qs-next-btn').onclick = () => {
+    const missing = qs.some((q, i) => {
+      if (q.required === false) return false;
+      return !(form.querySelector(`.qs-input[data-idx="${i}"]`)?.value.trim());
+    });
+    if (missing) { alert('필수 항목을 모두 입력해주세요.'); return; }
+    questionAnswers = {};
+    qs.forEach((q, i) => {
+      const el = form.querySelector(`.qs-input[data-idx="${i}"]`);
+      questionAnswers[q.label] = el?.value.trim() || '';
+    });
+    onPayBtnClick();
+  };
+
+  document.getElementById('qs-back-btn').onclick = () => {
+    document.getElementById('pay-questions').style.display = 'none';
+    if (from === 'from-options') renderOptionsScreen();
+    else document.getElementById('pay-screen').style.display = 'block';
+  };
+
+  document.getElementById('pay-screen').style.display = 'none';
+  document.getElementById('pay-options').style.display = 'none';
+  document.getElementById('pay-confirm').classList.remove('on');
+  document.getElementById('pay-questions').style.display = 'block';
 }
 
 function isMobile() {
@@ -282,21 +545,34 @@ function isMobile() {
 }
 
 function onPayBtnClick() {
-  // 최종 확인 화면 표시
-  const amount = Number(CONFIG.amount).toLocaleString();
-  const rows = [
-    ['상품명', CONFIG.productName || CONFIG.title || '-'],
-    ['결제 금액', amount + '원'],
-  ];
+  const opts = CONFIG.options   || [];
+  const qs   = CONFIG.questions || [];
+
+  if (opts.length && !selectedOption)                        { renderOptionsScreen();               return; }
+  if (qs.length && !Object.keys(questionAnswers).length)     { renderQuestionsScreen('from-screen'); return; }
+
+  const unitPrice = selectedOption ? selectedOption.price : CONFIG.amount;
+  const effectiveAmount = unitPrice * selectedQty;
+  const rows = [];
+  if (selectedOption) rows.push(['선택 옵션', selectedOption.label]);
+  rows.push(['상품명', CONFIG.productName || CONFIG.title || '-']);
+  Object.entries(questionAnswers).forEach(([label, answer]) => { if (answer) rows.push([label, answer]); });
+  if (CONFIG.qtyEnabled && selectedQty > 1) {
+    rows.push(['수량', `${selectedQty}개`]);
+    rows.push(['단가', Number(unitPrice).toLocaleString() + '원']);
+  }
+  rows.push(['결제 금액', Number(effectiveAmount).toLocaleString() + '원']);
+
   document.getElementById('pc-summary').innerHTML =
-    rows.map(([l,v]) => `<div class="pc-summary-row"><span class="pc-summary-label">${l}</span><span>${v}</span></div>`).join('');
+    rows.map(([l, v]) => `<div class="pc-summary-row"><span class="pc-summary-label">${esc(l)}</span><span class="pc-summary-value">${esc(v)}</span></div>`).join('');
 
-  // 이메일 문의처 (site settings에서 읽거나 빈 문자열)
   document.getElementById('pc-email').textContent = window._siteEmail || '관리자에게 문의해주세요';
-
   document.getElementById('pc-agree').checked = false;
   document.getElementById('pc-ok-btn').disabled = true;
+
   document.getElementById('pay-screen').style.display = 'none';
+  document.getElementById('pay-options').style.display = 'none';
+  document.getElementById('pay-questions').style.display = 'none';
   document.getElementById('pay-confirm').classList.add('on');
 }
 
@@ -305,10 +581,15 @@ async function onPayClick() {
   btn.disabled = true;
   btn.textContent = '결제창 여는 중…';
 
+  const unitPrice = selectedOption ? selectedOption.price : CONFIG.amount;
+  const effectiveAmount = unitPrice * selectedQty;
   const orderNumber = 'ord_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
   const userName = ctxUserFields?.name || ctxUserFields?.이름 || '고객';
 
-  // 서버 승인 엔드포인트 URL (id, projectId, userId를 쿼리로 전달)
+  sessionStorage.setItem('py_selectedOption',  JSON.stringify(selectedOption));
+  sessionStorage.setItem('py_questionAnswers', JSON.stringify(questionAnswers));
+  sessionStorage.setItem('py_selectedQty',     String(selectedQty));
+
   const confirmBase = new URL('/api/confirm-payup', location.origin);
   confirmBase.searchParams.set('id', CONFIG_ID);
   if (ctxProjectId) confirmBase.searchParams.set('projectId', ctxProjectId);
@@ -317,13 +598,12 @@ async function onPayClick() {
   const data = {
     merchantId:  MERCHANT_ID,
     itemName:    CONFIG.productName || CONFIG.title || '결제',
-    amount:      String(CONFIG.amount),
+    amount:      String(effectiveAmount),
     userName,
     orderNumber,
   };
   if (isMobile()) data.returnUrl = confirmBase.toString();
 
-  // PC: 인증 완료 시 payupPaymentSubmit 콜백이 호출됨 — 전역으로 노출
   window._payupConfirmUrl  = confirmBase.toString();
   window._payupOrderNumber = orderNumber;
 
@@ -331,16 +611,14 @@ async function onPayClick() {
     goPayupPay(data);
   } catch (e) {
     btn.disabled = false;
-    btn.textContent = '결제하기';
+    btn.textContent = '결제 진행하기';
     alert('결제 요청 실패: ' + (e?.message || e));
   }
 }
 
-// PC 인증 완료 콜백 — SDK가 호출 (함수명 변경 불가)
 function payupPaymentSubmit(payForm) {
   const form = document.getElementById(payForm) || document.getElementById('PayupPaymentStandardForm');
   if (!form) return;
-  // 서버로 configId / projectId / userId 전달용 hidden input 추가
   [['configId', CONFIG_ID], ['projectId', ctxProjectId], ['userId', ctxUserId]].forEach(([n, v]) => {
     const inp = document.createElement('input');
     inp.type = 'hidden'; inp.name = n; inp.value = v || '';
@@ -351,7 +629,6 @@ function payupPaymentSubmit(payForm) {
   form.submit();
 }
 
-// PC 결제창 닫기 콜백 — SDK가 호출 (함수명 변경 불가)
 function payupPaymentClose() {
   const btn = document.getElementById('pc-ok-btn');
   if (btn) {
@@ -363,32 +640,38 @@ function payupPaymentClose() {
 async function recordPayment(d) {
   try {
     await db.collection('cms_payment_records').doc(d.transactionId).set({
-      transactionId: d.transactionId,
-      orderName:     CONFIG.productName || CONFIG.title || '',
-      amount:        Number(d.amount),
-      cardName:      d.cardName     || '',
-      authNumber:    d.authNumber   || '',
-      authDatetime:  d.authDatetime || '',
-      configId:      CONFIG_ID,
-      configTitle:   CONFIG.title || '',
-      tier:          CONFIG.tier  || '',
-      projectId:     ctxProjectId,
-      userId:        ctxUserId,
-      userFields:    ctxUserFields || {},
-      pg:            'payup',
-      createdAt:     firebase.firestore.FieldValue.serverTimestamp(),
+      transactionId:   d.transactionId,
+      orderName:       CONFIG.productName || CONFIG.title || '',
+      amount:          Number(d.amount),
+      cardName:        d.cardName     || '',
+      authNumber:      d.authNumber   || '',
+      authDatetime:    d.authDatetime || '',
+      configId:        CONFIG_ID,
+      configTitle:     CONFIG.title || '',
+      tier:            CONFIG.tier  || '',
+      projectId:       ctxProjectId,
+      userId:          ctxUserId,
+      userFields:      ctxUserFields || {},
+      selectedOption:  selectedOption  || null,
+      questionAnswers: Object.keys(questionAnswers).length ? questionAnswers : null,
+      qty:             selectedQty,
+      pg:              'payup',
+      createdAt:       firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge: true });
   } catch (e) { console.error('record write failed:', e); }
 
   if (ctxUserId && ctxProjectId) {
     try {
+      const p = `paidConfigs.${CONFIG_ID}`;
       const update = {
-        [`paidConfigs.${CONFIG_ID}`]: {
-          paidAt:        firebase.firestore.FieldValue.serverTimestamp(),
-          amount:        Number(d.amount),
-          tier:          CONFIG.tier || '',
-          transactionId: d.transactionId,
-        },
+        [`${p}.paidAt`]:          firebase.firestore.FieldValue.serverTimestamp(),
+        [`${p}.amount`]:          Number(d.amount),
+        [`${p}.tier`]:            CONFIG.tier || '',
+        [`${p}.transactionId`]:   d.transactionId,
+        [`${p}.selectedOption`]:  selectedOption?.label || '',
+        [`${p}.questionAnswers`]: questionAnswers || {},
+        [`${p}.lastQty`]:         selectedQty,
+        [`${p}.totalQty`]:        firebase.firestore.FieldValue.increment(selectedQty),
       };
       if (CONFIG.tier) update.paidTiers = firebase.firestore.FieldValue.arrayUnion(CONFIG.tier);
       await db.collection('cms_users_' + ctxProjectId).doc(ctxUserId).update(update);
@@ -401,19 +684,25 @@ function showResult(kind, title, msg, receipt) {
   document.getElementById('status-msg').classList.remove('on');
   document.getElementById('app').style.display = 'block';
   document.getElementById('pay-screen').style.display = 'none';
+  document.getElementById('pay-options').style.display = 'none';
+  document.getElementById('pay-questions').style.display = 'none';
+  document.getElementById('pay-confirm').classList.remove('on');
+  document.getElementById('pay-history').classList.remove('on');
   document.getElementById('pay-result').classList.add('on');
   document.getElementById('r-icon').textContent  = kind === 'success' ? '✅' : kind === 'already' ? '✓' : '⚠️';
   document.getElementById('r-title').textContent = title;
-  document.getElementById('r-msg').innerHTML   = applyVars(msg);
+  document.getElementById('r-msg').innerHTML     = applyVars(msg);
+  const histBtn = document.getElementById('r-hist-btn');
+  if (histBtn) histBtn.style.display = ctxUserId && ctxProjectId ? 'block' : 'none';
   if (receipt) {
     const r = document.getElementById('r-receipt');
     const lines = [];
+    if (receipt.selectedOption) lines.push(`<div>선택 옵션: <b>${esc(receipt.selectedOption)}</b></div>`);
     if (receipt.orderName)  lines.push(`<div><b>${esc(receipt.orderName)}</b></div>`);
     if (receipt.amount != null) lines.push(`<div>금액: ${Number(receipt.amount).toLocaleString()}원</div>`);
     if (receipt.method)     lines.push(`<div>결제카드: ${esc(receipt.method)}</div>`);
     if (receipt.approvedAt) {
       const dt = String(receipt.approvedAt);
-      // YYYYMMDDHHMMSS → YYYY-MM-DD HH:MM
       const fmt = dt.length >= 12
         ? `${dt.slice(0,4)}-${dt.slice(4,6)}-${dt.slice(6,8)} ${dt.slice(8,10)}:${dt.slice(10,12)}`
         : dt;
@@ -422,6 +711,61 @@ function showResult(kind, title, msg, receipt) {
     r.innerHTML = lines.join('');
     r.style.display = 'block';
   }
+}
+
+function fireSmsWebhook(amount, productName, qty) {
+  if (!SMS_WEBHOOK_URL) return;
+  const phoneKey = SMS_PHONE_FIELD || '연락처';
+  const phone = ctxUserFields[phoneKey] || ctxUserFields['phone'] || ctxUserFields['전화번호'] || '';
+  fetch(SMS_WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      phone,
+      name:        ctxUserFields['이름'] || ctxUserFields['name'] || '고객',
+      amount:      Number(amount),
+      productName: productName,
+      qty:         qty,
+      projectId:   ctxProjectId,
+    }),
+  }).catch(e => console.warn('webhook:', e));
+}
+
+async function showHistory() {
+  document.getElementById('pay-result').classList.remove('on');
+  document.getElementById('pay-history').classList.add('on');
+  const listEl = document.getElementById('hist-list');
+  listEl.innerHTML = '<div class="hist-empty">불러오는 중…</div>';
+  try {
+    const snap = await db.collection('cms_payment_records')
+      .where('projectId', '==', ctxProjectId)
+      .where('userId', '==', ctxUserId)
+      .orderBy('createdAt', 'desc')
+      .limit(20)
+      .get();
+    if (snap.empty) {
+      listEl.innerHTML = '<div class="hist-empty">결제 내역이 없어요.</div>';
+      return;
+    }
+    listEl.innerHTML = snap.docs.map(doc => {
+      const r = doc.data();
+      const dt = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit' }) : '';
+      const optLine = r.selectedOption?.label ? `<div>옵션: ${esc(r.selectedOption.label)}</div>` : '';
+      const qtyLine = r.qty > 1 ? `<div>수량: ${r.qty}개</div>` : '';
+      return `<div class="hist-item">
+        <div class="hist-item-name">${esc(r.orderName || r.configTitle || '-')}</div>
+        <div class="hist-item-amount">${Number(r.amount).toLocaleString()}원</div>
+        <div class="hist-item-meta">${optLine}${qtyLine}<div>${esc(r.cardName || r.pg || '')}${dt ? ' · ' + dt : ''}</div></div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    listEl.innerHTML = `<div class="hist-empty">불러오기 실패: ${esc(e.message)}</div>`;
+  }
+}
+
+function hideHistory() {
+  document.getElementById('pay-history').classList.remove('on');
+  document.getElementById('pay-result').classList.add('on');
 }
 
 window.parent.postMessage({ type: 'lmp-ready' }, '*');

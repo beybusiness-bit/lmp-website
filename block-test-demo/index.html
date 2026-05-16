@@ -100,6 +100,20 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 #menu-footer{flex-shrink:0;display:none;padding:14px 28px 28px;border-top:1px solid rgba(0,0,0,.18);}
 #menu-logout{display:inline-block;font-size:13px;font-weight:600;color:rgba(0,0,0,.55);cursor:pointer;-webkit-tap-highlight-color:transparent;padding:6px 0;letter-spacing:-.2px;}
 #menu-logout:active{opacity:.55;}
+#menu-my-info{display:block;font-size:14px;font-weight:800;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:6px 0 12px;letter-spacing:-.2px;}
+#menu-my-info:active{opacity:.6;}
+#my-info-panel{position:absolute;top:0;bottom:0;left:0;right:0;background:#fff;z-index:85;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);}
+#my-info-panel.open{transform:translateX(0);}
+.mi-head{flex-shrink:0;display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid rgba(0,0,0,.12);}
+.mi-back{font-size:22px;cursor:pointer;padding:4px;color:#000;line-height:1;-webkit-tap-highlight-color:transparent;}
+.mi-title{font-size:16px;font-weight:800;letter-spacing:-.3px;}
+.mi-body{flex:1;overflow-y:auto;padding:4px 20px 32px;}
+.mi-pay-item{padding:14px 0;border-bottom:1px solid rgba(0,0,0,.1);}
+.mi-pay-item:last-child{border-bottom:none;}
+.mi-pay-name{font-size:14px;font-weight:700;margin-bottom:3px;}
+.mi-pay-amount{font-size:20px;font-weight:900;letter-spacing:-.3px;margin-bottom:4px;}
+.mi-pay-meta{font-size:11px;color:rgba(0,0,0,.45);line-height:1.6;}
+.mi-empty{text-align:center;padding:48px 0;font-size:13px;color:rgba(0,0,0,.4);font-weight:600;}
 .menu-dot{width:36px;height:36px;border-radius:50%;background:#000;color:var(--menu-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;text-align:center;line-height:1.3;}
 /* user greeting */
 #menu-greeting{display:none;padding:14px 20px 12px;border-bottom:1px solid rgba(0,0,0,.12);font-size:13px;font-weight:700;line-height:1.65;letter-spacing:-.2px;color:var(--menu-bg);background:#000;word-break:keep-all;}
@@ -258,13 +272,13 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 #screens-snap{height:100svh;scroll-snap-align:start;overflow:hidden;position:relative;flex-shrink:0;}
 #site-footer-snap{scroll-snap-align:start;background:#fff;}
 /* Site footer */
-#site-footer{padding:28px 20px 48px;}
-.footer-logo{max-height:36px;max-width:160px;object-fit:contain;display:block;margin-bottom:18px;}
-.footer-policy-row{display:flex;gap:8px;margin-bottom:16px;}
+#site-footer{padding:28px 20px 48px;text-align:center;}
+.footer-logo{max-height:36px;max-width:160px;object-fit:contain;display:block;margin-bottom:18px;margin-left:auto;margin-right:auto;}
+.footer-policy-row{display:flex;gap:8px;margin-bottom:16px;justify-content:center;}
 .footer-policy-btn{background:none;border:2px solid #000;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:-.2px;-webkit-tap-highlight-color:transparent;}
 .footer-policy-btn:active{background:#000;color:#fff;}
 .footer-biz{font-size:11px;color:rgba(0,0,0,.55);line-height:1.8;margin-bottom:14px;word-break:keep-all;}
-.footer-sns-row{display:flex;gap:14px;margin-bottom:14px;align-items:center;}
+.footer-sns-row{display:flex;gap:14px;margin-bottom:14px;align-items:center;justify-content:center;}
 .footer-sns-link{text-decoration:none;font-size:20px;opacity:.6;}
 .footer-sns-link:hover{opacity:1;}
 .footer-copy{font-size:11px;color:rgba(0,0,0,.35);font-weight:600;}
@@ -304,7 +318,17 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
     <div class="menu-header"><div class="menu-close" onclick="closeMenu()">✕</div></div>
     <div id="menu-greeting"></div>
     <div id="menu-list"></div>
-    <div id="menu-footer"><span id="menu-logout" onclick="logout()">로그아웃</span></div>
+    <div id="menu-footer">
+      <span id="menu-my-info" onclick="openMyInfo()">내 정보</span>
+      <span id="menu-logout" onclick="logout()">로그아웃</span>
+    </div>
+    <div id="my-info-panel">
+      <div class="mi-head">
+        <div class="mi-back" onclick="closeMyInfo()">←</div>
+        <div class="mi-title">내 정보</div>
+      </div>
+      <div class="mi-body" id="mi-body"></div>
+    </div>
   </div>
 
   <!-- SEPARATE layout main -->
@@ -1486,6 +1510,42 @@ function renderMenu(){
     footer.style.display=(AUTH_ENABLED&&!IS_ADMIN_PREVIEW&&loggedIn)?'block':'none';
   }
 }
+function openMyInfo(){
+  closeMenu();
+  document.getElementById('my-info-panel').classList.add('open');
+  loadMyPayments();
+}
+function closeMyInfo(){
+  document.getElementById('my-info-panel').classList.remove('open');
+}
+async function loadMyPayments(){
+  const body=document.getElementById('mi-body');
+  if(!body) return;
+  body.innerHTML='<div class="mi-empty">불러오는 중…</div>';
+  if(!USER_DOC_ID||!PROJECT_ID){ body.innerHTML='<div class="mi-empty">로그인이 필요해요.</div>'; return; }
+  try{
+    const snap=await db.collection('cms_payment_records')
+      .where('projectId','==',PROJECT_ID)
+      .where('userId','==',USER_DOC_ID)
+      .orderBy('createdAt','desc')
+      .limit(20)
+      .get();
+    if(snap.empty){ body.innerHTML='<div class="mi-empty">결제 내역이 없어요.</div>'; return; }
+    body.innerHTML=snap.docs.map(doc=>{
+      const r=doc.data();
+      const dt=r.createdAt?.toDate?r.createdAt.toDate().toLocaleDateString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit'}):'';
+      const opt=r.selectedOption?.label?`<div>옵션: ${esc(r.selectedOption.label)}</div>`:'';
+      const qty=(r.qty||1)>1?`<div>수량: ${r.qty}개</div>`:'';
+      return `<div class="mi-pay-item">
+        <div class="mi-pay-name">${esc(r.orderName||r.configTitle||'-')}</div>
+        <div class="mi-pay-amount">${Number(r.amount).toLocaleString()}원</div>
+        <div class="mi-pay-meta">${opt}${qty}<div>${esc(r.cardName||'')}${dt?' · '+dt:''}</div></div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    body.innerHTML='<div class="mi-empty">불러오기 실패</div>';
+  }
+}
 function logout(){
   if(!confirm('로그아웃 하시겠어요?')) return;
   _stopSessionHeartbeat();
@@ -1590,6 +1650,12 @@ function _isBlockLocked(b){
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
   return saved.project!==PROJECT_ID;
 }
+function _isTierLocked(b){
+  if(!b.requiredTier || IS_ADMIN_PREVIEW) return false;
+  const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  const tiers=Array.isArray(saved.paidTiers)?saved.paidTiers:[];
+  return !tiers.includes(b.requiredTier);
+}
 function blockHtml(b){
   const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
   const bgImgS=_blkBgImgCss(b);
@@ -1611,6 +1677,16 @@ function blockHtml(b){
         <div style="font-size:26px;margin-bottom:6px;">🔒</div>
         <div style="font-size:13px;font-weight:800;margin-bottom:3px;">로그인 후 볼 수 있어요</div>
         <div style="font-size:11px;opacity:.55;line-height:1.5;">탭해서 로그인하기</div>
+      </div>
+    </div>`;
+  }
+  // 결제 게이트 — requiredTier가 있고 사용자가 해당 tier를 구매하지 않은 경우
+  if(_isTierLocked(b)){
+    return `<div style="${mS}${bgS}min-height:120px;display:flex;align-items:center;justify-content:center;border:1.5px dashed rgba(0,0,0,.2);background:rgba(0,0,0,.03);">
+      <div style="text-align:center;padding:20px 16px;">
+        <div style="font-size:26px;margin-bottom:6px;">🔒</div>
+        <div style="font-size:13px;font-weight:800;margin-bottom:3px;">유료 콘텐츠</div>
+        <div style="font-size:11px;opacity:.55;line-height:1.5;">${b.requiredTier} 구매 후 이용할 수 있어요</div>
       </div>
     </div>`;
   }
@@ -2251,7 +2327,8 @@ function renderFooter() {
   const hint = document.getElementById('footer-hint');
   if (!el) return;
   const s = SITE_CONFIG;
-  const hasContent = s.footerBizName || s.footerLogoUrl || s.footerInstagram;
+  const snsList = s.snsLinks?.length ? s.snsLinks : (s.footerInstagram ? [{type:'instagram', url:s.footerInstagram}] : []);
+  const hasContent = s.footerBizName || s.footerLogoUrl || snsList.length;
   if (!hasContent) { el.innerHTML = ''; if (hint) hint.style.display = 'none'; return; }
   if (hint) hint.style.display = 'block';
   let html = '';
@@ -2272,8 +2349,16 @@ function renderFooter() {
   if (s.footerEmail) bizParts.push(`이메일: ${esc(s.footerEmail)}`);
   if (s.footerPhone) bizParts.push(`연락처: ${esc(s.footerPhone)}`);
   if (bizParts.length) html += `<div class="footer-biz">${bizParts.join('<br>')}</div>`;
-  if (s.footerInstagram) {
-    html += `<div class="footer-sns-row"><a class="footer-sns-link" href="${esc(s.footerInstagram)}" target="_blank" rel="noopener">📷</a></div>`;
+  if (snsList.length) {
+    const icons = snsList.map(item => {
+      const iconSrc = item.type === 'custom'
+        ? esc(item.iconUrl || '')
+        : `https://cdn.simpleicons.org/${item.type}/000000`;
+      return iconSrc
+        ? `<a class="footer-sns-link" href="${esc(item.url)}" target="_blank" rel="noopener"><img src="${iconSrc}" width="22" height="22" alt="${esc(item.type)}" style="opacity:.65;display:block;"></a>`
+        : '';
+    }).filter(Boolean).join('');
+    if (icons) html += `<div class="footer-sns-row">${icons}</div>`;
   }
   const yr = s.footerCopyrightYear || new Date().getFullYear();
   const brand = s.footerCopyright || 'lazymaxpotential';
