@@ -782,8 +782,8 @@ match /cms_payment_records/{doc} { allow read: if true; }
 특별히 예정된 큰 기능은 없음. 사용 중 발견되는 버그·피드백 수정 위주.
 
 **미완료 항목:**
-- 재고 잔량 표시: `stockRemaining ?? stockTotal` fallback 적용 완료 — 실제 테스트 재확인 필요
-- **PayUp 결제**: 오류코드 8002 = merchantId 문제. admin → 결제 설정 → 페이업 가맹점 ID를 `standard_test`(테스트) 또는 실제 가맹점 ID로 수정 필요
+- **홈화면 임베드 블록 "연결을 거부했습니다" 오류**: 홈 블록에서 임베드 타입으로 `https://lazymaxpotential.kr/tools/payment/?id=xxx` 같은 절대 URL을 넣으면 preview 도메인(`ects.vercel.app`)에서 cross-origin iframe 차단됨. 수정 방법: 임베드 URL이 `lazymaxpotential.kr/tools/` 패턴이면 상대 경로(`/tools/...`)로 자동 변환 OR `vercel.json`에서 X-Frame-Options 헤더 확인
+- **결제 테스트 재확인 필요**: 이번 세션에서 PayUp 결제 흐름을 fetch/JSON 방식으로 개선했음 — 실제 환경(운영 merchantId)에서 재테스트 필요
 
 **기타:**
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
@@ -801,8 +801,11 @@ match /cms_payment_records/{doc} { allow read: if true; }
 - **결제 내역 Firestore 인덱스 오류 수정** ✅: orderBy 제거 → 클라이언트 정렬 (tools/payment/index.html)
 - **결제 실패 UX 개선** ✅: 실패 화면에 "↩ 처음으로 돌아가기" 버튼 추가 (tools/payment/index.html)
 - **결제 게이트 다중 tier 지원** ✅: `requiredTier` 쉼표 구분 파싱 (4파일 동기화), gmbf-03 `_isTierLocked` 누락 추가
-- **홈화면 상단 여백 축소** ✅: `.screen-body` padding-top 24px→8px (4파일 동기화)
-- **블록 티어 잠금 '대체 블록' 기능** ✅: admin 3번째 옵션 + 미니RTE 에디터 + 배경색 + 자동완성 datalist, 플레이어 replace 모드 렌더링 (4파일 동기화)
+- **홈화면 상단 여백 축소** ✅: `.screen-body` padding-top 24px→12px, `#merged-stage-wrap` padding-top 20px→12px (4파일 동기화)
+- **블록 티어 잠금 '대체 블록' 기능** ✅: admin 4탭 미니 블록 에디터(텍스트/이미지/혼합/임베드) + `_repBlockHtml()` 헬퍼 함수 (4파일 동기화)
+- **비로그인 블록 체크 허용** ✅: `toggleBlockCheck()` 로그인 체크 제거 (4파일 동기화)
+- **도구 링크 복사 버튼 전체 적용** ✅: `copyToolUrl()` 함수 9개 도구 지원, 결제/방명록/계산기/꾸미기/유튜브 목록에 🔗 버튼 추가
+- **PayUp 결제 흐름 fetch/JSON 방식으로 개선** ✅: `payupPaymentSubmit()` form 필드 추출 → `POST /api/confirm-payup` (JSON) → JSON 응답으로 처리. `api/confirm-payup.js`도 isJsonMode 듀얼 응답 추가
 
 #### Firestore 스키마 추가 (누적)
 ```
@@ -820,7 +823,7 @@ cms_projects/{projectId}
 
 stage_content/{stageId}/blocks[*]
   tierLockMode: 'cover'|'hide'|'replace'  ← requiredTier 있을 때만 유효
-  tierReplaceBlock: {textContent: string, bgColor: string}  ← replace 모드일 때
+  tierReplaceBlock: {type, textContent, imageUrl, imageFit, imageHeight, imagePosition, mixedLayout, imageOrder, embedUrl, embedHeight, bgColor}  ← replace 모드, 4가지 블록 타입 지원
 ```
 
 ---
