@@ -3,8 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>준비 포털</title>
-<!-- OG_META -->
+<title>제3회 GMBF에 놀러오세요</title>
+<meta property="og:title" content="제3회 GMBF에 놀러오세요">
+<meta property="og:description" content="게을러서 못 열 뻔 했지만 올해도 어찌저찌 열게 된">
+<meta property="og:image" content="">
+<meta property="og:url" content="https://lazymaxpotential.kr/gmbf-03/">
+<meta property="og:type" content="website">
+<meta name="description" content="게을러서 못 열 뻔 했지만 올해도 어찌저찌 열게 된">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 html{height:100%;}
@@ -115,12 +120,11 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .mi-act-item{padding:14px 0;border-bottom:1px solid rgba(0,0,0,.1);cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .mi-act-item:last-child{border-bottom:none;}
 .mi-act-item:active{opacity:.6;}
-.mi-act-type{font-size:14px;font-weight:700;color:#000;letter-spacing:-.2px;margin-bottom:4px;}
-.mi-act-preview{font-size:13px;color:rgba(0,0,0,.6);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.mi-act-date{font-size:12px;color:rgba(0,0,0,.4);}
+.mi-act-type{font-size:14px;font-weight:700;color:#000;letter-spacing:-.2px;margin-bottom:3px;}
 .mi-act-sub{font-size:12px;color:rgba(0,0,0,.45);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .mi-act-status{font-size:12px;color:rgba(0,140,60,.9);font-weight:700;margin-bottom:3px;}
-.menu-dot{width:36px;height:36px;border-radius:50%;background:#000;color:var(--menu-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;text-align:center;line-height:1.3;}
+.mi-act-preview{font-size:13px;color:rgba(0,0,0,.6);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mi-act-date{font-size:12px;color:rgba(0,0,0,.4);}
 /* user greeting */
 #menu-greeting{display:none;padding:14px 20px 12px;border-bottom:1px solid rgba(0,0,0,.12);font-size:13px;font-weight:700;line-height:1.65;letter-spacing:-.2px;color:var(--menu-bg);background:#000;word-break:keep-all;}
 #prep-greeting{display:none;padding:10px 20px 20px;font-size:16px;font-weight:700;line-height:1.65;letter-spacing:-.2px;color:#000;word-break:keep-all;text-align:center;}
@@ -278,13 +282,13 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 #screens-snap{height:100svh;scroll-snap-align:start;overflow:hidden;position:relative;flex-shrink:0;}
 #site-footer-snap{scroll-snap-align:start;background:#fff;}
 /* Site footer */
-#site-footer{padding:28px 20px 48px;}
-.footer-logo{max-height:36px;max-width:160px;object-fit:contain;display:block;margin-bottom:18px;}
+#site-footer{padding:28px 20px 48px;text-align:center;}
+.footer-logo{max-height:36px;max-width:160px;object-fit:contain;display:block;margin-bottom:18px;margin-left:auto;margin-right:auto;}
 .footer-policy-row{display:flex;gap:16px;margin-bottom:10px;justify-content:center;}
 .footer-policy-link{font-size:11px;color:rgba(0,0,0,.45);text-decoration:underline;cursor:pointer;font-weight:500;letter-spacing:-.1px;-webkit-tap-highlight-color:transparent;}
 .footer-policy-link:active{opacity:.6;}
 .footer-biz{font-size:11px;color:rgba(0,0,0,.55);line-height:1.8;margin-bottom:14px;word-break:keep-all;}
-.footer-sns-row{display:flex;gap:14px;margin-bottom:14px;align-items:center;}
+.footer-sns-row{display:flex;gap:14px;margin-bottom:14px;align-items:center;justify-content:center;}
 .footer-sns-link{text-decoration:none;font-size:20px;opacity:.6;}
 .footer-sns-link:hover{opacity:1;}
 .footer-copy{font-size:11px;color:rgba(0,0,0,.35);font-weight:600;}
@@ -1502,6 +1506,7 @@ async function confirmAuth(){
   try{
     const keyField=AUTH_FIELDS.find(f=>f.key===AUTH_KEY_FIELD);
     let snap=await db.collection(AUTH_COLLECTION).where(AUTH_KEY_FIELD,'==',val).limit(1).get();
+    // 기존 데이터가 숫자로 저장된 경우 fallback
     if(snap.empty && keyField?.type==='number' && val!=='' && !isNaN(Number(val))){
       snap=await db.collection(AUTH_COLLECTION).where(AUTH_KEY_FIELD,'==',parseFloat(val)).limit(1).get();
     }
@@ -1812,7 +1817,7 @@ function closeMenu(){ document.getElementById('side-menu').classList.remove('ope
 /* ── Stage navigation ── */
 function goToStage(i){
   const stage=STAGES[i];
-  if(!stage) return;
+  if(!stage) return Promise.resolve();
   curStageIdx=i; curStageId=stage.id;
   if(LAYOUT_TYPE!=='merged') document.getElementById('topbar-title').textContent=stage.title;
   closeMenu();
@@ -1882,6 +1887,13 @@ function _isBlockLocked(b){
   if(USER_DOC_ID) return false;
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
   return saved.project!==PROJECT_ID;
+}
+function _isTierLocked(b){
+  if(!b.requiredTier || IS_ADMIN_PREVIEW) return false;
+  const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  const tiers=Array.isArray(saved.paidTiers)?saved.paidTiers:[];
+  const required=b.requiredTier.split(',').map(t=>t.trim()).filter(Boolean);
+  return !required.some(r=>tiers.includes(r));
 }
 function blockHtml(b){
   const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
@@ -2126,13 +2138,6 @@ function closeToolLinkModal(){
   modal.classList.remove('on');
   if(ov) ov.classList.remove('on');
   setTimeout(()=>{ iframe.src='about:blank'; },400);
-}
-function _isTierLocked(b){
-  if(!b.requiredTier || IS_ADMIN_PREVIEW) return false;
-  const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
-  const tiers=Array.isArray(saved.paidTiers)?saved.paidTiers:[];
-  const required=b.requiredTier.split(',').map(t=>t.trim()).filter(Boolean);
-  return !required.some(r=>tiers.includes(r));
 }
 function renderGuideScroll(blocks){
   const visible=blocks.filter(b=>!(_isTierLocked(b)&&b.tierLockMode==='hide'));
@@ -2575,7 +2580,8 @@ function renderFooter() {
   const hint = document.getElementById('footer-hint');
   if (!el) return;
   const s = SITE_CONFIG;
-  const hasContent = s.footerBizName || s.footerLogoUrl || s.footerInstagram;
+  const snsList = s.snsLinks?.length ? s.snsLinks : (s.footerInstagram ? [{type:'instagram', url:s.footerInstagram}] : []);
+  const hasContent = s.footerBizName || s.footerLogoUrl || snsList.length;
   if (!hasContent) { el.innerHTML = ''; if (hint) hint.style.display = 'none'; return; }
   if (hint) hint.style.display = 'block';
   let html = '';
@@ -2589,8 +2595,16 @@ function renderFooter() {
   if (s.footerEmail) bizParts.push(`이메일: ${esc(s.footerEmail)}`);
   if (s.footerPhone) bizParts.push(`연락처: ${esc(s.footerPhone)}`);
   if (bizParts.length) html += `<div class="footer-biz">${bizParts.join('<br>')}</div>`;
-  if (s.footerInstagram) {
-    html += `<div class="footer-sns-row"><a class="footer-sns-link" href="${esc(s.footerInstagram)}" target="_blank" rel="noopener">📷</a></div>`;
+  if (snsList.length) {
+    const icons = snsList.map(item => {
+      const iconSrc = item.type === 'custom'
+        ? esc(item.iconUrl || '')
+        : `https://cdn.simpleicons.org/${item.type}/000000`;
+      return iconSrc
+        ? `<a class="footer-sns-link" href="${esc(item.url)}" target="_blank" rel="noopener"><img src="${iconSrc}" width="22" height="22" alt="${esc(item.type)}" style="opacity:.65;display:block;"></a>`
+        : '';
+    }).filter(Boolean).join('');
+    if (icons) html += `<div class="footer-sns-row">${icons}</div>`;
   }
   const hasPolicies = s.privacyHtml || s.termsHtml;
   if (hasPolicies) {
