@@ -40,13 +40,13 @@ export default async function handler(req, res) {
     res.redirect(`${toolBase}&result=fail&message=${encodeURIComponent(msg)}&projectId=${encodeURIComponent(projectId)}&userId=${encodeURIComponent(userId)}`);
 
   if (!transactionId || !orderNumber || !amount) {
-    const dbg = JSON.stringify({
+    console.error('[confirm-payup] missing params', {
       qKeys: Object.keys(query),
       bKeys: Object.keys(body),
       method: req.method,
       ct: (req.headers['content-type'] || '').split(';')[0],
     });
-    return fail('결제 정보 누락: ' + dbg);
+    return fail('결제가 완료되지 않았어요. 결제창에서 취소하셨거나 오류가 발생했어요.');
   }
 
   try {
