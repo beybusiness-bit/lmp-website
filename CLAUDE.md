@@ -773,7 +773,7 @@ match /cms_payment_records/{doc} { allow read: if true; }
 
 #### 다음 세션 시작점 🔲
 
-- 사용자가 직접 지정할 예정
+- 결제 테스트 피드백 반영 (테스트 완료 후 사용자가 지정)
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 
 #### 이번 세션 완료 항목
@@ -781,7 +781,13 @@ match /cms_payment_records/{doc} { allow read: if true; }
 - SNS 다중 입력 (Simple Icons CDN 아이콘 + 커스텀 업로드)
 - 개인정보처리방침·이용약관 한국어 템플릿 "기본 내용 채우기"
 - 결제 전 최종 확인 화면 + 청약철회 배제 동의 체크박스
-- 플레이어 푸터 중앙 정렬 (3파일 동기화)
+- 플레이어 푸터 가운데 정렬 + 정책 링크 → 작은 밑줄 텍스트로 변경 (4파일 동기화)
+- 정책 모달 → 앱 내 팝업 모달로 변경 (4파일 동기화)
+- 내 정보 패널 CSS transform 중첩 버그 수정 (`#my-info-panel`을 `#side-menu` 밖으로 이동)
+- admin 결제 게이트 입력란 → 블록 에디터 맨 아래로 이동
+- 셀프 등록 모달 개인정보 동의 체크박스 추가 (4파일 동기화)
+- Stop hook 제거 (`/root/.claude/settings.json`)
+- CLAUDE.md 기생성 프로젝트 탐지 → git ls-files 자동 탐지로 변경
 - Make webhook (관리자 Gmail 알림용) — 코드 준비, 실제 시나리오 설정은 사용자가
 - 사이드바 "내 정보" 패널 — 결제 내역 조회 (로그인 사용자만)
 - 결제 게이트 (`requiredTier`) — 블록별 결제 상품 tier 잠금/해제
