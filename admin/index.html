@@ -2320,7 +2320,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       </div>
       <div style="margin-top:10px;">
         <div class="ed-lbl" style="font-size:11px;font-weight:700;margin-bottom:4px;">💳 결제 게이트 <span style="font-weight:400;opacity:.6;">(결제 상품의 tier 이름 입력 → 해당 tier 구매자만 볼 수 있음)</span></div>
-        <input class="fi-sm" id="blk-required-tier" placeholder="tier 이름 (예: vip, premium)" oninput="scheduleBmPreview()" style="margin-bottom:0;width:100%;">
+        <input class="fi-sm" id="blk-required-tier" placeholder="tier 이름 (예: vip, premium)" oninput="_onTierInput();scheduleBmPreview()" style="margin-bottom:4px;width:100%;">
+        <div id="blk-tier-mode-section" style="display:none;margin-top:2px;">
+          <div style="font-size:11px;color:rgba(0,0,0,.55);margin-bottom:5px;">tier 미보유 사용자에게</div>
+          <div style="display:flex;gap:10px;">
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer;">
+              <input type="radio" name="blk-tier-mode" value="cover" checked> 🔒 잠금 화면 표시
+            </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer;">
+              <input type="radio" name="blk-tier-mode" value="hide"> 👁 블록 완전 숨기기
+            </label>
+          </div>
+        </div>
       </div>
     </div>
     </div><!-- /ed-inner -->
@@ -6189,6 +6200,8 @@ function openBlockModal(idx,insertAt){
   setCheckPos(b.checkPosition||'bottom-center');
   const raSwEl=document.getElementById('blk-require-auth-sw'); if(raSwEl) raSwEl.classList.toggle('on',!!b.requireAuth);
   const rtEl=document.getElementById('blk-required-tier'); if(rtEl) rtEl.value=b.requiredTier||'';
+  _onTierInput();
+  const tlm=b.tierLockMode||'cover'; document.querySelectorAll('input[name="blk-tier-mode"]').forEach(r=>{r.checked=(r.value===tlm);});
   const bgH=document.getElementById('blk-bg-hex');  if(bgH) bgH.value=(curBlkBgColor||'').toUpperCase();
   const _sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
   // 하위호환: marginTop 없으면 marginV 기본값으로
@@ -6214,6 +6227,11 @@ let bmPreviewTimer=null;
 function scheduleBmPreview(){
   clearTimeout(bmPreviewTimer);
   bmPreviewTimer=setTimeout(updateBmPreview,200);
+}
+function _onTierInput(){
+  const val=(document.getElementById('blk-required-tier')?.value||'').trim();
+  const sec=document.getElementById('blk-tier-mode-section');
+  if(sec) sec.style.display=val?'block':'none';
 }
 function _buildCurrentBlock(){
   const b={type:curBlkType,bgColor:curBlkBgColor||''};
@@ -6360,7 +6378,11 @@ function saveBlock(){
   b.requireAuth=!!document.getElementById('blk-require-auth-sw')?.classList.contains('on');
   if(!b.requireAuth) delete b.requireAuth;
   b.requiredTier=(document.getElementById('blk-required-tier')?.value||'').trim();
-  if(!b.requiredTier) delete b.requiredTier;
+  if(b.requiredTier){
+    b.tierLockMode=document.querySelector('input[name="blk-tier-mode"]:checked')?.value||'cover';
+  } else {
+    delete b.requiredTier; delete b.tierLockMode;
+  }
   if(_hbMode){
     const _targetId=_hbEditId||existingId;
     b.id=_targetId;

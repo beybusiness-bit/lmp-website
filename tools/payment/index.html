@@ -441,7 +441,8 @@ async function renderPayScreen() {
 }
 
 function isOptSoldOut(o) {
-  return CONFIG.stockEnabled && o.stockRemaining != null && o.stockRemaining <= 0;
+  const rem = o.stockRemaining ?? o.stockTotal;
+  return CONFIG.stockEnabled && rem != null && rem <= 0;
 }
 
 function renderInlineOptions(opts) {
@@ -455,10 +456,11 @@ function renderInlineOptions(opts) {
     const imgHtml = o.imageUrl ? `<img class="opt-item-img" src="${esc(o.imageUrl)}">` : '';
     const isSel = selectedOption?.label === o.label;
     const soldOut = isOptSoldOut(o);
-    const stockLabel = CONFIG.stockEnabled && !soldOut && o.stockRemaining != null
+    const optRemaining = o.stockRemaining ?? o.stockTotal;
+    const stockLabel = CONFIG.stockEnabled && !soldOut && optRemaining != null
       && CONFIG.stockDisplayEnabled
-      && (CONFIG.stockDisplayThreshold == null || o.stockRemaining <= CONFIG.stockDisplayThreshold)
-      ? `<span style="font-size:10px;color:rgba(200,60,0,.85);margin-left:6px;font-weight:700;">⚡ ${o.stockRemaining}개 남음</span>` : '';
+      && (CONFIG.stockDisplayThreshold == null || optRemaining <= CONFIG.stockDisplayThreshold)
+      ? `<span style="font-size:10px;color:rgba(200,60,0,.85);margin-left:6px;font-weight:700;">⚡ ${optRemaining}개 남음</span>` : '';
     const soldOutLabel = soldOut ? `<span style="font-size:11px;color:rgba(0,0,0,.35);margin-left:6px;">품절</span>` : '';
     const dimStyle = soldOut ? 'opacity:.4;pointer-events:none;' : '';
     return `<div class="opt-item${isSel?' sel':''}" data-idx="${i}" onclick="${soldOut?'':('selectInlineOption('+i+')')}" style="margin-bottom:10px;${dimStyle}">
@@ -474,7 +476,7 @@ function renderInlineOptions(opts) {
 function selectInlineOption(idx) {
   const o = CONFIG.options[idx];
   if (isOptSoldOut(o)) return;
-  selectedOption = { label: o.label, price: o.price != null ? o.price : CONFIG.amount, tier: o.tier || '', stockRemaining: o.stockRemaining };
+  selectedOption = { label: o.label, price: o.price != null ? o.price : CONFIG.amount, tier: o.tier || '', stockRemaining: o.stockRemaining ?? o.stockTotal };
   document.querySelectorAll('#inline-opts-container .opt-item').forEach((el, i) => {
     el.classList.toggle('sel', i === idx);
     const mark = el.querySelector('.opt-sel-mark');
@@ -520,7 +522,7 @@ function updateStockDisplay() {
   if (opts.length) {
     remaining = selectedOption?.stockRemaining ?? null;
   } else {
-    remaining = CONFIG.stockRemaining ?? null;
+    remaining = CONFIG.stockRemaining ?? CONFIG.stockTotal ?? null;
   }
   if (remaining === null) {
     document.getElementById('stock-remaining-info').style.display = 'none';
@@ -795,8 +797,9 @@ async function recordPayment(d) {
           const snap = await tx.get(configRef);
           const options = [...(snap.data()?.options || [])];
           const idx = options.findIndex(o => o.label === selectedOption.label);
-          if (idx >= 0 && options[idx].stockRemaining != null) {
-            options[idx].stockRemaining = Math.max(0, options[idx].stockRemaining - selectedQty);
+          const optRem = options[idx]?.stockRemaining ?? options[idx]?.stockTotal;
+          if (idx >= 0 && optRem != null) {
+            options[idx].stockRemaining = Math.max(0, optRem - selectedQty);
             tx.update(configRef, { options });
           }
         });
@@ -804,7 +807,7 @@ async function recordPayment(d) {
         // 글로벌 재고 차감
         await db.runTransaction(async tx => {
           const snap = await tx.get(configRef);
-          const rem = snap.data()?.stockRemaining ?? 0;
+          const rem = snap.data()?.stockRemaining ?? snap.data()?.stockTotal ?? 0;
           tx.update(configRef, { stockRemaining: Math.max(0, rem - selectedQty) });
         });
       }

@@ -2106,7 +2106,8 @@ function closeToolLinkModal(){
   setTimeout(()=>{ iframe.src='about:blank'; },400);
 }
 function renderGuideScroll(blocks){
-  document.getElementById('guide-scroll-blocks').innerHTML=blocks.map(b=>{
+  const visible=blocks.filter(b=>!(_isTierLocked(b)&&b.tierLockMode==='hide'));
+  document.getElementById('guide-scroll-blocks').innerHTML=visible.map(b=>{
     const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
     const mS=(b.marginV||b.marginH)?`margin:${b.marginV||0}px ${b.marginH||0}px;`:'';
     const bStripped={...b,bgColor:'',marginV:0,marginH:0};
@@ -2117,10 +2118,11 @@ function renderGuideScroll(blocks){
   _sendContextToEmbeds();
 }
 function renderGuideSlide(blocks){
-  gSlideIdx=0; gSlideTotal=blocks.length;
+  const visible=blocks.filter(b=>!(_isTierLocked(b)&&b.tierLockMode==='hide'));
+  gSlideIdx=0; gSlideTotal=visible.length;
   const track=document.getElementById('guide-slide-track');
-  const N=blocks.length||1;
-  track.innerHTML=blocks.map(b=>{
+  const N=visible.length||1;
+  track.innerHTML=visible.map(b=>{
     const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
     const mS=(b.marginV||b.marginH)?`padding:${b.marginV||0}px ${b.marginH||0}px;`:'';
     const bStripped={...b,bgColor:'',marginV:0,marginH:0};
