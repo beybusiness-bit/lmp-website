@@ -2091,7 +2091,8 @@ function closeToolLinkModal(){
   setTimeout(()=>{ iframe.src='about:blank'; },400);
 }
 function renderGuideScroll(blocks){
-  document.getElementById('guide-scroll-blocks').innerHTML=blocks.map(b=>{
+  const visible=blocks.filter(b=>!(_isTierLocked(b)&&b.tierLockMode==='hide'));
+  document.getElementById('guide-scroll-blocks').innerHTML=visible.map(b=>{
     const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
     const mS=(b.marginV||b.marginH)?`margin:${b.marginV||0}px ${b.marginH||0}px;`:'';
     const bStripped={...b,bgColor:'',marginV:0,marginH:0};
