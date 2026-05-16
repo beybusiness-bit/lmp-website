@@ -100,6 +100,18 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 #menu-footer{flex-shrink:0;display:none;padding:14px 28px 28px;border-top:1px solid rgba(0,0,0,.18);}
 #menu-logout{display:inline-block;font-size:13px;font-weight:600;color:rgba(0,0,0,.55);cursor:pointer;-webkit-tap-highlight-color:transparent;padding:6px 0;letter-spacing:-.2px;}
 #menu-logout:active{opacity:.55;}
+#menu-my-info{display:block;font-size:14px;font-weight:800;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:6px 0 12px;letter-spacing:-.2px;}
+#menu-my-info:active{opacity:.6;}
+#my-info-panel{position:absolute;top:0;bottom:0;left:0;right:0;background:#fff;z-index:85;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);}
+#my-info-panel.open{transform:translateX(0);}
+.mi-head{display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid rgba(0,0,0,.1);flex-shrink:0;}
+.mi-back{font-size:22px;font-weight:900;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:4px 8px 4px 0;color:#000;}
+.mi-title{font-size:16px;font-weight:800;letter-spacing:-.3px;}
+.mi-body{flex:1;overflow-y:auto;padding:4px 20px 32px;}
+.mi-empty{padding:40px 0;text-align:center;font-size:14px;color:rgba(0,0,0,.4);}
+.mi-record{border:1px solid rgba(0,0,0,.12);border-radius:8px;padding:14px 16px;margin-bottom:12px;}
+.mi-record-name{font-size:14px;font-weight:800;margin-bottom:4px;}
+.mi-record-meta{font-size:12px;color:rgba(0,0,0,.5);line-height:1.6;}
 .menu-dot{width:36px;height:36px;border-radius:50%;background:#000;color:var(--menu-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;text-align:center;line-height:1.3;}
 /* user greeting */
 #menu-greeting{display:none;padding:14px 20px 12px;border-bottom:1px solid rgba(0,0,0,.12);font-size:13px;font-weight:700;line-height:1.65;letter-spacing:-.2px;color:var(--menu-bg);background:#000;word-break:keep-all;}
@@ -305,7 +317,19 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
     <div class="menu-header"><div class="menu-close" onclick="closeMenu()">✕</div></div>
     <div id="menu-greeting"></div>
     <div id="menu-list"></div>
-    <div id="menu-footer"><span id="menu-logout" onclick="logout()">로그아웃</span></div>
+    <div id="menu-footer">
+      <span id="menu-my-info" onclick="openMyInfo()">내 정보</span>
+      <span id="menu-logout" onclick="logout()">로그아웃</span>
+    </div>
+  </div>
+
+  <!-- 내 정보 패널 (side-menu 밖, #app 직하위) -->
+  <div id="my-info-panel">
+    <div class="mi-head">
+      <div class="mi-back" onclick="closeMyInfo()">←</div>
+      <div class="mi-title">내 정보</div>
+    </div>
+    <div class="mi-body" id="mi-body"></div>
   </div>
 
   <!-- SEPARATE layout main -->
@@ -722,7 +746,7 @@ function applySettings(d){
   /* 등록 CTA 별도 표시 */
   const regCtaBtn=document.getElementById('reg-cta-btn');
   if(regCtaBtn){
-    const showReg=AUTH_ENABLED&&SELF_REG_ENABLED&&SELF_REG_CTA_SEPARATE;
+    const showReg=SELF_REG_ENABLED&&SELF_REG_CTA_SEPARATE;
     regCtaBtn.style.display=showReg?'flex':'none';
     if(showReg){
       const regIcon=document.getElementById('reg-cta-icon');
@@ -1333,6 +1357,7 @@ async function submitRegistration(){
     document.getElementById('reg-box').innerHTML=`<div style="text-align:center;padding:24px 0;"><div style="font-size:28px;margin-bottom:12px;">✅</div><div style="font-size:16px;font-weight:900;margin-bottom:8px;white-space:pre-wrap;">${_regMsg}</div><div style="font-size:13px;opacity:.7;">잠시 후 입장합니다…</div></div>`;
     setTimeout(()=>{
       closeModal('reg-modal');
+      _sendContextToEmbeds();
       if(_pendingAuthAction){
         const fn=_pendingAuthAction; _pendingAuthAction=null; _pendingAuthReason='';
         renderMenu(); refreshStageProgress();
@@ -1430,6 +1455,7 @@ async function confirmAuth(){
     loadUserProgress(u);
     applyGreeting(u);
     closeModal('auth-modal');
+    _sendContextToEmbeds();
     // 보류된 동작이 있으면 실행 (필요 시 로그인 모드)
     if(_pendingAuthAction){
       const fn=_pendingAuthAction; _pendingAuthAction=null; _pendingAuthReason='';
@@ -1500,8 +1526,37 @@ function renderMenu(){
   const footer=document.getElementById('menu-footer');
   if(footer){
     const loggedIn=!!USER_DOC_ID||(JSON.parse(sessionStorage.getItem('userSession')||'{}').project===PROJECT_ID);
-    footer.style.display=(AUTH_ENABLED&&!IS_ADMIN_PREVIEW&&loggedIn)?'block':'none';
+    footer.style.display=((AUTH_ENABLED||SELF_REG_ENABLED)&&!IS_ADMIN_PREVIEW&&loggedIn)?'block':'none';
   }
+}
+function openMyInfo(){
+  closeMenu();
+  document.getElementById('my-info-panel').classList.add('open');
+  loadMyPayments();
+}
+function closeMyInfo(){
+  document.getElementById('my-info-panel').classList.remove('open');
+}
+async function loadMyPayments(){
+  const body=document.getElementById('mi-body');
+  if(!body) return;
+  body.innerHTML='<div class="mi-empty">불러오는 중…</div>';
+  if(!USER_DOC_ID||!PROJECT_ID){ body.innerHTML='<div class="mi-empty">로그인이 필요해요.</div>'; return; }
+  try{
+    const snap=await db.collection('cms_payment_records')
+      .where('projectId','==',PROJECT_ID)
+      .where('userId','==',USER_DOC_ID)
+      .orderBy('createdAt','desc')
+      .get();
+    if(snap.empty){ body.innerHTML='<div class="mi-empty">결제 내역이 없어요.</div>'; return; }
+    body.innerHTML=snap.docs.map(d=>{
+      const r=d.data();
+      const amt=r.amount!=null?Number(r.amount).toLocaleString()+'원':'';
+      const dt=r.approvedAt?(new Date(r.approvedAt.seconds?r.approvedAt.seconds*1000:r.approvedAt)).toLocaleDateString('ko-KR'):'';
+      const opt=r.selectedOption?.label?` · ${r.selectedOption.label}`:'';
+      return `<div class="mi-record"><div class="mi-record-name">${r.configTitle||r.orderName||'결제 상품'}</div><div class="mi-record-meta">${amt}${opt}<br>${dt} · ${r.method||''}</div></div>`;
+    }).join('');
+  }catch(e){ body.innerHTML='<div class="mi-empty">불러오지 못했어요.</div>'; }
 }
 function logout(){
   if(!confirm('로그아웃 하시겠어요?')) return;
@@ -1793,6 +1848,13 @@ window.addEventListener('message',e=>{
           autoCheckBlock(f.getAttribute('data-tool-block'));
       }catch(_){}
     });
+    return;
+  }
+  if(e.data?.type==='lmp-request-login'){
+    if(!AUTH_ENABLED&&!SELF_REG_ENABLED) return;
+    const reasonEl=document.getElementById('auth-reason');
+    if(reasonEl){ reasonEl.textContent=e.data.reason||'결제하려면 로그인이 필요해요.'; reasonEl.style.display='block'; }
+    openAuthModal(true);
     return;
   }
 });
