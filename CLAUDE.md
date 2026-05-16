@@ -343,14 +343,18 @@ PAT 인증이 있을 경우 `main` 직접 push가 가능할 수 있다. 단, 시
 #### ⚠️ 기존 생성 프로젝트 파일 동기화 필수 — 절대 빠뜨리지 말 것
 
 `p/index.html`은 새 프로젝트 배포 시 복사되는 **템플릿**이다.
-기존에 이미 생성된 프로젝트 파일들(`block-test-demo/index.html`, `gmbf-poc/index.html` 등)은 **템플릿 수정 시 자동으로 갱신되지 않는다.**
+기존에 이미 생성된 프로젝트 파일들은 **템플릿 수정 시 자동으로 갱신되지 않는다.**
 
 > 🔴 **이 규칙을 어기면 admin 미리보기는 정상으로 보이지만 실제 플레이어에서는 기능이 동작하지 않는 버그가 발생한다. 실제로 이 실수가 반복 발생했다.**
 
 **`p/index.html`을 수정했으면 — 규모·중요도와 무관하게 — 반드시:**
-1. `git ls-files | grep index.html` 로 존재하는 프로젝트 파일 목록 확인
-2. **동일한 수정을 `block-test-demo/index.html`, `gmbf-poc/index.html`에도 즉시 적용**
-3. 세 파일을 같은 커밋에 포함
+1. 아래 명령으로 현재 존재하는 **모든** 생성 프로젝트 파일 목록을 자동 탐지:
+   ```bash
+   git ls-files | grep "index.html" | grep -v "^p/\|^admin/\|^tools/\|^gmbf/\|^apps-script"
+   ```
+   (현재 기준: `block-test-demo/index.html`, `gmbf-poc/index.html`, `gmbf-03/index.html` — 추가될 수 있음)
+2. **탐지된 모든 파일에 동일한 수정을 즉시 적용** (파일마다 기능이 다를 수 있으니 패턴 존재 여부 확인 후 적용)
+3. 모든 파일을 같은 커밋에 포함
 4. ✅ 동기화 여부를 커밋 전에 반드시 자기 점검할 것
 
 ---
