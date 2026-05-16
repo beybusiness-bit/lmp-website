@@ -1940,7 +1940,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-img-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','text')" title="이미지 삽입" style="font-size:13px;padding:4px 7px;">🖼</button>
       </div>
       <div class="ced-wrap">
-        <div class="ced" id="ced-text" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="saveRange(this);syncFmtBar('text')" onmouseup="saveRange(this);syncFmtBar('text')"></div>
+        <div class="ced" id="ced-text" contenteditable="true" data-ph="텍스트를 입력하세요…" onkeyup="saveRange(this);syncFmtBar('text')" onmouseup="saveRange(this);syncFmtBar('text')"></div>
         <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-text')" title="드래그하여 편집기 높이 조절"></div>
       </div>
       <div id="blk-txtpadding-section" style="margin-top:8px;padding:8px 10px;background:rgba(0,0,0,.03);border-radius:6px;border:1px solid rgba(0,0,0,.08);">
@@ -2094,7 +2094,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <button class="fmt-btn" id="fmt-clr-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','formpost')" style="padding:5px 7px;"><span id="fmt-clr-dot-formpost" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
           <button class="fmt-btn" id="fmt-bg-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','formpost')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-formpost" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
         </div>
-        <div class="ced" id="ced-formpost" contenteditable="true" data-ph="제출 완료 후 표시할 메시지를 입력하세요…" onblur="saveRange(this)" onkeyup="saveRange(this)" onmouseup="saveRange(this)" style="min-height:80px;"></div>
+        <div class="ced" id="ced-formpost" contenteditable="true" data-ph="제출 완료 후 표시할 메시지를 입력하세요…" onkeyup="saveRange(this)" onmouseup="saveRange(this)" style="min-height:80px;"></div>
       </div>
       <div id="form-dup-wrap" style="margin-top:10px;display:none;">
         <div class="switch-row">
@@ -2190,7 +2190,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="fmt-btn" id="fmt-img-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','mixed')" title="이미지 삽입" style="font-size:13px;padding:4px 7px;">🖼</button>
       </div>
       <div class="ced-wrap">
-        <div class="ced" id="ced-mixed" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="saveRange(this);syncFmtBar('mixed')" onmouseup="saveRange(this);syncFmtBar('mixed')"></div>
+        <div class="ced" id="ced-mixed" contenteditable="true" data-ph="텍스트를 입력하세요…" onkeyup="saveRange(this);syncFmtBar('mixed')" onmouseup="saveRange(this);syncFmtBar('mixed')"></div>
         <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-mixed')" title="드래그하여 편집기 높이 조절"></div>
       </div>
     </div>
@@ -2338,9 +2338,113 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     </div>
     <!-- 공통: 지연 로그인 잠금 + 결제 게이트 (맨 아래) -->
     <div id="blk-require-auth-section" style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
-      <div class="switch-row">
-        <div class="switch" id="blk-require-auth-sw" onclick="this.classList.toggle('on');scheduleBmPreview()"></div>
-        <span class="switch-lbl">🔒 로그인 필요 <span style="font-weight:400;opacity:.6;">(지연 로그인 프로젝트에서 비로그인 사용자에게 잠금 표시)</span></span>
+      <div class="ed-lbl" style="font-size:11px;font-weight:700;margin-bottom:6px;">🔒 비로그인 접근 제한 <span style="font-weight:400;opacity:.6;">(지연 로그인 프로젝트에서만 동작)</span></div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer;"><input type="radio" name="blk-auth-mode" value="none" checked onchange="_onAuthModeChange()"> 없음 (제한 없음)</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer;"><input type="radio" name="blk-auth-mode" value="lock" onchange="_onAuthModeChange()"> 🔒 잠금 표시</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer;"><input type="radio" name="blk-auth-mode" value="restrict" onchange="_onAuthModeChange()"> 📄 내용 위에 로그인 오버레이</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer;"><input type="radio" name="blk-auth-mode" value="hide" onchange="_onAuthModeChange()"> 👁 완전 숨기기</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer;"><input type="radio" name="blk-auth-mode" value="replace" onchange="_onAuthModeChange()"> 📦 대체 블록 표시</label>
+      </div>
+      <div id="blk-auth-replace-section" style="display:none;margin-top:10px;border:1.5px solid rgba(0,0,0,.2);border-radius:8px;overflow:hidden;">
+        <div style="background:rgba(0,0,0,.05);padding:7px 10px;font-size:11px;font-weight:700;border-bottom:1px solid rgba(0,0,0,.1);">📦 대체 블록 <span style="font-weight:400;opacity:.55;">(비로그인 사용자에게 표시)</span></div>
+        <div style="padding:10px;">
+          <div style="display:flex;border:1.5px solid #000;border-radius:4px;overflow:hidden;margin-bottom:10px;">
+            <button class="blk-tab on" id="arep-btab-text" onclick="setAuthRepBlkType('text')" style="flex:1;font-size:11px;padding:5px 2px;border-radius:0;">텍스트</button>
+            <button class="blk-tab" id="arep-btab-image" onclick="setAuthRepBlkType('image')" style="flex:1;font-size:11px;padding:5px 2px;border-radius:0;">이미지</button>
+            <button class="blk-tab" id="arep-btab-mixed" onclick="setAuthRepBlkType('mixed')" style="flex:1;font-size:11px;padding:5px 2px;border-radius:0;">혼합</button>
+            <button class="blk-tab" id="arep-btab-embed" onclick="setAuthRepBlkType('embed')" style="flex:1;font-size:11px;padding:5px 2px;border-radius:0;">임베드</button>
+          </div>
+          <!-- 텍스트 -->
+          <div id="arep-panel-text">
+            <div class="fmt-bar">
+              <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtCmd('arep-txt','bold')"><b>B</b></button>
+              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','arep-txt')">Aa</button>
+              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','arep-txt')">≡</button>
+              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','arep-txt')" style="padding:5px 7px;"><span id="fmt-clr-dot-arep-txt" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','arep-txt')" style="font-size:13px;padding:4px 7px;">🔗</button>
+              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','arep-txt')" style="font-size:13px;padding:4px 7px;">🖼</button>
+            </div>
+            <div class="ced-wrap">
+              <div class="ced" id="ced-arep-txt" contenteditable="true" data-ph="텍스트를 입력하세요…" onkeyup="saveRange(this);syncFmtBar('arep-txt')" onmouseup="saveRange(this);syncFmtBar('arep-txt')"></div>
+              <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-arep-txt')" title="드래그하여 편집기 높이 조절"></div>
+            </div>
+          </div>
+          <!-- 이미지 -->
+          <div id="arep-panel-image" style="display:none;">
+            <div class="ed-lbl">이미지</div>
+            <input class="img-inp" id="arep-img-url" type="url" placeholder="https://…" oninput="prevImg('arep-img-prev',this.value);scheduleBmPreview()">
+            <button class="bg-up-btn" onclick="document.getElementById('arep-img-file').click()" style="margin-bottom:8px;">📁 직접 업로드</button>
+            <input type="file" id="arep-img-file" accept="image/*" style="display:none;" onchange="uploadBlockImage(event,'arep-img-url','arep-img-prev')">
+            <img id="arep-img-prev" class="img-prev">
+            <div class="ed-lbl" style="margin-top:8px;">이미지 배치</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+              <button class="img-fit-btn on" data-ctx="arep-img" data-fit="natural" onpointerdown="epd(event)" onclick="setAuthRepImgFit('natural')">원본비율</button>
+              <button class="img-fit-btn" data-ctx="arep-img" data-fit="cover" onpointerdown="epd(event)" onclick="setAuthRepImgFit('cover')">크롭채움</button>
+              <button class="img-fit-btn" data-ctx="arep-img" data-fit="contain" onpointerdown="epd(event)" onclick="setAuthRepImgFit('contain')">비율유지</button>
+              <button class="img-fit-btn" data-ctx="arep-img" data-fit="fill" onpointerdown="epd(event)" onclick="setAuthRepImgFit('fill')">늘려채움</button>
+            </div>
+            <div id="arep-img-height-row">
+              <div class="ed-lbl">높이 (px, 비워두면 원본 비율)</div>
+              <input class="fi-sm" id="arep-img-height" type="number" min="60" max="1200" placeholder="자동" style="width:80px;" oninput="scheduleBmPreview()">
+            </div>
+          </div>
+          <!-- 혼합 -->
+          <div id="arep-panel-mixed" style="display:none;">
+            <div class="ed-lbl">레이아웃</div>
+            <div class="mixed-row">
+              <button class="mixed-btn on" id="arep-ml-overlay" onclick="setAuthRepMixedLayout('overlay')">오버레이형<br><small style="font-weight:400;">이미지+텍스트 겹침</small></button>
+              <button class="mixed-btn" id="arep-ml-split" onclick="setAuthRepMixedLayout('split')">분리형<br><small style="font-weight:400;">이미지·텍스트 분리</small></button>
+            </div>
+            <div id="arep-split-order-row" style="display:none;margin-top:8px;margin-bottom:8px;">
+              <div class="ed-lbl" style="font-size:10px;">순서</div>
+              <div style="display:flex;gap:4px;">
+                <button class="img-fit-btn on" id="arep-order-img-first" onpointerdown="epd(event)" onclick="setAuthRepMixedImgOrder('img-first')" style="flex:1;">이미지→텍스트</button>
+                <button class="img-fit-btn" id="arep-order-text-first" onpointerdown="epd(event)" onclick="setAuthRepMixedImgOrder('text-first')" style="flex:1;">텍스트→이미지</button>
+              </div>
+            </div>
+            <div class="ed-lbl">이미지</div>
+            <input class="img-inp" id="arep-mixed-img-url" type="url" placeholder="https://…" oninput="prevImg('arep-mixed-img-prev',this.value);scheduleBmPreview()">
+            <button class="bg-up-btn" onclick="document.getElementById('arep-mixed-img-file').click()" style="margin-bottom:8px;">📁 직접 업로드</button>
+            <input type="file" id="arep-mixed-img-file" accept="image/*" style="display:none;" onchange="uploadBlockImage(event,'arep-mixed-img-url','arep-mixed-img-prev')">
+            <img id="arep-mixed-img-prev" class="img-prev">
+            <div class="ed-lbl" style="margin-top:6px;">이미지 배치</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+              <button class="img-fit-btn on" data-ctx="arep-mixed" data-fit="natural" onpointerdown="epd(event)" onclick="setAuthRepMixedImgFit('natural')">원본비율</button>
+              <button class="img-fit-btn" data-ctx="arep-mixed" data-fit="cover" onpointerdown="epd(event)" onclick="setAuthRepMixedImgFit('cover')">크롭채움</button>
+              <button class="img-fit-btn" data-ctx="arep-mixed" data-fit="contain" onpointerdown="epd(event)" onclick="setAuthRepMixedImgFit('contain')">비율유지</button>
+              <button class="img-fit-btn" data-ctx="arep-mixed" data-fit="fill" onpointerdown="epd(event)" onclick="setAuthRepMixedImgFit('fill')">늘려채움</button>
+            </div>
+            <div class="ed-lbl">높이 (px)</div>
+            <input class="fi-sm" id="arep-mixed-img-height" type="number" min="60" max="1200" placeholder="200" style="width:80px;margin-bottom:8px;" oninput="scheduleBmPreview()">
+            <div class="ed-lbl">텍스트</div>
+            <div class="fmt-bar">
+              <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtCmd('arep-mixed-txt','bold')"><b>B</b></button>
+              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','arep-mixed-txt')">Aa</button>
+              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','arep-mixed-txt')">≡</button>
+              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','arep-mixed-txt')" style="padding:5px 7px;"><span id="fmt-clr-dot-arep-mixed-txt" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','arep-mixed-txt')" style="font-size:13px;padding:4px 7px;">🔗</button>
+            </div>
+            <div class="ced-wrap">
+              <div class="ced" id="ced-arep-mixed-txt" contenteditable="true" data-ph="텍스트를 입력하세요…" onkeyup="saveRange(this);syncFmtBar('arep-mixed-txt')" onmouseup="saveRange(this);syncFmtBar('arep-mixed-txt')"></div>
+              <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-arep-mixed-txt')" title="드래그하여 편집기 높이 조절"></div>
+            </div>
+          </div>
+          <!-- 임베드 -->
+          <div id="arep-panel-embed" style="display:none;">
+            <div class="ed-lbl">임베드 URL</div>
+            <input class="img-inp" id="arep-embed-url" type="url" placeholder="https://tally.so/embed/…" oninput="scheduleBmPreview()">
+            <div class="ed-lbl" style="margin-top:8px;">높이 (px)</div>
+            <input class="fi-sm" id="arep-embed-height" type="number" placeholder="500" style="width:100px;" oninput="scheduleBmPreview()">
+          </div>
+          <!-- 배경색 공통 -->
+          <div class="ed-lbl" style="margin-top:10px;">배경색</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="color" id="blk-auth-replace-bg-color" value="#ffffff" oninput="document.getElementById('blk-auth-replace-bg-hex').value=this.value;scheduleBmPreview()" style="width:36px;height:28px;border:1px solid #000;padding:1px;cursor:pointer;border-radius:3px;">
+            <input class="fi-sm" id="blk-auth-replace-bg-hex" placeholder="#ffffff" value="#ffffff" style="width:90px;" oninput="document.getElementById('blk-auth-replace-bg-color').value=this.value||'#ffffff';scheduleBmPreview()">
+            <button class="prev-btn" onclick="document.getElementById('blk-auth-replace-bg-color').value='#ffffff';document.getElementById('blk-auth-replace-bg-hex').value='#ffffff';scheduleBmPreview()">초기화</button>
+          </div>
+        </div>
       </div>
       <div style="margin-top:10px;">
         <div class="ed-lbl" style="font-size:11px;font-weight:700;margin-bottom:4px;">💳 결제 게이트 <span style="font-weight:400;opacity:.6;">(결제 상품의 tier 이름 입력 → 해당 tier 구매자만 볼 수 있음)</span></div>
@@ -2379,7 +2483,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','rep-txt')" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
                 <div class="ced-wrap">
-                  <div class="ced" id="ced-rep-txt" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="saveRange(this);syncFmtBar('rep-txt')" onmouseup="saveRange(this);syncFmtBar('rep-txt')"></div>
+                  <div class="ced" id="ced-rep-txt" contenteditable="true" data-ph="텍스트를 입력하세요…" onkeyup="saveRange(this);syncFmtBar('rep-txt')" onmouseup="saveRange(this);syncFmtBar('rep-txt')"></div>
                   <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-rep-txt')" title="드래그하여 편집기 높이 조절"></div>
                 </div>
               </div>
@@ -2439,7 +2543,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','rep-mixed-txt')" style="font-size:13px;padding:4px 7px;">🔗</button>
                 </div>
                 <div class="ced-wrap">
-                  <div class="ced" id="ced-rep-mixed-txt" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="saveRange(this);syncFmtBar('rep-mixed-txt')" onmouseup="saveRange(this);syncFmtBar('rep-mixed-txt')"></div>
+                  <div class="ced" id="ced-rep-mixed-txt" contenteditable="true" data-ph="텍스트를 입력하세요…" onkeyup="saveRange(this);syncFmtBar('rep-mixed-txt')" onmouseup="saveRange(this);syncFmtBar('rep-mixed-txt')"></div>
                   <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-rep-mixed-txt')" title="드래그하여 편집기 높이 조절"></div>
                 </div>
               </div>
@@ -5285,6 +5389,9 @@ function setGuideType(t, silent=false) {
   document.getElementById('tog-slide').classList.toggle('on', t==='slide');
   scheduleGuidePreviewUpdate();
 }
+function _buildUpdatedStages() {
+  return curStages.map((s,i)=>({...s, order:i}));
+}
 async function _autoSaveStage() {
   if (curEditingStageIdx === null || !curProjId) return;
   const stage = curStages[curEditingStageIdx];
@@ -5297,15 +5404,10 @@ async function _autoSaveStage() {
       }, {merge:true});
     const checkableCount = curBlocks.filter(b=>b.checkable||b.type==='form'||b.type==='tool').length;
     curStages[curEditingStageIdx].checkableCount = checkableCount;
-    const updatedStages = curStages.map((s,i)=>({
-      id:s.id, title:s.title||'', displayType:s.displayType||'text',
-      stageImageUrl:s.stageImageUrl||'', order:i,
-      trackProgress:!!s.trackProgress, checkableCount:s.checkableCount||0,
-      published:s.published!==false, publishStatus:s.publishStatus||'published',
-      tagEnabled:!!s.tagEnabled, tagText:s.tagText||'',
-      tagBgColor:s.tagBgColor||'#000000', tagTextColor:s.tagTextColor||'#ffffff', tagShape:s.tagShape||'bookmark',
-    }));
-    await db.collection('cms_projects').doc(curProjId).update({stages: updatedStages});
+    await db.collection('cms_projects').doc(curProjId).update({
+      stages: _buildUpdatedStages(),
+      homeItemOrder: curHomeItemOrder,
+    });
     stageDirty = false;
   } catch(e) { /* silent auto-save failure */ }
 }
@@ -5320,18 +5422,12 @@ async function saveStageContent(e=null) {
         blocks: curBlocks.map((b,i)=>({...b,order:i})),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       }, {merge:true});
-    /* sync checkableCount to project stages */
     const checkableCount = curBlocks.filter(b=>b.checkable||b.type==='form'||b.type==='tool').length;
     curStages[curEditingStageIdx].checkableCount = checkableCount;
-    const updatedStages = curStages.map((s,i)=>({
-      id:s.id, title:s.title||'', displayType:s.displayType||'text',
-      stageImageUrl:s.stageImageUrl||'', order:i,
-      trackProgress:!!s.trackProgress, checkableCount:s.checkableCount||0,
-      published:s.published!==false, publishStatus:s.publishStatus||'published',
-      tagEnabled:!!s.tagEnabled, tagText:s.tagText||'',
-      tagBgColor:s.tagBgColor||'#000000', tagTextColor:s.tagTextColor||'#ffffff', tagShape:s.tagShape||'bookmark',
-    }));
-    await db.collection('cms_projects').doc(curProjId).update({stages: updatedStages});
+    await db.collection('cms_projects').doc(curProjId).update({
+      stages: _buildUpdatedStages(),
+      homeItemOrder: curHomeItemOrder,
+    });
     stageDirty = false;
     renderStageList();
     _btnFlash(_btn, '저장됨 ✓');
@@ -6215,7 +6311,11 @@ function openBlockModal(idx,insertAt){
   const chkTP=document.getElementById('blk-check-text-color'); if(chkTP) chkTP.value=curBlkCheckTextColor||'#ffffff';
   const chkTH=document.getElementById('blk-check-text-hex');   if(chkTH) chkTH.value=(curBlkCheckTextColor||'').toUpperCase();
   setCheckPos(b.checkPosition||'bottom-center');
-  const raSwEl=document.getElementById('blk-require-auth-sw'); if(raSwEl) raSwEl.classList.toggle('on',!!b.requireAuth);
+  // authMode 로드 (backward compat: requireAuth:true → 'lock')
+  const authM=(b.authMode||(b.requireAuth?'lock':'none'));
+  document.querySelectorAll('input[name="blk-auth-mode"]').forEach(r=>{r.checked=(r.value===authM);});
+  _onAuthModeChange(true);
+  _loadAuthRepBlock(b.authReplaceBlock);
   const rtEl=document.getElementById('blk-required-tier'); if(rtEl) rtEl.value=b.requiredTier||'';
   _onTierInput();
   const tlm=b.tierLockMode||'cover'; document.querySelectorAll('input[name="blk-tier-mode"]').forEach(r=>{r.checked=(r.value===tlm);});
@@ -6347,6 +6447,81 @@ function _collectRepBlock(){
   }
   return rb;
 }
+function _onAuthModeChange(silent){
+  const mode=document.querySelector('input[name="blk-auth-mode"]:checked')?.value||'none';
+  const sec=document.getElementById('blk-auth-replace-section');
+  if(sec) sec.style.display=mode==='replace'?'block':'none';
+  if(!silent) scheduleBmPreview();
+}
+let curAuthRepBlkType='text',curAuthRepImgFit='natural',curAuthRepMixedLayout='overlay',curAuthRepMixedImgOrder='img-first',curAuthRepMixedImgFit='natural';
+function setAuthRepBlkType(t){
+  curAuthRepBlkType=t;
+  ['text','image','mixed','embed'].forEach(x=>{
+    const tab=document.getElementById('arep-btab-'+x);const panel=document.getElementById('arep-panel-'+x);
+    if(tab)tab.classList.toggle('on',x===t);if(panel)panel.style.display=x===t?'block':'none';
+  });
+  scheduleBmPreview();
+}
+function setAuthRepImgFit(fit){
+  curAuthRepImgFit=fit;
+  document.querySelectorAll('.img-fit-btn[data-ctx="arep-img"]').forEach(b=>b.classList.toggle('on',b.dataset.fit===fit));
+  scheduleBmPreview();
+}
+function setAuthRepMixedLayout(l){
+  curAuthRepMixedLayout=l;
+  const ov=document.getElementById('arep-ml-overlay'),sp=document.getElementById('arep-ml-split');
+  if(ov)ov.classList.toggle('on',l==='overlay');if(sp)sp.classList.toggle('on',l==='split');
+  const row=document.getElementById('arep-split-order-row');if(row)row.style.display=l==='split'?'block':'none';
+  scheduleBmPreview();
+}
+function setAuthRepMixedImgOrder(o){
+  curAuthRepMixedImgOrder=o;
+  const a=document.getElementById('arep-order-img-first'),b=document.getElementById('arep-order-text-first');
+  if(a)a.classList.toggle('on',o==='img-first');if(b)b.classList.toggle('on',o==='text-first');
+  scheduleBmPreview();
+}
+function setAuthRepMixedImgFit(fit){
+  curAuthRepMixedImgFit=fit;
+  document.querySelectorAll('.img-fit-btn[data-ctx="arep-mixed"]').forEach(b=>b.classList.toggle('on',b.dataset.fit===fit));
+  scheduleBmPreview();
+}
+function _loadAuthRepBlock(rb){
+  rb=rb||{};setAuthRepBlkType(rb.type||'text');
+  const _s=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  const ct=document.getElementById('ced-arep-txt');if(ct)ct.innerHTML=rb.textContent||'';
+  _s('arep-img-url',rb.type==='image'?rb.imageUrl||'':'');prevImg('arep-img-prev',rb.type==='image'?rb.imageUrl||'':'');
+  _s('arep-img-height',rb.type==='image'&&rb.imageHeight?rb.imageHeight:'');
+  setAuthRepImgFit(rb.type==='image'?rb.imageFit||'natural':'natural');
+  _s('arep-mixed-img-url',rb.type==='mixed'?rb.imageUrl||'':'');prevImg('arep-mixed-img-prev',rb.type==='mixed'?rb.imageUrl||'':'');
+  _s('arep-mixed-img-height',rb.type==='mixed'&&rb.imageHeight?rb.imageHeight:'');
+  const cm=document.getElementById('ced-arep-mixed-txt');if(cm)cm.innerHTML=rb.type==='mixed'?rb.textContent||'':'';
+  setAuthRepMixedLayout(rb.type==='mixed'?rb.mixedLayout||'overlay':'overlay');
+  setAuthRepMixedImgOrder(rb.type==='mixed'?rb.imageOrder||'img-first':'img-first');
+  setAuthRepMixedImgFit(rb.type==='mixed'?rb.imageFit||'natural':'natural');
+  _s('arep-embed-url',rb.type==='embed'?rb.embedUrl||'':'');
+  _s('arep-embed-height',rb.type==='embed'&&rb.embedHeight?rb.embedHeight:'');
+  const bg=rb.bgColor||'#ffffff';
+  const bgc=document.getElementById('blk-auth-replace-bg-color');if(bgc)bgc.value=bg;
+  const bgh=document.getElementById('blk-auth-replace-bg-hex');if(bgh)bgh.value=bg;
+}
+function _collectAuthRepBlock(){
+  const t=curAuthRepBlkType;const bg=document.getElementById('blk-auth-replace-bg-hex')?.value||'#ffffff';
+  const rb={type:t,bgColor:bg};
+  if(t==='text'){rb.textContent=document.getElementById('ced-arep-txt')?.innerHTML||'';}
+  else if(t==='image'){
+    rb.imageUrl=document.getElementById('arep-img-url')?.value||'';rb.imageFit=curAuthRepImgFit;
+    const _h=document.getElementById('arep-img-height')?.value;if(_h)rb.imageHeight=parseInt(_h);
+  } else if(t==='mixed'){
+    rb.imageUrl=document.getElementById('arep-mixed-img-url')?.value||'';rb.imageFit=curAuthRepMixedImgFit;
+    const _h=document.getElementById('arep-mixed-img-height')?.value;if(_h)rb.imageHeight=parseInt(_h);
+    rb.textContent=document.getElementById('ced-arep-mixed-txt')?.innerHTML||'';
+    rb.mixedLayout=curAuthRepMixedLayout;rb.imageOrder=curAuthRepMixedImgOrder;
+  } else if(t==='embed'){
+    rb.embedUrl=document.getElementById('arep-embed-url')?.value||'';
+    const _h=document.getElementById('arep-embed-height')?.value;if(_h)rb.embedHeight=parseInt(_h);
+  }
+  return rb;
+}
 function _buildCurrentBlock(){
   const b={type:curBlkType,bgColor:curBlkBgColor||''};
   if(curBlkType==='text'){b.textContent=document.getElementById('ced-text')?.innerHTML||'';}
@@ -6403,6 +6578,9 @@ function _buildCurrentBlock(){
     if(curBlkCheckColor) b.checkColor=curBlkCheckColor;
     if(curBlkCheckTextColor) b.checkTextColor=curBlkCheckTextColor;
   }
+  // auth mode 미리보기용
+  const _amPrev=document.querySelector('input[name="blk-auth-mode"]:checked')?.value||'none';
+  if(_amPrev&&_amPrev!=='none'){b.authMode=_amPrev;if(_amPrev==='replace')b.authReplaceBlock=_collectAuthRepBlock();}
   // 티어 잠금 미리보기용
   const _rt=(document.getElementById('blk-required-tier')?.value||'').trim();
   if(_rt){
@@ -6500,8 +6678,10 @@ function saveBlock(){
   if(curBlkCheckColor) b.checkColor=curBlkCheckColor; else delete b.checkColor;
   if(curBlkCheckTextColor) b.checkTextColor=curBlkCheckTextColor; else delete b.checkTextColor;
   if(b.checkable) b.checkPosition=curCheckPos; else delete b.checkPosition;
-  b.requireAuth=!!document.getElementById('blk-require-auth-sw')?.classList.contains('on');
-  if(!b.requireAuth) delete b.requireAuth;
+  const _am=document.querySelector('input[name="blk-auth-mode"]:checked')?.value||'none';
+  if(_am&&_am!=='none'){b.authMode=_am;if(_am==='replace')b.authReplaceBlock=_collectAuthRepBlock();else delete b.authReplaceBlock;}
+  else{delete b.authMode;delete b.authReplaceBlock;}
+  delete b.requireAuth;
   b.requiredTier=(document.getElementById('blk-required-tier')?.value||'').trim();
   if(b.requiredTier){
     b.tierLockMode=document.querySelector('input[name="blk-tier-mode"]:checked')?.value||'cover';
@@ -6736,6 +6916,10 @@ function setEmbedHeightMode(mode){
 
 function getEd(ctx){
   if(ctx==='formpost') return document.getElementById('ced-formpost');
+  if(ctx==='rep-txt') return document.getElementById('ced-rep-txt');
+  if(ctx==='rep-mixed-txt') return document.getElementById('ced-rep-mixed-txt');
+  if(ctx==='arep-txt') return document.getElementById('ced-arep-txt');
+  if(ctx==='arep-mixed-txt') return document.getElementById('ced-arep-mixed-txt');
   return document.getElementById(ctx==='text'?'ced-text':'ced-mixed');
 }
 function focusEd(ctx){const ed=getEd(ctx);ed.focus();restoreRange(ed);}
@@ -7363,7 +7547,7 @@ function applyFmtSzPx(ctx,px){
   // 팝업 안 프리셋 버튼 선택 상태 업데이트
   document.querySelectorAll('.sz-preset-btn').forEach(b=>b.classList.toggle('on',parseInt(b.textContent)===px));
   // 숫자 입력 필드 동기화
-  const inp=document.getElementById('fmt-sz-inp');if(inp&&document.activeElement!==inp)inp.value=px;
+  const inp=document.getElementById('fmt-sz-inp');if(inp)inp.value=px;
 }
 function applyFmtSz(ctx,px){ applyFmtSzPx(ctx,px); closeFmtPopup(); }
 function applyFmtAlign(ctx,dir){
@@ -7629,6 +7813,17 @@ function _gBlockCore(b,S){
   const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
   const txS=b.txtColor?`color:${b.txtColor};`:'';
   const _m=k=>Math.round((b[k]??0)*S)|0;
+  // auth replace 미리보기 (authMode='replace'일 때 authReplaceBlock 표시)
+  if(b.authMode==='replace'&&b.authReplaceBlock){
+    const rb=b.authReplaceBlock;const t=rb.type||'text';
+    const _mm=k=>Math.round((b[k]??0)*S)|0;
+    const mS2=(_mm('marginTop')||_mm('marginRight')||_mm('marginBottom')||_mm('marginLeft'))?`margin:${_mm('marginTop')}px ${_mm('marginRight')}px ${_mm('marginBottom')}px ${_mm('marginLeft')}px;`:'';
+    const bg2=rb.bgColor?`background:${rb.bgColor};`:'';
+    if(t==='image'&&rb.imageUrl){const fit=rb.imageFit||'natural';const h=Math.round((rb.imageHeight||200)*S);if(fit==='natural'&&!rb.imageHeight)return `<div style="${mS2}${bg2}"><img src="${rb.imageUrl}" style="width:100%;display:block;"></div>`;return `<div style="${mS2}${bg2}overflow:hidden;"><div style="background-image:url(${JSON.stringify(rb.imageUrl)});background-size:${fit==='fill'?'100% 100%':fit};background-position:${rb.imagePosition||'50% 50%'};height:${h}px;"></div></div>`;}
+    if(t==='embed'&&rb.embedUrl){const h=Math.round((rb.embedHeight||300)*S);return `<div style="${mS2}"><iframe src="${rb.embedUrl.replace(/"/g,'&quot;')}" width="100%" height="${h}" frameborder="0" style="display:block;border:none;"></iframe></div>`;}
+    if(t==='mixed'){const imgUrl=rb.imageUrl||'';const fit=rb.imageFit||'cover';const h=Math.round((rb.imageHeight||200)*S);const txt=rb.textContent||'';const layout=rb.mixedLayout||'overlay';const order=rb.imageOrder||'img-first';const imgS=`width:100%;height:${h}px;object-fit:${fit==='natural'?'contain':fit==='fill'?'100% 100%':fit};display:block;`;const imgEl=imgUrl?`<img src="${imgUrl}" style="${imgS}">`:'';;if(layout==='split'){const txtEl=`<div style="padding:${Math.round(12*S)}px ${Math.round(20*S)}px;${bg2}font-size:${Math.round(13*S)}px;">${txt}</div>`;return `<div style="${mS2}">${order==='text-first'?txtEl+imgEl:imgEl+txtEl}</div>`;}return `<div style="${mS2}${bg2}position:relative;overflow:hidden;">${imgEl}<div style="position:absolute;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;"><div style="padding:${Math.round(12*S)}px ${Math.round(20*S)}px;font-size:${Math.round(13*S)}px;color:#fff;">${txt}</div></div></div>`;}
+    return `<div style="${mS2}${bg2||'background:#f8f8f8;'}padding:${Math.round(16*S)}px ${Math.round(20*S)}px;font-size:${Math.round(13*S)}px;line-height:1.6;">${rb.textContent||''}</div>`;
+  }
   // tier 잠금 미리보기 (admin에서는 실제 블록 위에 오버레이로 표시)
   if(b.requiredTier&&b.tierLockMode==='replace'&&b.tierReplaceBlock){
     const rb=b.tierReplaceBlock;const t=rb.type||'text';

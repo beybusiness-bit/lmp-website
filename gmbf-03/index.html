@@ -111,10 +111,11 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 #menu-footer{flex-shrink:0;display:none;padding:12px 28px 28px;border-top:1px solid rgba(0,0,0,.12);}
 #menu-logout{display:inline-block;font-size:13px;font-weight:600;color:rgba(0,0,0,.45);cursor:pointer;-webkit-tap-highlight-color:transparent;padding:6px 0;letter-spacing:-.2px;}
 #menu-logout:active{opacity:.55;}
-.mi-pay-item{padding:14px 0;border-bottom:1px solid rgba(0,0,0,.1);}
+.mi-pay-item{padding:14px 0;border-bottom:1px solid rgba(0,0,0,.1);cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .mi-pay-item:last-child{border-bottom:none;}
-.mi-pay-name{font-size:14px;font-weight:700;margin-bottom:3px;}
-.mi-pay-amount{font-size:20px;font-weight:900;letter-spacing:-.3px;margin-bottom:4px;}
+.mi-pay-item:active{opacity:.6;}
+.mi-pay-name{font-size:15px;font-weight:800;letter-spacing:-.2px;margin-bottom:3px;}
+.mi-pay-amount{font-size:13px;font-weight:600;color:rgba(0,0,0,.6);margin-bottom:3px;}
 .mi-pay-meta{font-size:11px;color:rgba(0,0,0,.45);line-height:1.6;}
 .mi-empty{text-align:center;padding:48px 0;font-size:13px;color:rgba(0,0,0,.4);font-weight:600;}
 .mi-act-item{padding:14px 0;border-bottom:1px solid rgba(0,0,0,.1);cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -1755,6 +1756,13 @@ async function loadMyActivity(){
     el.innerHTML=`<div class="mi-empty">불러오기 실패<br><span style="font-size:11px;font-weight:400;">${esc(e.message||'')}</span></div>`;
   }
 }
+async function _navToPaymentStage(configId){
+  if(!configId) return;
+  await _preloadStageBlocks();
+  const found=_findBlockByToolConfig(configId,'payment');
+  if(found){ closeMenu(); await _navToBlock(found); }
+  else closeMenu();
+}
 async function loadMyPayments(){
   const body=document.getElementById('menu-payment-panel');
   if(!body) return;
@@ -1771,12 +1779,13 @@ async function loadMyPayments(){
     body.innerHTML=sortedDocs.map(doc=>{
       const r=doc.data();
       const dt=r.createdAt?.toDate?r.createdAt.toDate().toLocaleDateString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit'}):'';
-      const opt=r.selectedOption?.label?`<div>옵션: ${esc(r.selectedOption.label)}</div>`:'';
-      const qty=(r.qty||1)>1?`<div>수량: ${r.qty}개</div>`:'';
-      return `<div class="mi-pay-item">
+      const opt=r.selectedOption?.label?`<span>옵션: ${esc(r.selectedOption.label)} · </span>`:'';
+      const qty=(r.qty||1)>1?`<span>수량: ${r.qty}개 · </span>`:'';
+      const configId=JSON.stringify(r.configId||'');
+      return `<div class="mi-pay-item" onclick="_navToPaymentStage(${configId})">
         <div class="mi-pay-name">${esc(r.orderName||r.configTitle||'-')}</div>
         <div class="mi-pay-amount">${Number(r.amount).toLocaleString()}원</div>
-        <div class="mi-pay-meta">${opt}${qty}<div>${esc(r.cardName||'')}${dt?' · '+dt:''}</div></div>
+        <div class="mi-pay-meta">${opt}${qty}${esc(r.cardName||'')}${dt?' · '+dt:''}</div>
       </div>`;
     }).join('');
   }catch(e){
@@ -1881,13 +1890,20 @@ function _blkBgImgCss(b){
   if(fit==='natural') return `background-image:${ov}url('${b.bgImageUrl}');background-repeat:no-repeat;background-size:contain;background-position:${pos};`;
   return `background-image:${ov}url('${b.bgImageUrl}');background-size:${fit};background-position:${pos};background-repeat:no-repeat;`;
 }
-function _isBlockLocked(b){
-  if(!b.requireAuth) return false;
+function _getAuthMode(b){
+  if(b.authMode) return b.authMode;
+  if(b.requireAuth) return 'lock';
+  return 'none';
+}
+function _isAuthRestricted(b){
+  const am=_getAuthMode(b);
+  if(am==='none') return false;
   if(!AUTH_ENABLED || AUTH_MODE!=='on-demand' || IS_ADMIN_PREVIEW) return false;
   if(USER_DOC_ID) return false;
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
   return saved.project!==PROJECT_ID;
 }
+function _isBlockLocked(b){ return _getAuthMode(b)==='lock' && _isAuthRestricted(b); }
 function _toRelEmbed(url){
   try{const u=new URL(url);if(/^(www\.)?lazymaxpotential\.kr$/.test(u.hostname))return u.pathname+u.search+u.hash;}catch(e){}
   return url;
@@ -1921,15 +1937,25 @@ function blockHtml(b){
   // 텍스트박스 패딩
   const txpt=b.txtPaddingTop??0,txpr=b.txtPaddingRight??0,txpb=b.txtPaddingBottom??0,txpl=b.txtPaddingLeft??0;
   const txpS=(txpt||txpr||txpb||txpl)?`padding:${txpt}px ${txpr}px ${txpb}px ${txpl}px;`:'';
-  // 지연 로그인 잠금 — requireAuth=true이고 비로그인 상태일 때
-  if(_isBlockLocked(b)){
-    return `<div style="${mS}${bgS}min-height:120px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1.5px dashed rgba(0,0,0,.2);background:rgba(0,0,0,.03);" onclick="requireAuthOr(()=>location.reload())">
-      <div style="text-align:center;padding:20px 16px;">
-        <div style="font-size:26px;margin-bottom:6px;">🔒</div>
-        <div style="font-size:13px;font-weight:800;margin-bottom:3px;">로그인 후 볼 수 있어요</div>
-        <div style="font-size:11px;opacity:.55;line-height:1.5;">탭해서 로그인하기</div>
-      </div>
-    </div>`;
+  // 비로그인 접근 제한 처리 (authMode)
+  if(_isAuthRestricted(b)){
+    const am=_getAuthMode(b);
+    if(am==='lock'){
+      return `<div style="${mS}${bgS}min-height:120px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1.5px dashed rgba(0,0,0,.2);background:rgba(0,0,0,.03);" onclick="requireAuthOr(()=>location.reload())">
+        <div style="text-align:center;padding:20px 16px;">
+          <div style="font-size:26px;margin-bottom:6px;">🔒</div>
+          <div style="font-size:13px;font-weight:800;margin-bottom:3px;">로그인 후 볼 수 있어요</div>
+          <div style="font-size:11px;opacity:.55;line-height:1.5;">탭해서 로그인하기</div>
+        </div>
+      </div>`;
+    }
+    if(am==='replace'&&b.authReplaceBlock){return _repBlockHtml(b.authReplaceBlock,mS);}
+    if(am==='replace'){
+      return `<div style="${mS}${bgS}min-height:80px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1.5px dashed rgba(0,0,0,.2);background:rgba(0,0,0,.03);" onclick="requireAuthOr(()=>location.reload())">
+        <div style="text-align:center;padding:16px;"><div style="font-size:22px;margin-bottom:4px;">🔒</div><div style="font-size:12px;font-weight:700;">로그인 후 볼 수 있어요</div></div>
+      </div>`;
+    }
+    // restrict: 내용 렌더 후 오버레이 추가 (아래에서 처리)
   }
   // 결제 게이트 — requiredTier가 있고 사용자가 해당 tier를 구매하지 않은 경우
   if(_isTierLocked(b)){
@@ -2151,20 +2177,29 @@ function closeToolLinkModal(){
   if(ov) ov.classList.remove('on');
   setTimeout(()=>{ iframe.src='about:blank'; },400);
 }
+function _wrapRestrictOverlay(html,b){
+  if(_getAuthMode(b)!=='restrict'||!_isAuthRestricted(b)) return html;
+  return `<div style="position:relative;">${html}<div style="position:absolute;inset:0;background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;z-index:10;cursor:pointer;" onclick="requireAuthOr(()=>location.reload())"><div style="text-align:center;padding:20px;"><div style="font-size:22px;margin-bottom:6px;">🔒</div><div style="font-size:13px;font-weight:800;margin-bottom:3px;">로그인 후 참여할 수 있어요</div><div style="font-size:11px;opacity:.55;line-height:1.5;">탭해서 로그인하기</div></div></div></div>`;
+}
+function _isBlockVisible(b){
+  if(_isTierLocked(b)&&b.tierLockMode==='hide') return false;
+  if(_getAuthMode(b)==='hide'&&_isAuthRestricted(b)) return false;
+  return true;
+}
 function renderGuideScroll(blocks){
-  const visible=blocks.filter(b=>!(_isTierLocked(b)&&b.tierLockMode==='hide'));
+  const visible=blocks.filter(b=>_isBlockVisible(b));
   document.getElementById('guide-scroll-blocks').innerHTML=visible.map(b=>{
     const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
     const mS=(b.marginV||b.marginH)?`margin:${b.marginV||0}px ${b.marginH||0}px;`:'';
     const bStripped={...b,bgColor:'',marginV:0,marginH:0};
-    const inner=attachCheck(blockHtml(bStripped),b);
+    const inner=_wrapRestrictOverlay(attachCheck(blockHtml(bStripped),b),b);
     return `<div id="block-${b.id}"${(bgS||mS)?` style="${bgS}${mS}"`:''}>${inner}</div>`;
   }).join('');
   document.getElementById('guide-scroll-body').style.display='block';
   _sendContextToEmbeds();
 }
 function renderGuideSlide(blocks){
-  const visible=blocks.filter(b=>!(_isTierLocked(b)&&b.tierLockMode==='hide'));
+  const visible=blocks.filter(b=>_isBlockVisible(b));
   gSlideIdx=0; gSlideTotal=visible.length;
   const track=document.getElementById('guide-slide-track');
   const N=visible.length||1;
@@ -2172,7 +2207,7 @@ function renderGuideSlide(blocks){
     const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
     const mS=(b.marginV||b.marginH)?`padding:${b.marginV||0}px ${b.marginH||0}px;`:'';
     const bStripped={...b,bgColor:'',marginV:0,marginH:0};
-    const inner=attachCheck(blockHtml(bStripped),b);
+    const inner=_wrapRestrictOverlay(attachCheck(blockHtml(bStripped),b),b);
     const scrollable=(b.type==='tool'||b.type==='embed');
     const fullH=b.imageHeight==='full';
     const vaMap={top:'flex-start',center:'center',bottom:'flex-end'};
