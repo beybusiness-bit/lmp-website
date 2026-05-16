@@ -749,7 +749,15 @@ function payupPaymentSubmit(formId) {
   window._payupSubmitCalled = true;
   const form = document.getElementById(formId) || document.getElementById('PayupPaymentStandardForm');
   if (form) {
+    // target="_self" ensures the form navigates the current frame (iframe or standalone),
+    // not the parent window or a new tab, regardless of what PayUp may have set.
+    form.setAttribute('target', '_self');
     form.submit();
+    return;
+  }
+  // Fallback: if PayUp's form is not found, navigate directly to the confirm URL
+  if (window._payupConfirmUrl) {
+    window.location.href = window._payupConfirmUrl;
   }
 }
 
