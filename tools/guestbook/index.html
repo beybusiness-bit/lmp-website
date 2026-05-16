@@ -98,14 +98,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 #done-banner{display:none;background:#000;color:#fff;padding:14px 16px;font-size:14px;font-weight:700;text-align:center;margin-bottom:20px;}
 #done-banner.on{display:block;}
 
-/* Bg image controls */
-.img-ctrl-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
-.img-ctrl-btn{flex:1;padding:5px 0;font-size:11px;font-weight:700;border:2px solid #000;cursor:pointer;font-family:inherit;background:transparent;min-width:60px;}
-.img-ctrl-btn.on{background:#000;color:#fff;}
-.range-row{display:flex;align-items:center;gap:10px;}
-.range-row input[type=range]{flex:1;-webkit-appearance:none;height:6px;background:rgba(0,0,0,.15);border-radius:3px;outline:none;}
-.range-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:#000;border-radius:50%;cursor:pointer;}
-.range-val{font-size:12px;font-weight:700;min-width:36px;text-align:right;}
 
 /* Live preview card */
 #write-preview-wrap{margin-bottom:22px;display:none;}
@@ -193,39 +185,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <div class="img-prog-wrap" id="bg-img-prog"><div class="img-prog-bar" id="bg-img-bar"></div></div>
       <input type="file" id="bg-img-file" accept="image/*" style="display:none;" onchange="onBgImageSelect(event)">
 
-      <!-- 이미지 선택 후 나타나는 컨트롤 -->
-      <div id="bg-img-controls" style="display:none;margin-top:14px;">
-        <div style="margin-bottom:10px;">
-          <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:6px;">이미지 맞춤</div>
-          <div class="img-ctrl-row">
-            <button class="img-ctrl-btn on" data-fit="cover"   onclick="setBgFit('cover')">꽉 채우기</button>
-            <button class="img-ctrl-btn"    data-fit="contain" onclick="setBgFit('contain')">비율 유지</button>
-            <button class="img-ctrl-btn"    data-fit="natural" onclick="setBgFit('natural')">원본</button>
-          </div>
-        </div>
-        <div style="margin-bottom:10px;">
-          <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:6px;">이미지 위치</div>
-          <div class="img-ctrl-row">
-            <button class="img-ctrl-btn"    data-pos="top"    onclick="setBgPos('top')">상단</button>
-            <button class="img-ctrl-btn on" data-pos="center" onclick="setBgPos('center')">중앙</button>
-            <button class="img-ctrl-btn"    data-pos="bottom" onclick="setBgPos('bottom')">하단</button>
-          </div>
-        </div>
-        <div style="margin-bottom:10px;">
-          <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:6px;">오버레이 색상</div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <input type="color" id="ov-color" value="#000000" oninput="setBgOverlayColor(this.value)" style="width:32px;height:32px;border:2px solid #000;padding:0;cursor:pointer;flex-shrink:0;">
-            <span style="font-size:12px;color:rgba(0,0,0,.5);">오버레이 색상 선택</span>
-          </div>
-        </div>
-        <div>
-          <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:6px;">오버레이 농도</div>
-          <div class="range-row">
-            <input type="range" id="ov-opacity" min="0" max="1" step="0.05" value="0.45" oninput="setBgOpacity(this.value)">
-            <span class="range-val" id="ov-opacity-val">45%</span>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- 색상 선택 -->
@@ -302,10 +261,10 @@ let pendingImageUrl  = '';
 // Bg image state
 let bgImgFile = null;
 let bgImgLocalUrl = '';
-let bgImgFit = 'cover';
-let bgImgPos = 'center';
-let bgOverlayColorHex = '#000000';
-let bgOverlayOpacity = 0.45;
+const BG_FIT = 'cover';
+const BG_POS = 'center';
+const BG_OVERLAY_COLOR = '#000000';
+const BG_OVERLAY_OPACITY = 0.4;
 
 let DISPLAY_MODE   = 'scroll';
 let SCROLL_COLS    = 2;
@@ -473,29 +432,6 @@ function pickColor(c) {
   updatePreview();
 }
 
-function setBgFit(fit) {
-  bgImgFit = fit;
-  document.querySelectorAll('[data-fit]').forEach(b => b.classList.toggle('on', b.dataset.fit === fit));
-  updatePreview();
-}
-
-function setBgPos(pos) {
-  bgImgPos = pos;
-  document.querySelectorAll('[data-pos]').forEach(b => b.classList.toggle('on', b.dataset.pos === pos));
-  updatePreview();
-}
-
-function setBgOverlayColor(hex) {
-  bgOverlayColorHex = hex;
-  updatePreview();
-}
-
-function setBgOpacity(val) {
-  bgOverlayOpacity = Number(val);
-  const pct = Math.round(Number(val) * 100);
-  document.getElementById('ov-opacity-val').textContent = pct + '%';
-  updatePreview();
-}
 
 function onBgImageSelect(event) {
   const file = event.target.files?.[0];
@@ -508,12 +444,10 @@ function onBgImageSelect(event) {
   const iconEl = document.getElementById('bg-img-icon');
   const lblEl  = document.getElementById('bg-img-lbl');
   const areaEl = document.getElementById('bg-img-area');
-  const ctrlEl = document.getElementById('bg-img-controls');
   if (prevEl)  { prevEl.src = bgImgLocalUrl; prevEl.style.display = 'block'; }
   if (iconEl)  iconEl.style.display = 'none';
   if (lblEl)   lblEl.textContent = '🖼 이미지 변경하기';
   if (areaEl)  areaEl.classList.add('has-img');
-  if (ctrlEl)  ctrlEl.style.display = '';
 
   // Update color label to "텍스트 색상"
   const label = document.getElementById('color-section-label');
@@ -554,13 +488,12 @@ function updatePreview() {
   }).filter(Boolean).join(' · ') || '미리보기';
 
   if (bgImgLocalUrl) {
-    const bgSize = bgImgFit === 'contain' ? 'contain' : bgImgFit === 'natural' ? 'auto' : 'cover';
     card.style.backgroundImage = `url('${bgImgLocalUrl}')`;
-    card.style.backgroundSize = bgSize;
-    card.style.backgroundPosition = bgImgPos;
+    card.style.backgroundSize = BG_FIT;
+    card.style.backgroundPosition = BG_POS;
     card.style.backgroundRepeat = 'no-repeat';
-    overlay.style.background = bgOverlayColorHex;
-    overlay.style.opacity = bgOverlayOpacity;
+    overlay.style.background = BG_OVERLAY_COLOR;
+    overlay.style.opacity = BG_OVERLAY_OPACITY;
     overlay.style.display = '';
     const textColor = selectedColor || '#fff';
     body.style.color = textColor;
@@ -643,10 +576,10 @@ async function submitEntry() {
       approved: !(CONFIG.requireApproval), pinned: false,
       bgColor: selectedColor,
       bgImageUrl: finalBgImageUrl,
-      bgImageFit: finalBgImageUrl ? bgImgFit : '',
-      bgImagePosition: finalBgImageUrl ? bgImgPos : '',
-      overlayColor: finalBgImageUrl ? bgOverlayColorHex : '',
-      overlayOpacity: finalBgImageUrl ? bgOverlayOpacity : 0,
+      bgImageFit: finalBgImageUrl ? BG_FIT : '',
+      bgImagePosition: finalBgImageUrl ? BG_POS : '',
+      overlayColor: finalBgImageUrl ? BG_OVERLAY_COLOR : '',
+      overlayOpacity: finalBgImageUrl ? BG_OVERLAY_OPACITY : 0,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     };
     await db.collection('cms_guestbook_entries').doc(CONFIG_ID).collection('entries').add(entry);
@@ -687,31 +620,16 @@ function resetForm() {
   // Reset bg image state
   bgImgFile = null;
   if (bgImgLocalUrl) { URL.revokeObjectURL(bgImgLocalUrl); bgImgLocalUrl = ''; }
-  bgImgFit = 'cover';
-  bgImgPos = 'center';
-  bgOverlayColorHex = '#000000';
-  bgOverlayOpacity = 0.45;
   const bgPrev = document.getElementById('bg-img-prev');
   const bgIcon = document.getElementById('bg-img-icon');
   const bgLbl  = document.getElementById('bg-img-lbl');
   const bgArea = document.getElementById('bg-img-area');
-  const bgCtrl = document.getElementById('bg-img-controls');
   const bgInp  = document.getElementById('bg-img-file');
   if (bgPrev)  { bgPrev.src = ''; bgPrev.style.display = 'none'; }
   if (bgIcon)  bgIcon.style.display = '';
   if (bgLbl)   bgLbl.textContent = '사진을 탭해서 선택하세요';
   if (bgArea)  bgArea.classList.remove('has-img');
-  if (bgCtrl)  bgCtrl.style.display = 'none';
   if (bgInp)   bgInp.value = '';
-  // Reset controls
-  const ovRange = document.getElementById('ov-opacity');
-  const ovVal   = document.getElementById('ov-opacity-val');
-  const ovColor = document.getElementById('ov-color');
-  if (ovRange) ovRange.value = '0.45';
-  if (ovVal)   ovVal.textContent = '45%';
-  if (ovColor) ovColor.value = '#000000';
-  document.querySelectorAll('[data-fit]').forEach(b => b.classList.toggle('on', b.dataset.fit === 'cover'));
-  document.querySelectorAll('[data-pos]').forEach(b => b.classList.toggle('on', b.dataset.pos === 'center'));
   // Rebuild swatches to reset label
   buildColorSwatches();
   // Reset anon

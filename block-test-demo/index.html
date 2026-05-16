@@ -947,8 +947,11 @@ async function loadWidget() {
         const e = d.data();
         const text = txtFields.map(f => e.fieldValues?.[f.id||f.key]||'').filter(Boolean).join('\n');
         const bg = e.bgColor || '#f2f2f2';
+        const bgImg = e.bgImageUrl || '';
+        const ovColor = e.overlayColor || '#000000';
+        const ovOp = e.overlayOpacity ?? 0.4;
         const dt = e.createdAt?.toDate ? (()=>{const dd=e.createdAt.toDate();return `${dd.getMonth()+1}.${dd.getDate()}`;})() : '';
-        gbCards.push({name:e.authorName||'', text, bg, dt});
+        gbCards.push({name:e.authorName||'', text, bg, bgImg, ovColor, ovOp, dt});
       });
       if(order === 'random') gbCards = gbCards.sort(() => Math.random() - 0.5);
       if(!gbCards.length) { el.style.display = 'none'; return; }
@@ -972,11 +975,17 @@ async function loadWidget() {
     }
     if(WIDGET.toolType === 'guestbook') {
       trackHtml = gbCards.map(c => {
-        return `<div class="ws-slide" style="flex:0 0 ${slideW};height:${h}px;overflow:hidden;border-radius:${radius}px;${border}flex-shrink:0;box-sizing:border-box;background:${c.bg||'#fff'};">
-          <div style="height:100%;padding:10px 12px;display:flex;flex-direction:column;overflow:hidden;">
+        const hasBg = !!c.bgImg;
+        const bgStyle = hasBg
+          ? `background-image:url('${c.bgImg.replace(/'/g,"\\'")}');background-size:cover;background-position:center;`
+          : `background:${c.bg||'#fff'};`;
+        const textColor = hasBg ? (c.bg || '#ffffff') : '#000';
+        return `<div class="ws-slide" style="flex:0 0 ${slideW};height:${h}px;overflow:hidden;border-radius:${radius}px;${border}flex-shrink:0;box-sizing:border-box;position:relative;${bgStyle}">
+          ${hasBg ? `<div style="position:absolute;inset:0;background:${c.ovColor||'#000'};opacity:${c.ovOp};"></div>` : ''}
+          <div style="height:100%;padding:10px 12px;display:flex;flex-direction:column;overflow:hidden;position:relative;z-index:1;color:${textColor};">
             ${c.name ? `<div style="font-size:12px;font-weight:800;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${_wesc(c.name)}</div>` : ''}
             <div style="flex:1;min-height:0;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:6;font-size:11px;line-height:1.5;word-break:break-word;">${_wesc(c.text)}</div>
-            ${c.dt ? `<div style="font-size:10px;opacity:.45;margin-top:5px;flex-shrink:0;">${c.dt}</div>` : ''}
+            ${c.dt ? `<div style="font-size:10px;opacity:.55;margin-top:5px;flex-shrink:0;">${c.dt}</div>` : ''}
           </div>
         </div>`;
       }).join('');
@@ -1244,7 +1253,7 @@ function openAuthModal(showReason){
   regWrap.style.display=SELF_REG_ENABLED?'':'none';
   if(SELF_REG_ENABLED) document.getElementById('auth-reg-btn').textContent=SELF_REG_CTA;
   document.getElementById('auth-modal').classList.add('on');
-  setTimeout(()=>document.getElementById('auth-key-input').focus(),200);
+
 }
 function openRegModal(){
   closeModal('auth-modal');
