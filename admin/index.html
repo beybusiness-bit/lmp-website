@@ -1361,6 +1361,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div class="proj-item" onclick="decoOpenConfig('booth')" style="cursor:pointer;">
               <div class="pi-name">부스 꾸미기</div>
               <div class="pi-meta">기본 꾸미기 도구 · /tools/booth</div>
+              <div class="blk-acts" style="margin-top:6px;" onclick="event.stopPropagation()">
+                <button class="b-btn" onclick="copyToolUrl('booth','',this)" title="URL 복사">🔗</button>
+              </div>
             </div>
           </div>
           <button class="add-btn" style="margin-top:14px;" onclick="decoCreateConfig()">+ 새 꾸미기 만들기</button>
@@ -2355,20 +2358,104 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <input type="radio" name="blk-tier-mode" value="replace" onchange="_onTierModeChange()"> 📦 대체 블록 표시
             </label>
           </div>
-          <div id="blk-tier-replace-section" style="display:none;margin-top:10px;border:1.5px dashed rgba(0,0,0,.25);border-radius:6px;padding:10px;">
-            <div style="font-size:11px;font-weight:700;margin-bottom:6px;">대체 블록 내용</div>
-            <div id="rte-blk-replace-text" contenteditable="true" class="mini-rte" style="min-height:72px;margin-bottom:6px;" oninput="scheduleBmPreview()" data-ph="대체 블록에 표시할 내용을 입력하세요"></div>
-            <div style="display:flex;gap:4px;margin-bottom:8px;">
-              <button class="prev-btn" onclick="rteCmd('blk-replace-text','bold')" style="font-weight:700;">B</button>
-              <button class="prev-btn" onclick="rteCmd('blk-replace-text','italic')" style="font-style:italic;">I</button>
-              <button class="prev-btn" onclick="rteCmd('blk-replace-text','underline')" style="text-decoration:underline;">U</button>
-              <button class="prev-btn" onclick="rteLinkCmd('blk-replace-text')">🔗</button>
-            </div>
-            <div class="ed-lbl">배경색</div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <input type="color" id="blk-replace-bg-color" value="#f8f8f8" oninput="document.getElementById('blk-replace-bg-hex').value=this.value;scheduleBmPreview()" style="width:36px;height:28px;border:1px solid #000;padding:1px;cursor:pointer;border-radius:3px;">
-              <input class="fi-sm" id="blk-replace-bg-hex" placeholder="#f8f8f8" value="#f8f8f8" style="width:90px;" oninput="document.getElementById('blk-replace-bg-color').value=this.value||'#f8f8f8';scheduleBmPreview()">
-              <button class="prev-btn" onclick="document.getElementById('blk-replace-bg-color').value='#ffffff';document.getElementById('blk-replace-bg-hex').value='#ffffff';scheduleBmPreview()">초기화</button>
+          <div id="blk-tier-replace-section" style="display:none;margin-top:10px;border:1.5px solid rgba(0,0,0,.2);border-radius:8px;overflow:hidden;">
+            <div style="background:rgba(0,0,0,.05);padding:7px 10px;font-size:11px;font-weight:700;border-bottom:1px solid rgba(0,0,0,.1);">📦 대체 블록 <span style="font-weight:400;opacity:.55;">(티어 없는 사용자에게 표시)</span></div>
+            <div style="padding:10px;">
+              <div style="display:flex;border:1.5px solid #000;border-radius:4px;overflow:hidden;margin-bottom:10px;">
+                <button class="blk-tab on" id="rep-btab-text" onclick="setRepBlkType('text')" style="flex:1;font-size:11px;padding:5px 2px;border-radius:0;">텍스트</button>
+                <button class="blk-tab" id="rep-btab-image" onclick="setRepBlkType('image')" style="flex:1;font-size:11px;padding:5px 2px;border-radius:0;">이미지</button>
+                <button class="blk-tab" id="rep-btab-mixed" onclick="setRepBlkType('mixed')" style="flex:1;font-size:11px;padding:5px 2px;border-radius:0;">혼합</button>
+                <button class="blk-tab" id="rep-btab-embed" onclick="setRepBlkType('embed')" style="flex:1;font-size:11px;padding:5px 2px;border-radius:0;">임베드</button>
+              </div>
+              <!-- 텍스트 -->
+              <div id="rep-panel-text">
+                <div class="fmt-bar">
+                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtCmd('rep-txt','bold')"><b>B</b></button>
+                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','rep-txt')">Aa</button>
+                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','rep-txt')">≡</button>
+                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','rep-txt')" style="padding:5px 7px;"><span id="fmt-clr-dot-rep-txt" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','rep-txt')" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','rep-txt')" style="font-size:13px;padding:4px 7px;">🖼</button>
+                </div>
+                <div class="ced-wrap">
+                  <div class="ced" id="ced-rep-txt" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="syncFmtBar('rep-txt')" onmouseup="syncFmtBar('rep-txt')"></div>
+                  <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-rep-txt')" title="드래그하여 편집기 높이 조절"></div>
+                </div>
+              </div>
+              <!-- 이미지 -->
+              <div id="rep-panel-image" style="display:none;">
+                <div class="ed-lbl">이미지</div>
+                <input class="img-inp" id="rep-img-url" type="url" placeholder="https://…" oninput="prevImg('rep-img-prev',this.value);scheduleBmPreview()">
+                <button class="bg-up-btn" onclick="document.getElementById('rep-img-file').click()" style="margin-bottom:8px;">📁 직접 업로드</button>
+                <input type="file" id="rep-img-file" accept="image/*" style="display:none;" onchange="uploadBlockImage(event,'rep-img-url','rep-img-prev')">
+                <img id="rep-img-prev" class="img-prev">
+                <div class="ed-lbl" style="margin-top:8px;">이미지 배치</div>
+                <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+                  <button class="img-fit-btn on" data-ctx="rep-img" data-fit="natural" onpointerdown="epd(event)" onclick="setRepImgFit('natural')">원본비율</button>
+                  <button class="img-fit-btn" data-ctx="rep-img" data-fit="cover" onpointerdown="epd(event)" onclick="setRepImgFit('cover')">크롭채움</button>
+                  <button class="img-fit-btn" data-ctx="rep-img" data-fit="contain" onpointerdown="epd(event)" onclick="setRepImgFit('contain')">비율유지</button>
+                  <button class="img-fit-btn" data-ctx="rep-img" data-fit="fill" onpointerdown="epd(event)" onclick="setRepImgFit('fill')">늘려채움</button>
+                </div>
+                <div id="rep-img-height-row">
+                  <div class="ed-lbl">높이 (px, 비워두면 원본 비율)</div>
+                  <input class="fi-sm" id="rep-img-height" type="number" min="60" max="1200" placeholder="자동" style="width:80px;" oninput="scheduleBmPreview()">
+                </div>
+              </div>
+              <!-- 혼합 -->
+              <div id="rep-panel-mixed" style="display:none;">
+                <div class="ed-lbl">레이아웃</div>
+                <div class="mixed-row">
+                  <button class="mixed-btn on" id="rep-ml-overlay" onclick="setRepMixedLayout('overlay')">오버레이형<br><small style="font-weight:400;">이미지+텍스트 겹침</small></button>
+                  <button class="mixed-btn" id="rep-ml-split" onclick="setRepMixedLayout('split')">분리형<br><small style="font-weight:400;">이미지·텍스트 분리</small></button>
+                </div>
+                <div id="rep-split-order-row" style="display:none;margin-top:8px;margin-bottom:8px;">
+                  <div class="ed-lbl" style="font-size:10px;">순서</div>
+                  <div style="display:flex;gap:4px;">
+                    <button class="img-fit-btn on" id="rep-order-img-first" onpointerdown="epd(event)" onclick="setRepMixedImgOrder('img-first')" style="flex:1;">이미지→텍스트</button>
+                    <button class="img-fit-btn" id="rep-order-text-first" onpointerdown="epd(event)" onclick="setRepMixedImgOrder('text-first')" style="flex:1;">텍스트→이미지</button>
+                  </div>
+                </div>
+                <div class="ed-lbl">이미지</div>
+                <input class="img-inp" id="rep-mixed-img-url" type="url" placeholder="https://…" oninput="prevImg('rep-mixed-img-prev',this.value);scheduleBmPreview()">
+                <button class="bg-up-btn" onclick="document.getElementById('rep-mixed-img-file').click()" style="margin-bottom:8px;">📁 직접 업로드</button>
+                <input type="file" id="rep-mixed-img-file" accept="image/*" style="display:none;" onchange="uploadBlockImage(event,'rep-mixed-img-url','rep-mixed-img-prev')">
+                <img id="rep-mixed-img-prev" class="img-prev">
+                <div class="ed-lbl" style="margin-top:6px;">이미지 배치</div>
+                <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+                  <button class="img-fit-btn on" data-ctx="rep-mixed" data-fit="natural" onpointerdown="epd(event)" onclick="setRepMixedImgFit('natural')">원본비율</button>
+                  <button class="img-fit-btn" data-ctx="rep-mixed" data-fit="cover" onpointerdown="epd(event)" onclick="setRepMixedImgFit('cover')">크롭채움</button>
+                  <button class="img-fit-btn" data-ctx="rep-mixed" data-fit="contain" onpointerdown="epd(event)" onclick="setRepMixedImgFit('contain')">비율유지</button>
+                  <button class="img-fit-btn" data-ctx="rep-mixed" data-fit="fill" onpointerdown="epd(event)" onclick="setRepMixedImgFit('fill')">늘려채움</button>
+                </div>
+                <div class="ed-lbl">높이 (px)</div>
+                <input class="fi-sm" id="rep-mixed-img-height" type="number" min="60" max="1200" placeholder="200" style="width:80px;margin-bottom:8px;" oninput="scheduleBmPreview()">
+                <div class="ed-lbl">텍스트</div>
+                <div class="fmt-bar">
+                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtCmd('rep-mixed-txt','bold')"><b>B</b></button>
+                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','rep-mixed-txt')">Aa</button>
+                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','rep-mixed-txt')">≡</button>
+                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','rep-mixed-txt')" style="padding:5px 7px;"><span id="fmt-clr-dot-rep-mixed-txt" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','rep-mixed-txt')" style="font-size:13px;padding:4px 7px;">🔗</button>
+                </div>
+                <div class="ced-wrap">
+                  <div class="ced" id="ced-rep-mixed-txt" contenteditable="true" data-ph="텍스트를 입력하세요…" onblur="saveRange(this)" onkeyup="syncFmtBar('rep-mixed-txt')" onmouseup="syncFmtBar('rep-mixed-txt')"></div>
+                  <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-rep-mixed-txt')" title="드래그하여 편집기 높이 조절"></div>
+                </div>
+              </div>
+              <!-- 임베드 -->
+              <div id="rep-panel-embed" style="display:none;">
+                <div class="ed-lbl">임베드 URL</div>
+                <input class="img-inp" id="rep-embed-url" type="url" placeholder="https://tally.so/embed/…" oninput="scheduleBmPreview()">
+                <div class="ed-lbl" style="margin-top:8px;">높이 (px)</div>
+                <input class="fi-sm" id="rep-embed-height" type="number" placeholder="500" style="width:100px;" oninput="scheduleBmPreview()">
+              </div>
+              <!-- 배경색 공통 -->
+              <div class="ed-lbl" style="margin-top:10px;">배경색</div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <input type="color" id="blk-replace-bg-color" value="#ffffff" oninput="document.getElementById('blk-replace-bg-hex').value=this.value;scheduleBmPreview()" style="width:36px;height:28px;border:1px solid #000;padding:1px;cursor:pointer;border-radius:3px;">
+                <input class="fi-sm" id="blk-replace-bg-hex" placeholder="#ffffff" value="#ffffff" style="width:90px;" oninput="document.getElementById('blk-replace-bg-color').value=this.value||'#ffffff';scheduleBmPreview()">
+                <button class="prev-btn" onclick="document.getElementById('blk-replace-bg-color').value='#ffffff';document.getElementById('blk-replace-bg-hex').value='#ffffff';scheduleBmPreview()">초기화</button>
+              </div>
             </div>
           </div>
         </div>
@@ -2518,132 +2605,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   </div>
 </div>
 
-<!-- 폼 필드 추가/편집 모달 -->
-<div class="modal-ov" id="form-field-modal">
-  <div class="modal-box">
-    <div class="modal-ttl" id="form-field-modal-ttl">필드 추가</div>
-    <div class="modal-scroll">
-      <div class="ed-lbl">필드 이름 (화면 표시용)</div>
-      <input class="fi-sm" id="ff-label" placeholder="예: 이름" style="margin-bottom:14px;" oninput="autoFfKey(this.value)">
-      <div class="ed-lbl">필드 키 (영문·숫자·_)</div>
-      <input class="fi-sm" id="ff-key" placeholder="예: name" style="margin-bottom:14px;" oninput="this.dataset.userEdited='1'">
-      <div class="ed-lbl">입력 타입</div>
-      <select class="fi-sm" id="ff-type" style="cursor:pointer;margin-bottom:14px;" onchange="onFfTypeChange()">
-        <option value="string">짧은 텍스트</option>
-        <option value="textarea">긴 텍스트</option>
-        <option value="number">숫자</option>
-        <option value="file">파일 업로드</option>
-        <option value="select">선택지</option>
-        <option value="color">색상 선택</option>
-        <option value="date">날짜 선택</option>
-      </select>
-      <div id="ff-date-extra" style="display:none;padding:10px 12px;background:#f8f8f8;border:1.5px solid rgba(0,0,0,.12);margin-bottom:12px;">
-        <div class="ed-lbl" style="margin-bottom:6px;">날짜 형식</div>
-        <div class="toggle-row" style="margin-bottom:10px;">
-          <button class="tgl-btn on" id="ff-date-date" onclick="setFfDateMode('date')">날짜만</button>
-          <button class="tgl-btn" id="ff-date-datetime" onclick="setFfDateMode('datetime')">날짜+시간</button>
-        </div>
-        <div class="ed-lbl" style="margin-bottom:4px;">선택 가능 범위 <span style="font-weight:400;opacity:.55;">(비워두면 제한 없음)</span></div>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <input class="fi-sm" id="ff-date-min" type="date" style="margin-bottom:0;flex:1;" placeholder="시작일">
-          <span style="font-size:12px;opacity:.5;">~</span>
-          <input class="fi-sm" id="ff-date-max" type="date" style="margin-bottom:0;flex:1;" placeholder="종료일">
-        </div>
-        <div class="ed-lbl" style="margin-top:10px;margin-bottom:6px;">선택 방식</div>
-        <div class="toggle-row" style="margin-bottom:6px;">
-          <button class="tgl-btn on" id="ff-date-single" onclick="setFfDatePickMode('single')">하루만</button>
-          <button class="tgl-btn" id="ff-date-range" onclick="setFfDatePickMode('range')">기간</button>
-          <button class="tgl-btn" id="ff-date-multi" onclick="setFfDatePickMode('multi')">여러 날짜</button>
-        </div>
-        <div id="ff-date-maxdays-wrap" style="display:none;margin-top:4px;">
-          <div class="ed-lbl" style="margin-bottom:3px;">최대 선택 기간 <span style="font-weight:400;opacity:.55;">(비워두면 자유)</span></div>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <input class="fi-sm" id="ff-date-max-days" type="number" min="2" placeholder="자유" style="margin-bottom:0;flex:1;">
-            <span style="font-size:12px;opacity:.6;">일</span>
-          </div>
-        </div>
-      </div>
-      <div id="ff-options-wrap" style="display:none;margin-bottom:10px;">
-        <div class="ed-lbl" style="margin-bottom:4px;">선택지 목록 (줄바꿈 또는 쉼표로 구분)</div>
-        <textarea id="ff-options" style="width:100%;height:80px;border:1.5px solid #000;padding:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none;" placeholder="옵션1&#10;옵션2&#10;옵션3"></textarea>
-      </div>
-      <div id="ff-select-extra" style="display:none;padding:10px 12px;background:#f8f8f8;border:1.5px solid rgba(0,0,0,.12);margin-bottom:12px;">
-        <div class="ed-lbl" style="margin-bottom:6px;">선택 방식</div>
-        <div class="toggle-row" style="margin-bottom:10px;">
-          <button class="tgl-btn on" id="ff-sel-dropdown" onclick="setFfSelectMode('dropdown')">드롭다운</button>
-          <button class="tgl-btn" id="ff-sel-buttons" onclick="setFfSelectMode('buttons')">버튼 선택</button>
-        </div>
-        <div class="switch-row" style="margin-bottom:10px;">
-          <div class="switch" id="ff-other-sw" onclick="toggleFfOther()"></div>
-          <span class="switch-lbl">'기타' 항목 포함</span>
-        </div>
-        <div style="display:flex;gap:8px;align-items:flex-start;">
-          <div style="flex:1;">
-            <div class="ed-lbl" style="margin-bottom:3px;">최소 선택 수</div>
-            <input class="fi-sm" id="ff-min-sel" type="number" min="0" placeholder="0" style="margin-bottom:0;">
-          </div>
-          <div style="flex:1;">
-            <div class="ed-lbl" style="margin-bottom:3px;">최대 선택 수</div>
-            <input class="fi-sm" id="ff-max-sel" type="number" min="1" placeholder="제한 없음" style="margin-bottom:0;">
-          </div>
-        </div>
-      </div>
-      <div class="ed-lbl" style="margin-bottom:4px;">필드 설명 <span style="font-weight:400;opacity:.55;">(선택, 굵기·링크 지원)</span></div>
-      <div class="ff-desc-editor-wrap">
-        <div class="ff-desc-toolbar">
-          <button type="button" id="ffd-bold-btn" title="굵게" onmousedown="event.preventDefault()" onclick="ffdFmt('bold')"><b>B</b></button>
-          <button type="button" id="ffd-link-btn" title="링크" onmousedown="event.preventDefault()" onclick="ffdToggleLink()">🔗</button>
-        </div>
-        <div id="ff-desc" contenteditable="true" class="ff-desc-ced" data-ph="항목에 대한 설명을 입력하세요"></div>
-        <div class="ff-desc-link-popup" id="ff-desc-link-popup">
-          <input type="url" id="ff-desc-link-url" placeholder="https://" onkeydown="if(event.key==='Enter'){event.preventDefault();ffdApplyLink();}">
-          <button type="button" onclick="ffdApplyLink()">적용</button>
-          <button type="button" onclick="ffdRemoveLink()" style="background:transparent;color:#000;">제거</button>
-        </div>
-      </div>
-      <div id="ff-placeholder-wrap" style="margin-bottom:12px;">
-        <div class="ed-lbl" style="margin-bottom:4px;">플레이스홀더 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
-        <input class="fi-sm" id="ff-placeholder" placeholder="예: 여기에 입력해주세요" style="margin-bottom:0;">
-      </div>
-      <div id="ff-charcount-wrap" style="display:none;margin-bottom:12px;">
-        <div class="ed-lbl" style="margin-bottom:4px;">글자 수 제한 <span style="font-weight:400;opacity:.55;">(비워두면 자유입력)</span></div>
-        <div style="display:flex;gap:8px;">
-          <div style="flex:1;">
-            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:3px;">최소 글자 수</div>
-            <input class="fi-sm" id="ff-min-chars" type="number" min="0" placeholder="제한 없음" style="margin-bottom:0;">
-          </div>
-          <div style="flex:1;">
-            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:3px;">최대 글자 수</div>
-            <input class="fi-sm" id="ff-max-chars" type="number" min="1" placeholder="제한 없음" style="margin-bottom:0;">
-          </div>
-        </div>
-      </div>
-      <div id="ff-file-extra" style="display:none;padding:10px 12px;background:#f8f8f8;border:1.5px solid rgba(0,0,0,.12);margin-bottom:12px;">
-        <div class="ed-lbl" style="margin-bottom:4px;">허용 파일 형식 <span style="font-weight:400;opacity:.55;">(비워두면 모든 형식)</span></div>
-        <input class="fi-sm" id="ff-accept" placeholder="예: image/* 또는 .jpg,.png,.pdf" style="margin-bottom:10px;">
-        <div style="font-size:11px;color:rgba(0,0,0,.4);margin-top:-6px;margin-bottom:10px;">image/* · video/* · .pdf · .pdf,.docx 등 쉼표로 구분</div>
-        <div style="display:flex;gap:8px;">
-          <div style="flex:1;">
-            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:3px;">최대 파일 수</div>
-            <input class="fi-sm" id="ff-max-files" type="number" min="1" placeholder="제한 없음" style="margin-bottom:0;">
-          </div>
-          <div style="flex:1;">
-            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:3px;">전체 용량 한도 (MB)</div>
-            <input class="fi-sm" id="ff-max-total-mb" type="number" min="1" placeholder="제한 없음" style="margin-bottom:0;">
-          </div>
-        </div>
-      </div>
-      <div class="switch-row">
-        <div class="switch" id="ff-req-sw" onclick="toggleFfReq()"></div>
-        <span class="switch-lbl">필수 입력 항목</span>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="mbtn-cancel" onclick="closeModal('form-field-modal')">취소</button>
-      <button class="mbtn-ok" onclick="saveFormField()">저장</button>
-    </div>
-  </div>
-</div>
 
 <!-- 폼 응답 보기 모달 -->
 <div class="modal-ov" id="form-resp-modal">
@@ -6252,11 +6213,7 @@ function openBlockModal(idx,insertAt){
   // replace mode — 대체 블록 데이터 로드
   const repSec=document.getElementById('blk-tier-replace-section');
   if(repSec) repSec.style.display=tlm==='replace'?'block':'none';
-  const rb=b.tierReplaceBlock||{};
-  rteSet('blk-replace-text',rb.textContent||'');
-  const repBgColor=rb.bgColor||'#f8f8f8';
-  const repBgColorEl=document.getElementById('blk-replace-bg-color');if(repBgColorEl)repBgColorEl.value=repBgColor;
-  const repBgHexEl=document.getElementById('blk-replace-bg-hex');if(repBgHexEl)repBgHexEl.value=repBgColor;
+  _loadRepBlock(b.tierReplaceBlock);
   const bgH=document.getElementById('blk-bg-hex');  if(bgH) bgH.value=(curBlkBgColor||'').toUpperCase();
   const _sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
   // 하위호환: marginTop 없으면 marginV 기본값으로
@@ -6306,6 +6263,80 @@ function _onTierModeChange(){
   const sec=document.getElementById('blk-tier-replace-section');
   if(sec) sec.style.display=mode==='replace'?'block':'none';
   scheduleBmPreview();
+}
+let curRepBlkType='text',curRepImgFit='natural',curRepMixedLayout='overlay',curRepMixedImgOrder='img-first',curRepMixedImgFit='natural';
+function setRepBlkType(t){
+  curRepBlkType=t;
+  ['text','image','mixed','embed'].forEach(x=>{
+    const tab=document.getElementById('rep-btab-'+x);const panel=document.getElementById('rep-panel-'+x);
+    if(tab)tab.classList.toggle('on',x===t);if(panel)panel.style.display=x===t?'block':'none';
+  });
+  scheduleBmPreview();
+}
+function setRepImgFit(fit){
+  curRepImgFit=fit;
+  document.querySelectorAll('.img-fit-btn[data-ctx="rep-img"]').forEach(b=>b.classList.toggle('on',b.dataset.fit===fit));
+  scheduleBmPreview();
+}
+function setRepMixedLayout(l){
+  curRepMixedLayout=l;
+  const ov=document.getElementById('rep-ml-overlay'),sp=document.getElementById('rep-ml-split');
+  if(ov)ov.classList.toggle('on',l==='overlay');if(sp)sp.classList.toggle('on',l==='split');
+  const row=document.getElementById('rep-split-order-row');if(row)row.style.display=l==='split'?'block':'none';
+  scheduleBmPreview();
+}
+function setRepMixedImgOrder(o){
+  curRepMixedImgOrder=o;
+  const a=document.getElementById('rep-order-img-first'),b=document.getElementById('rep-order-text-first');
+  if(a)a.classList.toggle('on',o==='img-first');if(b)b.classList.toggle('on',o==='text-first');
+  scheduleBmPreview();
+}
+function setRepMixedImgFit(fit){
+  curRepMixedImgFit=fit;
+  document.querySelectorAll('.img-fit-btn[data-ctx="rep-mixed"]').forEach(b=>b.classList.toggle('on',b.dataset.fit===fit));
+  scheduleBmPreview();
+}
+function _loadRepBlock(rb){
+  rb=rb||{};setRepBlkType(rb.type||'text');
+  const _s=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  // text
+  const ct=document.getElementById('ced-rep-txt');if(ct)ct.innerHTML=rb.textContent||'';
+  // image
+  _s('rep-img-url',rb.type==='image'?rb.imageUrl||'':'');prevImg('rep-img-prev',rb.type==='image'?rb.imageUrl||'':'');
+  _s('rep-img-height',rb.type==='image'&&rb.imageHeight?rb.imageHeight:'');
+  setRepImgFit(rb.type==='image'?rb.imageFit||'natural':'natural');
+  // mixed
+  _s('rep-mixed-img-url',rb.type==='mixed'?rb.imageUrl||'':'');prevImg('rep-mixed-img-prev',rb.type==='mixed'?rb.imageUrl||'':'');
+  _s('rep-mixed-img-height',rb.type==='mixed'&&rb.imageHeight?rb.imageHeight:'');
+  const cm=document.getElementById('ced-rep-mixed-txt');if(cm)cm.innerHTML=rb.type==='mixed'?rb.textContent||'':'';
+  setRepMixedLayout(rb.type==='mixed'?rb.mixedLayout||'overlay':'overlay');
+  setRepMixedImgOrder(rb.type==='mixed'?rb.imageOrder||'img-first':'img-first');
+  setRepMixedImgFit(rb.type==='mixed'?rb.imageFit||'natural':'natural');
+  // embed
+  _s('rep-embed-url',rb.type==='embed'?rb.embedUrl||'':'');
+  _s('rep-embed-height',rb.type==='embed'&&rb.embedHeight?rb.embedHeight:'');
+  // bgColor
+  const bg=rb.bgColor||'#ffffff';
+  const bgc=document.getElementById('blk-replace-bg-color');if(bgc)bgc.value=bg;
+  const bgh=document.getElementById('blk-replace-bg-hex');if(bgh)bgh.value=bg;
+}
+function _collectRepBlock(){
+  const t=curRepBlkType;const bg=document.getElementById('blk-replace-bg-hex')?.value||'#ffffff';
+  const rb={type:t,bgColor:bg};
+  if(t==='text'){rb.textContent=document.getElementById('ced-rep-txt')?.innerHTML||'';}
+  else if(t==='image'){
+    rb.imageUrl=document.getElementById('rep-img-url')?.value||'';rb.imageFit=curRepImgFit;
+    const _h=document.getElementById('rep-img-height')?.value;if(_h)rb.imageHeight=parseInt(_h);
+  } else if(t==='mixed'){
+    rb.imageUrl=document.getElementById('rep-mixed-img-url')?.value||'';rb.imageFit=curRepMixedImgFit;
+    const _h=document.getElementById('rep-mixed-img-height')?.value;if(_h)rb.imageHeight=parseInt(_h);
+    rb.textContent=document.getElementById('ced-rep-mixed-txt')?.innerHTML||'';
+    rb.mixedLayout=curRepMixedLayout;rb.imageOrder=curRepMixedImgOrder;
+  } else if(t==='embed'){
+    rb.embedUrl=document.getElementById('rep-embed-url')?.value||'';
+    const _h=document.getElementById('rep-embed-height')?.value;if(_h)rb.embedHeight=parseInt(_h);
+  }
+  return rb;
 }
 function _buildCurrentBlock(){
   const b={type:curBlkType,bgColor:curBlkBgColor||''};
@@ -6368,9 +6399,7 @@ function _buildCurrentBlock(){
   if(_rt){
     b.requiredTier=_rt;
     b.tierLockMode=document.querySelector('input[name="blk-tier-mode"]:checked')?.value||'cover';
-    if(b.tierLockMode==='replace'){
-      b.tierReplaceBlock={textContent:rteGet('blk-replace-text'),bgColor:document.getElementById('blk-replace-bg-hex')?.value||'#f8f8f8'};
-    }
+    if(b.tierLockMode==='replace') b.tierReplaceBlock=_collectRepBlock();
   }
   return b;
 }
@@ -6467,14 +6496,8 @@ function saveBlock(){
   b.requiredTier=(document.getElementById('blk-required-tier')?.value||'').trim();
   if(b.requiredTier){
     b.tierLockMode=document.querySelector('input[name="blk-tier-mode"]:checked')?.value||'cover';
-    if(b.tierLockMode==='replace'){
-      b.tierReplaceBlock={
-        textContent:rteGet('blk-replace-text'),
-        bgColor:document.getElementById('blk-replace-bg-hex')?.value||'#f8f8f8'
-      };
-    } else {
-      delete b.tierReplaceBlock;
-    }
+    if(b.tierLockMode==='replace') b.tierReplaceBlock=_collectRepBlock();
+    else delete b.tierReplaceBlock;
   } else {
     delete b.requiredTier; delete b.tierLockMode; delete b.tierReplaceBlock;
   }
@@ -7575,11 +7598,15 @@ function _gBlockCore(b,S){
   const txS=b.txtColor?`color:${b.txtColor};`:'';
   const _m=k=>Math.round((b[k]??0)*S)|0;
   // tier 잠금 미리보기 (admin에서는 실제 블록 위에 오버레이로 표시)
-  if(b.requiredTier&&b.tierLockMode==='replace'&&b.tierReplaceBlock?.textContent){
-    const rb=b.tierReplaceBlock;const repBg=rb.bgColor||'#f8f8f8';
+  if(b.requiredTier&&b.tierLockMode==='replace'&&b.tierReplaceBlock){
+    const rb=b.tierReplaceBlock;const t=rb.type||'text';
     const _mm=k=>Math.round((b[k]??0)*S)|0;
-    const repMarg=(_mm('marginTop')||_mm('marginRight')||_mm('marginBottom')||_mm('marginLeft'))?`margin:${_mm('marginTop')}px ${_mm('marginRight')}px ${_mm('marginBottom')}px ${_mm('marginLeft')}px;`:'';
-    return `<div style="${repMarg}background:${repBg};padding:${Math.round(16*S)}px ${Math.round(20*S)}px;font-size:${Math.round(13*S)}px;line-height:1.6;">${rb.textContent}</div>`;
+    const mS2=(_mm('marginTop')||_mm('marginRight')||_mm('marginBottom')||_mm('marginLeft'))?`margin:${_mm('marginTop')}px ${_mm('marginRight')}px ${_mm('marginBottom')}px ${_mm('marginLeft')}px;`:'';
+    const bg2=rb.bgColor?`background:${rb.bgColor};`:'';
+    if(t==='image'&&rb.imageUrl){const fit=rb.imageFit||'natural';const h=Math.round((rb.imageHeight||200)*S);if(fit==='natural'&&!rb.imageHeight)return `<div style="${mS2}${bg2}"><img src="${rb.imageUrl}" style="width:100%;display:block;"></div>`;return `<div style="${mS2}${bg2}overflow:hidden;"><div style="background-image:url(${JSON.stringify(rb.imageUrl)});background-size:${fit==='fill'?'100% 100%':fit};background-position:${rb.imagePosition||'50% 50%'};height:${h}px;"></div></div>`;}
+    if(t==='embed'&&rb.embedUrl){const h=Math.round((rb.embedHeight||300)*S);return `<div style="${mS2}"><iframe src="${rb.embedUrl.replace(/"/g,'&quot;')}" width="100%" height="${h}" frameborder="0" style="display:block;border:none;"></iframe></div>`;}
+    if(t==='mixed'){const imgUrl=rb.imageUrl||'';const fit=rb.imageFit||'cover';const h=Math.round((rb.imageHeight||200)*S);const txt=rb.textContent||'';const layout=rb.mixedLayout||'overlay';const order=rb.imageOrder||'img-first';const imgS=`width:100%;height:${h}px;object-fit:${fit==='natural'?'contain':fit==='fill'?'100% 100%':fit};display:block;`;const imgEl=imgUrl?`<img src="${imgUrl}" style="${imgS}">`:'';;if(layout==='split'){const txtEl=`<div style="padding:${Math.round(12*S)}px ${Math.round(20*S)}px;${bg2}font-size:${Math.round(13*S)}px;">${txt}</div>`;return `<div style="${mS2}">${order==='text-first'?txtEl+imgEl:imgEl+txtEl}</div>`;}return `<div style="${mS2}${bg2}position:relative;overflow:hidden;">${imgEl}<div style="position:absolute;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;"><div style="padding:${Math.round(12*S)}px ${Math.round(20*S)}px;font-size:${Math.round(13*S)}px;color:#fff;">${txt}</div></div></div>`;}
+    return `<div style="${mS2}${bg2||'background:#f8f8f8;'}padding:${Math.round(16*S)}px ${Math.round(20*S)}px;font-size:${Math.round(13*S)}px;line-height:1.6;">${rb.textContent||''}</div>`;
   }
   const mS=(b.marginTop||b.marginRight||b.marginBottom||b.marginLeft||b.marginV||b.marginH)
     ?`margin:${_m('marginTop')??_m('marginV')}px ${_m('marginRight')??_m('marginH')}px ${_m('marginBottom')??_m('marginV')}px ${_m('marginLeft')??_m('marginH')}px;`:'';
@@ -8404,7 +8431,9 @@ async function ytLoadPlaylists() {
           <div style="font-weight:800;font-size:14px;">${escHtml(p.title||'(이름 없음)')}</div>
           <div style="font-size:11px;color:rgba(0,0,0,.45);margin-top:3px;">ID: ${escHtml(p.id)}${p.desc?(' · '+escHtml(p.desc.slice(0,30))+(p.desc.length>30?'…':'')):''}</div>
         </div>
-        <span style="font-size:18px;color:rgba(0,0,0,.3);">›</span>
+        <div onclick="event.stopPropagation()">
+          <button class="b-btn" onclick="copyToolUrl('youtube-playlist','${escHtml(p.id)}',this)" title="URL 복사">🔗</button>
+        </div>
       </div>
     `).join('');
   } catch(e) {
@@ -9043,7 +9072,8 @@ async function loadDecoCustomList() {
       div.style.cursor = 'pointer';
       div.onclick = () => decoOpenConfig(doc.id);
       div.innerHTML = `<div class="pi-name">${data.name || doc.id}</div>
-        <div class="pi-meta">/tools/booth?config=${doc.id}</div>`;
+        <div class="pi-meta">/tools/booth?config=${doc.id}</div>
+        <div class="blk-acts" style="margin-top:6px;" onclick="event.stopPropagation()"><button class="b-btn" onclick="copyToolUrl('booth-config','${doc.id}',this)" title="URL 복사">🔗</button></div>`;
       listEl.appendChild(div);
     });
   } catch(e) { /* 커스텀 항목 없으면 무시 */ }
@@ -9153,6 +9183,7 @@ async function gbShowList() {
           <div class="pi-meta">블록 ${(f.blocks||[]).length}개</div>
         </div>
         <div style="display:flex;gap:6px;" onclick="event.stopPropagation()">
+          <button class="b-btn" onclick="copyToolUrl('guide','${d.id}',this)" title="URL 복사">🔗</button>
           <a href="/tools/guide?id=${d.id}" target="_blank" class="prev-btn" style="text-decoration:none;font-size:11px;">미리보기 ↗</a>
         </div>
       </div>`;
@@ -10050,7 +10081,17 @@ async function cgLoadList(){
   }catch(e){ el.innerHTML='<div class="empty-msg">불러오기 실패</div>'; }
 }
 function copyToolUrl(toolType, docId, btn){
-  const urlMap={'copy-gen':'/tools/copy-gen/?id=','form':'/tools/form/?id=','schedule':'/tools/schedule/?id='};
+  const urlMap={
+    'copy-gen':'/tools/copy-gen/?id=',
+    'form':'/tools/form/?id=',
+    'schedule':'/tools/schedule/?id=',
+    'payment':'/tools/payment/?id=',
+    'guestbook':'/tools/guestbook/?id=',
+    'guide':'/tools/guide/?id=',
+    'booth':'/tools/booth/',
+    'booth-config':'/tools/booth/?config=',
+    'youtube-playlist':'/tools/youtube-playlist/?id=',
+  };
   const url=(urlMap[toolType]||'')+docId;
   navigator.clipboard.writeText(url).then(()=>{
     const orig=btn.textContent; btn.textContent='✓ 복사됨';
@@ -10385,6 +10426,9 @@ async function pyLoadList(){
       return `<div class="proj-item" onclick="pyEdit('${d.id}')" style="cursor:pointer;">
         <div class="pi-name">${escHtml(r.title || '(제목 없음)')}${tier}</div>
         <div class="pi-meta">${escHtml(r.productName || '')} · ${Number(r.amount||0).toLocaleString()}원</div>
+        <div class="blk-acts" style="margin-top:6px;">
+          <button class="b-btn" onclick="event.stopPropagation();copyToolUrl('payment','${d.id}',this)" title="URL 복사">🔗</button>
+        </div>
       </div>`;
     }).join('');
   }catch(e){ el.innerHTML = '<div class="empty-msg">불러오기 실패: '+escHtml(e.message)+'</div>'; }
@@ -10703,6 +10747,9 @@ async function gbkLoadList() {
       return `<div class="proj-item" onclick="gbkOpenConfig('${d.id}')" style="cursor:pointer;">
         <div class="pi-name">${escHtml(data.title || '(제목 없음)')}</div>
         <div class="pi-meta">${escHtml(data.entryLabel || '방명록')} · 필드 ${(data.fields||[]).length}개${data.bgImageEnabled?' · 배경 이미지 허용':''}</div>
+        <div class="blk-acts" style="margin-top:6px;">
+          <button class="b-btn" onclick="event.stopPropagation();copyToolUrl('guestbook','${d.id}',this)" title="URL 복사">🔗</button>
+        </div>
       </div>`;
     }).join('');
   } catch(e) { listEl.innerHTML = `<div class="empty-msg">불러오기 실패: ${escHtml(e.message)}</div>`; }
@@ -10986,6 +11033,132 @@ async function deleteGbkEntry(configId, entryId) {
   } catch(e) { alert('삭제 실패: ' + e.message); }
 }
 </script>
+<!-- 폼 필드 추가/편집 모달 -->
+<div class="modal-ov" id="form-field-modal">
+  <div class="modal-box">
+    <div class="modal-ttl" id="form-field-modal-ttl">필드 추가</div>
+    <div class="modal-scroll">
+      <div class="ed-lbl">필드 이름 (화면 표시용)</div>
+      <input class="fi-sm" id="ff-label" placeholder="예: 이름" style="margin-bottom:14px;" oninput="autoFfKey(this.value)">
+      <div class="ed-lbl">필드 키 (영문·숫자·_)</div>
+      <input class="fi-sm" id="ff-key" placeholder="예: name" style="margin-bottom:14px;" oninput="this.dataset.userEdited='1'">
+      <div class="ed-lbl">입력 타입</div>
+      <select class="fi-sm" id="ff-type" style="cursor:pointer;margin-bottom:14px;" onchange="onFfTypeChange()">
+        <option value="string">짧은 텍스트</option>
+        <option value="textarea">긴 텍스트</option>
+        <option value="number">숫자</option>
+        <option value="file">파일 업로드</option>
+        <option value="select">선택지</option>
+        <option value="color">색상 선택</option>
+        <option value="date">날짜 선택</option>
+      </select>
+      <div id="ff-date-extra" style="display:none;padding:10px 12px;background:#f8f8f8;border:1.5px solid rgba(0,0,0,.12);margin-bottom:12px;">
+        <div class="ed-lbl" style="margin-bottom:6px;">날짜 형식</div>
+        <div class="toggle-row" style="margin-bottom:10px;">
+          <button class="tgl-btn on" id="ff-date-date" onclick="setFfDateMode('date')">날짜만</button>
+          <button class="tgl-btn" id="ff-date-datetime" onclick="setFfDateMode('datetime')">날짜+시간</button>
+        </div>
+        <div class="ed-lbl" style="margin-bottom:4px;">선택 가능 범위 <span style="font-weight:400;opacity:.55;">(비워두면 제한 없음)</span></div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input class="fi-sm" id="ff-date-min" type="date" style="margin-bottom:0;flex:1;" placeholder="시작일">
+          <span style="font-size:12px;opacity:.5;">~</span>
+          <input class="fi-sm" id="ff-date-max" type="date" style="margin-bottom:0;flex:1;" placeholder="종료일">
+        </div>
+        <div class="ed-lbl" style="margin-top:10px;margin-bottom:6px;">선택 방식</div>
+        <div class="toggle-row" style="margin-bottom:6px;">
+          <button class="tgl-btn on" id="ff-date-single" onclick="setFfDatePickMode('single')">하루만</button>
+          <button class="tgl-btn" id="ff-date-range" onclick="setFfDatePickMode('range')">기간</button>
+          <button class="tgl-btn" id="ff-date-multi" onclick="setFfDatePickMode('multi')">여러 날짜</button>
+        </div>
+        <div id="ff-date-maxdays-wrap" style="display:none;margin-top:4px;">
+          <div class="ed-lbl" style="margin-bottom:3px;">최대 선택 기간 <span style="font-weight:400;opacity:.55;">(비워두면 자유)</span></div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input class="fi-sm" id="ff-date-max-days" type="number" min="2" placeholder="자유" style="margin-bottom:0;flex:1;">
+            <span style="font-size:12px;opacity:.6;">일</span>
+          </div>
+        </div>
+      </div>
+      <div id="ff-options-wrap" style="display:none;margin-bottom:10px;">
+        <div class="ed-lbl" style="margin-bottom:4px;">선택지 목록 (줄바꿈 또는 쉼표로 구분)</div>
+        <textarea id="ff-options" style="width:100%;height:80px;border:1.5px solid #000;padding:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none;" placeholder="옵션1&#10;옵션2&#10;옵션3"></textarea>
+      </div>
+      <div id="ff-select-extra" style="display:none;padding:10px 12px;background:#f8f8f8;border:1.5px solid rgba(0,0,0,.12);margin-bottom:12px;">
+        <div class="ed-lbl" style="margin-bottom:6px;">선택 방식</div>
+        <div class="toggle-row" style="margin-bottom:10px;">
+          <button class="tgl-btn on" id="ff-sel-dropdown" onclick="setFfSelectMode('dropdown')">드롭다운</button>
+          <button class="tgl-btn" id="ff-sel-buttons" onclick="setFfSelectMode('buttons')">버튼 선택</button>
+        </div>
+        <div class="switch-row" style="margin-bottom:10px;">
+          <div class="switch" id="ff-other-sw" onclick="toggleFfOther()"></div>
+          <span class="switch-lbl">'기타' 항목 포함</span>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+          <div style="flex:1;">
+            <div class="ed-lbl" style="margin-bottom:3px;">최소 선택 수</div>
+            <input class="fi-sm" id="ff-min-sel" type="number" min="0" placeholder="0" style="margin-bottom:0;">
+          </div>
+          <div style="flex:1;">
+            <div class="ed-lbl" style="margin-bottom:3px;">최대 선택 수</div>
+            <input class="fi-sm" id="ff-max-sel" type="number" min="1" placeholder="제한 없음" style="margin-bottom:0;">
+          </div>
+        </div>
+      </div>
+      <div class="ed-lbl" style="margin-bottom:4px;">필드 설명 <span style="font-weight:400;opacity:.55;">(선택, 굵기·링크 지원)</span></div>
+      <div class="ff-desc-editor-wrap">
+        <div class="ff-desc-toolbar">
+          <button type="button" id="ffd-bold-btn" title="굵게" onmousedown="event.preventDefault()" onclick="ffdFmt('bold')"><b>B</b></button>
+          <button type="button" id="ffd-link-btn" title="링크" onmousedown="event.preventDefault()" onclick="ffdToggleLink()">🔗</button>
+        </div>
+        <div id="ff-desc" contenteditable="true" class="ff-desc-ced" data-ph="항목에 대한 설명을 입력하세요"></div>
+        <div class="ff-desc-link-popup" id="ff-desc-link-popup">
+          <input type="url" id="ff-desc-link-url" placeholder="https://" onkeydown="if(event.key==='Enter'){event.preventDefault();ffdApplyLink();}">
+          <button type="button" onclick="ffdApplyLink()">적용</button>
+          <button type="button" onclick="ffdRemoveLink()" style="background:transparent;color:#000;">제거</button>
+        </div>
+      </div>
+      <div id="ff-placeholder-wrap" style="margin-bottom:12px;">
+        <div class="ed-lbl" style="margin-bottom:4px;">플레이스홀더 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
+        <input class="fi-sm" id="ff-placeholder" placeholder="예: 여기에 입력해주세요" style="margin-bottom:0;">
+      </div>
+      <div id="ff-charcount-wrap" style="display:none;margin-bottom:12px;">
+        <div class="ed-lbl" style="margin-bottom:4px;">글자 수 제한 <span style="font-weight:400;opacity:.55;">(비워두면 자유입력)</span></div>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;">
+            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:3px;">최소 글자 수</div>
+            <input class="fi-sm" id="ff-min-chars" type="number" min="0" placeholder="제한 없음" style="margin-bottom:0;">
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:3px;">최대 글자 수</div>
+            <input class="fi-sm" id="ff-max-chars" type="number" min="1" placeholder="제한 없음" style="margin-bottom:0;">
+          </div>
+        </div>
+      </div>
+      <div id="ff-file-extra" style="display:none;padding:10px 12px;background:#f8f8f8;border:1.5px solid rgba(0,0,0,.12);margin-bottom:12px;">
+        <div class="ed-lbl" style="margin-bottom:4px;">허용 파일 형식 <span style="font-weight:400;opacity:.55;">(비워두면 모든 형식)</span></div>
+        <input class="fi-sm" id="ff-accept" placeholder="예: image/* 또는 .jpg,.png,.pdf" style="margin-bottom:10px;">
+        <div style="font-size:11px;color:rgba(0,0,0,.4);margin-top:-6px;margin-bottom:10px;">image/* · video/* · .pdf · .pdf,.docx 등 쉼표로 구분</div>
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1;">
+            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:3px;">최대 파일 수</div>
+            <input class="fi-sm" id="ff-max-files" type="number" min="1" placeholder="제한 없음" style="margin-bottom:0;">
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:3px;">전체 용량 한도 (MB)</div>
+            <input class="fi-sm" id="ff-max-total-mb" type="number" min="1" placeholder="제한 없음" style="margin-bottom:0;">
+          </div>
+        </div>
+      </div>
+      <div class="switch-row">
+        <div class="switch" id="ff-req-sw" onclick="toggleFfReq()"></div>
+        <span class="switch-lbl">필수 입력 항목</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="mbtn-cancel" onclick="closeModal('form-field-modal')">취소</button>
+      <button class="mbtn-ok" onclick="saveFormField()">저장</button>
+    </div>
+  </div>
+</div>
 <div id="fmt-popup" style="display:none;position:fixed;background:#fff;border:2px solid #000;z-index:600;box-shadow:3px 3px 0 rgba(0,0,0,.1);min-width:110px;"><div id="fmt-popup-inner"></div></div>
 <div id="rte-img-tb" style="display:none;position:fixed;z-index:700;background:#fff;border:1.5px solid #000;box-shadow:2px 2px 0 rgba(0,0,0,.12);padding:3px 4px;gap:3px;align-items:center;flex-wrap:wrap;"></div>
 </body>

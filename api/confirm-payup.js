@@ -1,37 +1,62 @@
 // 페이업(Payup) 결제 승인 서버 엔드포인트
-// 1. accessToken 발급
-// 2. 결제 승인 API 호출
-// 3. 결과에 따라 tools/payment/ 로 리다이렉트
+// Mode A: JSON POST (fetch from payupPaymentSubmit) → JSON 응답
+// Mode B: GET/form-POST (브라우저 리다이렉트) → redirect 응답
 export default async function handler(req, res) {
   const IS_TEST = process.env.PAYUP_TEST === 'true';
   const BASE    = IS_TEST
     ? 'https://standard.testpayup.co.kr'
     : 'https://standard.payup.co.kr';
 
-  // PC: form POST body (application/x-www-form-urlencoded)
-  // 모바일: returnUrl GET 쿼리
   const query = req.query || {};
+  const ct    = (req.headers['content-type'] || '').split(';')[0].trim();
+  const isJsonMode = req.method === 'POST' && ct === 'application/json';
 
-  // Vercel이 form body를 자동 파싱하지 않을 수 있으므로 직접 파싱
   let body = req.body || {};
-  if (req.method === 'POST' && typeof body === 'string') {
-    body = Object.fromEntries(new URLSearchParams(body));
+  if (req.method === 'POST') {
+    if (isJsonMode) {
+      if (typeof body === 'string' && body) {
+        try { body = JSON.parse(body); } catch(e) { body = {}; }
+      }
+    } else if (ct === 'application/x-www-form-urlencoded') {
+      if (typeof body === 'string' && body) {
+        body = Object.fromEntries(new URLSearchParams(body));
+      } else if (Buffer.isBuffer(body)) {
+        body = Object.fromEntries(new URLSearchParams(body.toString('utf8')));
+      }
+    }
   }
-  // body가 이미 객체여도 그대로 사용
 
-  const transactionId = body.transactionId || query.transactionId || '';
-  const orderNumber   = body.orderNumber   || query.orderNumber   || '';
-  const amount        = body.amount        || query.amount        || '';
+  // PayUp 파라미터 이름 통일 (여러 가능한 이름 처리)
+  const transactionId = body.transactionId || query.transactionId ||
+                        body.tid           || query.tid           ||
+                        body.transaction_id|| query.transaction_id||
+                        body.TID           || query.TID           || '';
+  const orderNumber   = body.orderNumber   || query.orderNumber   ||
+                        body.orderNo       || query.orderNo       ||
+                        body.orderId       || query.orderId       ||
+                        body.order_id      || query.order_id      ||
+                        body.ORDER_NO      || query.ORDER_NO      || '';
+  const amount        = body.amount        || query.amount        ||
+                        body.amt           || query.amt           ||
+                        body.AMOUNT        || query.AMOUNT        || '';
   const configId      = body.configId      || query.id            || '';
   const projectId     = body.projectId     || query.projectId     || '';
   const userId        = body.userId        || query.userId        || '';
 
   const toolBase = `/tools/payment/?id=${encodeURIComponent(configId)}`;
-  const fail = (msg) =>
-    res.redirect(`${toolBase}&result=fail&message=${encodeURIComponent(msg)}&projectId=${encodeURIComponent(projectId)}&userId=${encodeURIComponent(userId)}`);
+
+  const fail = (msg) => isJsonMode
+    ? res.status(200).json({ success: false, message: msg })
+    : res.redirect(`${toolBase}&result=fail&message=${encodeURIComponent(msg)}&projectId=${encodeURIComponent(projectId)}&userId=${encodeURIComponent(userId)}`);
 
   if (!transactionId || !orderNumber || !amount) {
-    return fail('결제 정보가 전달되지 않았어요.');
+    console.error('[confirm-payup] missing params', {
+      isJsonMode, method: req.method, ct,
+      qKeys: Object.keys(query), bKeys: Object.keys(body),
+      tid: !!transactionId, orderNo: !!orderNumber, amt: !!amount,
+      allBodyKeys: Object.keys(body),
+    });
+    return fail('결제가 완료되지 않았어요. 결제창에서 취소하셨거나 오류가 발생했어요.');
   }
 
   try {
@@ -69,6 +94,18 @@ export default async function handler(req, res) {
 
     if (payData.status === 'SUCCESS' && payData.data?.responseCode === '0000') {
       const d = payData.data;
+      if (isJsonMode) {
+        return res.status(200).json({
+          success: true,
+          data: {
+            transactionId: d.transactionId  || transactionId,
+            amount:        d.amount         || amount,
+            cardName:      d.issueCompanyName || '',
+            authDatetime:  d.authDatetime   || '',
+            authNumber:    d.authNumber     || '',
+          },
+        });
+      }
       const params = new URLSearchParams({
         id:            configId,
         result:        'success',

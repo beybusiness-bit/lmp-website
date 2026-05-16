@@ -42,7 +42,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 #merged-topbar{flex-shrink:0;display:flex;align-items:center;padding:14px 20px;border-bottom:2px solid rgba(255,255,255,.3);background:rgba(0,0,0,.25);backdrop-filter:blur(4px);}
 #merged-topbar .topbar-left{cursor:pointer;-webkit-tap-highlight-color:transparent;}
 #merged-topbar .topbar-center{flex:1;text-align:center;font-size:15px;font-weight:800;color:#fff;letter-spacing:-.3px;}
-#merged-stage-wrap{flex:1;overflow-y:auto;padding:20px 16px 60px;-webkit-overflow-scrolling:touch;}
+#merged-stage-wrap{flex:1;overflow-y:auto;padding:12px 16px 60px;-webkit-overflow-scrolling:touch;}
 #merged-edition{font-size:14px;font-weight:800;color:rgba(255,255,255,.8);margin-bottom:6px;letter-spacing:-.2px;}
 #merged-dday{font-size:28px;font-weight:300;color:#fff;margin-bottom:20px;letter-spacing:-1px;}
 /* return btn */
@@ -69,7 +69,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .topbar-center{flex:1;text-align:center;font-size:15px;font-weight:800;color:#000;letter-spacing:-.3px;}
 .topbar-right{font-size:22px;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;line-height:1;padding:4px;}
 .topbar-back{font-size:22px;font-weight:900;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;padding:4px;line-height:1;}
-.screen-body{flex:1;overflow-y:auto;padding:8px 20px 48px;-webkit-overflow-scrolling:touch;}
+.screen-body{flex:1;overflow-y:auto;padding:12px 20px 48px;-webkit-overflow-scrolling:touch;}
 /* stage cards */
 .stage-card{border:2px solid #000;background:transparent;margin-bottom:16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:opacity .15s;}
 .home-blk-wrap{margin-bottom:16px;}
@@ -1883,6 +1883,14 @@ function _isBlockLocked(b){
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
   return saved.project!==PROJECT_ID;
 }
+function _repBlockHtml(rb,mS){
+  if(!rb)return '';
+  const t=rb.type||'text';const bg=rb.bgColor?`background:${rb.bgColor};`:'';
+  if(t==='image'&&rb.imageUrl){const fit=rb.imageFit||'natural';const h=rb.imageHeight;if(fit==='natural'&&!h)return `<div style="${mS}${bg}"><img src="${rb.imageUrl}" alt="" loading="lazy" class="lb-img" onclick="openLightbox(this.src)" style="width:100%;display:block;"></div>`;const bgSize=fit==='fill'?'100% 100%':(fit==='natural'?'contain':fit);return `<div style="${mS}${bg}overflow:hidden;"><div style="background-image:url(${JSON.stringify(rb.imageUrl)});background-size:${bgSize};background-position:${rb.imagePosition||'50% 50%'};height:${h||200}px;"></div></div>`;}
+  if(t==='embed'&&rb.embedUrl){const h=rb.embedHeight||500;return `<div style="${mS}${bg}"><iframe src="${rb.embedUrl.replace(/"/g,'&quot;')}" width="100%" height="${h}" frameborder="0" allowfullscreen style="display:block;border:none;"></iframe></div>`;}
+  if(t==='mixed'){const txt=applyVars(rb.textContent||'');const imgUrl=rb.imageUrl||'';const layout=rb.mixedLayout||'overlay';const order=rb.imageOrder||'img-first';const fit=rb.imageFit||'cover';const h=rb.imageHeight;const imgS=h?`width:100%;height:${h}px;object-fit:${fit==='natural'?'contain':fit==='fill'?'100% 100%':fit};display:block;`:'width:100%;display:block;';const imgEl=imgUrl?`<img src="${imgUrl}" alt="" loading="lazy" class="lb-img" onclick="openLightbox(this.src)" style="${imgS}">`:'';;if(layout==='split'){const content=order==='text-first'?`<div class="g-split-text" style="${bg}">${txt}</div><div class="g-split-img">${imgEl}</div>`:`<div class="g-split-img">${imgEl}</div><div class="g-split-text" style="${bg}">${txt}</div>`;return `<div class="g-block-mixed-split" style="${mS}">${content}</div>`;}return `<div class="g-block-mixed-overlay" style="${mS}${bg}">${imgEl}<div class="g-overlay-text" style="align-items:flex-end;background:rgba(0,0,0,.4);"><div class="g-overlay-text-inner">${txt}</div></div></div>`;}
+  const txt=applyVars(rb.textContent||'');return `<div class="g-block-text" style="${mS}${bg}"><div class="g-block-text-inner">${txt}</div></div>`;
+}
 function _isTierLocked(b){
   if(!b.requiredTier || IS_ADMIN_PREVIEW) return false;
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
@@ -1915,13 +1923,8 @@ function blockHtml(b){
     </div>`;
   }
   // 결제 게이트 — requiredTier가 있고 사용자가 해당 tier를 구매하지 않은 경우
-  // 결제 게이트 — requiredTier가 있고 사용자가 해당 tier를 구매하지 않은 경우
   if(_isTierLocked(b)){
-    if(b.tierLockMode==='replace'&&b.tierReplaceBlock?.textContent){
-      const rb=b.tierReplaceBlock;
-      const repBg=rb.bgColor?`background:${rb.bgColor};`:'background:#f8f8f8;';
-      return `<div style="${mS}${repBg}padding:16px 20px;">${rb.textContent}</div>`;
-    }
+    if(b.tierLockMode==='replace'&&b.tierReplaceBlock){return _repBlockHtml(b.tierReplaceBlock,mS);}
     return `<div style="${mS}${bgS}min-height:120px;display:flex;align-items:center;justify-content:center;border:1.5px dashed rgba(0,0,0,.2);background:rgba(0,0,0,.03);">
       <div style="text-align:center;padding:20px 16px;">
         <div style="font-size:26px;margin-bottom:6px;">🔒</div>
@@ -2251,11 +2254,6 @@ function refreshStageProgress(){
   if(html) card.insertAdjacentHTML('beforeend',html);
 }
 async function toggleBlockCheck(blockId){
-  // 필요 시 로그인 모드: 비로그인 사용자는 로그인 요청 후 재시도
-  if(AUTH_ENABLED && AUTH_MODE==='on-demand' && !USER_DOC_ID && !IS_ADMIN_PREVIEW){
-    requireAuthOr(()=>toggleBlockCheck(blockId), '진행률을 체크하려면 로그인이 필요해요.');
-    return;
-  }
   const stageId=curStageId;
   if(!userProgress[stageId]) userProgress[stageId]=new Set();
   const prog=userProgress[stageId];
