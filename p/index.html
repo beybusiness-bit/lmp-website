@@ -1349,7 +1349,7 @@ function openRegModal(){
         setTimeout(()=>_calInit(calFid,{mode:pickMode,dateMin:f.dateMin||'',dateMax:f.dateMax||'',maxDays:f.dateMaxDays||0}),0);
       }
     } else if(t==='number'){
-      inp=`<input class="inp" type="number" data-reg-key="${f.key}" data-reg-type="${t}" placeholder="${f.label}" style="margin-bottom:0;">`;
+      inp=`<input class="inp" type="text" inputmode="numeric" data-reg-key="${f.key}" data-reg-type="${t}" placeholder="${f.label}" style="margin-bottom:0;">`;
     } else {
       inp=`<input class="inp" data-reg-key="${f.key}" data-reg-type="${t}" placeholder="${f.label}" style="margin-bottom:0;">`;
     }
@@ -1392,7 +1392,7 @@ async function submitRegistration(){
       val=el?(el.value||'').trim():'';
     }
     if(!val&&f.required){ document.getElementById('reg-err').textContent=`'${f.label}'을(를) 입력해주세요.`; const el=document.querySelector(`#reg-fields [data-reg-key="${key}"]`); if(el) el.focus(); return; }
-    data[key]=t==='number'?(parseFloat(val)||0):val;
+    data[key]=val;
   }
   const btn=document.getElementById('reg-ok');
   btn.textContent='등록 중…'; btn.disabled=true;
@@ -1500,8 +1500,11 @@ async function confirmAuth(){
   btn.textContent='확인 중…'; btn.disabled=true;
   try{
     const keyField=AUTH_FIELDS.find(f=>f.key===AUTH_KEY_FIELD);
-    const queryVal=keyField?.type==='number'?(parseFloat(val)||0):val;
-    const snap=await db.collection(AUTH_COLLECTION).where(AUTH_KEY_FIELD,'==',queryVal).limit(1).get();
+    let snap=await db.collection(AUTH_COLLECTION).where(AUTH_KEY_FIELD,'==',val).limit(1).get();
+    // 기존 데이터가 숫자로 저장된 경우 fallback
+    if(snap.empty && keyField?.type==='number' && val!=='' && !isNaN(Number(val))){
+      snap=await db.collection(AUTH_COLLECTION).where(AUTH_KEY_FIELD,'==',parseFloat(val)).limit(1).get();
+    }
     btn.textContent='확인'; btn.disabled=false;
     if(snap.empty){ errEl.textContent='인증 정보를 찾을 수 없어요.'; return; }
     const u=snap.docs[0].data();

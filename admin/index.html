@@ -4440,7 +4440,7 @@ function openUserModal(userId) {
     <div style="margin-bottom:12px;">
       <div class="ed-lbl">${f.label}${f.required?' *':''}</div>
       <input class="fi-sm" id="um-${f.key}" value="${(user[f.key]||'').toString().replace(/"/g,'&quot;')}"
-             type="${f.type==='number'?'number':'text'}" placeholder="${f.label}" style="margin-bottom:0;">
+             type="text" ${f.type==='number'?'inputmode="numeric"':''} placeholder="${f.label}" style="margin-bottom:0;">
     </div>`).join('');
   document.getElementById('user-modal').classList.add('on');
 }
@@ -4450,7 +4450,7 @@ async function saveUser() {
   for (const f of curAuthFields) {
     const val = document.getElementById('um-'+f.key).value.trim();
     if (f.required && !val) { alert(f.label+'을(를) 입력해주세요.'); return; }
-    data[f.key] = f.type==='number' ? (parseFloat(val)||0) : val;
+    data[f.key] = val;
   }
   try {
     if (curEditingUserId) {
@@ -4495,7 +4495,7 @@ async function saveBulkUsers() {
     const data = {};
     Object.entries(fieldMap).forEach(([idx,f]) => {
       const v = vals[idx]||'';
-      data[f.key] = f.type==='number' ? (parseFloat(v)||0) : v;
+      data[f.key] = v;
     });
     if (!data[curAuthFields[0]?.key]) continue;
     try { await db.collection(col).add(data); count++; } catch(e) {}
