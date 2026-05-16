@@ -715,18 +715,32 @@ async function onPayClick() {
   window._payupConfirmUrl  = confirmBase.toString();
   window._payupOrderNumber = orderNumber;
 
+  // payupPaymentSubmit이 호출되면 이 플래그가 세워짐
+  window._payupSubmitCalled = false;
   try {
     goPayupPay(data);
   } catch (e) {
     btn.disabled = false;
     btn.textContent = '결제 진행하기';
     alert('결제 요청 실패: ' + (e?.message || e));
+    return;
   }
+  // 5초 내 payupPaymentSubmit 미호출 → 팝업 차단 가능성 안내
+  setTimeout(() => {
+    if (!window._payupSubmitCalled && btn.disabled) {
+      btn.disabled = false;
+      btn.textContent = '결제 진행하기';
+      alert('결제창을 열지 못했어요. 브라우저의 팝업 차단을 해제하거나, 다른 브라우저로 시도해 주세요.');
+    }
+  }, 5000);
 }
 
 function payupPaymentSubmit(payForm) {
+  window._payupSubmitCalled = true;
   const form = document.getElementById(payForm) || document.getElementById('PayupPaymentStandardForm');
   if (!form) return;
+  // iframe 안에서 SDK 팝업이 차단되므로 현재 프레임에서 직접 리다이렉트
+  form.target = '';
   form.submit();
 }
 
