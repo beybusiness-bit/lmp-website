@@ -119,9 +119,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         </div>
       </div>
       <div id="qty-unit-price"></div>
-      <div id="stock-remaining-info" style="display:none;font-size:12px;color:rgba(0,0,0,.55);font-weight:600;margin-top:6px;">⚡ <span id="stock-remaining-text"></span></div>
+      <div id="stock-remaining-info" style="display:none;font-size:12px;color:rgba(0,0,0,.55);font-weight:600;margin-top:6px;"><span id="stock-remaining-text"></span></div>
     </div>
-    <div id="stock-info-no-qty" style="display:none;font-size:12px;color:rgba(0,0,0,.55);font-weight:600;margin-bottom:12px;">⚡ <span id="stock-info-no-qty-text"></span></div>
+    <div id="stock-info-no-qty" style="display:none;font-size:12px;color:rgba(0,0,0,.55);font-weight:600;margin-bottom:12px;"><span id="stock-info-no-qty-text"></span></div>
     <button class="lmp-btn" id="pay-btn">결제하기</button>
   </div>
 
@@ -460,7 +460,7 @@ function renderInlineOptions(opts) {
     const stockLabel = CONFIG.stockEnabled && !soldOut && optRemaining != null
       && CONFIG.stockDisplayEnabled
       && (CONFIG.stockDisplayThreshold == null || optRemaining <= CONFIG.stockDisplayThreshold)
-      ? `<span style="font-size:10px;color:rgba(200,60,0,.85);margin-left:6px;font-weight:700;">⚡ ${optRemaining}개 남음</span>` : '';
+      ? `<span style="font-size:10px;color:rgba(200,60,0,.85);margin-left:6px;font-weight:700;">${optRemaining}개 남음</span>` : '';
     const soldOutLabel = soldOut ? `<span style="font-size:11px;color:rgba(0,0,0,.35);margin-left:6px;">품절</span>` : '';
     const dimStyle = soldOut ? 'opacity:.4;pointer-events:none;' : '';
     return `<div class="opt-item${isSel?' sel':''}" data-idx="${i}" onclick="${soldOut?'':('selectInlineOption('+i+')')}" style="margin-bottom:10px;${dimStyle}">

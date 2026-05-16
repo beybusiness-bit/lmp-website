@@ -2016,6 +2016,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:14px;">
         <a id="tool-manage-link" href="#" onclick="openToolManageLink(event)" style="color:rgba(0,0,0,.5);text-decoration:underline;">도구 탭에서 관리하기 →</a>
       </div>
+      <div style="margin-bottom:14px;">
+        <div class="ed-lbl" style="margin-bottom:6px;">도구 별명 <span style="font-weight:400;opacity:.55;">(사이드바 활동 내역에 표시)</span></div>
+        <input class="fi" id="blk-tool-nickname" placeholder="예: 참가 신청서, 신청 완료 등" style="margin-bottom:0;">
+      </div>
       <div style="margin-top:4px;">
         <div class="ed-lbl" style="margin-bottom:6px;">높이</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
@@ -6130,6 +6134,8 @@ function openBlockModal(idx,insertAt){
     document.querySelectorAll('input[name="complete-trigger"]').forEach(r=>{
       r.checked=r.value===curBlkCompleteTrigger;
     });
+    const _nickEl=document.getElementById('blk-tool-nickname');
+    if(_nickEl) _nickEl.value=b.toolNickname||'';
   }
   /* form — 항상 UI 초기화 후 기존 값 로드 */
   curFormFields = b.type==='form' ? JSON.parse(JSON.stringify(b.formFields||[])) : [];
@@ -6257,6 +6263,8 @@ function _buildCurrentBlock(){
     b.toolConfig=curBlkToolConfig;
     b.height=curToolHeightMode==='full'?'full':(curToolHeightMode==='px'?parseInt(document.getElementById('tool-height')?.value)||0:0);
     b.completeTrigger=curBlkCompleteTrigger||'tool-signal';
+    const _nick=(document.getElementById('blk-tool-nickname')?.value||'').trim();
+    if(_nick) b.toolNickname=_nick; else delete b.toolNickname;
   } else if(curBlkType==='form'){
     b.formFields=curFormFields||[];
     b.formConfig={submitBtnText:document.getElementById('form-submit-text')?.value||'제출하기'};
@@ -6335,6 +6343,8 @@ function saveBlock(){
     b.toolType=curBlkToolType;
     b.toolConfig=tc;
     b.height=curToolHeightMode==='full'?'full':(curToolHeightMode==='px'?parseInt(document.getElementById('tool-height')?.value)||0:0);
+    const _nick2=(document.getElementById('blk-tool-nickname')?.value||'').trim();
+    if(_nick2) b.toolNickname=_nick2; else delete b.toolNickname;
   } else if(curBlkType==='form'){
     curFormConfig.formTitle       = document.getElementById('form-title-inp').value.trim();
     curFormConfig.submitBtnText   = document.getElementById('form-submit-text').value.trim()||'제출하기';

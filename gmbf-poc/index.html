@@ -99,9 +99,9 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .menu-tab.active{color:#000;border-bottom-color:#000;}
 #menu-activity-panel,#menu-payment-panel{display:none;flex:1;overflow-y:auto;padding:0 20px 32px;}
 #menu-login-prompt{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px 24px;}
-.menu-enter-btn{width:100%;padding:14px 0;background:#000;color:#fff;border:none;border-radius:0;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;}
+.menu-enter-btn{width:100%;padding:14px 0;background:#000;color:#fff;border:2px solid #000;border-radius:0;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;}
 .menu-enter-btn:active{opacity:.7;}
-.menu-sreg-btn{width:100%;padding:12px 0;background:transparent;color:#000;border:1.5px solid rgba(0,0,0,.3);border-radius:0;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;}
+.menu-sreg-btn{width:100%;padding:12px 0;background:transparent;color:#000;border:2px solid #000;border-radius:0;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;}
 .menu-sreg-btn:active{opacity:.6;}
 #menu-footer{flex-shrink:0;display:none;padding:12px 28px 28px;border-top:1px solid rgba(0,0,0,.12);}
 #menu-logout{display:inline-block;font-size:13px;font-weight:600;color:rgba(0,0,0,.45);cursor:pointer;-webkit-tap-highlight-color:transparent;padding:6px 0;letter-spacing:-.2px;}
@@ -118,6 +118,8 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .mi-act-type{font-size:14px;font-weight:700;color:#000;letter-spacing:-.2px;margin-bottom:4px;}
 .mi-act-preview{font-size:13px;color:rgba(0,0,0,.6);margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .mi-act-date{font-size:12px;color:rgba(0,0,0,.4);}
+.mi-act-sub{font-size:12px;color:rgba(0,0,0,.45);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mi-act-status{font-size:12px;color:rgba(0,140,60,.9);font-weight:700;margin-bottom:3px;}
 .menu-dot{width:36px;height:36px;border-radius:50%;background:#000;color:var(--menu-bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;text-align:center;line-height:1.3;}
 /* user greeting */
 #menu-greeting{display:none;padding:14px 20px 12px;border-bottom:1px solid rgba(0,0,0,.12);font-size:13px;font-weight:700;line-height:1.65;letter-spacing:-.2px;color:var(--menu-bg);background:#000;word-break:keep-all;}
@@ -1638,7 +1640,7 @@ function _findBlockByFormId(formId){
   for(let i=0;i<STAGES.length;i++){
     const blocks=_stageBlocksCache[STAGES[i].id]||[];
     const b=blocks.find(b=>(b.type==='tool'&&b.toolConfig?.formId===formId)||(b.type==='form'&&b.formId===formId));
-    if(b) return {stageIdx:i,blockId:b.id};
+    if(b) return {stageIdx:i,blockId:b.id,toolNickname:b.toolNickname||''};
   }
   return null;
 }
@@ -1647,15 +1649,15 @@ function _findBlockByToolConfig(configId, toolType){
   for(let i=0;i<STAGES.length;i++){
     const blocks=_stageBlocksCache[STAGES[i].id]||[];
     const b=blocks.find(b=>b.type==='tool'&&b.toolType===toolType&&b.toolConfig?.[toolKey]===configId);
-    if(b) return {stageIdx:i,blockId:b.id};
+    if(b) return {stageIdx:i,blockId:b.id,toolNickname:b.toolNickname||''};
   }
   return null;
 }
-function _navToBlock(found){
+async function _navToBlock(found){
   closeMenu();
   if(!found) return;
-  goToStage(found.stageIdx);
-  setTimeout(()=>{ document.getElementById('block-'+found.blockId)?.scrollIntoView({behavior:'smooth',block:'center'}); },450);
+  await goToStage(found.stageIdx);
+  setTimeout(()=>{ document.getElementById('block-'+found.blockId)?.scrollIntoView({behavior:'smooth',block:'center'}); },100);
 }
 async function loadMyActivity(){
   const el=document.getElementById('menu-activity-panel');
@@ -1672,12 +1674,18 @@ async function loadMyActivity(){
         if(b.type==='tool'&&b.toolType==='guestbook'&&b.toolConfig?.guestbookId) gbIds.add(b.toolConfig.guestbookId);
       });
     });
+    // 인스턴스 제목 병렬 로드
+    const formTitles={}, gbTitles={};
     const items=[];
     await Promise.all([
       ...[...formIds].map(async formId=>{
         try{
-          const snap=await db.collection('cms_form_responses').doc(formId)
-            .collection('responses').where('_userId','==',USER_DOC_ID).limit(10).get();
+          const [cfgDoc,snap]=await Promise.all([
+            db.collection('cms_form_configs').doc(formId).get(),
+            db.collection('cms_form_responses').doc(formId)
+              .collection('responses').where('_userId','==',USER_DOC_ID).limit(10).get()
+          ]);
+          formTitles[formId]=cfgDoc.data()?.title||'';
           snap.docs.forEach(doc=>{
             const d=doc.data();
             const ts=d.submittedAt?.toMillis?.()??d.updatedAt?.toMillis?.()??0;
@@ -1687,8 +1695,12 @@ async function loadMyActivity(){
       }),
       ...[...gbIds].map(async configId=>{
         try{
-          const snap=await db.collection('cms_guestbook_entries').doc(configId)
-            .collection('entries').where('userId','==',USER_DOC_ID).limit(10).get();
+          const [cfgDoc,snap]=await Promise.all([
+            db.collection('cms_guestbook_configs').doc(configId).get(),
+            db.collection('cms_guestbook_entries').doc(configId)
+              .collection('entries').where('userId','==',USER_DOC_ID).limit(10).get()
+          ]);
+          gbTitles[configId]=cfgDoc.data()?.title||'';
           snap.docs.forEach(doc=>{
             const d=doc.data();
             const ts=d.createdAt?.toMillis?.()??0;
@@ -1703,23 +1715,31 @@ async function loadMyActivity(){
       if(item.type==='form'){
         const dt=item.d.submittedAt?.toDate?.()?.toLocaleDateString('ko-KR')||item.d.updatedAt?.toDate?.()?.toLocaleDateString('ko-KR')||'';
         const found=_findBlockByFormId(item.formId);
+        const nickname=found?.toolNickname||'';
+        const instTitle=esc(formTitles[item.formId]||'');
+        const label=nickname?(esc(nickname)+(instTitle?' · '+instTitle:'')):instTitle||'폼 응답';
         const stageTitle=found?esc(STAGES[found.stageIdx]?.title||''):'';
-        const navJson=found?JSON.stringify(found).replace(/"/g,"'"):'';
+        const navJson=found?JSON.stringify({stageIdx:found.stageIdx,blockId:found.blockId}).replace(/"/g,"'"):'';
         const clickAttr=found?` onclick="_navToBlock(${navJson})"`:' onclick="closeMenu();"';
         return `<div class="mi-act-item"${clickAttr}>
-          <div class="mi-act-type">폼 응답${stageTitle?' · '+stageTitle:''}</div>
+          <div class="mi-act-type">${label}</div>
+          ${stageTitle?`<div class="mi-act-sub">${stageTitle}</div>`:''}
+          <div class="mi-act-status">제출 완료</div>
           <div class="mi-act-date">${dt}</div>
         </div>`;
       } else {
         const dt=item.d.createdAt?.toDate?.()?.toLocaleDateString('ko-KR')||'';
-        const txt=esc((item.d.text||'').replace(/<[^>]+>/g,'').slice(0,40));
         const found=_findBlockByToolConfig(item.configId,'guestbook');
+        const nickname=found?.toolNickname||'';
+        const instTitle=esc(gbTitles[item.configId]||'');
+        const label=nickname?(esc(nickname)+(instTitle?' · '+instTitle:'')):instTitle||'방명록';
         const stageTitle=found?esc(STAGES[found.stageIdx]?.title||''):'';
-        const navJson=found?JSON.stringify(found).replace(/"/g,"'"):'';
+        const navJson=found?JSON.stringify({stageIdx:found.stageIdx,blockId:found.blockId}).replace(/"/g,"'"):'';
         const clickAttr=found?` onclick="_navToBlock(${navJson})"`:' onclick="closeMenu();"';
         return `<div class="mi-act-item"${clickAttr}>
-          <div class="mi-act-type">방명록${stageTitle?' · '+stageTitle:''}</div>
-          ${txt?`<div class="mi-act-preview">${txt}</div>`:''}
+          <div class="mi-act-type">${label}</div>
+          ${stageTitle?`<div class="mi-act-sub">${stageTitle}</div>`:''}
+          <div class="mi-act-status">작성 완료</div>
           <div class="mi-act-date">${dt}</div>
         </div>`;
       }
@@ -1794,7 +1814,7 @@ function goToStage(i){
   curStageIdx=i; curStageId=stage.id;
   if(LAYOUT_TYPE!=='merged') document.getElementById('topbar-title').textContent=stage.title;
   closeMenu();
-  openStageContent(stage);
+  return openStageContent(stage);
 }
 
 /* ── Guide viewer ── */
@@ -2113,7 +2133,7 @@ function renderGuideScroll(blocks){
     const mS=(b.marginV||b.marginH)?`margin:${b.marginV||0}px ${b.marginH||0}px;`:'';
     const bStripped={...b,bgColor:'',marginV:0,marginH:0};
     const inner=attachCheck(blockHtml(bStripped),b);
-    return (bgS||mS)?`<div style="${bgS}${mS}">${inner}</div>`:inner;
+    return `<div id="block-${b.id}"${(bgS||mS)?` style="${bgS}${mS}"`:''}>${inner}</div>`;
   }).join('');
   document.getElementById('guide-scroll-body').style.display='block';
   _sendContextToEmbeds();
@@ -2134,7 +2154,7 @@ function renderGuideSlide(blocks){
     const va=scrollable||fullH?'':(b.verticalAlign||'');
     const jc=scrollable||fullH?'flex-start':(vaMap[b.verticalAlign]||'center');
     const scrollS=scrollable?'overflow-y:auto;':'';
-    return `<div class="guide-slide-item"${va?` data-valign="${va}"`:''}  style="width:${100/N}%;justify-content:${jc};${bgS}${mS}${scrollS}">${inner}</div>`;
+    return `<div id="block-${b.id}" class="guide-slide-item"${va?` data-valign="${va}"`:''}  style="width:${100/N}%;justify-content:${jc};${bgS}${mS}${scrollS}">${inner}</div>`;
   }).join('');
   track.style.width=(N*100)+'%';
   track.style.transform='translateX(0)';
