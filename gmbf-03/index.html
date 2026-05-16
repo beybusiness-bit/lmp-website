@@ -1577,37 +1577,141 @@ function applyGreeting(userRecord){
 }
 
 /* ── Side menu (both layouts) ── */
+let _sideTab='activity';
+let _sideTabsInited=false;
 function renderMenu(){
-  const target=LAYOUT_TYPE==='merged'?'merged-side':'side';
   setCss('--menu-bg',pickOther(prepBg,KEY_COLORS));
-  document.getElementById('menu-list').innerHTML=STAGES.map((s,i)=>{
-    const isDisabled=s.publishStatus==='disabled';
-    const isHidden=s.publishStatus==='hidden';
-    const canClick=!isDisabled||IS_ADMIN_PREVIEW;
-    const dimStyle=isDisabled?(IS_ADMIN_PREVIEW?'opacity:.55;':'opacity:.4;pointer-events:none;'):'';
-    const adminTag=IS_ADMIN_PREVIEW&&(isDisabled||isHidden)?`<span style="background:#f95548;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;margin-left:6px;">${isHidden?'숨김':'비활성'}</span>`:'';
-    const pct=calcPct(s);
-    const statusTxt=pct===0?'시작 전':pct===100?'완료':'진행 중';
-    const dotHtml=s.trackProgress?`<div class="menu-dot">${statusTxt}</div>`:'';
-    const click=canClick?` onclick="goToStage(${i});closeMenu();"`:'';
-    return `<div class="menu-item"${click} style="${dimStyle}">${dotHtml}<div class="menu-title">${s.title}${adminTag}</div></div>`;
-  }).join('');
+  const loggedIn=!!(USER_DOC_ID||(JSON.parse(sessionStorage.getItem('userSession')||'{}').project===PROJECT_ID));
+  const tabsBar=document.getElementById('menu-tabs-bar');
+  const actPanel=document.getElementById('menu-activity-panel');
+  const payPanel=document.getElementById('menu-payment-panel');
+  const loginPrompt=document.getElementById('menu-login-prompt');
   const footer=document.getElementById('menu-footer');
-  if(footer){
-    const loggedIn=!!USER_DOC_ID||(JSON.parse(sessionStorage.getItem('userSession')||'{}').project===PROJECT_ID);
-    footer.style.display=((AUTH_ENABLED||SELF_REG_ENABLED)&&!IS_ADMIN_PREVIEW&&loggedIn)?'block':'none';
+  if(loggedIn&&!IS_ADMIN_PREVIEW){
+    if(tabsBar) tabsBar.style.display='block';
+    if(loginPrompt) loginPrompt.style.display='none';
+    if(footer) footer.style.display='block';
+    switchSideTab(_sideTab, true);
+  } else {
+    if(tabsBar) tabsBar.style.display='none';
+    if(actPanel){ actPanel.style.display='none'; }
+    if(payPanel){ payPanel.style.display='none'; }
+    if(loginPrompt){
+      loginPrompt.style.display='flex';
+      const sregBtn=document.getElementById('menu-sreg-cta');
+      if(sregBtn) sregBtn.style.display=SELF_REG_ENABLED?'block':'none';
+    }
+    if(footer) footer.style.display='none';
   }
 }
-function openMyInfo(){
-  closeMenu();
-  document.getElementById('my-info-panel').classList.add('open');
-  loadMyPayments();
+let _actLoaded=false, _payLoaded=false;
+function switchSideTab(tab, force){
+  _sideTab=tab;
+  const actTab=document.getElementById('menu-tab-activity');
+  const payTab=document.getElementById('menu-tab-payment');
+  const actPanel=document.getElementById('menu-activity-panel');
+  const payPanel=document.getElementById('menu-payment-panel');
+  if(!actTab||!payTab||!actPanel||!payPanel) return;
+  if(tab==='activity'){
+    actTab.classList.add('active'); payTab.classList.remove('active');
+    actPanel.style.display='block'; payPanel.style.display='none';
+    if(!_actLoaded||force){ _actLoaded=true; loadMyActivity(); }
+  } else {
+    payTab.classList.add('active'); actTab.classList.remove('active');
+    payPanel.style.display='block'; actPanel.style.display='none';
+    if(!_payLoaded||force){ _payLoaded=true; loadMyPayments(); }
+  }
 }
-function closeMyInfo(){
-  document.getElementById('my-info-panel').classList.remove('open');
+let _stageBlocksCache={}, _stageBlocksCacheLoaded=false;
+async function _preloadStageBlocks(){
+  if(_stageBlocksCacheLoaded) return;
+  try{
+    await Promise.all(STAGES.map(async s=>{
+      if(_stageBlocksCache[s.id]) return;
+      const doc=await db.collection('cms_projects').doc(PROJECT_ID).collection('stage_content').doc(s.id).get();
+      if(doc.exists) _stageBlocksCache[s.id]=(doc.data().blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
+    }));
+    _stageBlocksCacheLoaded=true;
+  }catch(e){}
+}
+function _findBlockByFormId(formId){
+  for(let i=0;i<STAGES.length;i++){
+    const blocks=_stageBlocksCache[STAGES[i].id]||[];
+    const b=blocks.find(b=>(b.type==='tool'&&b.toolConfig?.formId===formId)||(b.type==='form'&&b.formId===formId));
+    if(b) return {stageIdx:i,blockId:b.id};
+  }
+  return null;
+}
+function _findBlockByToolConfig(configId, toolType){
+  const toolKey=toolType==='guestbook'?'guestbookId':'configId';
+  for(let i=0;i<STAGES.length;i++){
+    const blocks=_stageBlocksCache[STAGES[i].id]||[];
+    const b=blocks.find(b=>b.type==='tool'&&b.toolType===toolType&&b.toolConfig?.[toolKey]===configId);
+    if(b) return {stageIdx:i,blockId:b.id};
+  }
+  return null;
+}
+function _navToBlock(found){
+  closeMenu();
+  if(!found) return;
+  goToStage(found.stageIdx);
+  setTimeout(()=>{ document.getElementById('block-'+found.blockId)?.scrollIntoView({behavior:'smooth',block:'center'}); },450);
+}
+async function loadMyActivity(){
+  const el=document.getElementById('menu-activity-panel');
+  if(!el) return;
+  el.innerHTML='<div class="mi-empty">불러오는 중…</div>';
+  if(!USER_DOC_ID||!PROJECT_ID){ el.innerHTML='<div class="mi-empty">로그인이 필요해요.</div>'; return; }
+  try{
+    await _preloadStageBlocks();
+    const [formSnap,gbSnap]=await Promise.all([
+      db.collectionGroup('responses').where('_userId','==',USER_DOC_ID).limit(40).get(),
+      db.collectionGroup('entries').where('userId','==',USER_DOC_ID).limit(40).get()
+    ]);
+    const items=[];
+    formSnap.docs.forEach(doc=>{
+      const d=doc.data();
+      if(d.projectId!==PROJECT_ID) return;
+      const formId=doc.ref.parent?.parent?.id||'';
+      const ts=d.submittedAt?.toMillis?.()??d.updatedAt?.toMillis?.()??0;
+      items.push({type:'form',formId,ts,d});
+    });
+    gbSnap.docs.forEach(doc=>{
+      const d=doc.data();
+      if(d.projectId!==PROJECT_ID) return;
+      const configId=doc.ref.parent?.parent?.id||'';
+      const ts=d.createdAt?.toMillis?.()??0;
+      items.push({type:'guestbook',configId,ts,d});
+    });
+    items.sort((a,b)=>b.ts-a.ts);
+    if(!items.length){ el.innerHTML='<div class="mi-empty">활동 내역이 없어요.</div>'; return; }
+    el.innerHTML=items.map(item=>{
+      if(item.type==='form'){
+        const dt=item.d.submittedAt?.toDate?.()?.toLocaleDateString('ko-KR')||item.d.updatedAt?.toDate?.()?.toLocaleDateString('ko-KR')||'';
+        const found=_findBlockByFormId(item.formId);
+        const clickAttr=found?` onclick="_navToBlock(${JSON.stringify(found)})"`:` onclick="closeMenu();"`;
+        return `<div class="mi-act-item"${clickAttr}>
+          <div class="mi-act-type">폼 응답</div>
+          <div class="mi-act-date">${dt}</div>
+        </div>`;
+      } else {
+        const dt=item.d.createdAt?.toDate?.()?.toLocaleDateString('ko-KR')||'';
+        const txt=esc((item.d.text||'').replace(/<[^>]+>/g,'').slice(0,40));
+        const found=_findBlockByToolConfig(item.configId,'guestbook');
+        const clickAttr=found?` onclick="_navToBlock(${JSON.stringify(found)})"`:` onclick="closeMenu();"`;
+        return `<div class="mi-act-item"${clickAttr}>
+          <div class="mi-act-type">방명록</div>
+          ${txt?`<div class="mi-act-preview">${txt}</div>`:''}
+          <div class="mi-act-date">${dt}</div>
+        </div>`;
+      }
+    }).join('');
+  }catch(e){
+    el.innerHTML=`<div class="mi-empty">불러오기 실패<br><span style="font-size:11px;font-weight:400;">${esc(e.message||'')}</span></div>`;
+  }
 }
 async function loadMyPayments(){
-  const body=document.getElementById('mi-body');
+  const body=document.getElementById('menu-payment-panel');
   if(!body) return;
   body.innerHTML='<div class="mi-empty">불러오는 중…</div>';
   if(!USER_DOC_ID||!PROJECT_ID){ body.innerHTML='<div class="mi-empty">로그인이 필요해요.</div>'; return; }
@@ -1616,16 +1720,23 @@ async function loadMyPayments(){
       .where('projectId','==',PROJECT_ID)
       .where('userId','==',USER_DOC_ID)
       .orderBy('createdAt','desc')
+      .limit(20)
       .get();
     if(snap.empty){ body.innerHTML='<div class="mi-empty">결제 내역이 없어요.</div>'; return; }
-    body.innerHTML=snap.docs.map(d=>{
-      const r=d.data();
-      const amt=r.amount!=null?Number(r.amount).toLocaleString()+'원':'';
-      const dt=r.approvedAt?(new Date(r.approvedAt.seconds?r.approvedAt.seconds*1000:r.approvedAt)).toLocaleDateString('ko-KR'):'';
-      const opt=r.selectedOption?.label?` · ${r.selectedOption.label}`:'';
-      return `<div class="mi-record"><div class="mi-record-name">${r.configTitle||r.orderName||'결제 상품'}</div><div class="mi-record-meta">${amt}${opt}<br>${dt} · ${r.method||''}</div></div>`;
+    body.innerHTML=snap.docs.map(doc=>{
+      const r=doc.data();
+      const dt=r.createdAt?.toDate?r.createdAt.toDate().toLocaleDateString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit'}):'';
+      const opt=r.selectedOption?.label?`<div>옵션: ${esc(r.selectedOption.label)}</div>`:'';
+      const qty=(r.qty||1)>1?`<div>수량: ${r.qty}개</div>`:'';
+      return `<div class="mi-pay-item">
+        <div class="mi-pay-name">${esc(r.orderName||r.configTitle||'-')}</div>
+        <div class="mi-pay-amount">${Number(r.amount).toLocaleString()}원</div>
+        <div class="mi-pay-meta">${opt}${qty}<div>${esc(r.cardName||'')}${dt?' · '+dt:''}</div></div>
+      </div>`;
     }).join('');
-  }catch(e){ body.innerHTML='<div class="mi-empty">불러오지 못했어요.</div>'; }
+  }catch(e){
+    body.innerHTML='<div class="mi-empty">불러오기 실패</div>';
+  }
 }
 function logout(){
   if(!confirm('로그아웃 하시겠어요?')) return;
@@ -1682,6 +1793,7 @@ async function openStageContent(stage){
     if(!doc.exists){ showGuideEmpty('안내 내용이 아직 준비되지 않았어요.'); return; }
     const g=doc.data();
     const blocks=(g.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
+    _stageBlocksCache[stage.id]=blocks;
     /* checkableCount 보정: Firestore 스테이지 데이터가 stale할 수 있으므로 실제 블록 기준으로 갱신 */
     const actualCnt=blocks.filter(b=>b.checkable||b.type==='form'||b.type==='tool').length;
     if(STAGES[curStageIdx]) STAGES[curStageIdx].checkableCount=actualCnt;

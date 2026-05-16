@@ -1793,6 +1793,7 @@ async function openStageContent(stage){
     if(!doc.exists){ showGuideEmpty('안내 내용이 아직 준비되지 않았어요.'); return; }
     const g=doc.data();
     const blocks=(g.blocks||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
+    _stageBlocksCache[stage.id]=blocks;
     /* checkableCount 보정: Firestore 스테이지 데이터가 stale할 수 있으므로 실제 블록 기준으로 갱신 */
     const actualCnt=blocks.filter(b=>b.checkable||b.type==='form'||b.type==='tool').length;
     if(STAGES[curStageIdx]) STAGES[curStageIdx].checkableCount=actualCnt;
