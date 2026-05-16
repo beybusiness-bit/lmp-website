@@ -2001,11 +2001,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       </div>
       <div style="margin-top:10px;">
         <div class="ed-lbl" style="margin-bottom:6px;">높이</div>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:700;margin-bottom:8px;">
-          <input type="checkbox" id="embed-height-auto" onchange="toggleEmbedHeightAuto(this.checked)" style="cursor:pointer;width:14px;height:14px;">
-          자동 (콘텐츠 높이에 맞춤)
-        </label>
-        <div id="embed-height-wrap" style="display:flex;align-items:center;gap:6px;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button id="embed-h-auto" onclick="setEmbedHeightMode('auto')" style="padding:7px 14px;border:1.5px solid #000;background:#000;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">자동</button>
+          <button id="embed-h-full" onclick="setEmbedHeightMode('full')" style="padding:7px 14px;border:1.5px solid #000;background:transparent;color:#000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">전체화면</button>
+          <button id="embed-h-px" onclick="setEmbedHeightMode('px')" style="padding:7px 14px;border:1.5px solid #000;background:transparent;color:#000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">직접 입력</button>
+        </div>
+        <div id="embed-h-px-wrap" style="display:none;margin-top:8px;align-items:center;gap:6px;">
           <input class="img-inp" id="embed-height" type="number" placeholder="500" style="margin-bottom:0;width:100px;">
           <span style="font-size:11px;color:rgba(0,0,0,.45);">px</span>
         </div>
@@ -3061,6 +3062,7 @@ let curBlkToolType = 'form';
 let curBlkToolConfig = {};
 let curBlkCompleteTrigger = 'tool-signal';
 let curToolHeightMode = 'auto'; // 'auto'|'full'|'px'
+let curEmbedHeightMode = 'auto'; // 'auto'|'full'|'px'
 
 // 스크롤형 스테이지에서 전체화면 옵션을 막는 공통 가드
 // 새 블록 타입에서 전체화면 옵션을 추가할 때 이 함수를 호출하면 됨
@@ -6118,10 +6120,11 @@ function openBlockModal(idx,insertAt){
   const _cedM=document.getElementById('ced-mixed');
   _cedM.innerHTML=b.type==='mixed'?(b.textContent||''):''; _cedM.style.height='';
   document.getElementById('embed-url').value=b.type==='embed'?(b.embedUrl||''):'';
-  const _isAutoH=b.type==='embed'&&(b.embedHeight===0);
-  document.getElementById('embed-height-auto').checked=_isAutoH;
-  document.getElementById('embed-height').value=b.type==='embed'?(b.embedHeight||500):'500';
-  document.getElementById('embed-height-wrap').style.display=_isAutoH?'none':'';
+  if(b.type==='embed'){
+    const _eHMode=b.embedHeight==='full'?'full':(b.embedHeight===0?'auto':'px');
+    setEmbedHeightMode(_eHMode);
+    if(_eHMode==='px'){const hi=document.getElementById('embed-height');if(hi)hi.value=b.embedHeight||500;}
+  } else { setEmbedHeightMode('auto'); }
   /* tool 블록 상태 로드 */
   if(b.type==='tool'){
     curBlkToolType=b.toolType||'form';
@@ -6362,7 +6365,7 @@ function _buildCurrentBlock(){
     if(curMixedLayout==='overlay'){b.overlayTextVAlign=curOverlayVAlign||'bottom';b.overlayShadow=curOverlayShadow;b.overlayColor=curOverlayColor;}
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url')?.value||'';
-    b.embedHeight=document.getElementById('embed-height-auto')?.checked?0:(parseInt(document.getElementById('embed-height')?.value)||500);
+    b.embedHeight=curEmbedHeightMode==='full'?'full':(curEmbedHeightMode==='auto'?0:(parseInt(document.getElementById('embed-height')?.value)||500));
   } else if(curBlkType==='tool'){
     b.toolType=curBlkToolType;
     b.toolConfig=curBlkToolConfig;
@@ -6440,7 +6443,7 @@ function saveBlock(){
     b.overlayColor=curMixedLayout==='overlay'?(curOverlayColor||''):'';
   } else if(curBlkType==='embed'){
     b.embedUrl=document.getElementById('embed-url').value.trim();
-    b.embedHeight=document.getElementById('embed-height-auto').checked?0:(parseInt(document.getElementById('embed-height').value)||500);
+    b.embedHeight=curEmbedHeightMode==='full'?'full':(curEmbedHeightMode==='auto'?0:(parseInt(document.getElementById('embed-height').value)||500));
   } else if(curBlkType==='tool'){
     const selV=document.getElementById('tool-inst-sel')?.value||'';
     const tc={};
@@ -6718,7 +6721,18 @@ function setMixedImgOrder(o){
   scheduleBmPreview();
 }
 function setOverlayVAlign(v){curOverlayVAlign=v;['top','center','bottom'].forEach(k=>document.getElementById('ova-'+k)?.classList.toggle('on',k===v));scheduleBmPreview();}
-function toggleEmbedHeightAuto(checked){document.getElementById('embed-height-wrap').style.display=checked?'none':'';}
+function setEmbedHeightMode(mode){
+  if(mode==='full'&&!_assertFullScreenAllowed())return;
+  curEmbedHeightMode=mode;
+  ['auto','full','px'].forEach(m=>{
+    const btn=document.getElementById('embed-h-'+m);
+    if(!btn)return;
+    btn.style.background=m===mode?'#000':'transparent';
+    btn.style.color=m===mode?'#fff':'#000';
+  });
+  const px=document.getElementById('embed-h-px-wrap');
+  if(px)px.style.display=mode==='px'?'flex':'none';
+}
 
 function getEd(ctx){
   if(ctx==='formpost') return document.getElementById('ced-formpost');
@@ -7644,7 +7658,7 @@ function _gBlockCore(b,S){
   }
   if(b.type==='embed'){
     if(!b.embedUrl) return `<div style="${mS}${bgS}${bgImgS}${pS||pad};text-align:center;font-size:${Math.round(11*S)}px;color:rgba(0,0,0,.4);">임베드 URL 없음</div>`;
-    const rawH = b.embedHeight===0 ? Math.round(360*S) : Math.round((b.embedHeight||500)*S);
+    const rawH = (b.embedHeight===0||b.embedHeight==='full') ? Math.round(360*S) : Math.round((b.embedHeight||500)*S);
     const eh = Math.min(rawH, 300);
     return `<div style="${mS}${bgS}${bgImgS}${pS}position:relative;"><iframe src="${b.embedUrl}" width="100%" height="${eh}" frameborder="0" allowfullscreen loading="lazy" style="display:block;border:none;pointer-events:none;"></iframe></div>`;
   }
