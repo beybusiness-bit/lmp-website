@@ -447,6 +447,12 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
     <div class="modal-ttl" id="reg-title">등록하기</div>
     <div class="modal-desc" id="reg-desc" style="margin-bottom:16px;">정보를 입력하고 등록해주세요.</div>
     <div id="reg-fields"></div>
+    <div id="reg-privacy-wrap" style="display:none;margin:10px 0 2px;">
+      <label style="display:flex;align-items:flex-start;gap:7px;cursor:pointer;font-size:12px;color:rgba(0,0,0,.7);line-height:1.5;">
+        <input type="checkbox" id="reg-privacy-chk" style="margin-top:2px;flex-shrink:0;accent-color:#000;">
+        <span><span onclick="openPolicyModal('privacy');event.stopPropagation();" style="text-decoration:underline;cursor:pointer;">개인정보처리방침</span>에 동의합니다 <span style="color:#c00;">(필수)</span></span>
+      </label>
+    </div>
     <div class="modal-err" id="reg-err"></div>
     <div class="modal-btns">
       <button class="modal-btn" onclick="closeModal('reg-modal')">취소</button>
@@ -1283,6 +1289,10 @@ function openRegModal(){
     return `<div style="margin-bottom:12px;">${lbl}${desc}${inp}</div>`;
   }).join('');
   document.getElementById('reg-fields').innerHTML=fieldsHtml;
+  const privWrap=document.getElementById('reg-privacy-wrap');
+  const privChk=document.getElementById('reg-privacy-chk');
+  if(_siteSettings&&_siteSettings.privacyHtml){ privWrap.style.display=''; privChk.checked=false; }
+  else { privWrap.style.display='none'; }
   document.getElementById('reg-modal').classList.add('on');
   setTimeout(()=>{ const first=document.querySelector('#reg-fields input,#reg-fields select,#reg-fields textarea'); if(first) first.focus(); },200);
 }
@@ -1294,6 +1304,10 @@ function toggleRegOptBtn(btn, key){
   else { wrap.dataset.regVal=val; wrap.querySelectorAll('.reg-opt-btn').forEach(b=>{ b.style.background='transparent'; b.style.color=''; }); btn.style.background='#000'; btn.style.color='#fff'; }
 }
 async function submitRegistration(){
+  const privWrap=document.getElementById('reg-privacy-wrap');
+  if(privWrap.style.display!=='none'&&!document.getElementById('reg-privacy-chk').checked){
+    document.getElementById('reg-err').textContent='개인정보처리방침에 동의해주세요.'; return;
+  }
   const data={};
   for(const f of AUTH_FIELDS){
     const key=f.key;
