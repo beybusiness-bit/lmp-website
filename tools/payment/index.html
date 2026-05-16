@@ -217,6 +217,7 @@ let selectedOption = null;  // { label, price } | null
 let questionAnswers = {};   // { [label]: answer }
 let selectedQty = 1;
 let qtyMaxAllowed = null;   // per-user remaining (null = unlimited)
+let _waitingForLogin = false;
 
 window.addEventListener('message', e => {
   if (e.data?.type !== 'lmp-context') return;
@@ -225,6 +226,7 @@ window.addEventListener('message', e => {
   ctxUserFields = e.data.userFields || {};
   if (e.data.blockBg) { document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg); document.documentElement.style.setProperty('--lmp-input-bg', e.data.blockBg); }
   if (!ctxReceived) { ctxReceived = true; resolveCtx(); }
+  if (_waitingForLogin && ctxUserId) { _waitingForLogin = false; onPayClick(); }
 });
 
 function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -577,6 +579,12 @@ function onPayBtnClick() {
 }
 
 async function onPayClick() {
+  if (!ctxUserId) {
+    _waitingForLogin = true;
+    window.parent.postMessage({ type: 'lmp-request-login', reason: '결제하려면 로그인이 필요해요.' }, '*');
+    return;
+  }
+
   const btn = document.getElementById('pc-ok-btn');
   btn.disabled = true;
   btn.textContent = '결제창 여는 중…';
@@ -602,7 +610,7 @@ async function onPayClick() {
     userName,
     orderNumber,
   };
-  if (isMobile()) data.returnUrl = confirmBase.toString();
+  data.returnUrl = confirmBase.toString();
 
   window._payupConfirmUrl  = confirmBase.toString();
   window._payupOrderNumber = orderNumber;

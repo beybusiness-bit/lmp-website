@@ -1359,6 +1359,7 @@ async function submitRegistration(){
     document.getElementById('reg-box').innerHTML=`<div style="text-align:center;padding:24px 0;"><div style="font-size:28px;margin-bottom:12px;">✅</div><div style="font-size:16px;font-weight:900;margin-bottom:8px;white-space:pre-wrap;">${_regMsg}</div><div style="font-size:13px;opacity:.7;">잠시 후 입장합니다…</div></div>`;
     setTimeout(()=>{
       closeModal('reg-modal');
+      _sendContextToEmbeds();
       if(_pendingAuthAction){
         const fn=_pendingAuthAction; _pendingAuthAction=null; _pendingAuthReason='';
         renderMenu(); refreshStageProgress();
@@ -1456,6 +1457,7 @@ async function confirmAuth(){
     loadUserProgress(u);
     applyGreeting(u);
     closeModal('auth-modal');
+    _sendContextToEmbeds();
     // 보류된 동작이 있으면 실행 (필요 시 로그인 모드)
     if(_pendingAuthAction){
       const fn=_pendingAuthAction; _pendingAuthAction=null; _pendingAuthReason='';
@@ -1871,6 +1873,13 @@ window.addEventListener('message',e=>{
           autoCheckBlock(f.getAttribute('data-tool-block'));
       }catch(_){}
     });
+    return;
+  }
+  if(e.data?.type==='lmp-request-login'){
+    if(!AUTH_ENABLED&&!SELF_REG_ENABLED) return;
+    const reasonEl=document.getElementById('auth-reason');
+    if(reasonEl){ reasonEl.textContent=e.data.reason||'결제하려면 로그인이 필요해요.'; reasonEl.style.display='block'; }
+    openAuthModal(true);
     return;
   }
 });
