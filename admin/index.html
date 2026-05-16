@@ -836,6 +836,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button onmousedown="event.preventDefault()" onclick="rteCmd('gbk-desc','bold')"><b>B</b></button>
                   <button onmousedown="event.preventDefault()" onclick="rteCmd('gbk-desc','italic')"><i>I</i></button>
                   <button onmousedown="event.preventDefault()" onclick="rteCmd('gbk-desc','underline')"><u>U</u></button>
+                  <div class="rte-sep"></div>
+                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('gbk-desc')">🔗</button>
                 </div>
                 <div class="mini-rte" id="rte-gbk-desc" contenteditable="true" data-ph="사용자에게 보여줄 설명을 입력하세요"></div>
               </div>
@@ -1276,9 +1278,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               </div>
             </div>
             <div class="ed-sect">
-              <div class="switch-row" style="margin-bottom:0;">
+              <div class="switch-row" style="margin-bottom:8px;">
                 <div class="switch" id="tf-no-resubmit-sw" onclick="this.classList.toggle('on')"></div>
                 <span class="switch-lbl">중복 제출 방지</span>
+              </div>
+              <div class="switch-row" style="margin-bottom:0;">
+                <div class="switch" id="tf-allow-edit-sw" onclick="this.classList.toggle('on')"></div>
+                <span class="switch-lbl">응답 수정 허용 <span style="font-weight:400;opacity:.55;">(제출자가 이전 내역 확인·수정 가능)</span></span>
               </div>
             </div>
             <div class="sect-head" style="margin-top:24px;margin-bottom:8px;">응답 관리</div>
@@ -1481,9 +1487,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <input class="fi" id="cg-title" placeholder="예: 행사 홍보 문구 생성기" style="margin-bottom:0;">
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
-              <input class="fi-sm" id="cg-desc" placeholder="사용자에게 표시될 설명" style="margin-bottom:4px;">
-              <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 <code>{{key}}</code>로 변수 삽입 가능</div>
+              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">설명 <span style="font-weight:400;opacity:.55;">(선택)</span><button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('cg-desc')">{x} 변수</button></div>
+              <div class="mini-rte-wrap">
+                <div class="mini-rte-tb">
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-desc','bold')"><b>B</b></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-desc','italic')"><i>I</i></button>
+                  <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-desc','underline')"><u>U</u></button>
+                  <div class="rte-sep"></div>
+                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('cg-desc')">🔗</button>
+                </div>
+                <div class="mini-rte" id="rte-cg-desc" contenteditable="true" data-ph="사용자에게 표시될 설명"></div>
+              </div>
             </div>
             <!-- 입력 필드 -->
             <div class="sect-head">입력 필드</div>
@@ -1527,6 +1541,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-ai-context','bold')"><b>B</b></button>
                   <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-ai-context','italic')"><i>I</i></button>
                   <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-ai-context','underline')"><u>U</u></button>
+                  <div class="rte-sep"></div>
+                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('cg-ai-context')">🔗</button>
                 </div>
                 <div class="mini-rte" id="rte-cg-ai-context" contenteditable="true" data-ph="예: 이 문구는 인스타그램 신메뉴 런칭에 사용됩니다. 브랜드 키워드는 '느림', '건강', '지속가능성'입니다." style="min-height:80px;"></div>
               </div>
@@ -8546,6 +8562,7 @@ async function toolFormEdit(docId){
     document.getElementById('tf-submit-text').value=d.submitBtnText||'제출하기';
     rteSet('tf-submit-msg',d.submitMsg||'');
     document.getElementById('tf-no-resubmit-sw').classList.toggle('on',!!d.noResubmit);
+    document.getElementById('tf-allow-edit-sw').classList.toggle('on',!!d.allowEdit);
     tfRespFormConfig={sheetId:d.sheetId||'',sheetTab:d.sheetTab||'응답',sheetUrl:d.sheetUrl||''};
     renderTfFieldList();
     loadTfInlineResponses();
@@ -8591,10 +8608,11 @@ async function toolFormSave(e=null){
   const submitBtnText=document.getElementById('tf-submit-text')?.value.trim()||'제출하기';
   const submitMsg=rteGet('tf-submit-msg');
   const noResubmit=document.getElementById('tf-no-resubmit-sw')?.classList.contains('on')||false;
+  const allowEdit=document.getElementById('tf-allow-edit-sw')?.classList.contains('on')||false;
   if(!title){alert('폼 이름을 입력해주세요.');return;}
   try{
     await db.collection('cms_form_configs').doc(tfCurDocId).update({
-      title,desc,fields:tfFields,submitBtnText,submitMsg,noResubmit,
+      title,desc,fields:tfFields,submitBtnText,submitMsg,noResubmit,allowEdit,
       sheetId:tfRespFormConfig.sheetId||'',
       sheetTab:tfRespFormConfig.sheetTab||'응답',
       sheetUrl:tfRespFormConfig.sheetUrl||'',
@@ -10012,7 +10030,7 @@ async function cgEdit(docId){
       cgMaxSelect[s.key]=s.maxSelect||2;
     });
     document.getElementById('cg-title').value=d.title||'';
-    document.getElementById('cg-desc').value=d.description||'';
+    rteSet('cg-desc',d.description||'');
     document.getElementById('cg-count').value=d.outputConfig?.count||5;
     document.getElementById('cg-min-chars').value=d.outputConfig?.minChars||'';
     document.getElementById('cg-max-chars').value=d.outputConfig?.maxChars||'';
@@ -10128,7 +10146,7 @@ async function cgSave(e=null){
   };
   try{
     await db.collection('cms_copy_gen_configs').doc(cgCurDocId).update({
-      title, description:document.getElementById('cg-desc')?.value.trim()||'',
+      title, description:rteGet('cg-desc'),
       speakerDesc:document.getElementById('cg-speaker-desc')?.value.trim()||'',
       aiContext:rteGet('cg-ai-context'),
       fields:cgFields, styleOptions, outputConfig, references:cgRefs, referenceRole:cgReferenceRole,

@@ -392,7 +392,7 @@ function showDone(html, showHistLink) {
   document.getElementById('form-screen').classList.add('off');
   document.getElementById('done-msg').innerHTML = applyVars(html) || '제출이 완료됐어요!';
   document.getElementById('done-screen').classList.add('on');
-  if (showHistLink) document.getElementById('done-history-link').style.display = '';
+  if (showHistLink && formConfig?.allowEdit) document.getElementById('done-history-link').style.display = '';
 }
 
 async function checkAlreadySubmitted() {
@@ -421,8 +421,8 @@ async function init() {
     if (formConfig.noResubmit && !ctxReceived) {
       await Promise.race([ctxPromise, new Promise(res => setTimeout(res, 600))]);
     }
-    // noResubmit=false도 이전 제출 내역 링크를 위해 context 대기 (최대 300ms)
-    if (!formConfig.noResubmit && !ctxReceived) {
+    // allowEdit인 경우 이전 제출 내역 링크를 위해 context 대기 (최대 300ms)
+    if (formConfig.allowEdit && !ctxReceived) {
       await Promise.race([ctxPromise, new Promise(res => setTimeout(res, 300))]);
     }
 
@@ -453,8 +453,8 @@ async function init() {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display = '';
 
-    // 이전 제출 내역 있으면 링크 표시 (중복 제출 허용 폼에서만)
-    if (!formConfig.noResubmit && ctxUserId) {
+    // 응답 수정 허용인 경우 이전 제출 내역 링크 표시
+    if (formConfig.allowEdit && ctxUserId) {
       try {
         const prevSnap = await db.collection('cms_form_responses').doc(FORM_ID).collection('responses')
           .where('_userId', '==', ctxUserId).limit(1).get();
@@ -628,8 +628,8 @@ async function submitForm() {
         } catch(e) {}
       }
 
-      // noResubmit 아닌 경우 이전 제출 내역 링크 표시
-      if (!formConfig.noResubmit && ctxUserId) {
+      // 응답 수정 허용인 경우 이전 제출 내역 링크 표시
+      if (formConfig.allowEdit && ctxUserId) {
         document.getElementById('history-link').style.display = '';
       }
 
@@ -704,7 +704,7 @@ async function showHistory() {
       return `<div class="hist-item">
         <div class="hist-ts">${ts ? label + ': ' + ts : ''}</div>
         ${fieldsHtml}
-        <button class="hist-edit-btn" onclick="editFromHistory('${doc.id}')">이 제출 내용 수정하기</button>
+        ${formConfig.allowEdit ? `<button class="hist-edit-btn" onclick="editFromHistory('${doc.id}')">이 제출 내용 수정하기</button>` : ''}
       </div>`;
     }).join('');
   } catch(e) {
