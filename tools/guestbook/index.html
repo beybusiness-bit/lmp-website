@@ -45,26 +45,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .slide-arrow{background:none;border:2px solid #000;width:32px;height:32px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;font-weight:900;line-height:1;flex-shrink:0;}
 .slide-arrow:active{background:#000;color:#fff;}
 
-/* Card shared */
+/* Cards */
 .gb-card{border:2px solid #000;overflow:hidden;cursor:pointer;position:relative;transition:opacity .12s;}
 .gb-card:active{opacity:.8;}
-.gb-card.layout-text-top .card-img-wrap,.gb-card.layout-text-only .card-img-wrap{display:none;}
-.gb-card.layout-text-top .card-body,.gb-card.layout-text-only .card-body{padding:16px;}
-.gb-card.layout-img-top .card-img-wrap{width:100%;aspect-ratio:4/3;overflow:hidden;background:#e8e8e8;}
-.gb-card.layout-img-top .card-img-wrap img{width:100%;height:100%;object-fit:cover;display:block;}
-.gb-card.layout-img-top .card-body{padding:14px;}
-.gb-card.layout-img-overlay{min-height:200px;}
-.gb-card.layout-img-overlay .card-bg{position:absolute;inset:0;}
-.gb-card.layout-img-overlay .card-bg img{width:100%;height:100%;object-fit:cover;display:block;}
-.gb-card.layout-img-overlay .card-dim{position:absolute;inset:0;background:rgba(0,0,0,.45);}
-.gb-card.layout-img-overlay .card-body{position:relative;z-index:1;padding:20px 16px;color:#fff;}
-.gb-card.layout-img-overlay .card-field-val{color:rgba(255,255,255,.9);}
-.gb-card.layout-img-overlay .card-meta{color:rgba(255,255,255,.45);}
+.gb-card .card-img-wrap{width:100%;aspect-ratio:4/3;overflow:hidden;background:#e8e8e8;}
+.gb-card .card-img-wrap img{width:100%;height:100%;object-fit:cover;display:block;}
+.gb-card .card-body{padding:16px;}
+.gb-card.has-img-bg{min-height:160px;}
+.gb-card .card-overlay{position:absolute;inset:0;pointer-events:none;}
 .card-field{margin-bottom:9px;}
 .card-field:last-of-type{margin-bottom:0;}
 .card-field-val{font-size:14px;font-weight:600;line-height:1.55;word-break:break-word;}
 .card-meta{font-size:10px;color:rgba(0,0,0,.35);margin-top:10px;font-weight:600;}
-.gb-card.has-color .card-field-val{color:inherit;}
 /* Gallery & slide cards — uniform height with ellipsis */
 .cards-grid .gb-card,.slide-item .gb-card{height:var(--gallery-card-h,160px);}
 .cards-grid .card-field-val,.slide-item .card-field-val{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
@@ -106,11 +98,37 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 #done-banner{display:none;background:#000;color:#fff;padding:14px 16px;font-size:14px;font-weight:700;text-align:center;margin-bottom:20px;}
 #done-banner.on{display:block;}
 
+/* Bg image controls */
+.anchor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:108px;}
+.anchor-btn{width:32px;height:32px;border:2px solid rgba(0,0,0,.25);background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(0,0,0,.4);transition:all .1s;}
+.anchor-btn.on{border-color:#000;background:#000;color:#fff;}
+.anchor-btn:hover:not(.on){border-color:#000;}
+.ov-toggle{display:flex;gap:0;}
+.ov-toggle-btn{flex:1;padding:8px;border:2px solid #000;background:#fff;cursor:pointer;font-size:13px;font-weight:700;font-family:inherit;transition:background .1s,color .1s;}
+.ov-toggle-btn.on{background:#000;color:#fff;}
+.ov-toggle-btn:first-child{border-right:1px solid #000;}
+.ov-toggle-btn:last-child{border-left:1px solid #000;}
+.range-row{display:flex;align-items:center;gap:10px;}
+.range-row input[type=range]{flex:1;-webkit-appearance:none;height:6px;background:rgba(0,0,0,.15);border-radius:3px;outline:none;}
+.range-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:#000;border-radius:50%;cursor:pointer;}
+.range-val{font-size:12px;font-weight:700;min-width:36px;text-align:right;}
+
+/* Live preview card */
+#write-preview-wrap{margin-bottom:22px;display:none;}
+#write-preview-wrap .preview-label{font-size:12px;font-weight:700;color:rgba(0,0,0,.45);margin-bottom:8px;}
+#preview-card{border:2px solid #000;overflow:hidden;min-height:120px;position:relative;}
+#preview-card .card-overlay{position:absolute;inset:0;pointer-events:none;}
+#preview-card .card-body{padding:14px;position:relative;z-index:1;}
+#preview-card .card-field-val{font-size:13px;font-weight:600;line-height:1.5;}
+
 /* Detail Lightbox */
 #detail-modal{position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);padding:24px;}
 #detail-modal.on{display:flex;}
 #detail-card{width:100%;max-height:72vh;overflow-y:auto;border:2px solid #000;background:#fff;}
 #detail-card .gb-lightbox-img{width:100%;display:block;}
+#detail-card .gb-lightbox-img-bg{width:100%;min-height:180px;background-size:cover;background-repeat:no-repeat;position:relative;}
+#detail-card .gb-lightbox-img-bg .card-overlay{position:absolute;inset:0;}
+#detail-card .gb-lightbox-img-bg .gb-lightbox-body{position:relative;z-index:1;padding:20px 16px;}
 #detail-card .gb-lightbox-body{padding:16px;}
 #detail-card .card-field{margin-bottom:9px;}
 #detail-card .card-field:last-of-type{margin-bottom:0;}
@@ -168,10 +186,57 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <input type="checkbox" id="anon-check" style="width:18px;height:18px;"> 익명으로 남기기
       </label>
     </div>
+
+    <!-- 배경 이미지 섹션 (bgImageEnabled 일 때만 표시) -->
+    <div id="bg-image-section" class="ff-wrap" style="display:none;">
+      <label class="ff-label">배경 이미지 <span style="font-weight:400;opacity:.55;">(선택)</span></label>
+      <div class="img-upload-area" id="bg-img-area" onclick="document.getElementById('bg-img-file').click()">
+        <img id="bg-img-prev" class="img-upload-preview" style="display:none;" alt="">
+        <div id="bg-img-icon" class="img-upload-icon">🖼</div>
+        <div id="bg-img-lbl" class="img-upload-label">사진을 탭해서 선택하세요</div>
+        <div class="img-upload-hint">JPG, PNG 이미지 파일</div>
+      </div>
+      <div class="img-prog-wrap" id="bg-img-prog"><div class="img-prog-bar" id="bg-img-bar"></div></div>
+      <input type="file" id="bg-img-file" accept="image/*" style="display:none;" onchange="onBgImageSelect(event)">
+
+      <!-- 이미지 선택 후 나타나는 컨트롤 -->
+      <div id="bg-img-controls" style="display:none;margin-top:14px;">
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:8px;">이미지 위치</div>
+          <div class="anchor-grid" id="anchor-grid"></div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:8px;">오버레이 색상</div>
+          <div class="ov-toggle">
+            <button class="ov-toggle-btn on" id="ov-black" onclick="setOverlayColor('black')">검정</button>
+            <button class="ov-toggle-btn" id="ov-white" onclick="setOverlayColor('white')">흰색</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:8px;">오버레이 농도</div>
+          <div class="range-row">
+            <input type="range" id="ov-opacity" min="0" max="100" value="45" oninput="setOverlayOpacity(this.value)">
+            <span class="range-val" id="ov-opacity-val">45%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 색상 선택 -->
     <div id="color-section" class="ff-wrap" style="display:none;">
-      <label class="ff-label">카드 배경 색상</label>
+      <label class="ff-label" id="color-section-label">카드 배경 색상</label>
       <div class="color-swatches-wrap" id="color-swatches"></div>
     </div>
+
+    <!-- 라이브 미리보기 -->
+    <div id="write-preview-wrap">
+      <div class="preview-label">미리보기</div>
+      <div id="preview-card">
+        <div class="card-overlay" id="preview-overlay" style="background:#000;opacity:0.45;"></div>
+        <div class="card-body" id="preview-body"></div>
+      </div>
+    </div>
+
     <div class="ff-err" id="form-err"></div>
     <button class="lmp-btn" id="submit-btn" onclick="submitEntry()">남기기</button>
   </div>
@@ -204,12 +269,10 @@ window.addEventListener('message', e => {
   ctxUserId     = e.data.userId     || '';
   ctxUserFields = e.data.userFields || {};
   ctxKeyColors  = e.data.keyColors  || [];
-  // Block background color
   if (e.data.blockBg) {
     document.body.style.backgroundColor = e.data.blockBg;
     document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg);
   }
-  // Block background image
   if (e.data.blockBgImage) {
     const fit = e.data.blockBgFit || 'cover';
     const pos = e.data.blockBgPos  || 'center';
@@ -218,18 +281,24 @@ window.addEventListener('message', e => {
     document.body.style.backgroundPosition = pos;
     document.body.style.backgroundRepeat   = 'no-repeat';
   }
-  if (CONFIG && !hasImageField()) buildColorSwatches();
-  updateWriteBtn();
+  if (CONFIG) { buildColorSwatches(); updateWriteBtn(); }
 });
 window.parent.postMessage({ type: 'lmp-ready' }, '*');
 
 let CONFIG = null;
 let ENTRIES = [];
 let selectedColor = '';
+
+// Field image state
 let pendingImageFile = null;
 let pendingImageUrl  = '';
-let uploadedImageUrl = '';
-let isUploading = false;
+
+// Bg image state
+let bgImgFile = null;
+let bgImgLocalUrl = '';
+let bgImgPosition = 'center';
+let bgOverlayColor = 'black';
+let bgOverlayOpacity = 0.45;
 
 let DISPLAY_MODE   = 'scroll';
 let SCROLL_COLS    = 2;
@@ -243,6 +312,12 @@ let SHOWN_COUNT = 0;
 let slideIdx = 0;
 let slideTimer = null;
 let infiniteObserver = null;
+
+const ANCHOR_POSITIONS = [
+  {label:'↖', pos:'top left'},    {label:'↑', pos:'top center'},    {label:'↗', pos:'top right'},
+  {label:'←', pos:'center left'}, {label:'·', pos:'center'},         {label:'→', pos:'center right'},
+  {label:'↙', pos:'bottom left'}, {label:'↓', pos:'bottom center'}, {label:'↘', pos:'bottom right'},
+];
 
 function hasImageField() {
   return !!(CONFIG && (CONFIG.fields || []).some(f => f.type === 'image'));
@@ -272,6 +347,15 @@ function generateAnonName() {
   return [p1, p2].filter(Boolean).join(' ') || '익명';
 }
 
+function getContrastColor(hex) {
+  if (!hex || !hex.startsWith('#') || hex.length < 7) return '#000';
+  const r = parseInt(hex.slice(1,3),16)/255;
+  const g = parseInt(hex.slice(3,5),16)/255;
+  const b = parseInt(hex.slice(5,7),16)/255;
+  const lum = 0.2126*r + 0.7152*g + 0.0722*b;
+  return lum > 0.45 ? '#000' : '#fff';
+}
+
 async function init() {
   if (!CONFIG_ID) { showErr('설정 ID가 없어요. (URL에 ?id=... 필요)'); return; }
   try {
@@ -288,6 +372,7 @@ async function init() {
     PAGER_TYPE     = CONFIG.pagerType     || 'dots';
     document.documentElement.style.setProperty('--gallery-card-h', (Number(CONFIG.cardHeight) || 160) + 'px');
 
+    buildAnchorGrid();
     renderWriteForm();
     updateWriteBtn();
     await loadEntries();
@@ -312,14 +397,22 @@ function renderWriteForm() {
   const wrap = document.getElementById('write-fields-wrap');
   wrap.innerHTML = '';
   (CONFIG.fields || []).forEach(f => wrap.appendChild(buildFieldEl(f)));
-  // Anonymous option: 로그인된 상태에서만 체크박스 표시
+
   const anonRow = document.getElementById('anon-row');
   if (anonRow) anonRow.style.display = (ctxUserId && CONFIG.allowAnonymous) ? '' : 'none';
-  // Color picker (when no image field)
-  if (!hasImageField()) {
-    document.getElementById('color-section').style.display = '';
-    buildColorSwatches();
-  }
+
+  // Bg image section
+  const bgSection = document.getElementById('bg-image-section');
+  if (bgSection) bgSection.style.display = CONFIG.bgImageEnabled ? '' : 'none';
+
+  // Color section
+  document.getElementById('color-section').style.display = '';
+  buildColorSwatches();
+
+  // Preview wrap
+  const previewWrap = document.getElementById('write-preview-wrap');
+  if (previewWrap) previewWrap.style.display = CONFIG.bgImageEnabled ? '' : 'none';
+  updatePreview();
 }
 
 function buildFieldEl(f) {
@@ -341,17 +434,21 @@ function buildFieldEl(f) {
   } else if (f.type === 'textarea') {
     div.innerHTML = `
       <label class="ff-label" for="field-${fk}">${esc(f.label)}${req}</label>
-      <textarea class="ff-textarea" id="field-${fk}" placeholder="${esc(f.placeholder||'')}"></textarea>`;
+      <textarea class="ff-textarea" id="field-${fk}" placeholder="${esc(f.placeholder||'')}" oninput="updatePreview()"></textarea>`;
   } else {
     div.innerHTML = `
       <label class="ff-label" for="field-${fk}">${esc(f.label)}${req}</label>
-      <input class="ff-inp" id="field-${fk}" type="text" placeholder="${esc(f.placeholder||'')}">`;
+      <input class="ff-inp" id="field-${fk}" type="text" placeholder="${esc(f.placeholder||'')}" oninput="updatePreview()">`;
   }
   return div;
 }
 
 function buildColorSwatches() {
   const wrap = document.getElementById('color-swatches');
+  const label = document.getElementById('color-section-label');
+  if (!wrap) return;
+  const hasBgImg = CONFIG?.bgImageEnabled && bgImgLocalUrl;
+  if (label) label.textContent = hasBgImg ? '텍스트 색상' : '카드 배경 색상';
   wrap.innerHTML = '';
   const colors = ctxKeyColors.length ? ctxKeyColors : ['#000000','#333333','#555555','#888888','#cccccc','#ffffff'];
   colors.forEach((c, i) => {
@@ -364,7 +461,7 @@ function buildColorSwatches() {
     sw.onclick = () => pickColor(c);
     wrap.appendChild(sw);
   });
-  if (colors.length) pickColor(colors[0]);
+  if (colors.length) pickColor(selectedColor || colors[0]);
 }
 
 function pickColor(c) {
@@ -372,6 +469,58 @@ function pickColor(c) {
   document.querySelectorAll('.color-swatch').forEach(sw => {
     sw.classList.toggle('selected', sw.dataset.color === c);
   });
+  updatePreview();
+}
+
+function buildAnchorGrid() {
+  const grid = document.getElementById('anchor-grid');
+  if (!grid) return;
+  grid.innerHTML = ANCHOR_POSITIONS.map(a =>
+    `<button class="anchor-btn${a.pos===bgImgPosition?' on':''}" data-pos="${a.pos}" onclick="setAnchorPos('${a.pos}')" title="${a.pos}">${a.label}</button>`
+  ).join('');
+}
+
+function setAnchorPos(pos) {
+  bgImgPosition = pos;
+  document.querySelectorAll('.anchor-btn').forEach(b => b.classList.toggle('on', b.dataset.pos === pos));
+  updatePreview();
+}
+
+function setOverlayColor(color) {
+  bgOverlayColor = color;
+  document.getElementById('ov-black').classList.toggle('on', color === 'black');
+  document.getElementById('ov-white').classList.toggle('on', color === 'white');
+  updatePreview();
+}
+
+function setOverlayOpacity(val) {
+  bgOverlayOpacity = Number(val) / 100;
+  document.getElementById('ov-opacity-val').textContent = val + '%';
+  updatePreview();
+}
+
+function onBgImageSelect(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  bgImgFile = file;
+  if (bgImgLocalUrl) URL.revokeObjectURL(bgImgLocalUrl);
+  bgImgLocalUrl = URL.createObjectURL(file);
+
+  const prevEl = document.getElementById('bg-img-prev');
+  const iconEl = document.getElementById('bg-img-icon');
+  const lblEl  = document.getElementById('bg-img-lbl');
+  const areaEl = document.getElementById('bg-img-area');
+  const ctrlEl = document.getElementById('bg-img-controls');
+  if (prevEl)  { prevEl.src = bgImgLocalUrl; prevEl.style.display = 'block'; }
+  if (iconEl)  iconEl.style.display = 'none';
+  if (lblEl)   lblEl.textContent = '🖼 이미지 변경하기';
+  if (areaEl)  areaEl.classList.add('has-img');
+  if (ctrlEl)  ctrlEl.style.display = '';
+
+  // Update color label to "텍스트 색상"
+  const label = document.getElementById('color-section-label');
+  if (label) label.textContent = '텍스트 색상';
+  updatePreview();
 }
 
 function onImageSelect(event, fieldKey) {
@@ -390,15 +539,51 @@ function onImageSelect(event, fieldKey) {
   if (areaEl)  areaEl.classList.add('has-img');
 }
 
-async function doUpload(file) {
-  const imgField = (CONFIG.fields || []).find(f => f.type === 'image');
-  if (!imgField) return '';
-  const ext = file.name.split('.').pop() || 'jpg';
-  const path = `guestbook_entries/${CONFIG_ID}/${ctxUserId||'anon'}_${Date.now()}.${ext}`;
+function updatePreview() {
+  const wrap = document.getElementById('write-preview-wrap');
+  if (!wrap || !CONFIG?.bgImageEnabled) return;
+
+  const card = document.getElementById('preview-card');
+  const overlay = document.getElementById('preview-overlay');
+  const body = document.getElementById('preview-body');
+  if (!card || !overlay || !body) return;
+
+  // Get first text field value for preview
+  const textFields = (CONFIG.fields || []).filter(f => f.type !== 'image');
+  const previewText = textFields.map(f => {
+    const el = document.getElementById('field-' + (f.id || f.key));
+    return el ? el.value.trim() : '';
+  }).filter(Boolean).join(' · ') || '미리보기';
+
+  if (bgImgLocalUrl) {
+    card.style.backgroundImage = `url('${bgImgLocalUrl}')`;
+    card.style.backgroundSize = 'cover';
+    card.style.backgroundPosition = bgImgPosition;
+    card.style.backgroundRepeat = 'no-repeat';
+    const ovRgb = bgOverlayColor === 'white' ? '#fff' : '#000';
+    overlay.style.background = ovRgb;
+    overlay.style.opacity = bgOverlayOpacity;
+    overlay.style.display = '';
+    const textColor = selectedColor || '#fff';
+    body.style.color = textColor;
+    body.innerHTML = `<div class="card-field-val">${esc(previewText)}</div>`;
+  } else {
+    card.style.backgroundImage = '';
+    card.style.backgroundSize = '';
+    card.style.backgroundPosition = '';
+    overlay.style.display = 'none';
+    const bgColor = selectedColor || '';
+    card.style.background = bgColor;
+    const textColor = bgColor ? getContrastColor(bgColor) : '#000';
+    body.style.color = textColor;
+    body.innerHTML = `<div class="card-field-val">${esc(previewText)}</div>`;
+  }
+}
+
+async function doUpload(file, path, progWrapId, progBarId) {
   const ref = storage.ref(path);
-  const fk = imgField.id || imgField.key;
-  const progWrap = document.getElementById('img-prog-' + fk);
-  const progBar  = document.getElementById('img-bar-'  + fk);
+  const progWrap = progWrapId ? document.getElementById(progWrapId) : null;
+  const progBar  = progBarId  ? document.getElementById(progBarId)  : null;
   if (progWrap) progWrap.style.display = 'block';
   const task = ref.put(file);
   task.on('state_changed', snap => {
@@ -428,20 +613,29 @@ async function submitEntry() {
   if (imgField && imgField.required && !pendingImageFile) {
     errEl.textContent = `"${imgField.label}" 사진을 추가해주세요.`; return;
   }
-  if (!hasImageField() && !selectedColor) {
-    errEl.textContent = '카드 배경 색상을 선택해주세요.'; return;
+  if (!selectedColor) {
+    errEl.textContent = '색상을 선택해주세요.'; return;
   }
   const lbl = applyVars(CONFIG.writeLabel || '') || '남기기';
   const isAnon = !ctxUserId || (CONFIG.allowAnonymous && !!document.getElementById('anon-check')?.checked);
   const authorName = isAnon ? generateAnonName() : (ctxUserFields?.name || ctxUserFields?.이름 || ctxUserId || '');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>저장 중…';
-  isUploading = true;
   try {
+    // Upload field image
     let finalImageUrl = '';
     if (imgField && pendingImageFile) {
-      finalImageUrl = await doUpload(pendingImageFile);
-      uploadedImageUrl = finalImageUrl;
+      const fk = imgField.id || imgField.key;
+      const ext = pendingImageFile.name.split('.').pop() || 'jpg';
+      const path = `guestbook_entries/${CONFIG_ID}/${ctxUserId||'anon'}_${Date.now()}.${ext}`;
+      finalImageUrl = await doUpload(pendingImageFile, path, 'img-prog-' + fk, 'img-bar-' + fk);
+    }
+    // Upload bg image
+    let finalBgImageUrl = '';
+    if (CONFIG.bgImageEnabled && bgImgFile) {
+      const ext = bgImgFile.name.split('.').pop() || 'jpg';
+      const path = `guestbook_entries/${CONFIG_ID}/bg_${ctxUserId||'anon'}_${Date.now()}.${ext}`;
+      finalBgImageUrl = await doUpload(bgImgFile, path, 'bg-img-prog', 'bg-img-bar');
     }
     const fieldValues = { ...values };
     if (imgField) fieldValues[imgField.id || imgField.key] = finalImageUrl;
@@ -449,7 +643,11 @@ async function submitEntry() {
       fieldValues, authorName, isAnonymous: isAnon,
       userId: ctxUserId, projectId: ctxProjectId, userFields: ctxUserFields,
       approved: !(CONFIG.requireApproval), pinned: false,
-      bgColor: hasImageField() ? '' : selectedColor,
+      bgColor: selectedColor,
+      bgImageUrl: finalBgImageUrl,
+      bgImagePosition: finalBgImageUrl ? bgImgPosition : '',
+      overlayColor: finalBgImageUrl ? bgOverlayColor : '',
+      overlayOpacity: finalBgImageUrl ? bgOverlayOpacity : 0,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     };
     await db.collection('cms_guestbook_entries').doc(CONFIG_ID).collection('entries').add(entry);
@@ -463,7 +661,6 @@ async function submitEntry() {
   } finally {
     btn.textContent = lbl;
     btn.disabled = false;
-    isUploading = false;
   }
 }
 
@@ -473,7 +670,6 @@ function resetForm() {
     if (f.type === 'image') {
       pendingImageFile = null;
       if (pendingImageUrl) { URL.revokeObjectURL(pendingImageUrl); pendingImageUrl = ''; }
-      uploadedImageUrl = '';
       const prevEl = document.getElementById('img-prev-' + fk);
       const iconEl = document.getElementById('img-icon-' + fk);
       const lblEl  = document.getElementById('img-lbl-'  + fk);
@@ -489,8 +685,37 @@ function resetForm() {
       if (el) el.value = '';
     }
   });
+  // Reset bg image state
+  bgImgFile = null;
+  if (bgImgLocalUrl) { URL.revokeObjectURL(bgImgLocalUrl); bgImgLocalUrl = ''; }
+  bgImgPosition = 'center';
+  bgOverlayColor = 'black';
+  bgOverlayOpacity = 0.45;
+  const bgPrev = document.getElementById('bg-img-prev');
+  const bgIcon = document.getElementById('bg-img-icon');
+  const bgLbl  = document.getElementById('bg-img-lbl');
+  const bgArea = document.getElementById('bg-img-area');
+  const bgCtrl = document.getElementById('bg-img-controls');
+  const bgInp  = document.getElementById('bg-img-file');
+  if (bgPrev)  { bgPrev.src = ''; bgPrev.style.display = 'none'; }
+  if (bgIcon)  bgIcon.style.display = '';
+  if (bgLbl)   bgLbl.textContent = '사진을 탭해서 선택하세요';
+  if (bgArea)  bgArea.classList.remove('has-img');
+  if (bgCtrl)  bgCtrl.style.display = 'none';
+  if (bgInp)   bgInp.value = '';
+  // Reset overlay controls
+  const ovRange = document.getElementById('ov-opacity');
+  const ovVal   = document.getElementById('ov-opacity-val');
+  if (ovRange) ovRange.value = '45';
+  if (ovVal)   ovVal.textContent = '45%';
+  setOverlayColor('black');
+  buildAnchorGrid();
+  // Rebuild swatches to reset label
+  buildColorSwatches();
+  // Reset anon
   const anonCheck = document.getElementById('anon-check');
   if (anonCheck) anonCheck.checked = false;
+  updatePreview();
 }
 
 async function loadEntries() {
@@ -631,43 +856,54 @@ function clearAutoSlide() {
 }
 
 function buildCardHtml(entry) {
-  const layout = CONFIG.cardLayout || 'text-top';
   const imgField = (CONFIG.fields || []).find(f => f.type === 'image');
-  const imgUrl = (imgField ? entry.fieldValues?.[imgField.id || imgField.key] : '') || entry.imageUrl || '';
+  const fieldImgUrl = imgField ? (entry.fieldValues?.[imgField.id || imgField.key] || '') : '';
+  const bgImageUrl = entry.bgImageUrl || '';
   const bgColor = entry.bgColor || '';
-  const fields = (CONFIG.fields || []).filter(f => f.type !== 'image');
-  const bgStyle  = (!imgUrl && bgColor) ? `style="background:${bgColor};"` : '';
-  const hasBgCls = (!imgUrl && bgColor) ? ' has-color' : '';
-  const effectiveLayout = (imgUrl && (layout === 'img-top' || layout === 'img-overlay'))
-    ? layout : (layout === 'text-only' ? 'text-only' : 'text-top');
-  let imgSection = '', dimLayer = '', bgLayer = '';
-  if (imgUrl) {
-    if (effectiveLayout === 'img-top') {
-      imgSection = `<div class="card-img-wrap"><img src="${esc(imgUrl)}" alt="" loading="lazy"></div>`;
-    } else if (effectiveLayout === 'img-overlay') {
-      bgLayer  = `<div class="card-bg"><img src="${esc(imgUrl)}" alt="" loading="lazy"></div>`;
-      dimLayer = `<div class="card-dim"></div>`;
-    }
-  }
-  // Only show field values — no label keys
-  const fieldsHtml = fields.map(f => {
+  const textFields = (CONFIG.fields || []).filter(f => f.type !== 'image');
+
+  const fieldsHtml = textFields.map(f => {
     const fk = f.id || f.key;
     const val = entry.fieldValues?.[fk] || entry.values?.[fk] || '';
     if (!val) return '';
     return `<div class="card-field"><div class="card-field-val">${esc(val)}</div></div>`;
   }).join('');
-  // Meta: date + author name
+
   const parts = [];
   if (entry.createdAt?.toDate) {
     const d = entry.createdAt.toDate();
     parts.push(`${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`);
   }
   if (entry.authorName) parts.push(esc(entry.authorName));
-  const metaHtml = parts.length ? `<div class="card-meta">${parts.join(' · ')}</div>` : '';
-  return `<div class="gb-card layout-${effectiveLayout}${hasBgCls}" ${bgStyle} onclick="openDetail('${entry.id}')">
-    ${bgLayer}${dimLayer}${imgSection}
-    <div class="card-body">${fieldsHtml}${metaHtml}</div>
-  </div>`;
+  const metaText = parts.join(' · ');
+
+  if (bgImageUrl) {
+    const pos = entry.bgImagePosition || 'center';
+    const ovRgb = entry.overlayColor === 'white' ? '#fff' : '#000';
+    const ovOp  = entry.overlayOpacity ?? 0.45;
+    const textColor = bgColor || '#ffffff';
+    const metaColor = bgColor ? bgColor + 'aa' : 'rgba(255,255,255,.65)';
+    return `<div class="gb-card has-img-bg" onclick="openDetail('${entry.id}')"
+      style="background-image:url('${esc(bgImageUrl)}');background-size:cover;background-position:${pos};background-repeat:no-repeat;">
+      <div class="card-overlay" style="background:${ovRgb};opacity:${ovOp};"></div>
+      <div class="card-body" style="position:relative;z-index:1;color:${textColor};">
+        ${fieldsHtml}
+        ${metaText ? `<div class="card-meta" style="color:${metaColor};">${metaText}</div>` : ''}
+      </div>
+    </div>`;
+  } else if (fieldImgUrl) {
+    return `<div class="gb-card" onclick="openDetail('${entry.id}')">
+      <div class="card-img-wrap"><img src="${esc(fieldImgUrl)}" alt="" loading="lazy"></div>
+      <div class="card-body">${fieldsHtml}${metaText ? `<div class="card-meta">${metaText}</div>` : ''}</div>
+    </div>`;
+  } else {
+    const bgStyle = bgColor ? `background:${bgColor};` : '';
+    const textColor = bgColor ? getContrastColor(bgColor) : '#000';
+    const textStyle = bgColor ? `color:${textColor};` : '';
+    return `<div class="gb-card" onclick="openDetail('${entry.id}')" style="${bgStyle}${textStyle}">
+      <div class="card-body">${fieldsHtml}${metaText ? `<div class="card-meta" style="${bgColor?`color:${textColor};opacity:.6;`:''}">` + metaText + '</div>' : ''}</div>
+    </div>`;
+  }
 }
 
 function openDetail(entryId) {
@@ -676,30 +912,46 @@ function openDetail(entryId) {
   const fields = CONFIG.fields || [];
   const isOwner = ctxUserId && entry.userId === ctxUserId;
   const imgField = fields.find(f => f.type === 'image');
-  const imgUrl = (imgField ? entry.fieldValues?.[imgField.id || imgField.key] : '') || entry.imageUrl || '';
+  const fieldImgUrl = imgField ? (entry.fieldValues?.[imgField.id || imgField.key] || '') : '';
+  const bgImageUrl = entry.bgImageUrl || '';
   const bgColor = entry.bgColor || '';
   const textFields = fields.filter(f => f.type !== 'image');
 
-  let html = '';
-  if (imgUrl) html += `<img class="gb-lightbox-img" src="${esc(imgUrl)}" alt="">`;
-
-  const bodyBg = (!imgUrl && bgColor) ? `background:${bgColor};` : '';
-  html += `<div class="gb-lightbox-body" style="${bodyBg}">`;
-  textFields.forEach(f => {
+  const fieldsHtml = textFields.map(f => {
     const fk = f.id || f.key;
     const val = entry.fieldValues?.[fk] || entry.values?.[fk] || '';
-    if (!val) return;
-    html += `<div class="card-field"><div class="card-field-val">${esc(val)}</div></div>`;
-  });
+    if (!val) return '';
+    return `<div class="card-field"><div class="card-field-val">${esc(val)}</div></div>`;
+  }).join('');
+
   const metaParts = [];
   if (entry.createdAt?.toDate) {
     const d = entry.createdAt.toDate();
     metaParts.push(`${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`);
   }
   if (entry.authorName) metaParts.push(esc(entry.authorName));
-  if (metaParts.length) html += `<div class="card-meta">${metaParts.join(' · ')}</div>`;
-  if (isOwner) html += `<button class="dm-del-btn" onclick="deleteEntry('${entryId}')">삭제하기</button>`;
-  html += `</div>`;
+  const metaHtml = metaParts.length ? `<div class="card-meta">${metaParts.join(' · ')}</div>` : '';
+  const delBtn = isOwner ? `<button class="dm-del-btn" onclick="deleteEntry('${entryId}')">삭제하기</button>` : '';
+
+  let html = '';
+  if (bgImageUrl) {
+    const pos = entry.bgImagePosition || 'center';
+    const ovRgb = entry.overlayColor === 'white' ? '#fff' : '#000';
+    const ovOp  = entry.overlayOpacity ?? 0.45;
+    const textColor = bgColor || '#ffffff';
+    html = `<div class="gb-lightbox-img-bg" style="background-image:url('${esc(bgImageUrl)}');background-position:${pos};">
+      <div class="card-overlay" style="background:${ovRgb};opacity:${ovOp};"></div>
+      <div class="gb-lightbox-body" style="color:${textColor};">
+        ${fieldsHtml}
+        <div class="card-meta" style="color:${textColor};opacity:.65;">${metaParts.join(' · ')}</div>
+        ${delBtn}
+      </div>
+    </div>`;
+  } else {
+    if (fieldImgUrl) html += `<img class="gb-lightbox-img" src="${esc(fieldImgUrl)}" alt="">`;
+    const bodyBg = (!fieldImgUrl && bgColor) ? `background:${bgColor};color:${getContrastColor(bgColor)};` : '';
+    html += `<div class="gb-lightbox-body" style="${bodyBg}">${fieldsHtml}${metaHtml}${delBtn}</div>`;
+  }
 
   document.getElementById('detail-card').innerHTML = html;
   document.getElementById('detail-modal').classList.add('on');

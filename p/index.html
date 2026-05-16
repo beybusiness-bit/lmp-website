@@ -546,6 +546,7 @@ let slideIdx   = 0;
 let colorIdx   = -1;
 let slideTimer = null;
 let kcTimer    = null;
+const _regBoxTpl = document.getElementById('reg-box')?.innerHTML || '';
 let kcIdx      = -1;
 let KEY_COLORS_DATA = []; // [{color, holdTime, transitionTime}]
 let prepBg     = KEY_COLORS[0];
@@ -1247,6 +1248,8 @@ function openAuthModal(showReason){
 }
 function openRegModal(){
   closeModal('auth-modal');
+  if(!document.getElementById('reg-err') && _regBoxTpl)
+    document.getElementById('reg-box').innerHTML = _regBoxTpl;
   const c=pickOther(KEY_COLORS[colorIdx]||'',KEY_COLORS);
   const box=document.getElementById('reg-box');
   box.style.background=c; box.style.setProperty('--modal-bg',c);
@@ -1360,9 +1363,10 @@ async function submitRegistration(){
     setTimeout(()=>{
       closeModal('reg-modal');
       _sendContextToEmbeds();
+      renderMenu();
       if(_pendingAuthAction){
         const fn=_pendingAuthAction; _pendingAuthAction=null; _pendingAuthReason='';
-        renderMenu(); refreshStageProgress();
+        refreshStageProgress();
         try{ fn(); }catch(_){}
         return;
       }

@@ -844,13 +844,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div style="font-size:11px;color:rgba(0,0,0,.45);margin-top:4px;">예: {{이름}}의 기대평 남기기 — 로그인 사용자 필드 자동 치환</div>
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl" style="margin-bottom:10px;">카드 레이아웃</div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;" id="gbk-layout-btns">
-                <button class="blk-tab on" id="gbk-layout-img-overlay" onclick="gbkSetLayout('img-overlay')" style="font-size:12px;padding:6px 12px;">이미지 오버레이</button>
-                <button class="blk-tab" id="gbk-layout-img-top" onclick="gbkSetLayout('img-top')" style="font-size:12px;padding:6px 12px;">이미지 상단</button>
-                <button class="blk-tab" id="gbk-layout-text-top" onclick="gbkSetLayout('text-top')" style="font-size:12px;padding:6px 12px;">텍스트 상단</button>
-                <button class="blk-tab" id="gbk-layout-text-only" onclick="gbkSetLayout('text-only')" style="font-size:12px;padding:6px 12px;">텍스트만</button>
-              </div>
+              <div class="ed-lbl" style="margin-bottom:10px;">배경 이미지</div>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;">
+                <input type="checkbox" id="gbk-bg-image-enabled" style="width:16px;height:16px;"> 배경 이미지 업로드 허용
+              </label>
+              <div style="font-size:11px;color:rgba(0,0,0,.45);margin-top:6px;line-height:1.6;">켜면 사용자가 방명록을 남길 때 배경 이미지를 선택할 수 있어요. 이미지가 있으면 색상이 텍스트 색상으로 사용되고, 이미지가 없으면 색상이 카드 배경색으로 사용됩니다.</div>
             </div>
             <div class="ed-sect">
               <div class="ed-lbl" style="margin-bottom:10px;">갤러리 표시 방식</div>
@@ -1653,7 +1651,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div id="py-stock-opts" style="display:none;">
                 <div style="display:flex;gap:8px;margin-bottom:8px;">
                   <div style="flex:1;">
-                    <div style="font-size:11px;font-weight:600;margin-bottom:4px;">총 재고 수량</div>
+                    <div style="font-size:11px;font-weight:600;margin-bottom:4px;">총 재고 수량 <span style="font-weight:400;opacity:.5;">(옵션 없는 상품에서 사용)</span></div>
                     <input class="fi" id="py-stock-total" type="number" min="1" placeholder="100" style="margin:0;">
                   </div>
                   <div style="flex:1;">
@@ -1661,7 +1659,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                     <input class="fi" id="py-stock-remaining" type="number" min="0" placeholder="100" style="margin:0;">
                   </div>
                 </div>
-                <div style="font-size:10px;color:rgba(0,0,0,.45);line-height:1.5;">재고 0이 되면 결제 버튼이 "품절되었습니다"로 비활성화돼요. 환불 시 남은 재고를 수동으로 올려주세요.</div>
+                <div style="border-top:1px solid rgba(0,0,0,.08);margin:10px 0;padding-top:10px;">
+                  <div style="font-size:11px;font-weight:700;margin-bottom:6px;">재고 남은 양 표시 (사용자에게)</div>
+                  <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer;margin-bottom:6px;">
+                    <input type="checkbox" id="py-stock-display-enabled"> 남은 재고 수량을 사용자에게 표시
+                  </label>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="font-size:11px;color:rgba(0,0,0,.55);">재고가</div>
+                    <input class="fi" id="py-stock-display-threshold" type="number" min="1" placeholder="항상" style="width:70px;margin:0;font-size:12px;">
+                    <div style="font-size:11px;color:rgba(0,0,0,.55);">개 이하일 때만 표시 (비우면 항상)</div>
+                  </div>
+                </div>
+                <div style="font-size:10px;color:rgba(0,0,0,.45);line-height:1.5;margin-top:6px;">💡 옵션 있는 상품은 각 옵션 행에서 재고를 설정하세요. 재고 0이면 해당 옵션이 품절 표시됩니다.</div>
               </div>
             </div>
             <div class="ed-sect">
@@ -10200,6 +10209,8 @@ async function pyEdit(id){
     document.getElementById('py-stock-opts').style.display = stockEnabled ? 'block' : 'none';
     document.getElementById('py-stock-total').value = r.stockTotal != null ? r.stockTotal : '';
     document.getElementById('py-stock-remaining').value = r.stockRemaining != null ? r.stockRemaining : '';
+    document.getElementById('py-stock-display-enabled').checked = !!(r.stockDisplayEnabled);
+    document.getElementById('py-stock-display-threshold').value = r.stockDisplayThreshold != null ? r.stockDisplayThreshold : '';
   }catch(e){ alert('불러오기 실패: '+e.message); }
 }
 
@@ -10238,22 +10249,81 @@ async function pySave(e=null){
       qtyMin:         parseInt(document.getElementById('py-qty-min')?.value) || 1,
       qtyMax:         parseInt(document.getElementById('py-qty-max')?.value) || null,
       qtyPerUser:     parseInt(document.getElementById('py-qty-per-user')?.value) || null,
-      stockEnabled:   !!(document.getElementById('py-stock-enabled')?.checked),
-      stockTotal:     parseInt(document.getElementById('py-stock-total')?.value) || null,
-      stockRemaining: parseInt(document.getElementById('py-stock-remaining')?.value) ?? null,
-      updatedAt:      firebase.firestore.FieldValue.serverTimestamp(),
+      stockEnabled:          !!(document.getElementById('py-stock-enabled')?.checked),
+      stockTotal:            parseInt(document.getElementById('py-stock-total')?.value) || null,
+      stockRemaining:        (() => { const v = document.getElementById('py-stock-remaining')?.value; return v !== '' && v != null ? (parseInt(v) ?? null) : null; })(),
+      stockDisplayEnabled:   !!(document.getElementById('py-stock-display-enabled')?.checked),
+      stockDisplayThreshold: (() => { const v = document.getElementById('py-stock-display-threshold')?.value; return v ? (parseInt(v) || null) : null; })(),
+      updatedAt:             firebase.firestore.FieldValue.serverTimestamp(),
     }, { merge:true });
     _btnFlash(_btn,'저장됨 ✓');
   }catch(e){ alert('저장 실패: '+e.message); }
+}
+
+function _pyOptRowHtml(o) {
+  const label   = o?.label   || '';
+  const price   = o?.price   != null ? o.price : '';
+  const imgUrl  = o?.imageUrl || '';
+  const tier    = o?.tier     || '';
+  const sTotal  = o?.stockTotal     != null ? o.stockTotal     : '';
+  const sRemain = o?.stockRemaining != null ? o.stockRemaining : '';
+  return `<div style="width:100%;display:flex;flex-direction:column;gap:5px;">
+    <div style="display:flex;gap:6px;align-items:center;">
+      <input class="fi py-opt-label" placeholder="옵션 이름 (예: 일반석)" style="flex:2;margin:0;" value="${escHtml(label)}">
+      <input class="fi py-opt-price" type="number" min="100" step="100" placeholder="금액 (선택)" style="flex:1;margin:0;" value="${escHtml(String(price))}">
+      <button onclick="this.closest('.py-opt-row').remove()" style="flex:0 0 auto;border:none;background:transparent;font-size:18px;cursor:pointer;padding:2px 6px;color:rgba(0,0,0,.35);">✕</button>
+    </div>
+    <div style="display:flex;gap:4px;align-items:center;">
+      <input class="fi py-opt-img" placeholder="사진 URL (선택)" style="flex:1;margin:0;font-size:11px;" value="${escHtml(imgUrl)}">
+      <button onclick="this.nextElementSibling.click()" class="prev-btn" style="font-size:11px;padding:4px 8px;white-space:nowrap;margin:0;">📁 업로드</button>
+      <input type="file" accept="image/*" style="display:none;" onchange="pyOptImgUpload(event)">
+    </div>
+    <div style="display:flex;gap:6px;align-items:flex-end;">
+      <div style="flex:1;">
+        <div style="font-size:10px;color:rgba(0,0,0,.45);margin-bottom:2px;">tier (선택 · 예: vip)</div>
+        <input class="fi py-opt-tier" placeholder="권한 라벨" style="margin:0;font-size:11px;" value="${escHtml(tier)}">
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:10px;color:rgba(0,0,0,.45);margin-bottom:2px;">재고 총 / 남은 (선택)</div>
+        <div style="display:flex;gap:4px;">
+          <input class="fi py-opt-stock-total" type="number" min="0" placeholder="총" style="flex:1;margin:0;font-size:11px;" value="${escHtml(String(sTotal))}">
+          <input class="fi py-opt-stock-remaining" type="number" min="0" placeholder="남은" style="flex:1;margin:0;font-size:11px;" value="${escHtml(String(sRemain))}">
+        </div>
+      </div>
+    </div>
+  </div>`;
 }
 
 function pyAddOption(){
   const list = document.getElementById('py-options-list');
   const row = document.createElement('div');
   row.className = 'py-opt-row';
-  row.style.cssText = 'display:flex;gap:6px;align-items:flex-start;';
-  row.innerHTML = `<div style="width:100%;display:flex;flex-direction:column;gap:4px;"><div style="display:flex;gap:6px;align-items:center;"><input class="fi py-opt-label" placeholder="옵션 이름 (예: 일반석)" style="flex:2;margin:0;"><input class="fi py-opt-price" type="number" min="100" step="100" placeholder="금액 (선택)" style="flex:1;margin:0;"><button onclick="this.closest('.py-opt-row').remove()" style="flex:0 0 auto;border:none;background:transparent;font-size:18px;cursor:pointer;padding:2px 6px;color:rgba(0,0,0,.35);">✕</button></div><input class="fi py-opt-img" placeholder="사진 URL (선택 · 옵션 선택 시 썸네일 표시)" style="margin:0;font-size:11px;"></div>`;
+  row.style.cssText = 'border:1.5px solid rgba(0,0,0,.1);padding:10px;';
+  row.innerHTML = _pyOptRowHtml(null);
   list.appendChild(row);
+}
+
+async function pyOptImgUpload(event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  const row = event.target.closest('.py-opt-row');
+  const urlInput = row?.querySelector('.py-opt-img');
+  const btn = event.target.previousElementSibling;
+  const origTxt = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  try {
+    const compressed = await compressImage(file, { maxWidth: 600, quality: 0.88 });
+    const path = `cms_payment_configs/opt-img/${Date.now()}.webp`;
+    const ref = storage.ref(path);
+    await ref.put(compressed, { contentType: 'image/webp' });
+    const url = await ref.getDownloadURL();
+    if (urlInput) urlInput.value = url;
+  } catch(err) {
+    alert('업로드 실패: ' + err.message);
+  } finally {
+    if (btn) { btn.textContent = origTxt; btn.disabled = false; }
+  }
 }
 
 function pyAddQuestion(){
@@ -10267,11 +10337,22 @@ function pyAddQuestion(){
 
 function pyGetOptions(){
   return Array.from(document.querySelectorAll('#py-options-list .py-opt-row')).map(row => {
-    const label = row.querySelector('.py-opt-label')?.value.trim() || '';
-    const priceRaw = row.querySelector('.py-opt-price')?.value;
-    const price = priceRaw ? (parseInt(priceRaw) || null) : null;
-    const imageUrl = row.querySelector('.py-opt-img')?.value.trim() || '';
-    return { label, price, ...(imageUrl ? { imageUrl } : {}) };
+    const label      = row.querySelector('.py-opt-label')?.value.trim() || '';
+    const priceRaw   = row.querySelector('.py-opt-price')?.value;
+    const price      = priceRaw ? (parseInt(priceRaw) || null) : null;
+    const imageUrl   = row.querySelector('.py-opt-img')?.value.trim() || '';
+    const tier       = row.querySelector('.py-opt-tier')?.value.trim() || '';
+    const sTotalRaw  = row.querySelector('.py-opt-stock-total')?.value;
+    const sRemainRaw = row.querySelector('.py-opt-stock-remaining')?.value;
+    const stockTotal     = sTotalRaw  !== '' && sTotalRaw  != null ? (parseInt(sTotalRaw)  ?? null) : null;
+    const stockRemaining = sRemainRaw !== '' && sRemainRaw != null ? (parseInt(sRemainRaw) ?? null) : null;
+    return {
+      label, price,
+      ...(imageUrl   ? { imageUrl }   : {}),
+      ...(tier       ? { tier }       : {}),
+      ...(stockTotal     != null ? { stockTotal }     : {}),
+      ...(stockRemaining != null ? { stockRemaining } : {}),
+    };
   }).filter(o => o.label);
 }
 
@@ -10291,8 +10372,8 @@ function pyRenderOptions(options){
   (options || []).forEach(o => {
     const row = document.createElement('div');
     row.className = 'py-opt-row';
-    row.style.cssText = 'display:flex;gap:6px;align-items:flex-start;';
-    row.innerHTML = `<div style="width:100%;display:flex;flex-direction:column;gap:4px;"><div style="display:flex;gap:6px;align-items:center;"><input class="fi py-opt-label" placeholder="옵션 이름 (예: 일반석)" style="flex:2;margin:0;" value="${escHtml(o.label||'')}"><input class="fi py-opt-price" type="number" min="100" step="100" placeholder="금액 (선택)" style="flex:1;margin:0;" value="${o.price!=null?o.price:''}"><button onclick="this.closest('.py-opt-row').remove()" style="flex:0 0 auto;border:none;background:transparent;font-size:18px;cursor:pointer;padding:2px 6px;color:rgba(0,0,0,.35);">✕</button></div><input class="fi py-opt-img" placeholder="사진 URL (선택 · 옵션 선택 시 썸네일 표시)" style="margin:0;font-size:11px;" value="${escHtml(o.imageUrl||'')}"></div>`;
+    row.style.cssText = 'border:1.5px solid rgba(0,0,0,.1);padding:10px;';
+    row.innerHTML = _pyOptRowHtml(o);
     list.appendChild(row);
   });
 }
@@ -10389,7 +10470,7 @@ async function gbkLoadList() {
       const data = d.data();
       return `<div class="proj-item" onclick="gbkOpenConfig('${d.id}')" style="cursor:pointer;">
         <div class="pi-name">${escHtml(data.title || '(제목 없음)')}</div>
-        <div class="pi-meta">${escHtml(data.entryLabel || '방명록')} · 필드 ${(data.fields||[]).length}개 · ${data.cardLayout || 'text-only'}</div>
+        <div class="pi-meta">${escHtml(data.entryLabel || '방명록')} · 필드 ${(data.fields||[]).length}개${data.bgImageEnabled?' · 배경 이미지 허용':''}</div>
       </div>`;
     }).join('');
   } catch(e) { listEl.innerHTML = `<div class="empty-msg">불러오기 실패: ${escHtml(e.message)}</div>`; }
@@ -10402,7 +10483,7 @@ async function gbkCreateConfig() {
       description: '',
       entryLabel: '방명록',
       fields: [],
-      cardLayout: 'text-only',
+      bgImageEnabled: false,
       allowDuplicate: false,
       allowAnonymous: false,
       requireApproval: false,
@@ -10439,6 +10520,8 @@ async function gbkOpenConfig(configId) {
     document.getElementById('gbk-allow-dup').checked = !!data.allowDuplicate;
     document.getElementById('gbk-require-approval').checked = !!data.requireApproval;
     document.getElementById('gbk-allow-anon').checked = !!data.allowAnonymous;
+    const bgImgEnabledEl = document.getElementById('gbk-bg-image-enabled');
+    if (bgImgEnabledEl) bgImgEnabledEl.checked = !!data.bgImageEnabled;
 
     // Gallery display settings
     gbkSetDisplayMode(data.displayMode || 'scroll');
@@ -10514,7 +10597,7 @@ async function gbkSaveConfig(e) {
       entryLabel: document.getElementById('gbk-entry-label').value.trim() || '방명록',
       writeLabel: document.getElementById('gbk-write-label').value.trim(),
       fields: gbkState.curFields,
-      cardLayout: gbkState.curLayout,
+      bgImageEnabled: !!document.getElementById('gbk-bg-image-enabled')?.checked,
       allowDuplicate: document.getElementById('gbk-allow-dup').checked,
       requireApproval: document.getElementById('gbk-require-approval').checked,
       allowAnonymous: document.getElementById('gbk-allow-anon').checked,
