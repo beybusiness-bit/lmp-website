@@ -844,13 +844,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div style="font-size:11px;color:rgba(0,0,0,.45);margin-top:4px;">예: {{이름}}의 기대평 남기기 — 로그인 사용자 필드 자동 치환</div>
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl" style="margin-bottom:10px;">카드 레이아웃</div>
-              <div style="display:flex;flex-wrap:wrap;gap:6px;" id="gbk-layout-btns">
-                <button class="blk-tab on" id="gbk-layout-img-overlay" onclick="gbkSetLayout('img-overlay')" style="font-size:12px;padding:6px 12px;">이미지 오버레이</button>
-                <button class="blk-tab" id="gbk-layout-img-top" onclick="gbkSetLayout('img-top')" style="font-size:12px;padding:6px 12px;">이미지 상단</button>
-                <button class="blk-tab" id="gbk-layout-text-top" onclick="gbkSetLayout('text-top')" style="font-size:12px;padding:6px 12px;">텍스트 상단</button>
-                <button class="blk-tab" id="gbk-layout-text-only" onclick="gbkSetLayout('text-only')" style="font-size:12px;padding:6px 12px;">텍스트만</button>
-              </div>
+              <div class="ed-lbl" style="margin-bottom:10px;">배경 이미지</div>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;">
+                <input type="checkbox" id="gbk-bg-image-enabled" style="width:16px;height:16px;"> 배경 이미지 업로드 허용
+              </label>
+              <div style="font-size:11px;color:rgba(0,0,0,.45);margin-top:6px;line-height:1.6;">켜면 사용자가 방명록을 남길 때 배경 이미지를 선택할 수 있어요. 이미지가 있으면 색상이 텍스트 색상으로 사용되고, 이미지가 없으면 색상이 카드 배경색으로 사용됩니다.</div>
             </div>
             <div class="ed-sect">
               <div class="ed-lbl" style="margin-bottom:10px;">갤러리 표시 방식</div>
@@ -10472,7 +10470,7 @@ async function gbkLoadList() {
       const data = d.data();
       return `<div class="proj-item" onclick="gbkOpenConfig('${d.id}')" style="cursor:pointer;">
         <div class="pi-name">${escHtml(data.title || '(제목 없음)')}</div>
-        <div class="pi-meta">${escHtml(data.entryLabel || '방명록')} · 필드 ${(data.fields||[]).length}개 · ${data.cardLayout || 'text-only'}</div>
+        <div class="pi-meta">${escHtml(data.entryLabel || '방명록')} · 필드 ${(data.fields||[]).length}개${data.bgImageEnabled?' · 배경 이미지 허용':''}</div>
       </div>`;
     }).join('');
   } catch(e) { listEl.innerHTML = `<div class="empty-msg">불러오기 실패: ${escHtml(e.message)}</div>`; }
@@ -10485,7 +10483,7 @@ async function gbkCreateConfig() {
       description: '',
       entryLabel: '방명록',
       fields: [],
-      cardLayout: 'text-only',
+      bgImageEnabled: false,
       allowDuplicate: false,
       allowAnonymous: false,
       requireApproval: false,
@@ -10522,6 +10520,8 @@ async function gbkOpenConfig(configId) {
     document.getElementById('gbk-allow-dup').checked = !!data.allowDuplicate;
     document.getElementById('gbk-require-approval').checked = !!data.requireApproval;
     document.getElementById('gbk-allow-anon').checked = !!data.allowAnonymous;
+    const bgImgEnabledEl = document.getElementById('gbk-bg-image-enabled');
+    if (bgImgEnabledEl) bgImgEnabledEl.checked = !!data.bgImageEnabled;
 
     // Gallery display settings
     gbkSetDisplayMode(data.displayMode || 'scroll');
@@ -10597,7 +10597,7 @@ async function gbkSaveConfig(e) {
       entryLabel: document.getElementById('gbk-entry-label').value.trim() || '방명록',
       writeLabel: document.getElementById('gbk-write-label').value.trim(),
       fields: gbkState.curFields,
-      cardLayout: gbkState.curLayout,
+      bgImageEnabled: !!document.getElementById('gbk-bg-image-enabled')?.checked,
       allowDuplicate: document.getElementById('gbk-allow-dup').checked,
       requireApproval: document.getElementById('gbk-require-approval').checked,
       allowAnonymous: document.getElementById('gbk-allow-anon').checked,
