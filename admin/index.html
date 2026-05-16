@@ -8463,8 +8463,10 @@ async function ytLoadPlaylists() {
           <div style="font-weight:800;font-size:14px;">${escHtml(p.title||'(이름 없음)')}</div>
           <div style="font-size:11px;color:rgba(0,0,0,.45);margin-top:3px;">ID: ${escHtml(p.id)}${p.desc?(' · '+escHtml(p.desc.slice(0,30))+(p.desc.length>30?'…':'')):''}</div>
         </div>
-        <div onclick="event.stopPropagation()">
+        <div class="blk-acts" style="margin-top:6px;" onclick="event.stopPropagation()">
           <button class="b-btn" onclick="copyToolUrl('youtube-playlist','${escHtml(p.id)}',this)" title="URL 복사">🔗</button>
+          <button class="b-btn" onclick="ytDuplicate('${escHtml(p.id)}',this)" title="복제">⧉</button>
+          <button class="b-btn" onclick="if(confirm('이 재생목록을 삭제할까요? 제출된 신청곡 데이터는 그대로 남습니다.'))ytDeleteById('${escHtml(p.id)}')">✕</button>
         </div>
       </div>
     `).join('');
@@ -8557,6 +8559,19 @@ async function ytPlaylistDelete() {
     console.error('[ytPlaylistDelete]', e);
     alert('삭제 실패: ' + e.message);
   }
+}
+async function ytDuplicate(id, btn) {
+  if(btn){ btn.disabled=true; btn.textContent='…'; }
+  try{
+    const snap = await db.collection('cms_youtube_playlists').doc(id).get();
+    if(!snap.exists) return;
+    const d = snap.data();
+    await db.collection('cms_youtube_playlists').add({...d, title:(d.title||'(이름 없음)')+' (복사본)', createdAt:firebase.firestore.FieldValue.serverTimestamp(), updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    ytLoadPlaylists();
+  }catch(e){ alert('복제 실패: '+e.message); if(btn){btn.disabled=false;btn.textContent='⧉';} }
+}
+async function ytDeleteById(id) {
+  try{ await db.collection('cms_youtube_playlists').doc(id).delete(); ytLoadPlaylists(); }catch(e){ alert('삭제 실패: '+e.message); }
 }
 
 async function ytLoadSubmissions() {
@@ -9105,12 +9120,30 @@ async function loadDecoCustomList() {
       div.onclick = () => decoOpenConfig(doc.id);
       div.innerHTML = `<div class="pi-name">${data.name || doc.id}</div>
         <div class="pi-meta">/tools/booth?config=${doc.id}</div>
-        <div class="blk-acts" style="margin-top:6px;" onclick="event.stopPropagation()"><button class="b-btn" onclick="copyToolUrl('booth-config','${doc.id}',this)" title="URL 복사">🔗</button></div>`;
+        <div class="blk-acts" style="margin-top:6px;" onclick="event.stopPropagation()">
+          <button class="b-btn" onclick="copyToolUrl('booth-config','${doc.id}',this)" title="URL 복사">🔗</button>
+          <button class="b-btn" onclick="decoDuplicateConfig('${doc.id}',this)" title="복제">⧉</button>
+          <button class="b-btn" onclick="if(confirm('이 꾸미기 설정을 삭제할까요?'))decoDeleteConfigById('${doc.id}')">✕</button>
+        </div>`;
       listEl.appendChild(div);
     });
   } catch(e) { /* 커스텀 항목 없으면 무시 */ }
 }
 
+async function decoDuplicateConfig(id, btn) {
+  if(btn){ btn.disabled=true; btn.textContent='…'; }
+  try{
+    const snap = await db.collection('game_configs').doc(id).get();
+    if(!snap.exists) return;
+    const d = snap.data();
+    const newId = 'deco_' + Date.now();
+    await db.collection('game_configs').doc(newId).set({...d, name:(d.name||'꾸미기')+' (복사본)', createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    loadDecoCustomList();
+  }catch(e){ alert('복제 실패: '+e.message); if(btn){btn.disabled=false;btn.textContent='⧉';} }
+}
+async function decoDeleteConfigById(id) {
+  try{ await db.collection('game_configs').doc(id).delete(); loadDecoCustomList(); }catch(e){ alert('삭제 실패: '+e.message); }
+}
 async function decoCreateConfig() {
   const name = prompt('새 꾸미기 이름을 입력하세요 (예: 봄 플리마켓)');
   if(!name) return;
@@ -9214,9 +9247,10 @@ async function gbShowList() {
           <div class="pi-name">${gbEsc(f.title||'(제목 없음)')}</div>
           <div class="pi-meta">블록 ${(f.blocks||[]).length}개</div>
         </div>
-        <div style="display:flex;gap:6px;" onclick="event.stopPropagation()">
+        <div class="blk-acts" style="margin-top:6px;" onclick="event.stopPropagation()">
           <button class="b-btn" onclick="copyToolUrl('guide','${d.id}',this)" title="URL 복사">🔗</button>
-          <a href="/tools/guide?id=${d.id}" target="_blank" class="prev-btn" style="text-decoration:none;font-size:11px;">미리보기 ↗</a>
+          <button class="b-btn" onclick="gbDuplicateCalc('${d.id}',this)" title="복제">⧉</button>
+          <button class="b-btn" onclick="if(confirm('이 계산기를 삭제할까요?'))gbDeleteCalc('${d.id}')">✕</button>
         </div>
       </div>`;
     }).join('');
@@ -9319,6 +9353,19 @@ async function gbDelete() {
   if(!confirm('이 계산기를 삭제할까요?')) return;
   await gbRef().doc(gbState.curCalcId).delete();
   gbShowList();
+}
+async function gbDuplicateCalc(id, btn) {
+  if(btn){ btn.disabled=true; btn.textContent='…'; }
+  try{
+    const snap = await gbRef().doc(id).get();
+    if(!snap.exists) return;
+    const d = snap.data();
+    await gbRef().add({...d, title:(d.title||'(제목 없음)')+' (복사본)', createdAt:firebase.firestore.FieldValue.serverTimestamp(), updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    gbShowList();
+  }catch(e){ alert('복제 실패: '+e.message); if(btn){btn.disabled=false;btn.textContent='⧉';} }
+}
+async function gbDeleteCalc(id) {
+  try{ await gbRef().doc(id).delete(); gbShowList(); }catch(e){ alert('삭제 실패: '+e.message); }
 }
 
 /* ── 블록 관리 ── */
@@ -10460,12 +10507,26 @@ async function pyLoadList(){
         <div class="pi-meta">${escHtml(r.productName || '')} · ${Number(r.amount||0).toLocaleString()}원</div>
         <div class="blk-acts" style="margin-top:6px;">
           <button class="b-btn" onclick="event.stopPropagation();copyToolUrl('payment','${d.id}',this)" title="URL 복사">🔗</button>
+          <button class="b-btn" onclick="event.stopPropagation();pyDuplicate('${d.id}',this)" title="복제">⧉</button>
+          <button class="b-btn" onclick="event.stopPropagation();if(confirm('이 결제 상품을 삭제할까요? 이미 결제된 기록은 그대로 남습니다.'))pyDeleteById('${d.id}')">✕</button>
         </div>
       </div>`;
     }).join('');
   }catch(e){ el.innerHTML = '<div class="empty-msg">불러오기 실패: '+escHtml(e.message)+'</div>'; }
 }
-
+async function pyDuplicate(id, btn) {
+  if(btn){ btn.disabled=true; btn.textContent='…'; }
+  try{
+    const snap = await db.collection('cms_payment_configs').doc(id).get();
+    if(!snap.exists) return;
+    const d = snap.data();
+    await db.collection('cms_payment_configs').add({...d, title:(d.title||'(제목 없음)')+' (복사본)', createdAt:firebase.firestore.FieldValue.serverTimestamp(), updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    pyLoadList();
+  }catch(e){ alert('복제 실패: '+e.message); if(btn){btn.disabled=false;btn.textContent='⧉';} }
+}
+async function pyDeleteById(id) {
+  try{ await db.collection('cms_payment_configs').doc(id).delete(); pyLoadList(); }catch(e){ alert('삭제 실패: '+e.message); }
+}
 async function pyCreate(){
   const title = prompt('새 결제 상품의 제목을 입력해주세요.', '프로 멤버십');
   if(!title) return;
@@ -10781,12 +10842,26 @@ async function gbkLoadList() {
         <div class="pi-meta">${escHtml(data.entryLabel || '방명록')} · 필드 ${(data.fields||[]).length}개${data.bgImageEnabled?' · 배경 이미지 허용':''}</div>
         <div class="blk-acts" style="margin-top:6px;">
           <button class="b-btn" onclick="event.stopPropagation();copyToolUrl('guestbook','${d.id}',this)" title="URL 복사">🔗</button>
+          <button class="b-btn" onclick="event.stopPropagation();gbkDuplicate('${d.id}',this)" title="복제">⧉</button>
+          <button class="b-btn" onclick="event.stopPropagation();if(confirm('이 방명록을 삭제할까요? 제출된 항목은 그대로 남습니다.'))gbkDeleteById('${d.id}')">✕</button>
         </div>
       </div>`;
     }).join('');
   } catch(e) { listEl.innerHTML = `<div class="empty-msg">불러오기 실패: ${escHtml(e.message)}</div>`; }
 }
-
+async function gbkDuplicate(id, btn) {
+  if(btn){ btn.disabled=true; btn.textContent='…'; }
+  try{
+    const snap = await db.collection('cms_guestbook_configs').doc(id).get();
+    if(!snap.exists) return;
+    const d = snap.data();
+    await db.collection('cms_guestbook_configs').add({...d, title:(d.title||'(제목 없음)')+' (복사본)', createdAt:firebase.firestore.FieldValue.serverTimestamp(), updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    gbkLoadList();
+  }catch(e){ alert('복제 실패: '+e.message); if(btn){btn.disabled=false;btn.textContent='⧉';} }
+}
+async function gbkDeleteById(id) {
+  try{ await db.collection('cms_guestbook_configs').doc(id).delete(); gbkLoadList(); }catch(e){ alert('삭제 실패: '+e.message); }
+}
 async function gbkCreateConfig() {
   try {
     const docRef = await db.collection('cms_guestbook_configs').add({
