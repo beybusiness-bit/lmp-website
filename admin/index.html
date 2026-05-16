@@ -1573,6 +1573,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             📌 가맹점 ID도 Vercel 환경변수 <code>PAYUP_MERCHANT_ID</code>에 동일하게 입력해주세요.<br>
             📌 테스트 모드일 때도 Vercel 환경변수 <code>PAYUP_TEST=true</code>로 설정해야 해요.
           </div>
+          <div style="border-top:1.5px solid rgba(0,0,0,.1);margin-top:16px;padding-top:16px;">
+            <div class="ed-lbl" style="margin-bottom:10px;">📱 SMS 결제 알림 (Make → Solapi)</div>
+            <div class="ed-lbl" style="font-size:11px;font-weight:600;margin-bottom:4px;">Make Webhook URL</div>
+            <input class="fi" id="py-sms-webhook" placeholder="https://hook.make.com/..." style="margin-bottom:10px;font-family:monospace;font-size:11px;">
+            <div class="ed-lbl" style="font-size:11px;font-weight:600;margin-bottom:4px;">연락처 필드 키 <span style="font-weight:400;opacity:.55;">(사용자 데이터의 전화번호 필드 이름)</span></div>
+            <input class="fi" id="py-sms-phone-field" placeholder="예: 연락처, phone, 전화번호" style="margin-bottom:4px;font-size:13px;">
+            <div style="font-size:10px;color:rgba(0,0,0,.45);line-height:1.6;margin-top:6px;">
+              📌 Make 시나리오: Webhook 수신 → Solapi HTTP 모듈 → SMS 발송<br>
+              📌 전달 데이터: <code>phone</code>, <code>name</code>, <code>amount</code>, <code>productName</code>, <code>qty</code>, <code>projectId</code>
+            </div>
+          </div>
         </div>
         <!-- 편집 화면 -->
         <div id="py-edit-screen" style="display:none;flex-direction:column;overflow:hidden;">
@@ -10059,20 +10070,29 @@ function pyBack(){ closeTool(); }
 async function pyLoadSettings(){
   try{
     const doc = await db.collection('cms_admin_settings').doc('payment').get();
-    const mid  = doc.exists ? (doc.data().payupMerchantId || '') : '';
-    const test = doc.exists ? !!(doc.data().payupTestMode)        : false;
+    const d = doc.exists ? doc.data() : {};
     const inp  = document.getElementById('py-merchant-id');
     const chk  = document.getElementById('py-test-mode');
-    if(inp) inp.value   = mid;
-    if(chk) chk.checked = test;
+    const wh   = document.getElementById('py-sms-webhook');
+    const pf   = document.getElementById('py-sms-phone-field');
+    if(inp) inp.value   = d.payupMerchantId || '';
+    if(chk) chk.checked = !!(d.payupTestMode);
+    if(wh)  wh.value    = d.smsWebhookUrl  || '';
+    if(pf)  pf.value    = d.smsPhoneField  || '';
   }catch(e){ console.error('[pyLoadSettings]',e); }
 }
 async function pySaveSettings(e=null){
   const _btn=e?.currentTarget;
   const mid  = (document.getElementById('py-merchant-id')?.value || '').trim();
   const test = !!(document.getElementById('py-test-mode')?.checked);
+  const wh   = (document.getElementById('py-sms-webhook')?.value || '').trim();
+  const pf   = (document.getElementById('py-sms-phone-field')?.value || '').trim();
   try{
-    await db.collection('cms_admin_settings').doc('payment').set({ payupMerchantId: mid, payupTestMode: test, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+    await db.collection('cms_admin_settings').doc('payment').set({
+      payupMerchantId: mid, payupTestMode: test,
+      smsWebhookUrl: wh, smsPhoneField: pf,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge:true });
     _btnFlash(_btn,'저장됨 ✓');
   }catch(e){ alert('저장 실패: '+e.message); }
 }

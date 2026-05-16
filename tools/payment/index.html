@@ -79,6 +79,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .qty-btn:disabled{opacity:.25;cursor:default;}
 #qty-display{font-size:20px;font-weight:900;min-width:32px;text-align:center;}
 #qty-unit-price{font-size:11px;color:rgba(0,0,0,.45);margin-top:4px;}
+
+/* 결제 내역 */
+#pay-history{display:none;padding:0;}
+#pay-history.on{display:block;}
+.hist-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.hist-head-title{font-size:16px;font-weight:800;letter-spacing:-.3px;}
+.hist-back{background:none;border:none;font-size:13px;font-weight:700;cursor:pointer;color:rgba(0,0,0,.5);padding:0;}
+.hist-item{border:1.5px solid rgba(0,0,0,.12);padding:14px;margin-bottom:10px;}
+.hist-item-name{font-size:14px;font-weight:700;margin-bottom:4px;}
+.hist-item-amount{font-size:20px;font-weight:900;letter-spacing:-.3px;margin-bottom:6px;}
+.hist-item-meta{font-size:11px;color:rgba(0,0,0,.45);line-height:1.6;}
+.hist-empty{text-align:center;padding:40px 0;font-size:13px;color:rgba(0,0,0,.4);font-weight:600;}
+.hist-link-btn{display:block;width:100%;margin-top:16px;padding:12px;border:2px solid rgba(0,0,0,.2);background:none;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.6);}
+.hist-link-btn:active{background:rgba(0,0,0,.04);}
 </style>
 </head>
 <body>
@@ -149,6 +163,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <div class="pay-result-title" id="r-title"></div>
     <div class="pay-result-msg" id="r-msg"></div>
     <div class="pay-receipt" id="r-receipt" style="display:none;"></div>
+    <button class="hist-link-btn" id="r-hist-btn" style="display:none;" onclick="showHistory()">내 결제 내역 보기</button>
+  </div>
+
+  <!-- 결제 내역 화면 -->
+  <div id="pay-history">
+    <div class="hist-head">
+      <div class="hist-head-title">내 결제 내역</div>
+      <button class="hist-back" onclick="hideHistory()">← 닫기</button>
+    </div>
+    <div id="hist-list"></div>
   </div>
 </div>
 
@@ -179,6 +203,8 @@ const URL_USER_ID     = urlParams.get('userId') || '';
 let CONFIG = null;
 let MERCHANT_ID = '';
 let IS_TEST = false;
+let SMS_WEBHOOK_URL = '';
+let SMS_PHONE_FIELD = '';
 let ctxProjectId = URL_PROJECT_ID;
 let ctxUserId    = URL_USER_ID;
 let ctxUserFields = {};
@@ -234,8 +260,11 @@ async function loadConfig() {
       db.collection('cms_admin_settings').doc('site').get(),
     ]);
     if (paySettings.exists) {
-      MERCHANT_ID = paySettings.data().payupMerchantId || '';
-      IS_TEST     = !!(paySettings.data().payupTestMode);
+      const ps = paySettings.data();
+      MERCHANT_ID     = ps.payupMerchantId || '';
+      IS_TEST         = !!(ps.payupTestMode);
+      SMS_WEBHOOK_URL = ps.smsWebhookUrl   || '';
+      SMS_PHONE_FIELD = ps.smsPhoneField   || '';
     }
     if (siteSettings.exists) {
       window._siteEmail = siteSettings.data().footerEmail || '';
@@ -289,6 +318,7 @@ async function init() {
       authDatetime:  AUTH_DATETIME,
       authNumber:    AUTH_NUMBER,
     });
+    fireSmsWebhook(AMOUNT_FROM_URL, CONFIG.productName || CONFIG.title || '', selectedQty);
     window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
     showResult('success', '결제가 완료되었어요',
       CONFIG.successMessage || '결제하신 권한이 부여되었어요.',
@@ -657,10 +687,13 @@ function showResult(kind, title, msg, receipt) {
   document.getElementById('pay-options').style.display = 'none';
   document.getElementById('pay-questions').style.display = 'none';
   document.getElementById('pay-confirm').classList.remove('on');
+  document.getElementById('pay-history').classList.remove('on');
   document.getElementById('pay-result').classList.add('on');
   document.getElementById('r-icon').textContent  = kind === 'success' ? '✅' : kind === 'already' ? '✓' : '⚠️';
   document.getElementById('r-title').textContent = title;
   document.getElementById('r-msg').innerHTML     = applyVars(msg);
+  const histBtn = document.getElementById('r-hist-btn');
+  if (histBtn) histBtn.style.display = ctxUserId && ctxProjectId ? 'block' : 'none';
   if (receipt) {
     const r = document.getElementById('r-receipt');
     const lines = [];
@@ -678,6 +711,62 @@ function showResult(kind, title, msg, receipt) {
     r.innerHTML = lines.join('');
     r.style.display = 'block';
   }
+}
+
+function fireSmsWebhook(amount, productName, qty) {
+  if (!SMS_WEBHOOK_URL) return;
+  const phoneKey = SMS_PHONE_FIELD || '연락처';
+  const phone = ctxUserFields[phoneKey] || ctxUserFields['phone'] || ctxUserFields['전화번호'] || '';
+  if (!phone) return;
+  fetch(SMS_WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      phone,
+      name:        ctxUserFields['이름'] || ctxUserFields['name'] || '고객',
+      amount:      Number(amount),
+      productName: productName,
+      qty:         qty,
+      projectId:   ctxProjectId,
+    }),
+  }).catch(e => console.warn('SMS webhook:', e));
+}
+
+async function showHistory() {
+  document.getElementById('pay-result').classList.remove('on');
+  document.getElementById('pay-history').classList.add('on');
+  const listEl = document.getElementById('hist-list');
+  listEl.innerHTML = '<div class="hist-empty">불러오는 중…</div>';
+  try {
+    const snap = await db.collection('cms_payment_records')
+      .where('projectId', '==', ctxProjectId)
+      .where('userId', '==', ctxUserId)
+      .orderBy('createdAt', 'desc')
+      .limit(20)
+      .get();
+    if (snap.empty) {
+      listEl.innerHTML = '<div class="hist-empty">결제 내역이 없어요.</div>';
+      return;
+    }
+    listEl.innerHTML = snap.docs.map(doc => {
+      const r = doc.data();
+      const dt = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleDateString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit' }) : '';
+      const optLine = r.selectedOption?.label ? `<div>옵션: ${esc(r.selectedOption.label)}</div>` : '';
+      const qtyLine = r.qty > 1 ? `<div>수량: ${r.qty}개</div>` : '';
+      return `<div class="hist-item">
+        <div class="hist-item-name">${esc(r.orderName || r.configTitle || '-')}</div>
+        <div class="hist-item-amount">${Number(r.amount).toLocaleString()}원</div>
+        <div class="hist-item-meta">${optLine}${qtyLine}<div>${esc(r.cardName || r.pg || '')}${dt ? ' · ' + dt : ''}</div></div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    listEl.innerHTML = `<div class="hist-empty">불러오기 실패: ${esc(e.message)}</div>`;
+  }
+}
+
+function hideHistory() {
+  document.getElementById('pay-history').classList.remove('on');
+  document.getElementById('pay-result').classList.add('on');
 }
 
 window.parent.postMessage({ type: 'lmp-ready' }, '*');
