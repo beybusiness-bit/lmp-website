@@ -748,7 +748,7 @@ function applySettings(d){
   /* 등록 CTA 별도 표시 */
   const regCtaBtn=document.getElementById('reg-cta-btn');
   if(regCtaBtn){
-    const showReg=AUTH_ENABLED&&SELF_REG_ENABLED&&SELF_REG_CTA_SEPARATE;
+    const showReg=SELF_REG_ENABLED&&SELF_REG_CTA_SEPARATE;
     regCtaBtn.style.display=showReg?'flex':'none';
     if(showReg){
       const regIcon=document.getElementById('reg-cta-icon');
@@ -1526,7 +1526,7 @@ function renderMenu(){
   const footer=document.getElementById('menu-footer');
   if(footer){
     const loggedIn=!!USER_DOC_ID||(JSON.parse(sessionStorage.getItem('userSession')||'{}').project===PROJECT_ID);
-    footer.style.display=(AUTH_ENABLED&&!IS_ADMIN_PREVIEW&&loggedIn)?'block':'none';
+    footer.style.display=((AUTH_ENABLED||SELF_REG_ENABLED)&&!IS_ADMIN_PREVIEW&&loggedIn)?'block':'none';
   }
 }
 function openMyInfo(){
