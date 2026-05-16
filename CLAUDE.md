@@ -756,17 +756,14 @@ closeHelpPanel();
 - **GAS 재배포 필요** (updateFormRow + bulkAppend + Calendar 액션 코드는 추가됐으나 GAS 편집기에서 "새 버전" 배포 안 됨)
   → script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
 - **일정 잡기 도구 end-to-end 테스트**: GAS 재배포 후 실제 캘린더 연동 확인 필요
-- **결제 후 권한 분기(잠금 게이트)**: `paidTiers` 데이터는 저장되나 블록/스테이지/프로젝트 잠금 로직 미구현
-- **환불 처리 기능**: 페이업 환불 API 연동 미구현 (admin에서 환불 버튼 → 서버 API 호출)
-- **결제 완료 알림**: 이메일 또는 문자 발송 미구현 (전자상거래법 제8조 거래 확인 의무)
-- **결제 내역 조회**: 사용자 본인이 자신의 결제 내역 직접 확인하는 화면 미구현
-- **통신판매업 신고**: 오프라인 행정 절차 (관할 시·군·구청 직접 신고) — 사용자가 처리
+- **환불 처리 기능**: 페이업 환불 API 연동 미구현 — 현재 수동 처리 (페이업 대시보드에서 직접)
 
-#### Firestore 보안 규칙 (이전 세션에서 변경됨)
+#### Firestore 보안 규칙 (적용 완료)
 ```
 match /cms_form_responses/{document=**} { allow write: if true; allow read: if true; }
+match /cms_payment_records/{doc} { allow read: if true; }
 ```
-→ 제출 내역 조회를 위해 read를 `if true`로 변경 (이미 Firebase Console에서 적용 완료)
+→ `cms_payment_records` read 허용: 사이드바 "내 정보" 결제 내역 조회 + payment 도구 내역 조회에 필요 (Firebase Console에서 적용 완료)
 
 ---
 
@@ -774,6 +771,17 @@ match /cms_form_responses/{document=**} { allow write: if true; allow read: if t
 
 - 사용자가 직접 지정할 예정
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
+
+#### 이번 세션 완료 항목
+- 결제 선택 옵션 (옵션별 금액 다름) / 주관식 질문 / 구매 수량 (1회 min·max + 누적 per-user 제한)
+- SNS 다중 입력 (Simple Icons CDN 아이콘 + 커스텀 업로드)
+- 개인정보처리방침·이용약관 한국어 템플릿 "기본 내용 채우기"
+- 결제 전 최종 확인 화면 + 청약철회 배제 동의 체크박스
+- 플레이어 푸터 중앙 정렬 (3파일 동기화)
+- Make webhook (관리자 Gmail 알림용) — 코드 준비, 실제 시나리오 설정은 사용자가
+- 사이드바 "내 정보" 패널 — 결제 내역 조회 (로그인 사용자만)
+- 결제 게이트 (`requiredTier`) — 블록별 결제 상품 tier 잠금/해제
+- 배포 전략 변경: 세션 중 커밋만 → 마무리 시 push+머지 1회 (총 2회)
 
 #### Firestore 스키마 추가 (이번 세션)
 ```
@@ -859,15 +867,15 @@ stage_content/{stageId}/blocks/{blockId}
 2. ✅ 개인정보처리방침 — admin에 템플릿 입력됨 (⚠️ 이메일 교체 필요)
 3. ✅ 이용약관 — admin에 템플릿 입력됨 (⚠️ 이메일 교체 필요)
 4. ✅ 결제 전 최종 확인 화면 + 청약철회 배제 동의 체크박스
-5. 🔲 통신판매업 신고 *(행정 절차, 관할 구청 직접 처리)*
+5. ✅ 통신판매업 신고 — 신고번호 푸터 표시 완료
 
 **결제 오픈 후 빠르게:**
-6. 🔲 환불 처리 기능 (페이업 환불 API → admin 환불 버튼)
-7. 🔲 결제 완료 알림 (이메일 또는 문자)
-8. 🔲 결제 내역 조회 (사용자 본인 확인 화면)
-9. 🔲 결제 후 권한 분기 — `paidTiers`로 블록/스테이지 잠금
+6. 🔲 환불 처리 기능 (페이업 환불 API → admin 환불 버튼) — 현재 수동 처리
+7. ~~결제 완료 알림~~ — 결제 완료 화면 + 내 정보 내역 조회로 대체 결정 (법적 문제 없음)
+8. ✅ 결제 내역 조회 — 사이드바 "내 정보" 패널 구현 완료
+9. ✅ 결제 후 권한 분기 — `_isTierLocked()` 블록 잠금 구현 완료
 
-> 1~4번 완료. 6~9번은 코드로 구현 가능. 5번은 오프라인 행정 절차.
+> 1~5, 8~9번 완료. 6번(환불)은 현재 수동 처리 중.
 
 ---
 
