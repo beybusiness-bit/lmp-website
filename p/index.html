@@ -98,10 +98,11 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .menu-tab{flex:1;text-align:center;padding:13px 0;font-size:13px;font-weight:700;cursor:pointer;border-bottom:2.5px solid transparent;color:rgba(0,0,0,.4);-webkit-tap-highlight-color:transparent;transition:color .15s,border-color .15s;letter-spacing:-.2px;}
 .menu-tab.active{color:#000;border-bottom-color:#000;}
 #menu-activity-panel,#menu-payment-panel{display:none;flex:1;overflow-y:auto;padding:0 20px 32px;}
-#menu-login-prompt{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 24px;}
-.menu-enter-btn{width:100%;padding:14px 0;background:#000;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;}
-.menu-enter-btn:active{opacity:.7;}
-.menu-sreg-btn{width:100%;padding:12px 0;background:transparent;color:#000;border:1.5px solid rgba(0,0,0,.2);border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;}
+#menu-login-prompt{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px 24px;}
+#menu-login-desc{font-size:13px;font-weight:600;color:rgba(0,0,0,.4);text-align:center;line-height:1.7;margin-bottom:8px;word-break:keep-all;}
+.menu-enter-btn{width:100%;padding:13px 0;background:var(--prep-bg,#000);color:var(--menu-bg,#fff);border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;}
+.menu-enter-btn:active{opacity:.75;}
+.menu-sreg-btn{width:100%;padding:11px 0;background:transparent;color:var(--prep-bg,#000);border:1.5px solid var(--prep-bg,rgba(0,0,0,.2));border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;}
 .menu-sreg-btn:active{opacity:.6;}
 #menu-footer{flex-shrink:0;display:none;padding:12px 28px 28px;border-top:1px solid rgba(0,0,0,.12);}
 #menu-logout{display:inline-block;font-size:13px;font-weight:600;color:rgba(0,0,0,.45);cursor:pointer;-webkit-tap-highlight-color:transparent;padding:6px 0;letter-spacing:-.2px;}
@@ -332,6 +333,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
     <div id="menu-payment-panel"></div>
     <!-- 비로그인 상태: 입장하기 -->
     <div id="menu-login-prompt">
+      <p id="menu-login-desc">로그인하면 활동 내역과<br>구매 내역을 확인할 수 있어요</p>
       <button class="menu-enter-btn" onclick="closeMenu();openAuthModal();">입장하기</button>
       <button class="menu-sreg-btn" id="menu-sreg-cta" onclick="closeMenu();openRegModal();" style="display:none;">등록하기</button>
     </div>
@@ -1663,25 +1665,39 @@ async function loadMyActivity(){
   if(!USER_DOC_ID||!PROJECT_ID){ el.innerHTML='<div class="mi-empty">로그인이 필요해요.</div>'; return; }
   try{
     await _preloadStageBlocks();
-    const [formSnap,gbSnap]=await Promise.all([
-      db.collectionGroup('responses').where('_userId','==',USER_DOC_ID).limit(40).get(),
-      db.collectionGroup('entries').where('userId','==',USER_DOC_ID).limit(40).get()
-    ]);
+    const formIds=new Set(), gbIds=new Set();
+    Object.values(_stageBlocksCache).forEach(blocks=>{
+      (blocks||[]).forEach(b=>{
+        if(b.type==='tool'&&b.toolConfig?.formId) formIds.add(b.toolConfig.formId);
+        if(b.type==='form'&&b.formId) formIds.add(b.formId);
+        if(b.type==='tool'&&b.toolType==='guestbook'&&b.toolConfig?.guestbookId) gbIds.add(b.toolConfig.guestbookId);
+      });
+    });
     const items=[];
-    formSnap.docs.forEach(doc=>{
-      const d=doc.data();
-      if(d.projectId!==PROJECT_ID) return;
-      const formId=doc.ref.parent?.parent?.id||'';
-      const ts=d.submittedAt?.toMillis?.()??d.updatedAt?.toMillis?.()??0;
-      items.push({type:'form',formId,ts,d});
-    });
-    gbSnap.docs.forEach(doc=>{
-      const d=doc.data();
-      if(d.projectId!==PROJECT_ID) return;
-      const configId=doc.ref.parent?.parent?.id||'';
-      const ts=d.createdAt?.toMillis?.()??0;
-      items.push({type:'guestbook',configId,ts,d});
-    });
+    await Promise.all([
+      ...[...formIds].map(async formId=>{
+        try{
+          const snap=await db.collection('cms_form_responses').doc(formId)
+            .collection('responses').where('_userId','==',USER_DOC_ID).limit(10).get();
+          snap.docs.forEach(doc=>{
+            const d=doc.data();
+            const ts=d.submittedAt?.toMillis?.()??d.updatedAt?.toMillis?.()??0;
+            items.push({type:'form',formId,ts,d});
+          });
+        }catch(e){}
+      }),
+      ...[...gbIds].map(async configId=>{
+        try{
+          const snap=await db.collection('cms_guestbook_entries').doc(configId)
+            .collection('entries').where('userId','==',USER_DOC_ID).limit(10).get();
+          snap.docs.forEach(doc=>{
+            const d=doc.data();
+            const ts=d.createdAt?.toMillis?.()??0;
+            items.push({type:'guestbook',configId,ts,d});
+          });
+        }catch(e){}
+      })
+    ]);
     items.sort((a,b)=>b.ts-a.ts);
     if(!items.length){ el.innerHTML='<div class="mi-empty">활동 내역이 없어요.</div>'; return; }
     el.innerHTML=items.map(item=>{
