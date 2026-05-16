@@ -782,8 +782,7 @@ match /cms_payment_records/{doc} { allow read: if true; }
 특별히 예정된 큰 기능은 없음. 사용 중 발견되는 버그·피드백 수정 위주.
 
 **미완료 항목:**
-- **홈화면 임베드 블록 "연결을 거부했습니다" 오류**: 홈 블록에서 임베드 타입으로 `https://lazymaxpotential.kr/tools/payment/?id=xxx` 같은 절대 URL을 넣으면 preview 도메인(`ects.vercel.app`)에서 cross-origin iframe 차단됨. 수정 방법: 임베드 URL이 `lazymaxpotential.kr/tools/` 패턴이면 상대 경로(`/tools/...`)로 자동 변환 OR `vercel.json`에서 X-Frame-Options 헤더 확인
-- **결제 테스트 재확인 필요**: 이번 세션에서 PayUp 결제 흐름을 fetch/JSON 방식으로 개선했음 — 실제 환경(운영 merchantId)에서 재테스트 필요
+- **결제 메인 도메인 재테스트 필요**: PayUp은 등록된 도메인에서만 결제 처리됨 — lazymaxpotential.kr 에서 실제 결제 흐름 확인 필요 (모바일 사파리는 이미 성공 확인)
 
 **기타:**
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
@@ -801,11 +800,14 @@ match /cms_payment_records/{doc} { allow read: if true; }
 - **결제 내역 Firestore 인덱스 오류 수정** ✅: orderBy 제거 → 클라이언트 정렬 (tools/payment/index.html)
 - **결제 실패 UX 개선** ✅: 실패 화면에 "↩ 처음으로 돌아가기" 버튼 추가 (tools/payment/index.html)
 - **결제 게이트 다중 tier 지원** ✅: `requiredTier` 쉼표 구분 파싱 (4파일 동기화), gmbf-03 `_isTierLocked` 누락 추가
-- **홈화면 상단 여백 축소** ✅: `.screen-body` padding-top 24px→12px, `#merged-stage-wrap` padding-top 20px→12px (4파일 동기화)
 - **블록 티어 잠금 '대체 블록' 기능** ✅: admin 4탭 미니 블록 에디터(텍스트/이미지/혼합/임베드) + `_repBlockHtml()` 헬퍼 함수 (4파일 동기화)
 - **비로그인 블록 체크 허용** ✅: `toggleBlockCheck()` 로그인 체크 제거 (4파일 동기화)
 - **도구 링크 복사 버튼 전체 적용** ✅: `copyToolUrl()` 함수 9개 도구 지원, 결제/방명록/계산기/꾸미기/유튜브 목록에 🔗 버튼 추가
-- **PayUp 결제 흐름 fetch/JSON 방식으로 개선** ✅: `payupPaymentSubmit()` form 필드 추출 → `POST /api/confirm-payup` (JSON) → JSON 응답으로 처리. `api/confirm-payup.js`도 isJsonMode 듀얼 응답 추가
+- **PayUp 결제 흐름 동기 form.submit() 방식으로 개선** ✅: `payupPaymentSubmit()` → 동기 `form.submit()`, 타임아웃 60초, 취소 후 재시도 복원. 모바일 사파리 결제 성공 확인
+- **메인화면 상·하단 여백 축소** ✅: `#main-content` padding 80px→40px(상단), 100px→40px(하단) — 4파일 동기화. 스테이지 카드 목록 여백은 원래대로 유지
+- **스테이지 제목 정렬** ✅: admin ←/↔/→ 버튼, `titleAlign` 필드, 플레이어 4곳(분리형/병합형 × 이미지/텍스트) 적용
+- **임베드 블록 "연결 거부" 수정** ✅: `_toRelEmbed()` 헬퍼로 `lazymaxpotential.kr/tools/...` 절대 URL → 상대 경로 자동 변환 (4파일)
+- **임베드 블록 전체화면 옵션** ✅: 높이 UI를 자동/전체화면/직접입력 3버튼으로 교체. `embedHeight:'full'` → `g-tool-full-wrap` 100vh 전체화면 (admin + 4파일)
 
 #### Firestore 스키마 추가 (누적)
 ```
