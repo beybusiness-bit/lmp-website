@@ -326,6 +326,8 @@ async function init() {
     });
     fireSmsWebhook(AMOUNT_FROM_URL, CONFIG.productName || CONFIG.title || '', selectedQty);
     window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+    // 팝업으로 열린 경우 opener(플레이어 최상위)에도 신호 전달
+    try { if (window.opener) window.opener.postMessage({ type: 'lmp-tool-complete' }, '*'); } catch(e) {}
     showResult('success', '결제가 완료되었어요',
       CONFIG.successMessage || '결제하신 권한이 부여되었어요.',
       { amount: AMOUNT_FROM_URL, orderName: CONFIG.productName, method: CARD_NAME,
@@ -715,7 +717,16 @@ async function onPayClick() {
   window._payupConfirmUrl  = confirmBase.toString();
   window._payupOrderNumber = orderNumber;
 
-  // payupPaymentSubmit이 호출되면 이 플래그가 세워짐
+  // iframe 안에서 SDK의 window.open이 차단되므로, top-level 컨텍스트에서 팝업을 열도록 우회
+  if (window !== window.top) {
+    const _origOpen = window.open;
+    window.open = function(url, name, features) {
+      let popup = null;
+      try { popup = window.top.open(url, name, features); } catch(e) {}
+      return popup || _origOpen.call(this, url, name, features);
+    };
+  }
+
   window._payupSubmitCalled = false;
   try {
     goPayupPay(data);
@@ -725,7 +736,6 @@ async function onPayClick() {
     alert('결제 요청 실패: ' + (e?.message || e));
     return;
   }
-  // 5초 내 payupPaymentSubmit 미호출 → 팝업 차단 가능성 안내
   setTimeout(() => {
     if (!window._payupSubmitCalled && btn.disabled) {
       btn.disabled = false;
@@ -739,8 +749,6 @@ function payupPaymentSubmit(payForm) {
   window._payupSubmitCalled = true;
   const form = document.getElementById(payForm) || document.getElementById('PayupPaymentStandardForm');
   if (!form) return;
-  // iframe 안에서 SDK 팝업이 차단되므로 현재 프레임에서 직접 리다이렉트
-  form.target = '';
   form.submit();
 }
 
