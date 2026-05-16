@@ -2340,16 +2340,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       </div>
       <div style="margin-top:10px;">
         <div class="ed-lbl" style="font-size:11px;font-weight:700;margin-bottom:4px;">💳 결제 게이트 <span style="font-weight:400;opacity:.6;">(결제 상품의 tier 이름 입력 → 해당 tier 구매자만 볼 수 있음)</span></div>
-        <input class="fi-sm" id="blk-required-tier" placeholder="tier 이름 (예: vip, premium)" oninput="_onTierInput();scheduleBmPreview()" style="margin-bottom:4px;width:100%;">
+        <input class="fi-sm" id="blk-required-tier" list="blk-tier-datalist" placeholder="tier 이름 (예: vip, premium)" oninput="_onTierInput();scheduleBmPreview()" style="margin-bottom:4px;width:100%;">
+        <datalist id="blk-tier-datalist"></datalist>
         <div id="blk-tier-mode-section" style="display:none;margin-top:2px;">
           <div style="font-size:11px;color:rgba(0,0,0,.55);margin-bottom:5px;">tier 미보유 사용자에게</div>
-          <div style="display:flex;gap:10px;">
+          <div style="display:flex;flex-direction:column;gap:6px;">
             <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer;">
-              <input type="radio" name="blk-tier-mode" value="cover" checked> 🔒 잠금 화면 표시
+              <input type="radio" name="blk-tier-mode" value="cover" checked onchange="_onTierModeChange()"> 🔒 잠금 화면 표시
             </label>
             <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer;">
-              <input type="radio" name="blk-tier-mode" value="hide"> 👁 블록 완전 숨기기
+              <input type="radio" name="blk-tier-mode" value="hide" onchange="_onTierModeChange()"> 👁 블록 완전 숨기기
             </label>
+            <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer;">
+              <input type="radio" name="blk-tier-mode" value="replace" onchange="_onTierModeChange()"> 📦 대체 블록 표시
+            </label>
+          </div>
+          <div id="blk-tier-replace-section" style="display:none;margin-top:10px;border:1.5px dashed rgba(0,0,0,.25);border-radius:6px;padding:10px;">
+            <div style="font-size:11px;font-weight:700;margin-bottom:6px;">대체 블록 내용</div>
+            <div id="rte-blk-replace-text" contenteditable="true" class="mini-rte" style="min-height:72px;margin-bottom:6px;" oninput="scheduleBmPreview()" data-ph="대체 블록에 표시할 내용을 입력하세요"></div>
+            <div style="display:flex;gap:4px;margin-bottom:8px;">
+              <button class="prev-btn" onclick="rteCmd('blk-replace-text','bold')" style="font-weight:700;">B</button>
+              <button class="prev-btn" onclick="rteCmd('blk-replace-text','italic')" style="font-style:italic;">I</button>
+              <button class="prev-btn" onclick="rteCmd('blk-replace-text','underline')" style="text-decoration:underline;">U</button>
+              <button class="prev-btn" onclick="rteLinkCmd('blk-replace-text')">🔗</button>
+            </div>
+            <div class="ed-lbl">배경색</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <input type="color" id="blk-replace-bg-color" value="#f8f8f8" oninput="document.getElementById('blk-replace-bg-hex').value=this.value;scheduleBmPreview()" style="width:36px;height:28px;border:1px solid #000;padding:1px;cursor:pointer;border-radius:3px;">
+              <input class="fi-sm" id="blk-replace-bg-hex" placeholder="#f8f8f8" value="#f8f8f8" style="width:90px;" oninput="document.getElementById('blk-replace-bg-color').value=this.value||'#f8f8f8';scheduleBmPreview()">
+              <button class="prev-btn" onclick="document.getElementById('blk-replace-bg-color').value='#ffffff';document.getElementById('blk-replace-bg-hex').value='#ffffff';scheduleBmPreview()">초기화</button>
+            </div>
           </div>
         </div>
       </div>
@@ -6229,6 +6249,14 @@ function openBlockModal(idx,insertAt){
   const rtEl=document.getElementById('blk-required-tier'); if(rtEl) rtEl.value=b.requiredTier||'';
   _onTierInput();
   const tlm=b.tierLockMode||'cover'; document.querySelectorAll('input[name="blk-tier-mode"]').forEach(r=>{r.checked=(r.value===tlm);});
+  // replace mode — 대체 블록 데이터 로드
+  const repSec=document.getElementById('blk-tier-replace-section');
+  if(repSec) repSec.style.display=tlm==='replace'?'block':'none';
+  const rb=b.tierReplaceBlock||{};
+  rteSet('blk-replace-text',rb.textContent||'');
+  const repBgColor=rb.bgColor||'#f8f8f8';
+  const repBgColorEl=document.getElementById('blk-replace-bg-color');if(repBgColorEl)repBgColorEl.value=repBgColor;
+  const repBgHexEl=document.getElementById('blk-replace-bg-hex');if(repBgHexEl)repBgHexEl.value=repBgColor;
   const bgH=document.getElementById('blk-bg-hex');  if(bgH) bgH.value=(curBlkBgColor||'').toUpperCase();
   const _sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
   // 하위호환: marginTop 없으면 marginV 기본값으로
@@ -6255,10 +6283,29 @@ function scheduleBmPreview(){
   clearTimeout(bmPreviewTimer);
   bmPreviewTimer=setTimeout(updateBmPreview,200);
 }
+let _tierSuggestionsLoaded=false;
+async function _loadTierSuggestions(){
+  if(_tierSuggestionsLoaded) return;
+  _tierSuggestionsLoaded=true;
+  try{
+    const snap=await db.collection('cms_payment_configs').get();
+    const tiers=new Set();
+    snap.forEach(d=>{const t=d.data().tier;if(t)t.split(',').forEach(x=>{const s=x.trim();if(s)tiers.add(s);});});
+    const dl=document.getElementById('blk-tier-datalist');
+    if(dl){dl.innerHTML='';tiers.forEach(t=>{const o=document.createElement('option');o.value=t;dl.appendChild(o);});}
+  }catch(e){console.warn('tier suggestions load failed',e);}
+}
 function _onTierInput(){
   const val=(document.getElementById('blk-required-tier')?.value||'').trim();
   const sec=document.getElementById('blk-tier-mode-section');
   if(sec) sec.style.display=val?'block':'none';
+  if(val) _loadTierSuggestions();
+}
+function _onTierModeChange(){
+  const mode=document.querySelector('input[name="blk-tier-mode"]:checked')?.value||'cover';
+  const sec=document.getElementById('blk-tier-replace-section');
+  if(sec) sec.style.display=mode==='replace'?'block':'none';
+  scheduleBmPreview();
 }
 function _buildCurrentBlock(){
   const b={type:curBlkType,bgColor:curBlkBgColor||''};
@@ -6315,6 +6362,15 @@ function _buildCurrentBlock(){
     if(_ca) b.checkAfterText=_ca;
     if(curBlkCheckColor) b.checkColor=curBlkCheckColor;
     if(curBlkCheckTextColor) b.checkTextColor=curBlkCheckTextColor;
+  }
+  // 티어 잠금 미리보기용
+  const _rt=(document.getElementById('blk-required-tier')?.value||'').trim();
+  if(_rt){
+    b.requiredTier=_rt;
+    b.tierLockMode=document.querySelector('input[name="blk-tier-mode"]:checked')?.value||'cover';
+    if(b.tierLockMode==='replace'){
+      b.tierReplaceBlock={textContent:rteGet('blk-replace-text'),bgColor:document.getElementById('blk-replace-bg-hex')?.value||'#f8f8f8'};
+    }
   }
   return b;
 }
@@ -6411,8 +6467,16 @@ function saveBlock(){
   b.requiredTier=(document.getElementById('blk-required-tier')?.value||'').trim();
   if(b.requiredTier){
     b.tierLockMode=document.querySelector('input[name="blk-tier-mode"]:checked')?.value||'cover';
+    if(b.tierLockMode==='replace'){
+      b.tierReplaceBlock={
+        textContent:rteGet('blk-replace-text'),
+        bgColor:document.getElementById('blk-replace-bg-hex')?.value||'#f8f8f8'
+      };
+    } else {
+      delete b.tierReplaceBlock;
+    }
   } else {
-    delete b.requiredTier; delete b.tierLockMode;
+    delete b.requiredTier; delete b.tierLockMode; delete b.tierReplaceBlock;
   }
   if(_hbMode){
     const _targetId=_hbEditId||existingId;
@@ -7510,6 +7574,13 @@ function _gBlockCore(b,S){
   const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
   const txS=b.txtColor?`color:${b.txtColor};`:'';
   const _m=k=>Math.round((b[k]??0)*S)|0;
+  // tier 잠금 미리보기 (admin에서는 실제 블록 위에 오버레이로 표시)
+  if(b.requiredTier&&b.tierLockMode==='replace'&&b.tierReplaceBlock?.textContent){
+    const rb=b.tierReplaceBlock;const repBg=rb.bgColor||'#f8f8f8';
+    const _mm=k=>Math.round((b[k]??0)*S)|0;
+    const repMarg=(_mm('marginTop')||_mm('marginRight')||_mm('marginBottom')||_mm('marginLeft'))?`margin:${_mm('marginTop')}px ${_mm('marginRight')}px ${_mm('marginBottom')}px ${_mm('marginLeft')}px;`:'';
+    return `<div style="${repMarg}background:${repBg};padding:${Math.round(16*S)}px ${Math.round(20*S)}px;font-size:${Math.round(13*S)}px;line-height:1.6;">${rb.textContent}</div>`;
+  }
   const mS=(b.marginTop||b.marginRight||b.marginBottom||b.marginLeft||b.marginV||b.marginH)
     ?`margin:${_m('marginTop')??_m('marginV')}px ${_m('marginRight')??_m('marginH')}px ${_m('marginBottom')??_m('marginV')}px ${_m('marginLeft')??_m('marginH')}px;`:'';
   const bgImgS=b.bgImageUrl?_buildBgImgStyle(b):'';
