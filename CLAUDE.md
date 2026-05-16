@@ -773,21 +773,20 @@ match /cms_payment_records/{doc} { allow read: if true; }
 
 #### 다음 세션 시작점 🔲
 
-- 결제 기능 end-to-end 테스트 완료 후 피드백 반영
+- 재고 잔량 표시 확인: admin에서 결제 상품 열고 "재고 잔량 표시" 체크 후 저장 → 플레이어에서 표시되는지 확인
+- Firebase Storage 규칙 확인: `guestbook_entries` 블록이 `match /b/{bucket}/o { }` 안에 들어가 있는지 확인 (밖에 있으면 무효)
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 
 #### 이번 세션 완료 항목
-- Stop hook 재제거 (`/root/.claude/settings.json` — 이전 세션에서 제거했으나 재등장)
-- selfReg CTA 클릭 안 되던 버그 수정: `showReg` 조건에서 `AUTH_ENABLED&&` 제거 (4파일 동기화)
-- 사이드바 로그아웃·내정보 사라지던 버그 수정: footer 표시 조건 `AUTH_ENABLED→AUTH_ENABLED||SELF_REG_ENABLED` (4파일 동기화)
-- 결제 무한 로딩 수정: `returnUrl` 항상 설정해 redirect 방식 강제 (iframe 팝업 차단 문제 해결)
-- 결제 비로그인 차단: 결제 진행하기 클릭 시 로그인 체크 → `lmp-request-login` 메시지로 플레이어 로그인 모달 트리거 → 로그인 후 자동 결제 재개
-- 로그인/등록 완료 후 `_sendContextToEmbeds()` 추가 → 모든 iframe에 최신 userId 전송 (4파일 동기화)
-- 결제 도구: 옵션형 상품 진입 시 옵션 즉시 표시 (기존 "옵션선택하기" 버튼 제거)
-- 결제 도구: 옵션별 사진 URL → 플레이어에서 썸네일 표시
-- 결제 도구: 상세 설명 RTE에 🖼 이미지 URL 삽입 버튼 추가
-- 결제 도구: 재고 관리 기능 (stockEnabled/stockTotal/stockRemaining · 품절 표시 · 결제 후 Firestore 트랜잭션 차감)
-- Vercel 프리뷰 URL 정책: 세션 중 push 요청 시에만 /admin 포함 프리뷰 URL 제공 (세션 마무리 시는 main 머지만)
+- 모달 z-index 수정: `.modal-ov` z-index 300→500 (4파일 동기화)
+  - 도구 링크 모달(z-index 400) 뒤로 숨던 인증·등록 모달 수정
+  - 결제 모달 열린 상태에서 비로그인 시 로그인 팝업 정상 표시
+  - 등록하기 무반응, 사이드바 내정보/로그아웃 미표시 문제 해결
+- 방명록 배경이미지 컨트롤 교체: 블록 이미지 설정과 동일한 UI로 통일
+  - 꽉 채우기/비율 유지/원본 (fit 3버튼), 상단/중앙/하단 (pos 3버튼)
+  - 오버레이 색상 컬러 피커 (`<input type=color>`), 농도 슬라이더 (0~1, step=0.05)
+  - `bgImageFit` Firestore 저장 및 카드·상세 모달 렌더링 반영
+- (이전 세션 누적) Stop hook 재제거, selfReg CTA 버그, 사이드바 footer 버그, 결제 무한 로딩, 비로그인 차단, context 전파, 옵션 즉시 표시, 옵션별 썸네일, 재고 관리 기능
 
 #### Firestore 스키마 추가 (이번 세션)
 ```
@@ -796,6 +795,10 @@ cms_payment_configs/{configId}
   stockTotal: number         ← 총 재고 수량
   stockRemaining: number     ← 현재 남은 재고 (결제 후 트랜잭션으로 차감)
   options[].imageUrl: string ← 옵션별 썸네일 이미지 URL (선택)
+
+cms_guestbook_entries/{configId}/entries/{entryId}
+  bgImageFit: string         ← 'cover'|'contain'|'natural' (이번 세션 추가)
+  overlayColor: string       ← 오버레이 hex 색상 (기존 'black'/'white' 문자열 → hex로 변경)
 ```
 
 ---
