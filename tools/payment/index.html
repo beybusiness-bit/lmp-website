@@ -727,13 +727,6 @@ async function onPayClick() {
 function payupPaymentSubmit(payForm) {
   const form = document.getElementById(payForm) || document.getElementById('PayupPaymentStandardForm');
   if (!form) return;
-  [['configId', CONFIG_ID], ['projectId', ctxProjectId], ['userId', ctxUserId]].forEach(([n, v]) => {
-    const inp = document.createElement('input');
-    inp.type = 'hidden'; inp.name = n; inp.value = v || '';
-    form.appendChild(inp);
-  });
-  form.method = 'POST';
-  form.action = window._payupConfirmUrl || ('/api/confirm-payup?id=' + CONFIG_ID);
   form.submit();
 }
 
