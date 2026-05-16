@@ -717,7 +717,6 @@ function fireSmsWebhook(amount, productName, qty) {
   if (!SMS_WEBHOOK_URL) return;
   const phoneKey = SMS_PHONE_FIELD || '연락처';
   const phone = ctxUserFields[phoneKey] || ctxUserFields['phone'] || ctxUserFields['전화번호'] || '';
-  if (!phone) return;
   fetch(SMS_WEBHOOK_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -729,7 +728,7 @@ function fireSmsWebhook(amount, productName, qty) {
       qty:         qty,
       projectId:   ctxProjectId,
     }),
-  }).catch(e => console.warn('SMS webhook:', e));
+  }).catch(e => console.warn('webhook:', e));
 }
 
 async function showHistory() {
