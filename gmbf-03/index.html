@@ -2117,7 +2117,7 @@ function renderGuideScroll(blocks){
     const mS=(b.marginV||b.marginH)?`margin:${b.marginV||0}px ${b.marginH||0}px;`:'';
     const bStripped={...b,bgColor:'',marginV:0,marginH:0};
     const inner=attachCheck(blockHtml(bStripped),b);
-    return (bgS||mS)?`<div style="${bgS}${mS}">${inner}</div>`:inner;
+    return `<div id="block-${b.id}"${(bgS||mS)?` style="${bgS}${mS}"`:''}>${inner}</div>`;
   }).join('');
   document.getElementById('guide-scroll-body').style.display='block';
   _sendContextToEmbeds();
@@ -2138,7 +2138,7 @@ function renderGuideSlide(blocks){
     const va=scrollable||fullH?'':(b.verticalAlign||'');
     const jc=scrollable||fullH?'flex-start':(vaMap[b.verticalAlign]||'center');
     const scrollS=scrollable?'overflow-y:auto;':'';
-    return `<div class="guide-slide-item"${va?` data-valign="${va}"`:''}  style="width:${100/N}%;justify-content:${jc};${bgS}${mS}${scrollS}">${inner}</div>`;
+    return `<div id="block-${b.id}" class="guide-slide-item"${va?` data-valign="${va}"`:''}  style="width:${100/N}%;justify-content:${jc};${bgS}${mS}${scrollS}">${inner}</div>`;
   }).join('');
   track.style.width=(N*100)+'%';
   track.style.transform='translateX(0)';
