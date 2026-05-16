@@ -724,6 +724,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <button class="add-btn" onclick="addStage()">+ 스테이지 추가</button>
           </div>
         </div>
+
+        <!-- 홈 화면 구성 -->
+        <div class="inner-panel" id="ip-home-blocks">
+          <div class="sect-head">홈 화면 구성</div>
+          <div class="ed-sect">
+            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:8px;">스테이지 카드 사이에 텍스트·이미지 블록을 자유롭게 배치할 수 있어요.</div>
+            <div id="home-order-list"></div>
+            <button class="add-btn" onclick="addHomeBlockItem()">+ 홈 블록 추가</button>
+          </div>
+        </div>
         </div><!-- /ed-inner -->
         </div><!-- /proj-content -->
         <!-- 프로젝트 실시간 미리보기 패널 -->
@@ -2993,6 +3003,10 @@ let curSelfRegEnabled = false;
 let curAuthFields = [];        // [{key, label, type, required}]
 let curAuthKeyField = '';
 let curStages = [];
+let curHomeBlocks = [];
+let curHomeItemOrder = [];
+let _hbMode = false;
+let _hbEditId = null;
 let curKeyColors = [{color:'#00CE6B',holdTime:8,transitionTime:2},{color:'#FFF100',holdTime:8,transitionTime:2},{color:'#F95548',holdTime:8,transitionTime:2},{color:'#0BC6FF',holdTime:8,transitionTime:2}];
 let curStats = [];             // [{id, label, collection, countType, unit, enabled, extProjectId, extMetric, extStageId, extBlockId}]
 let _statProjCache = undefined; // undefined=미로드, null=로딩중, [{id,name}]=완료
@@ -4464,7 +4478,7 @@ async function saveBulkUsers() {
    Stage editor
 ══════════════════════════════════════ */
 function _stageInsertRow(pos){return `<div class="insert-row" onclick="insertStageAt(${pos})"><button class="insert-row-btn">+</button></div>`;}
-function insertStageAt(pos){curStages.splice(pos,0,{id:uid(),title:'',displayType:'text',stageImageUrl:'',order:pos});renderStageList();schedulePreviewUpdate();projDirty=true;}
+function insertStageAt(pos){const _isId=uid();curStages.splice(pos,0,{id:_isId,title:'',displayType:'text',stageImageUrl:'',order:pos});curHomeItemOrder.splice(pos,0,{type:'stage',id:_isId});renderStageList();schedulePreviewUpdate();projDirty=true;}
 function renderStageList() {
   const el = document.getElementById('stage-list');
   if (!curStages.length) { el.innerHTML = _stageInsertRow(0)+'<div class="empty-msg" style="padding:12px 0;">스테이지가 없어요.</div>'; schedulePreviewUpdate(); return; }
@@ -4519,10 +4533,74 @@ function renderStageList() {
       </div>
     </div>`);
   el.innerHTML = _stageInsertRow(0) + items.map((h,i)=>h+_stageInsertRow(i+1)).join('');
+  renderHomeOrderList();
 }
-function addStage()   { curStages.push({id:uid(),title:'',displayType:'text',stageImageUrl:'',order:curStages.length}); renderStageList(); schedulePreviewUpdate(); projDirty=true; }
+function renderHomeOrderList(){
+  const el=document.getElementById('home-order-list');
+  if(!el) return;
+  if(!curHomeItemOrder.length){ el.innerHTML='<div class="empty-msg" style="padding:8px 0;font-size:11px;color:rgba(0,0,0,.4);">스테이지나 홈 블록을 추가하면 여기에 순서가 표시돼요.</div>'; return; }
+  const stageMap={};
+  curStages.forEach(s=>{ stageMap[s.id]=s; });
+  const hbMap={};
+  curHomeBlocks.forEach(hb=>{ hbMap[hb.id]=hb; });
+  el.innerHTML=curHomeItemOrder.map((item,i)=>{
+    const isFirst=i===0, isLast=i===curHomeItemOrder.length-1;
+    const mvUp=isFirst?'<div style="width:24px;"></div>':`<button class="s-btn" onclick="mvHomeItem(${i},-1)" style="font-size:10px;width:24px;">↑</button>`;
+    const mvDn=isLast?'<div style="width:24px;"></div>':`<button class="s-btn" onclick="mvHomeItem(${i},1)" style="font-size:10px;width:24px;">↓</button>`;
+    if(item.type==='stage'){
+      const s=stageMap[item.id];
+      const label=s?s.title||'(제목 없음)':'(삭제된 스테이지)';
+      return `<div style="display:flex;align-items:center;gap:4px;padding:5px 8px;background:#f9f9f9;border:1px solid rgba(0,0,0,.1);border-radius:6px;margin-bottom:4px;">
+        <span style="font-size:10px;font-weight:700;color:rgba(0,0,0,.35);min-width:34px;flex-shrink:0;">스테이지</span>
+        <span style="flex:1;font-size:11px;color:#000;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(label)}</span>
+        ${mvUp}${mvDn}
+      </div>`;
+    } else {
+      const hb=hbMap[item.id];
+      const typeLabel=hb?{text:'텍스트',image:'이미지',mixed:'혼합',embed:'임베드'}[hb.type]||hb.type:'(삭제됨)';
+      const preview=hb?_hbPreview(hb):'';
+      return `<div style="display:flex;align-items:center;gap:4px;padding:5px 8px;background:#fff;border:1.5px solid rgba(0,0,0,.15);border-radius:6px;margin-bottom:4px;">
+        <span style="font-size:10px;font-weight:700;color:#0BC6FF;min-width:34px;flex-shrink:0;">블록</span>
+        <span style="flex:1;font-size:11px;color:rgba(0,0,0,.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">[${typeLabel}] ${esc(preview)}</span>
+        <button class="s-btn" onclick="openHomeBlockModal('${item.id}')" style="font-size:10px;width:28px;" title="편집">✏</button>
+        <button class="s-btn" onclick="rmHomeBlock('${item.id}')" style="font-size:10px;width:24px;" title="삭제">✕</button>
+        ${mvUp}${mvDn}
+      </div>`;
+    }
+  }).join('');
+}
+function _hbPreview(hb){
+  if(hb.type==='text'){ const d=document.createElement('div'); d.innerHTML=hb.textContent||''; return d.textContent.slice(0,30); }
+  if(hb.type==='image') return hb.imageUrl?'이미지':'(이미지 없음)';
+  if(hb.type==='mixed'){ const d=document.createElement('div'); d.innerHTML=hb.textContent||''; return d.textContent.slice(0,20)||'혼합 블록'; }
+  if(hb.type==='embed') return hb.embedUrl||'(URL 없음)';
+  return '';
+}
+function mvHomeItem(i,d){
+  const j=i+d;
+  if(j<0||j>=curHomeItemOrder.length) return;
+  [curHomeItemOrder[i],curHomeItemOrder[j]]=[curHomeItemOrder[j],curHomeItemOrder[i]];
+  renderHomeOrderList();
+  projDirty=true;
+}
+function addHomeBlockItem(){
+  _hbMode=true; _hbEditId=null;
+  openBlockModal(null,null);
+}
+function openHomeBlockModal(id){
+  _hbMode=true; _hbEditId=id;
+  openBlockModal(null,null);
+}
+function rmHomeBlock(id){
+  if(!confirm('이 홈 블록을 삭제할까요?')) return;
+  curHomeBlocks=curHomeBlocks.filter(hb=>hb.id!==id);
+  curHomeItemOrder=curHomeItemOrder.filter(o=>!(o.type==='homeBlock'&&o.id===id));
+  renderHomeOrderList();
+  projDirty=true;
+}
+function addStage()   { const _nsId=uid(); curStages.push({id:_nsId,title:'',displayType:'text',stageImageUrl:'',order:curStages.length}); curHomeItemOrder.push({type:'stage',id:_nsId}); renderStageList(); schedulePreviewUpdate(); projDirty=true; }
 function mvStage(i,d) { const j=i+d; if(j<0||j>=curStages.length) return; [curStages[i],curStages[j]]=[curStages[j],curStages[i]]; renderStageList(); schedulePreviewUpdate(); projDirty=true; }
-function rmStage(i)   { if(!confirm('이 스테이지를 삭제할까요?')) return; curStages.splice(i,1); renderStageList(); schedulePreviewUpdate(); projDirty=true; }
+function rmStage(i)   { if(!confirm('이 스테이지를 삭제할까요?')) return; const _rsId=curStages[i]?.id; curStages.splice(i,1); if(_rsId) curHomeItemOrder=curHomeItemOrder.filter(o=>!(o.type==='stage'&&o.id===_rsId)); renderStageList(); schedulePreviewUpdate(); projDirty=true; }
 function getStagePublishStatus(s){ return s.publishStatus || (s.published===false?'hidden':'published'); }
 function setStagePublish(i, status){ curStages[i].publishStatus=status; curStages[i].published=(status!=='hidden'); renderStageList(); schedulePreviewUpdate(); projDirty=true; }
 function setStageTagProp(i, key, val){ curStages[i][key]=val; projDirty=true; renderStageList(); schedulePreviewUpdate(); }
@@ -4611,12 +4689,12 @@ function showProjView(v) {
 function backToProjects() {
   if(projDirty && !confirm('저장하지 않은 변경사항이 있어요. 저장 없이 나가시겠어요?')) return;
   projDirty=false; _projDirtyLock=true;
-  history.replaceState(null,'','#list'); showProjView('list'); curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[]; curUsers=[]; curAuthCollection=''; customColWidths={}; curRespColWidths={};
+  history.replaceState(null,'','#list'); showProjView('list'); curProjId=null; curStages=[]; curHomeBlocks=[]; curHomeItemOrder=[]; curBgImages=[]; curAuthFields=[]; curUsers=[]; curAuthCollection=''; customColWidths={}; curRespColWidths={};
 }
 function startNewProject() {
   if(projDirty && !confirm('저장하지 않은 변경사항이 있어요. 저장 없이 새 프로젝트를 만드시겠어요?')) return;
   projDirty=false; _projDirtyLock=true;
-  curProjId=null; curStages=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}]; customColWidths={}; curRespColWidths={};
+  curProjId=null; curStages=[]; curHomeBlocks=[]; curHomeItemOrder=[]; curBgImages=[]; curAuthFields=[{key:'name',label:'이름',type:'string',required:true}]; customColWidths={}; curRespColWidths={};
   curAuthKeyField='name'; curUsers=[]; curAuthCollection=''; curLogoTextSize='24'; curLogoTextAlign='center'; curLogoImgW=76;
   setSelfReg(false); document.getElementById('p-self-reg-modal-title').value=''; document.getElementById('p-self-reg-modal-desc').value=''; document.getElementById('p-self-reg-cta').value='등록하기'; document.getElementById('p-self-reg-success').value='';
   setSelfRegCtaSep(false); document.getElementById('p-self-reg-cta-icon-url').value=''; document.getElementById('p-self-reg-cta-sep-text').value='등록하기';
@@ -4635,7 +4713,7 @@ function startNewProject() {
   setLogoType('image'); setLayoutType('separate'); setDday(false); setAuth(false);
   setLogoColorMode('keycolor'); setCtaIconColorMode('keycolor');
   renderTextColorRows();
-  renderKeyColorList(); renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList();
+  renderKeyColorList(); renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList(); renderHomeOrderList();
   switchInnerTab('basic'); showProjView('edit');
   if (!_navRestore) history.pushState({v:'proj'}, '', '#edit/new/basic');
   setTimeout(()=>{ _projDirtyLock=false; projDirty=false; }, 300);
@@ -4651,6 +4729,8 @@ async function editProject(id) {
     const d = doc.data();
     curProjId = id;
     curStages = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
+    curHomeBlocks = d.homeBlocks || [];
+    curHomeItemOrder = Array.isArray(d.homeItemOrder) && d.homeItemOrder.length ? d.homeItemOrder : curStages.map(s=>({type:'stage',id:s.id}));
     customColWidths = d.userColumnWidths || {};
     curRespColWidths = d.formRespColWidths || {};
     const _acp=d.adminColPrefs||{};
@@ -4823,6 +4903,8 @@ async function saveProject(deploy=true, e=null) {
     bgOverlayOpacity: curBgOverlayOpacity,
     bgOverlayColor:   curBgOverlayColor,
     stages:       curStages.map((s,i)=>({...s,order:i})),
+    homeBlocks:   curHomeBlocks,
+    homeItemOrder: curHomeItemOrder,
     stats:         curStats,
     elementOrder:  curElementOrder,
     elementMargins: curElementMargins,
@@ -5984,10 +6066,11 @@ async function uploadBlkBgImage(event){
   event.target.value='';
 }
 function openBlockModal(idx,insertAt){
-  curBlkIdx=idx;
-  curBlkInsertAt=(idx===null&&insertAt!==undefined&&insertAt!==null)?insertAt:null;
-  document.getElementById('bm-title').textContent=idx===null?'블록 추가':'블록 편집';
-  const b=idx!==null?curBlocks[idx]:{type:'text',textContent:'',imageUrl:'',mixedLayout:'overlay'};
+  const _isHb=_hbMode;
+  curBlkIdx=_isHb?null:idx;
+  curBlkInsertAt=_isHb?null:((idx===null&&insertAt!==undefined&&insertAt!==null)?insertAt:null);
+  document.getElementById('bm-title').textContent=_isHb?(_hbEditId?'홈 블록 편집':'홈 블록 추가'):(idx===null?'블록 추가':'블록 편집');
+  const b=_isHb?(curHomeBlocks.find(hb=>hb.id===_hbEditId)||{type:'text',textContent:'',imageUrl:'',mixedLayout:'overlay'}):(idx!==null?curBlocks[idx]:{type:'text',textContent:'',imageUrl:'',mixedLayout:'overlay'});
   curBlkType=b.type||'text';curMixedLayout=b.mixedLayout||'overlay';
   /* tool 블록 상태는 switchBlkTab 전에 미리 세팅 — loadToolInstList가 올바른 toolType/Config로 호출되도록 */
   if(b.type==='tool'){
@@ -5996,6 +6079,11 @@ function openBlockModal(idx,insertAt){
     curBlkCompleteTrigger=b.completeTrigger||'tool-signal';
   }
   switchBlkTab(curBlkType);
+  // Home block mode: hide unsupported block types
+  ['tool','form','spacer','divider'].forEach(k=>{
+    const btn=document.getElementById('btab-'+k); if(btn) btn.style.display=_isHb?'none':'';
+  });
+  const _hbCheckSec=document.getElementById('blk-check-section'); if(_hbCheckSec&&_isHb) _hbCheckSec.style.display='none';
   const _cedT=document.getElementById('ced-text');
   _cedT.innerHTML=b.type==='text'?(b.textContent||''):''; _cedT.style.height='';
   document.getElementById('text-link-url').value=b.type==='text'?(b.linkUrl||''):'';
@@ -6116,10 +6204,10 @@ function openBlockModal(idx,insertAt){
   const showVar = curAuthEnabled && curAuthFields.length > 0;
   ['text','mixed'].forEach(c=>{const b=document.getElementById('fmt-var-'+c);if(b)b.style.display=showVar?'':'none';});
   document.getElementById('block-modal').classList.add('on');
-  if (!_navRestore) history.pushState({v:'block', blkIdx:idx, insertAt:insertAt??null, projId:curProjId, stageIdx:curEditingStageIdx}, '', '#edit/'+curProjId+'/stages/'+(curEditingStageIdx??0)+'/block');
+  if (!_isHb && !_navRestore) history.pushState({v:'block', blkIdx:idx, insertAt:insertAt??null, projId:curProjId, stageIdx:curEditingStageIdx}, '', '#edit/'+curProjId+'/stages/'+(curEditingStageIdx??0)+'/block');
   updateBmPreview();
 }
-function closeBlockModal(){document.getElementById('block-modal').classList.remove('on');}
+function closeBlockModal(){document.getElementById('block-modal').classList.remove('on');_hbMode=false;_hbEditId=null;['tool','form','spacer','divider'].forEach(k=>{const btn=document.getElementById('btab-'+k);if(btn)btn.style.display='';});const _cs=document.getElementById('blk-check-section');if(_cs)_cs.style.display='';}
 /* ── 블록 모달 실시간 미리보기 ── */
 let bmPreviewTimer=null;
 function scheduleBmPreview(){
@@ -6272,6 +6360,23 @@ function saveBlock(){
   if(!b.requireAuth) delete b.requireAuth;
   b.requiredTier=(document.getElementById('blk-required-tier')?.value||'').trim();
   if(!b.requiredTier) delete b.requiredTier;
+  if(_hbMode){
+    const _targetId=_hbEditId||existingId;
+    b.id=_targetId;
+    if(_hbEditId){
+      const _hbI=curHomeBlocks.findIndex(hb=>hb.id===_hbEditId);
+      if(_hbI>=0) curHomeBlocks[_hbI]=b; else curHomeBlocks.push(b);
+    } else {
+      _hbEditId=_targetId;
+      curHomeBlocks.push(b);
+      curHomeItemOrder.push({type:'homeBlock',id:_targetId});
+    }
+    document.getElementById('bm-title').textContent='홈 블록 편집';
+    renderHomeOrderList();
+    projDirty=true;
+    _btnFlash(document.querySelector('.bm-top .save-btn'), '저장됨 ✓', 1200);
+    return;
+  }
   if(curBlkIdx!==null){
     // order만 보존하고 나머지는 새 b로 교체 — 스프레드 병합 시 삭제된 필드가 남는 버그 방지
     curBlocks[curBlkIdx]={order:curBlocks[curBlkIdx].order,...b};
