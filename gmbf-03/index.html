@@ -530,6 +530,7 @@ let SELF_REG_CTA_ICON_URL = '';
 let SELF_REG_CTA_SEP_TEXT = '등록하기';
 let GREETING_TEXT  = '';
 let STAGES         = [];
+let _siteSettings  = null;
 let _navRestore    = false;
 let STATS          = [];   // [{id, label, collection, countType, unit, enabled}]
 let ELEMENT_ORDER  = ['edition','logo','dday','stats'];
@@ -648,8 +649,12 @@ async function loadProjectSettings(){
   if(!PROJECT_ID){ showError('프로젝트 ID가 없어요.','URL에 ?id=프로젝트ID 형식으로 접근해주세요.'); return; }
   await checkAdminPreview();
   try{
-    const doc=await db.collection('cms_projects').doc(PROJECT_ID).get();
+    const [doc, siteDoc] = await Promise.all([
+      db.collection('cms_projects').doc(PROJECT_ID).get(),
+      db.collection('cms_admin_settings').doc('site').get()
+    ]);
     if(!doc.exists){ showError('프로젝트를 찾을 수 없어요.','관리자에게 문의해주세요.'); return; }
+    if(siteDoc.exists) _siteSettings = siteDoc.data();
     applySettings(doc.data());
   }catch(e){ showError('연결에 실패했어요.','잠시 후 다시 시도해주세요.'); }
 }
