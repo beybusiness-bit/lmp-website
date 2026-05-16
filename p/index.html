@@ -1883,6 +1883,14 @@ function _isBlockLocked(b){
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
   return saved.project!==PROJECT_ID;
 }
+function _repBlockHtml(rb,mS){
+  if(!rb)return '';
+  const t=rb.type||'text';const bg=rb.bgColor?`background:${rb.bgColor};`:'';
+  if(t==='image'&&rb.imageUrl){const fit=rb.imageFit||'natural';const h=rb.imageHeight;if(fit==='natural'&&!h)return `<div style="${mS}${bg}"><img src="${rb.imageUrl}" alt="" loading="lazy" class="lb-img" onclick="openLightbox(this.src)" style="width:100%;display:block;"></div>`;const bgSize=fit==='fill'?'100% 100%':(fit==='natural'?'contain':fit);return `<div style="${mS}${bg}overflow:hidden;"><div style="background-image:url(${JSON.stringify(rb.imageUrl)});background-size:${bgSize};background-position:${rb.imagePosition||'50% 50%'};height:${h||200}px;"></div></div>`;}
+  if(t==='embed'&&rb.embedUrl){const h=rb.embedHeight||500;return `<div style="${mS}${bg}"><iframe src="${rb.embedUrl.replace(/"/g,'&quot;')}" width="100%" height="${h}" frameborder="0" allowfullscreen style="display:block;border:none;"></iframe></div>`;}
+  if(t==='mixed'){const txt=applyVars(rb.textContent||'');const imgUrl=rb.imageUrl||'';const layout=rb.mixedLayout||'overlay';const order=rb.imageOrder||'img-first';const fit=rb.imageFit||'cover';const h=rb.imageHeight;const imgS=h?`width:100%;height:${h}px;object-fit:${fit==='natural'?'contain':fit==='fill'?'100% 100%':fit};display:block;`:'width:100%;display:block;';const imgEl=imgUrl?`<img src="${imgUrl}" alt="" loading="lazy" class="lb-img" onclick="openLightbox(this.src)" style="${imgS}">`:'';;if(layout==='split'){const content=order==='text-first'?`<div class="g-split-text" style="${bg}">${txt}</div><div class="g-split-img">${imgEl}</div>`:`<div class="g-split-img">${imgEl}</div><div class="g-split-text" style="${bg}">${txt}</div>`;return `<div class="g-block-mixed-split" style="${mS}">${content}</div>`;}return `<div class="g-block-mixed-overlay" style="${mS}${bg}">${imgEl}<div class="g-overlay-text" style="align-items:flex-end;background:rgba(0,0,0,.4);"><div class="g-overlay-text-inner">${txt}</div></div></div>`;}
+  const txt=applyVars(rb.textContent||'');return `<div class="g-block-text" style="${mS}${bg}"><div class="g-block-text-inner">${txt}</div></div>`;
+}
 function _isTierLocked(b){
   if(!b.requiredTier || IS_ADMIN_PREVIEW) return false;
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
@@ -1916,12 +1924,7 @@ function blockHtml(b){
   }
   // 결제 게이트 — requiredTier가 있고 사용자가 해당 tier를 구매하지 않은 경우
   if(_isTierLocked(b)){
-    if(b.tierLockMode==='replace'&&b.tierReplaceBlock){
-      const rb=b.tierReplaceBlock;const repType=rb.type||'text';
-      if(repType==='image'&&rb.imageUrl){const h=rb.imageHeight||200;return `<div style="${mS}${rb.bgColor?'background:'+rb.bgColor+';':''}overflow:hidden;"><div style="background-image:url(${JSON.stringify(rb.imageUrl)});background-size:${rb.imageFit||'cover'};background-position:center;height:${h}px;"></div></div>`;}
-      if(repType==='embed'&&rb.embedUrl){const h=rb.embedHeight||300;return `<div style="${mS}"><iframe src="${rb.embedUrl.replace(/"/g,'&quot;')}" width="100%" height="${h}" frameborder="0" allowfullscreen style="display:block;border:none;"></iframe></div>`;}
-      if(rb.textContent){const repBg=rb.bgColor?`background:${rb.bgColor};`:'background:#f8f8f8;';return `<div style="${mS}${repBg}padding:16px 20px;">${rb.textContent}</div>`;}
-    }
+    if(b.tierLockMode==='replace'&&b.tierReplaceBlock){return _repBlockHtml(b.tierReplaceBlock,mS);}
     return `<div style="${mS}${bgS}min-height:120px;display:flex;align-items:center;justify-content:center;border:1.5px dashed rgba(0,0,0,.2);background:rgba(0,0,0,.03);">
       <div style="text-align:center;padding:20px 16px;">
         <div style="font-size:26px;margin-bottom:6px;">🔒</div>
