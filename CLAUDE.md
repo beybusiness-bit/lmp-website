@@ -783,8 +783,6 @@ match /cms_payment_records/{doc} { allow read: if true; }
 
 **미완료 항목:**
 - 재고 잔량 표시: `stockRemaining ?? stockTotal` fallback 적용 완료 — 실제 테스트 재확인 필요
-- 블록 숨기기: `tierLockMode: 'hide'` 구현 완료 — admin에서 설정 후 플레이어에서 확인 필요
-- **폼 필드 추가 모달**: z-index 600 배포됨. 여전히 안 열리면 콘솔 오류 확인 (try-catch로 alert 표시 추가됨)
 - **PayUp 결제**: 오류코드 8002 = merchantId 문제. admin → 결제 설정 → 페이업 가맹점 ID를 `standard_test`(테스트) 또는 실제 가맹점 ID로 수정 필요
 
 **기타:**
@@ -799,9 +797,12 @@ match /cms_payment_records/{doc} { allow read: if true; }
 - **재고 잔량 표시 버그 수정** ✅: `stockRemaining ?? stockTotal` fallback (표시·품절판단·재고차감 모두)
 - **블록 완전 숨기기 옵션** ✅: admin `tierLockMode: 'cover'|'hide'` 라디오, player renderGuideScroll/Slide 필터링 (4파일)
 - **PayUp 결제창 오픈** ✅: SDK 컨테이너 ID `payup_layer`/`bg_layer` 교체 — 오류코드 8002(merchantId)까지 도달
-- **admin 폼 필드 모달 z-index** ✅: `.modal-ov` 400→600 (preview 백드롭 449 위로)
-- **폼 필드 모달 JS 오류 감지** ✅: try-catch + alert 추가
+- **admin 폼 필드 모달 버그 수정** ✅: closeFmtPopup() + body.appendChild(modal) 로 z-index DOM 순서 충돌 해결
+- **결제 내역 Firestore 인덱스 오류 수정** ✅: orderBy 제거 → 클라이언트 정렬 (tools/payment/index.html)
+- **결제 실패 UX 개선** ✅: 실패 화면에 "↩ 처음으로 돌아가기" 버튼 추가 (tools/payment/index.html)
 - **결제 게이트 다중 tier 지원** ✅: `requiredTier` 쉼표 구분 파싱 (4파일 동기화), gmbf-03 `_isTierLocked` 누락 추가
+- **홈화면 상단 여백 축소** ✅: `.screen-body` padding-top 24px→8px (4파일 동기화)
+- **블록 티어 잠금 '대체 블록' 기능** ✅: admin 3번째 옵션 + 미니RTE 에디터 + 배경색 + 자동완성 datalist, 플레이어 replace 모드 렌더링 (4파일 동기화)
 
 #### Firestore 스키마 추가 (누적)
 ```
@@ -818,7 +819,8 @@ cms_projects/{projectId}
   homeItemOrder: [{type:'stage'|'homeBlock', id:string}]
 
 stage_content/{stageId}/blocks[*]
-  tierLockMode: 'cover'|'hide'  ← requiredTier 있을 때만 유효
+  tierLockMode: 'cover'|'hide'|'replace'  ← requiredTier 있을 때만 유효
+  tierReplaceBlock: {textContent: string, bgColor: string}  ← replace 모드일 때
 ```
 
 ---
