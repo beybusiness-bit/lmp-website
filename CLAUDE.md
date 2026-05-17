@@ -829,9 +829,16 @@ match /cms_payment_records/{doc} { allow read: if true; }
 
 #### 다음 세션 시작점 🔲
 
-**다음 세션: 피드백 기반 버그 수정 + 유튜브 재생목록 도구 기능 보완**
+**다음 세션: 이번 세션 수정 테스트 피드백 반영 + 미처리 버그 목록 처리**
 
-위의 "🔴 다음 세션 처리 목록"을 순서대로 처리할 것. 특히 아래 우선순위 참고:
+사용자가 이번 세션 수정 항목들을 테스트한 결과를 먼저 받고, 피드백 있으면 우선 처리.
+그 다음 아래 우선순위 순서대로 처리:
+
+**🔴 테스트 확인 필요 (이번 세션 수정):**
+- admin 포맷바 Aa/정렬/색상 동작 여부
+- 위젯 카드 테두리 굵기·색 변경 후 플레이어 반영 여부
+- 결제 취소 확인 버튼(OK 클릭 시 UI 리셋) 동작 여부
+- 결제 모바일 리다이렉트 시 "결제 처리 중…" 텍스트 표시 여부
 
 **🔴 즉시 수정 (UX에 심각한 영향):**
 1. CTA 버튼 잘림 방지 (모바일 크롬 — 어떤 환경에서도 잘리면 안 됨)
@@ -849,12 +856,16 @@ match /cms_payment_records/{doc} { allow read: if true; }
 
 **미완료 항목:**
 - **결제 메인 도메인 재테스트 필요**: PayUp은 등록된 도메인에서만 결제 처리됨 — lazymaxpotential.kr 에서 실제 결제 흐름 확인 필요 (모바일 사파리는 이미 성공 확인)
-- **authMode 피드백**: 이번 세션에 구현한 5단계 authMode 기능 피드백을 다음 세션에서 처리
+- **authMode 피드백**: 5단계 authMode 기능 테스트 피드백을 다음 세션에서 처리
 
 **기타:**
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 
 #### 이번 세션 완료 항목
+- **admin 포맷바 Aa/정렬/색상 수정** ✅: `_fmtCtxRange` 변수로 버튼 클릭 시점 selection 명시 캡처 → mini-rte 팝업 열려도 selection 유지 (admin/index.html)
+- **위젯 카드 테두리 설정** ✅: admin 위젯 탭에 테두리 굵기(px)·테두리 색 입력 추가, `WIDGET.borderWidth`/`borderColor` Firestore 필드, 플레이어 4파일 동기화
+- **결제 취소 확인 버튼 수정** ✅: `window.confirm` 인터셉트 추가 → PayUp 취소 확인창에서 OK 클릭 시 UI 리셋 (이전엔 아무 반응 없음)
+- **결제 모바일 빈화면 개선** ✅: `/api/confirm-payup` 302 redirect → HTML+JS redirect로 교체 → "결제 처리 중…" 텍스트 표시 후 이동 (api/confirm-payup.js)
 - iOS 자동 포커스 제거, 방명록 위젯 배경이미지 수정, 등록하기 모달 버그 수정 (이전 세션)
 - 홈 블록 기능 추가 (이전 세션)
 - **결제 모바일 빈화면 수정** ✅: 성공/실패 결과 페이지 lmp-context 대기 1500ms→200ms 단축 (tools/payment/index.html)
