@@ -832,14 +832,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div class="ed-sect">
               <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
               <div class="mini-rte-wrap">
-                <div class="mini-rte-tb">
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('gbk-desc','bold')"><b>B</b></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('gbk-desc','italic')"><i>I</i></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('gbk-desc','underline')"><u>U</u></button>
-                  <div class="rte-sep"></div>
-                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('gbk-desc')">🔗</button>
+                <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
+                  <button class="fmt-btn" id="fmt-bold-gbk-desc" onpointerdown="epd(event)" onclick="fmtCmd('gbk-desc','bold')"><b>B</b></button>
+                  <button class="fmt-btn" id="fmt-sz-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','gbk-desc')">Aa</button>
+                  <button class="fmt-btn" id="fmt-al-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','gbk-desc')">≡</button>
+                  <button class="fmt-btn" id="fmt-clr-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','gbk-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-gbk-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" id="fmt-bg-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','gbk-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-gbk-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" id="fmt-link-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','gbk-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" id="fmt-hr-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','gbk-desc')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" id="fmt-var-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','gbk-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" id="fmt-img-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','gbk-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="rte-gbk-desc" contenteditable="true" data-ph="사용자에게 보여줄 설명을 입력하세요"></div>
+                <div class="mini-rte" id="ed-gbk-desc" contenteditable="true" data-ph="사용자에게 보여줄 설명을 입력하세요"></div>
               </div>
             </div>
             <div class="ed-sect">
@@ -1002,16 +1006,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 <code>{{key}}</code>로 변수 삽입 가능</div>
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">일정 설명<button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('sc-desc')">{x} 변수</button></div>
+              <div class="ed-lbl">일정 설명</div>
               <div class="mini-rte-wrap">
-                <div class="mini-rte-tb">
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('sc-desc','bold')"><b>B</b></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('sc-desc','italic')"><i>I</i></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('sc-desc','underline')"><u>U</u></button>
-                  <div class="rte-sep"></div>
-                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('sc-desc')">🔗</button>
+                <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
+                  <button class="fmt-btn" id="fmt-bold-sc-desc" onpointerdown="epd(event)" onclick="fmtCmd('sc-desc','bold')"><b>B</b></button>
+                  <button class="fmt-btn" id="fmt-sz-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','sc-desc')">Aa</button>
+                  <button class="fmt-btn" id="fmt-al-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','sc-desc')">≡</button>
+                  <button class="fmt-btn" id="fmt-clr-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','sc-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-sc-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" id="fmt-bg-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','sc-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-sc-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" id="fmt-link-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','sc-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" id="fmt-hr-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','sc-desc')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" id="fmt-var-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','sc-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" id="fmt-img-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','sc-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="rte-sc-desc" contenteditable="true" data-ph="예: 30분간 1:1 상담을 진행합니다."></div>
+                <div class="mini-rte" id="ed-sc-desc" contenteditable="true" data-ph="예: 30분간 1:1 상담을 진행합니다."></div>
               </div>
             </div>
             <div class="ed-sect">
@@ -1096,16 +1104,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <!-- 완료 안내 메시지 -->
             <div class="sect-head" style="margin-top:20px;margin-bottom:8px;">완료 안내 메시지</div>
             <div class="ed-sect">
-              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">&nbsp;<button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('sc-confirm-msg')">{x} 변수</button></div>
+              <div class="ed-lbl">완료 안내 문구</div>
               <div class="mini-rte-wrap">
-                <div class="mini-rte-tb">
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('sc-confirm-msg','bold')"><b>B</b></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('sc-confirm-msg','italic')"><i>I</i></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('sc-confirm-msg','underline')"><u>U</u></button>
-                  <div class="rte-sep"></div>
-                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('sc-confirm-msg')">🔗</button>
+                <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
+                  <button class="fmt-btn" id="fmt-bold-sc-confirm-msg" onpointerdown="epd(event)" onclick="fmtCmd('sc-confirm-msg','bold')"><b>B</b></button>
+                  <button class="fmt-btn" id="fmt-sz-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','sc-confirm-msg')">Aa</button>
+                  <button class="fmt-btn" id="fmt-al-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','sc-confirm-msg')">≡</button>
+                  <button class="fmt-btn" id="fmt-clr-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','sc-confirm-msg')" style="padding:5px 7px;"><span id="fmt-clr-dot-sc-confirm-msg" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" id="fmt-bg-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','sc-confirm-msg')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-sc-confirm-msg" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" id="fmt-link-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','sc-confirm-msg')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" id="fmt-hr-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','sc-confirm-msg')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" id="fmt-var-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','sc-confirm-msg')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" id="fmt-img-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','sc-confirm-msg')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="rte-sc-confirm-msg" contenteditable="true" data-ph="예약해 주셔서 감사해요!"></div>
+                <div class="mini-rte" id="ed-sc-confirm-msg" contenteditable="true" data-ph="예약해 주셔서 감사해요!"></div>
               </div>
             </div>
 
@@ -1159,16 +1171,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <input class="fi" id="yt-plc-title" placeholder="예: GMBF 3회 신청곡 받기" style="margin-bottom:0;">
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">설명 <span style="font-weight:400;color:rgba(0,0,0,.45);">(사용자에게 보여지는 안내문)</span><button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('yt-plc-desc')">{x} 변수</button></div>
+              <div class="ed-lbl">설명 <span style="font-weight:400;color:rgba(0,0,0,.45);">(사용자에게 보여지는 안내문)</span></div>
               <div class="mini-rte-wrap">
-                <div class="mini-rte-tb">
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('yt-plc-desc','bold')"><b>B</b></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('yt-plc-desc','italic')"><i>I</i></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('yt-plc-desc','underline')"><u>U</u></button>
-                  <div class="rte-sep"></div>
-                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('yt-plc-desc')">🔗</button>
+                <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
+                  <button class="fmt-btn" id="fmt-bold-yt-plc-desc" onpointerdown="epd(event)" onclick="fmtCmd('yt-plc-desc','bold')"><b>B</b></button>
+                  <button class="fmt-btn" id="fmt-sz-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','yt-plc-desc')">Aa</button>
+                  <button class="fmt-btn" id="fmt-al-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','yt-plc-desc')">≡</button>
+                  <button class="fmt-btn" id="fmt-clr-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','yt-plc-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-yt-plc-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" id="fmt-bg-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','yt-plc-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-yt-plc-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" id="fmt-link-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','yt-plc-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" id="fmt-hr-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','yt-plc-desc')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" id="fmt-var-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','yt-plc-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" id="fmt-img-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','yt-plc-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="rte-yt-plc-desc" contenteditable="true" data-ph="예: 행사에서 듣고 싶은 곡을 검색해서 신청해주세요."></div>
+                <div class="mini-rte" id="ed-yt-plc-desc" contenteditable="true" data-ph="예: 행사에서 듣고 싶은 곡을 검색해서 신청해주세요."></div>
               </div>
             </div>
             <div class="sect-head" style="margin-top:20px;margin-bottom:8px;">제출 설정</div>
@@ -1183,16 +1199,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 <code>{{key}}</code>로 변수 삽입 가능</div>
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">제출 완료 안내 문구 <span style="font-weight:400;color:rgba(0,0,0,.45);">({count} = 곡 수)</span><button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('yt-plc-done-sub')">{x} 변수</button></div>
+              <div class="ed-lbl">제출 완료 안내 문구 <span style="font-weight:400;color:rgba(0,0,0,.45);">({count} = 곡 수)</span></div>
               <div class="mini-rte-wrap">
-                <div class="mini-rte-tb">
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('yt-plc-done-sub','bold')"><b>B</b></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('yt-plc-done-sub','italic')"><i>I</i></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('yt-plc-done-sub','underline')"><u>U</u></button>
-                  <div class="rte-sep"></div>
-                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('yt-plc-done-sub')">🔗</button>
+                <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
+                  <button class="fmt-btn" id="fmt-bold-yt-plc-done-sub" onpointerdown="epd(event)" onclick="fmtCmd('yt-plc-done-sub','bold')"><b>B</b></button>
+                  <button class="fmt-btn" id="fmt-sz-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','yt-plc-done-sub')">Aa</button>
+                  <button class="fmt-btn" id="fmt-al-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','yt-plc-done-sub')">≡</button>
+                  <button class="fmt-btn" id="fmt-clr-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','yt-plc-done-sub')" style="padding:5px 7px;"><span id="fmt-clr-dot-yt-plc-done-sub" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" id="fmt-bg-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','yt-plc-done-sub')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-yt-plc-done-sub" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" id="fmt-link-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','yt-plc-done-sub')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" id="fmt-hr-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','yt-plc-done-sub')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" id="fmt-var-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','yt-plc-done-sub')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" id="fmt-img-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','yt-plc-done-sub')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="rte-yt-plc-done-sub" contenteditable="true" data-ph="{count}곡을 신청해 주셔서 감사해요."></div>
+                <div class="mini-rte" id="ed-yt-plc-done-sub" contenteditable="true" data-ph="{count}곡을 신청해 주셔서 감사해요."></div>
               </div>
             </div>
             <div style="margin-top:24px;padding-top:16px;border-top:1.5px solid rgba(0,0,0,.1);">
@@ -1243,16 +1263,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 <code>{{key}}</code>로 사용자 정보 변수 삽입 가능 (예: {{name}})</div>
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">설명 <span style="font-weight:400;opacity:.55;">(선택)</span><button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('tf-desc')">{x} 변수</button></div>
+              <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
               <div class="mini-rte-wrap">
-                <div class="mini-rte-tb">
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('tf-desc','bold')" title="굵게"><b>B</b></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('tf-desc','italic')" title="기울임"><i>I</i></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('tf-desc','underline')" title="밑줄"><u>U</u></button>
-                  <div class="rte-sep"></div>
-                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('tf-desc')" title="링크">🔗</button>
+                <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
+                  <button class="fmt-btn" id="fmt-bold-tf-desc" onpointerdown="epd(event)" onclick="fmtCmd('tf-desc','bold')"><b>B</b></button>
+                  <button class="fmt-btn" id="fmt-sz-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','tf-desc')">Aa</button>
+                  <button class="fmt-btn" id="fmt-al-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','tf-desc')">≡</button>
+                  <button class="fmt-btn" id="fmt-clr-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','tf-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-tf-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" id="fmt-bg-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','tf-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-tf-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" id="fmt-link-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','tf-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" id="fmt-hr-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','tf-desc')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" id="fmt-var-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','tf-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" id="fmt-img-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','tf-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="rte-tf-desc" contenteditable="true" data-ph="폼에 대한 안내 문구를 입력하세요."></div>
+                <div class="mini-rte" id="ed-tf-desc" contenteditable="true" data-ph="폼에 대한 안내 문구를 입력하세요."></div>
               </div>
             </div>
             <div class="sect-head" style="margin-bottom:8px;">필드</div>
@@ -1265,16 +1289,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 <code>{{key}}</code>로 사용자 변수 삽입 가능</div>
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">완료 메시지<button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('tf-submit-msg')">{x} 변수</button></div>
+              <div class="ed-lbl">완료 메시지</div>
               <div class="mini-rte-wrap">
-                <div class="mini-rte-tb">
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('tf-submit-msg','bold')" title="굵게"><b>B</b></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('tf-submit-msg','italic')" title="기울임"><i>I</i></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('tf-submit-msg','underline')" title="밑줄"><u>U</u></button>
-                  <div class="rte-sep"></div>
-                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('tf-submit-msg')" title="링크">🔗</button>
+                <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
+                  <button class="fmt-btn" id="fmt-bold-tf-submit-msg" onpointerdown="epd(event)" onclick="fmtCmd('tf-submit-msg','bold')"><b>B</b></button>
+                  <button class="fmt-btn" id="fmt-sz-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','tf-submit-msg')">Aa</button>
+                  <button class="fmt-btn" id="fmt-al-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','tf-submit-msg')">≡</button>
+                  <button class="fmt-btn" id="fmt-clr-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','tf-submit-msg')" style="padding:5px 7px;"><span id="fmt-clr-dot-tf-submit-msg" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" id="fmt-bg-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','tf-submit-msg')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-tf-submit-msg" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" id="fmt-link-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','tf-submit-msg')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" id="fmt-hr-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','tf-submit-msg')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" id="fmt-var-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','tf-submit-msg')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" id="fmt-img-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','tf-submit-msg')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="rte-tf-submit-msg" contenteditable="true" data-ph="제출이 완료됐어요!"></div>
+                <div class="mini-rte" id="ed-tf-submit-msg" contenteditable="true" data-ph="제출이 완료됐어요!"></div>
               </div>
             </div>
             <div class="ed-sect">
@@ -1490,16 +1518,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <input class="fi" id="cg-title" placeholder="예: 행사 홍보 문구 생성기" style="margin-bottom:0;">
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">설명 <span style="font-weight:400;opacity:.55;">(선택)</span><button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('cg-desc')">{x} 변수</button></div>
+              <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
               <div class="mini-rte-wrap">
-                <div class="mini-rte-tb">
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-desc','bold')"><b>B</b></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-desc','italic')"><i>I</i></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-desc','underline')"><u>U</u></button>
-                  <div class="rte-sep"></div>
-                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('cg-desc')">🔗</button>
+                <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
+                  <button class="fmt-btn" id="fmt-bold-cg-desc" onpointerdown="epd(event)" onclick="fmtCmd('cg-desc','bold')"><b>B</b></button>
+                  <button class="fmt-btn" id="fmt-sz-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','cg-desc')">Aa</button>
+                  <button class="fmt-btn" id="fmt-al-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','cg-desc')">≡</button>
+                  <button class="fmt-btn" id="fmt-clr-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','cg-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-cg-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" id="fmt-bg-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','cg-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-cg-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" id="fmt-link-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','cg-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" id="fmt-hr-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','cg-desc')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" id="fmt-var-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','cg-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" id="fmt-img-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','cg-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="rte-cg-desc" contenteditable="true" data-ph="사용자에게 표시될 설명"></div>
+                <div class="mini-rte" id="ed-cg-desc" contenteditable="true" data-ph="사용자에게 표시될 설명"></div>
               </div>
             </div>
             <!-- 입력 필드 -->
@@ -1538,16 +1570,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <input class="fi-sm" id="cg-speaker-desc" type="text" placeholder="예: 친환경 카페를 운영하는 30대 여성 사장님" style="margin-bottom:0;">
             </div>
             <div style="margin-bottom:8px;">
-              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">배경 및 컨텍스트<button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('cg-ai-context')">{x} 변수</button></div>
+              <div class="ed-lbl" style="margin-bottom:4px;">배경 및 컨텍스트</div>
               <div class="mini-rte-wrap">
-                <div class="mini-rte-tb">
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-ai-context','bold')"><b>B</b></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-ai-context','italic')"><i>I</i></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('cg-ai-context','underline')"><u>U</u></button>
-                  <div class="rte-sep"></div>
-                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('cg-ai-context')">🔗</button>
+                <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
+                  <button class="fmt-btn" id="fmt-bold-cg-ai-context" onpointerdown="epd(event)" onclick="fmtCmd('cg-ai-context','bold')"><b>B</b></button>
+                  <button class="fmt-btn" id="fmt-sz-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','cg-ai-context')">Aa</button>
+                  <button class="fmt-btn" id="fmt-al-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','cg-ai-context')">≡</button>
+                  <button class="fmt-btn" id="fmt-clr-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','cg-ai-context')" style="padding:5px 7px;"><span id="fmt-clr-dot-cg-ai-context" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" id="fmt-bg-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','cg-ai-context')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-cg-ai-context" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" id="fmt-link-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','cg-ai-context')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" id="fmt-hr-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','cg-ai-context')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" id="fmt-var-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','cg-ai-context')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" id="fmt-img-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','cg-ai-context')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="rte-cg-ai-context" contenteditable="true" data-ph="예: 이 문구는 인스타그램 신메뉴 런칭에 사용됩니다. 브랜드 키워드는 '느림', '건강', '지속가능성'입니다." style="min-height:80px;"></div>
+                <div class="mini-rte" id="ed-cg-ai-context" contenteditable="true" data-ph="예: 이 문구는 인스타그램 신메뉴 런칭에 사용됩니다. 브랜드 키워드는 '느림', '건강', '지속가능성'입니다." style="min-height:80px;"></div>
               </div>
             </div>
             <!-- 참고 문구 -->
@@ -1703,17 +1739,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               </div>
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">상세 설명 <span style="font-weight:400;opacity:.55;">(선택 · 결제창에 표시)</span><button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('py-desc')">{x} 변수</button></div>
+              <div class="ed-lbl">상세 설명 <span style="font-weight:400;opacity:.55;">(선택 · 결제창에 표시)</span></div>
               <div class="mini-rte-wrap">
-                <div class="mini-rte-tb">
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('py-desc','bold')"><b>B</b></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('py-desc','italic')"><i>I</i></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('py-desc','underline')"><u>U</u></button>
-                  <div class="rte-sep"></div>
-                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('py-desc')">🔗</button>
-                  <button onmousedown="event.preventDefault()" onclick="rteInsertImg('py-desc')" title="이미지 URL">🖼</button>
+                <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
+                  <button class="fmt-btn" id="fmt-bold-py-desc" onpointerdown="epd(event)" onclick="fmtCmd('py-desc','bold')"><b>B</b></button>
+                  <button class="fmt-btn" id="fmt-sz-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','py-desc')">Aa</button>
+                  <button class="fmt-btn" id="fmt-al-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','py-desc')">≡</button>
+                  <button class="fmt-btn" id="fmt-clr-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','py-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-py-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" id="fmt-bg-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','py-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-py-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" id="fmt-link-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','py-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" id="fmt-hr-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','py-desc')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" id="fmt-var-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','py-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" id="fmt-img-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','py-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="rte-py-desc" contenteditable="true" data-ph="결제 전 사용자에게 보여줄 설명" style="min-height:100px;"></div>
+                <div class="mini-rte" id="ed-py-desc" contenteditable="true" data-ph="결제 전 사용자에게 보여줄 설명" style="min-height:100px;"></div>
               </div>
             </div>
             <div class="ed-sect">
@@ -1722,16 +1761,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div style="font-size:10px;color:rgba(0,0,0,.45);line-height:1.6;margin-top:6px;">결제 성공 시 사용자에게 이 라벨이 부여돼요. 비워두면 결제 기록만 남아요.</div>
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl" style="display:flex;align-items:center;gap:6px;">결제 완료 메시지 <span style="font-weight:400;opacity:.55;">(선택)</span><button class="prev-btn" style="margin-left:auto;font-size:10px;padding:2px 7px;" onmousedown="event.preventDefault()" onclick="rteInsertVar('py-success')">{x} 변수</button></div>
+              <div class="ed-lbl">결제 완료 메시지 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
               <div class="mini-rte-wrap">
-                <div class="mini-rte-tb">
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('py-success','bold')"><b>B</b></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('py-success','italic')"><i>I</i></button>
-                  <button onmousedown="event.preventDefault()" onclick="rteCmd('py-success','underline')"><u>U</u></button>
-                  <div class="rte-sep"></div>
-                  <button onmousedown="event.preventDefault()" onclick="rteLinkCmd('py-success')">🔗</button>
+                <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
+                  <button class="fmt-btn" id="fmt-bold-py-success" onpointerdown="epd(event)" onclick="fmtCmd('py-success','bold')"><b>B</b></button>
+                  <button class="fmt-btn" id="fmt-sz-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','py-success')">Aa</button>
+                  <button class="fmt-btn" id="fmt-al-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','py-success')">≡</button>
+                  <button class="fmt-btn" id="fmt-clr-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','py-success')" style="padding:5px 7px;"><span id="fmt-clr-dot-py-success" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" id="fmt-bg-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','py-success')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-py-success" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" id="fmt-link-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','py-success')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" id="fmt-hr-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','py-success')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" id="fmt-var-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','py-success')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" id="fmt-img-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','py-success')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="rte-py-success" contenteditable="true" data-ph="예: 결제가 완료되었어요. 이제 프로 콘텐츠를 볼 수 있어요."></div>
+                <div class="mini-rte" id="ed-py-success" contenteditable="true" data-ph="예: 결제가 완료되었어요. 이제 프로 콘텐츠를 볼 수 있어요."></div>
               </div>
             </div>
             <!-- 결제 내역 인라인 (결제 내역 버튼 클릭 시 표시) -->
@@ -6057,30 +6100,30 @@ function setCheckPos(pos){
 }
 /* ── 미니 RTE 헬퍼 (도구 설명·완료메시지 전용) ── */
 function rteGet(id){
-  const el=document.getElementById('rte-'+id);
+  const el=document.getElementById('ed-'+id)||document.getElementById('rte-'+id);
   if(!el)return'';
   const h=el.innerHTML.trim();
   return(h==='<br>'||h==='')?'':h;
 }
 function rteSet(id,html){
-  const el=document.getElementById('rte-'+id);
+  const el=document.getElementById('ed-'+id)||document.getElementById('rte-'+id);
   if(!el)return;
   if(html&&!/<[a-z]/i.test(html))html=html.replace(/\n/g,'<br>');
   el.innerHTML=html||'';
 }
 function rteCmd(id,cmd){
-  const el=document.getElementById('rte-'+id);
+  const el=document.getElementById('ed-'+id)||document.getElementById('rte-'+id);
   if(el)el.focus();
   document.execCommand(cmd,false,null);
 }
 function rteLinkCmd(id){
-  const el=document.getElementById('rte-'+id);
+  const el=document.getElementById('ed-'+id)||document.getElementById('rte-'+id);
   if(el)el.focus();
   const url=prompt('링크 URL을 입력하세요:');
   if(url)document.execCommand('createLink',false,url);
 }
 function rteInsertVar(id){
-  const el=document.getElementById('rte-'+id);
+  const el=document.getElementById('ed-'+id)||document.getElementById('rte-'+id);
   if(!el)return;
   el.focus();
   const key=prompt('삽입할 변수 키를 입력하세요\n예) name, phone, team …','name');
@@ -6088,7 +6131,7 @@ function rteInsertVar(id){
   document.execCommand('insertText',false,'{{'+key+'}}');
 }
 function rteInsertImg(id){
-  const el=document.getElementById('rte-'+id);
+  const el=document.getElementById('ed-'+id)||document.getElementById('rte-'+id);
   if(!el)return;
   const useFile=confirm('파일로 업로드하겠습니까?\n\n확인 = 파일 업로드\n취소 = URL 직접 입력');
   if(useFile){
@@ -6945,7 +6988,10 @@ function getEd(ctx){
   if(ctx==='rep-mixed-txt') return document.getElementById('ced-rep-mixed-txt');
   if(ctx==='arep-txt') return document.getElementById('ced-arep-txt');
   if(ctx==='arep-mixed-txt') return document.getElementById('ced-arep-mixed-txt');
-  return document.getElementById(ctx==='text'?'ced-text':'ced-mixed');
+  if(ctx==='text') return document.getElementById('ced-text');
+  if(ctx==='mixed') return document.getElementById('ced-mixed');
+  // 도구 설명 필드: ed-{ctx} 우선, rte-{ctx} 폴백
+  return document.getElementById('ed-'+ctx)||document.getElementById('rte-'+ctx)||null;
 }
 function focusEd(ctx){const ed=getEd(ctx);ed.focus();restoreRange(ed);}
 /* 커서 위치(선택 없음)에 포맷을 쌓아두는 pending span 반환 또는 생성 */

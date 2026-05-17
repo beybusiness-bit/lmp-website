@@ -104,9 +104,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .submit-row{margin-top:20px;}
 .submit-count-label{font-size:12px;font-weight:700;opacity:.5;margin-bottom:8px;text-align:center;}
 
-/* 내가 신청한 곡 */
-.prev-section{margin-bottom:20px;padding:14px 14px 10px;border:1.5px solid rgba(0,0,0,.15);background:rgba(0,0,0,.02);}
-.prev-section-title{font-size:11px;font-weight:800;opacity:.55;margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase;}
+/* 신청한 곡 탭 */
 .prev-list{display:flex;flex-direction:column;gap:0;}
 .prev-item{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid rgba(0,0,0,.07);align-items:center;}
 .prev-item:last-child{border-bottom:none;}
@@ -136,16 +134,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <div class="tool-desc" id="tool-desc"></div>
   </div>
 
-  <!-- 내가 신청한 곡 -->
-  <div class="prev-section" id="prev-section" style="display:none;">
-    <div class="prev-section-title" id="prev-section-title">내가 신청한 곡</div>
-    <div class="prev-list" id="prev-list"></div>
-  </div>
-
   <!-- 탭 -->
   <div class="tab-row">
     <button class="tab-btn on" id="tab-search" onclick="switchTab('search')">검색</button>
     <button class="tab-btn" id="tab-selected" onclick="switchTab('selected')">선택 목록 <span id="sel-count-badge"></span></button>
+    <button class="tab-btn" id="tab-submitted" onclick="switchTab('submitted')" style="display:none;">신청한 곡 <span id="submitted-count-badge"></span></button>
   </div>
 
   <!-- 검색 탭 -->
@@ -184,6 +177,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <div class="submit-count-label" id="submit-count-label"></div>
       <button class="lmp-btn" id="submit-btn" onclick="submitSelected()">신청하기</button>
     </div>
+  </div>
+
+  <!-- 신청한 곡 탭 -->
+  <div id="pane-submitted" style="display:none;">
+    <div class="prev-list" id="prev-list"></div>
+    <div class="empty-msg" id="prev-empty-msg" style="display:none;">아직 신청한 곡이 없어요.</div>
   </div>
 
 </div>
@@ -253,8 +252,10 @@ function showErr(msg) {
 function switchTab(tab) {
   document.getElementById('tab-search').classList.toggle('on', tab === 'search');
   document.getElementById('tab-selected').classList.toggle('on', tab === 'selected');
+  document.getElementById('tab-submitted').classList.toggle('on', tab === 'submitted');
   document.getElementById('pane-search').style.display = tab === 'search' ? '' : 'none';
   document.getElementById('pane-selected').style.display = tab === 'selected' ? '' : 'none';
+  document.getElementById('pane-submitted').style.display = tab === 'submitted' ? '' : 'none';
   if (tab === 'selected') renderSelectedList();
 }
 
@@ -548,10 +549,12 @@ function resetForMore() {
 async function loadPrevSubmissions() {
   submittedVideoIds = new Set();
   submittedItems = [];
+  const tabBtn = document.getElementById('tab-submitted');
   if (!PLAYLIST_ID || !ctxUserId) {
-    document.getElementById('prev-section').style.display = 'none';
+    tabBtn.style.display = 'none';
     return;
   }
+  tabBtn.style.display = '';
   try {
     const snap = await db.collection('cms_youtube_submissions')
       .doc(PLAYLIST_ID).collection('songs')
@@ -560,13 +563,16 @@ async function loadPrevSubmissions() {
       .limit(50)
       .get();
     if (snap.empty) {
-      document.getElementById('prev-section').style.display = 'none';
+      document.getElementById('prev-list').innerHTML = '';
+      document.getElementById('prev-empty-msg').style.display = '';
+      document.getElementById('submitted-count-badge').textContent = '';
       return;
     }
     submittedItems = snap.docs.map(d => d.data());
     submittedItems.forEach(v => v.videoId && submittedVideoIds.add(v.videoId));
 
-    document.getElementById('prev-section-title').textContent = `내가 신청한 곡 (${submittedItems.length}곡)`;
+    document.getElementById('submitted-count-badge').textContent = `(${submittedItems.length})`;
+    document.getElementById('prev-empty-msg').style.display = 'none';
     document.getElementById('prev-list').innerHTML = submittedItems.map(v => `
       <div class="prev-item">
         <img class="prev-thumb" src="${esc(v.thumbnailUrl||'')}" alt="" loading="lazy" onerror="this.style.display='none'">
@@ -575,11 +581,11 @@ async function loadPrevSubmissions() {
           <div class="prev-ch">${esc(v.channelTitle||'')}</div>
         </div>
       </div>`).join('');
-    document.getElementById('prev-section').style.display = '';
     refreshResultButtons();
   } catch(e) {
     console.error('[loadPrevSubmissions]', e);
-    document.getElementById('prev-section').style.display = 'none';
+    document.getElementById('prev-list').innerHTML = '';
+    document.getElementById('prev-empty-msg').style.display = '';
   }
 }
 
