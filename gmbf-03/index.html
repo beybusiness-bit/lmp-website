@@ -388,9 +388,6 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
     </div>
   </div>
 
-  <div id="return-btn" onclick="reopenPrep()">↑</div>
-  <div id="return-greeting"></div>
-
   <div id="error-screen">
     <div class="error-msg" id="error-msg">프로젝트를 찾을 수 없어요.</div>
     <div class="error-sub" id="error-sub">URL을 확인해주세요.</div>
@@ -783,16 +780,12 @@ function applySettings(d){
   /* 등록 CTA 별도 표시 */
   const regCtaBtn=document.getElementById('reg-cta-btn');
   if(regCtaBtn){
-    const showReg=SELF_REG_ENABLED&&SELF_REG_CTA_SEPARATE;
-    regCtaBtn.style.display=showReg?'flex':'none';
-    if(showReg){
-      const regIcon=document.getElementById('reg-cta-icon');
-      if(SELF_REG_CTA_ICON_URL&&regIcon){ setMaskUrl('#reg-cta-icon',SELF_REG_CTA_ICON_URL,REG_ICON_COLOR_MODE); regIcon.style.display=''; }
-      else if(regIcon){ regIcon.style.display='none'; }
-      const regTxt=document.getElementById('reg-cta-text');
-      if(regTxt) regTxt.textContent=SELF_REG_CTA_SEP_TEXT;
-    }
+    if(SELF_REG_CTA_ICON_URL){ setMaskUrl('#reg-cta-icon',SELF_REG_CTA_ICON_URL,REG_ICON_COLOR_MODE); document.getElementById('reg-cta-icon').style.display=''; }
+    else { const ri=document.getElementById('reg-cta-icon'); if(ri) ri.style.display='none'; }
+    const regTxt=document.getElementById('reg-cta-text');
+    if(regTxt) regTxt.textContent=SELF_REG_CTA_SEP_TEXT;
   }
+  _refreshRegCta();
 
   /* auth modal text */
   if(d.authTitle) document.getElementById('auth-title').textContent=d.authTitle;
@@ -1294,7 +1287,7 @@ function onCtaClick(){
   if(AUTH_ENABLED && !IS_ADMIN_PREVIEW){
     const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
     if(saved.project===PROJECT_ID) reopenPrep();
-    else if(AUTH_MODE==='on-demand') openPrep();
+    else if(AUTH_MODE==='on-demand') reopenPrep();
     else openAuthModal();
   } else openPrep();
 }
@@ -1437,6 +1430,7 @@ async function submitRegistration(){
       loginCount: 1
     });
     USER_DOC_ID=ref.id;
+    _refreshRegCta();
     sessionStorage.setItem('userSession',JSON.stringify({...data,project:PROJECT_ID,_docId:USER_DOC_ID,_sessionId:sessionId}));
     _startSessionHeartbeat(USER_DOC_ID);
     loadUserProgress(data);
@@ -1532,6 +1526,7 @@ async function confirmAuth(){
     const blockHtml=_checkSessionConflict(u);
     if(blockHtml){ errEl.innerHTML=blockHtml; return; }
     USER_DOC_ID=docId;
+    _refreshRegCta();
     const sessionId=_newSessionId();
     const deviceId=_getDeviceId();
     const {activeSession:_omit, ...uClean}=u;
@@ -1580,12 +1575,13 @@ function closePrep(){
   history.replaceState(null,'','#');
   if(sessionStorage.getItem('userSession')) showReturnBtn();
 }
-function showReturnBtn(){
-  const b=document.getElementById('return-btn'); b.style.display='flex'; b.style.background=prepBg;
-}
-function hideReturnBtn(){
-  document.getElementById('return-btn').style.display='none';
-  document.getElementById('return-greeting').style.display='none';
+function showReturnBtn(){}
+function hideReturnBtn(){}
+function _refreshRegCta(){
+  const btn=document.getElementById('reg-cta-btn'); if(!btn) return;
+  const loggedIn=!!(USER_DOC_ID||(JSON.parse(sessionStorage.getItem('userSession')||'{}').project===PROJECT_ID));
+  const show=SELF_REG_ENABLED&&SELF_REG_CTA_SEPARATE&&!(AUTH_MODE==='on-demand'&&loggedIn);
+  btn.style.display=show?'flex':'none';
 }
 function applyGreeting(userRecord){
   console.log('[Greeting] applyGreeting called. GREETING_TEXT=', GREETING_TEXT, 'userRecord=', userRecord);
