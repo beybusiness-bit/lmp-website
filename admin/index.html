@@ -1625,7 +1625,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <!-- 결제 내부 탭 -->
         <div id="py-tab-nav" style="display:flex;border-bottom:2px solid #000;flex-shrink:0;">
           <button class="tgl-btn on" id="py-tab-products" onclick="pySwTab('products')" style="flex:1;border-radius:0;border:none;border-right:1px solid rgba(0,0,0,.15);font-size:12px;">결제 상품</button>
-          <button class="tgl-btn"    id="py-tab-settings" onclick="pySwTab('settings')" style="flex:1;border-radius:0;border:none;font-size:12px;">결제 설정</button>
+          <button class="tgl-btn"    id="py-tab-settings" onclick="pySwTab('settings')" style="flex:1;border-radius:0;border:none;border-right:1px solid rgba(0,0,0,.15);font-size:12px;">결제 설정</button>
+          <button class="tgl-btn"    id="py-tab-all"      onclick="pySwTab('all')"      style="flex:1;border-radius:0;border:none;font-size:12px;">결제 관리</button>
         </div>
         <!-- 결제 상품 탭 -->
         <div id="py-list-screen" style="padding:16px;overflow-y:auto;flex:1;">
@@ -1660,6 +1661,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               📌 전달 데이터: <code>phone</code>, <code>name</code>, <code>amount</code>, <code>productName</code>, <code>qty</code>, <code>projectId</code>
             </div>
           </div>
+        </div>
+        <!-- 결제 관리 탭 (전체 내역) -->
+        <div id="py-all-screen" style="display:none;padding:16px;overflow-y:auto;flex:1;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div id="py-all-summary" style="font-size:12px;color:rgba(0,0,0,.5);"></div>
+            <button class="prev-btn" onclick="pyLoadAllRecords()" style="font-size:11px;padding:5px 10px;">↻ 새로고침</button>
+          </div>
+          <div id="py-all-list"><div class="empty-msg">불러오는 중…</div></div>
         </div>
         <!-- 편집 화면 -->
         <div id="py-edit-screen" style="display:none;flex-direction:column;overflow:hidden;">
@@ -3115,7 +3124,23 @@ function _btnFlash(btn, label='저장됨 ✓', ms=1500) {
   btn.style.background = '#1a7a4a'; btn.style.borderColor = '#1a7a4a';
   setTimeout(() => { btn.disabled = false; btn.textContent = orig; btn.style.background = ''; btn.style.borderColor = ''; }, ms);
 }
-function epd(e) { e.preventDefault(); }
+function epd(e) {
+  // pointerdown 시점(click보다 먼저)에 selection을 캡처 — 이후 팝업 열려도 복원 가능
+  if (!_fmtPopType) {
+    const active = document.activeElement;
+    if (active && active.isContentEditable) {
+      const s = window.getSelection();
+      if (s && s.rangeCount) {
+        try {
+          const r = s.getRangeAt(0).cloneRange();
+          savedRange = {el: active, range: r};
+          _fmtCtxRange = {el: active, range: r.cloneRange()};
+        } catch(_) {}
+      }
+    }
+  }
+  e.preventDefault();
+}
 function closeModal(id) { document.getElementById(id).classList.remove('on'); }
 
 /* ── PAT ── */
@@ -7052,7 +7077,7 @@ function getEd(ctx){
   // 도구 설명 필드: ed-{ctx} 우선, rte-{ctx} 폴백
   return document.getElementById('ed-'+ctx)||document.getElementById('rte-'+ctx)||null;
 }
-function focusEd(ctx){const ed=getEd(ctx);ed.focus();restoreRange(ed);}
+function focusEd(ctx){const ed=getEd(ctx);ed.focus({preventScroll:true});restoreRange(ed);}
 /* 커서 위치(선택 없음)에 포맷을 쌓아두는 pending span 반환 또는 생성 */
 function _getPendingSpan(ctx){
   const sel=window.getSelection();
@@ -7667,9 +7692,7 @@ function insertHr(ctx){
   const thickness=_hrThickness||parseInt(document.getElementById('hr-thickness')?.value)||1;
   const color=_hrColor||'#000000';
   const style=_hrStyle||'solid';
-  const ed=getEd(ctx);
-  ed.focus();
-  if(savedRange&&savedRange.el===ed){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}
+  focusEd(ctx);
   const html=`<hr style="border:none;border-top:${thickness}px ${style} ${color};margin:8px 0;" contenteditable="false">`;
   document.execCommand('insertHTML',false,html);
   closeFmtPopup();
@@ -7713,9 +7736,7 @@ function applyFmtBg(ctx,clr){
 function applyFmtLink(ctx,url,newText){
   if(!url||!url.trim())return;
   const ed=getEd(ctx);
-  ed.focus();
-  // 선택 범위를 강제 복원 (URL 입력란 클릭 시 선택이 날아가는 버그 방지)
-  if(savedRange&&savedRange.el===ed){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}
+  focusEd(ctx); // focus + 저장된 selection 복원 (_fmtCtxRange → savedRange 순으로)
   const sel2=window.getSelection();
   if(sel2.rangeCount){
     const range=sel2.getRangeAt(0);
@@ -7736,8 +7757,7 @@ function applyFmtLink(ctx,url,newText){
   closeFmtPopup();scheduleBmPreview();
 }
 function removeFmtLink(ctx){
-  const ed=getEd(ctx);ed.focus();
-  if(savedRange&&savedRange.el===ed){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}
+  const ed=getEd(ctx);focusEd(ctx);
   document.execCommand('unlink',false,null);
   closeFmtPopup();scheduleBmPreview();
 }
@@ -10927,8 +10947,11 @@ async function pyEdit(id){
 function pySwTab(t) {
   document.getElementById('py-tab-products').classList.toggle('on', t === 'products');
   document.getElementById('py-tab-settings').classList.toggle('on', t === 'settings');
-  document.getElementById('py-list-screen').style.display    = t === 'products' ? '' : 'none';
+  document.getElementById('py-tab-all').classList.toggle('on', t === 'all');
+  document.getElementById('py-list-screen').style.display     = t === 'products' ? '' : 'none';
   document.getElementById('py-settings-screen').style.display = t === 'settings' ? '' : 'none';
+  document.getElementById('py-all-screen').style.display      = t === 'all'      ? '' : 'none';
+  if(t === 'all') pyLoadAllRecords();
 }
 function pyShowList(){
   document.getElementById('py-edit-screen').style.display = 'none';
@@ -11138,7 +11161,7 @@ async function pyViewRecords(){
         const userName = r.userFields?.name || r.userFields?.이름 || r.userId || '(비로그인)';
         const phone    = r.userFields?.phone || r.userFields?.연락처 || '';
         const userCell = phone ? `${escHtml(userName)}<br><span style="font-size:10px;opacity:.55;">${escHtml(phone)}</span>` : escHtml(userName);
-        const approvedAt = (r.approvedAt || '').replace('T',' ').slice(0,16);
+        const approvedAt = (r.authDatetime || '').replace('T',' ').slice(0,16);
         const optStr = r.selectedOption?.label ? escHtml(r.selectedOption.label) : '';
         const ansStr = r.questionAnswers ? Object.entries(r.questionAnswers).filter(([,v])=>v).map(([k,v])=>`${escHtml(k)}: ${escHtml(v)}`).join('<br>') : '';
         const optAns = [optStr, ansStr].filter(Boolean).join('<br>') || '<span style="opacity:.3;">-</span>';
@@ -11147,7 +11170,48 @@ async function pyViewRecords(){
           <td>${userCell}</td>
           <td style="font-size:12px;line-height:1.5;">${optAns}</td>
           <td style="white-space:nowrap;text-align:right;">${Number(r.amount||0).toLocaleString()}원</td>
-          <td>${escHtml(r.method||'')}</td>
+          <td>${escHtml(r.cardName||'')}</td>
+          <td style="white-space:nowrap;font-size:11px;">${escHtml(approvedAt)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  }catch(e){ list.innerHTML = '<div class="empty-msg">불러오기 실패: '+escHtml(e.message)+'</div>'; }
+}
+
+async function pyLoadAllRecords(){
+  const list    = document.getElementById('py-all-list');
+  const summary = document.getElementById('py-all-summary');
+  list.innerHTML = '<div class="empty-msg">불러오는 중…</div>';
+  summary.textContent = '';
+  try{
+    const snap = await db.collection('cms_payment_records').get();
+    if(snap.empty){ list.innerHTML = '<div class="empty-msg">아직 결제 내역이 없어요.</div>'; return; }
+    const docs = snap.docs.slice().sort((a,b)=>{
+      const ta = a.data().createdAt?.toMillis?.()||0;
+      const tb = b.data().createdAt?.toMillis?.()||0;
+      return tb - ta;
+    });
+    const total = docs.reduce((s,d)=> s + (Number(d.data().amount)||0), 0);
+    summary.textContent = `전체 ${docs.length}건 · ${total.toLocaleString()}원`;
+    list.innerHTML = `<div class="user-table-wrap"><table class="user-table">
+      <thead><tr><th>주문번호</th><th>상품</th><th>프로젝트</th><th>사용자</th><th>옵션·답변</th><th>금액</th><th>결제수단</th><th>승인</th></tr></thead>
+      <tbody>${docs.map(d=>{
+        const r = d.data();
+        const userName = r.userFields?.name || r.userFields?.이름 || r.userId || '(비로그인)';
+        const phone    = r.userFields?.phone || r.userFields?.연락처 || '';
+        const userCell = phone ? `${escHtml(userName)}<br><span style="font-size:10px;opacity:.55;">${escHtml(phone)}</span>` : escHtml(userName);
+        const approvedAt = (r.authDatetime || '').replace('T',' ').slice(0,16);
+        const optStr = r.selectedOption?.label ? escHtml(r.selectedOption.label) : '';
+        const ansStr = r.questionAnswers ? Object.entries(r.questionAnswers).filter(([,v])=>v).map(([k,v])=>`${escHtml(k)}: ${escHtml(v)}`).join('<br>') : '';
+        const optAns = [optStr, ansStr].filter(Boolean).join('<br>') || '<span style="opacity:.3;">-</span>';
+        return `<tr>
+          <td style="font-family:monospace;font-size:10px;word-break:break-all;">${escHtml(r.orderId||'')}</td>
+          <td style="font-size:12px;">${escHtml(r.configTitle||r.orderName||'')}</td>
+          <td style="font-size:11px;opacity:.7;">${escHtml(r.projectId||'')}</td>
+          <td>${userCell}</td>
+          <td style="font-size:12px;line-height:1.5;">${optAns}</td>
+          <td style="white-space:nowrap;text-align:right;">${Number(r.amount||0).toLocaleString()}원</td>
+          <td>${escHtml(r.cardName||'')}</td>
           <td style="white-space:nowrap;font-size:11px;">${escHtml(approvedAt)}</td>
         </tr>`;
       }).join('')}</tbody>
