@@ -147,7 +147,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .rte-itb-btn:hover{border-color:#000;}
 .fmt-btn:active{background:#000;color:#fff;}
 .fmt-btn.on{background:#000;color:#fff;border-color:#000;}
-#fmt-popup{display:none;position:fixed;background:#fff;border:2px solid #000;z-index:600;box-shadow:3px 3px 0 rgba(0,0,0,.1);min-width:110px;}
+#fmt-popup{display:none;position:fixed;background:#fff;border:2px solid #000;z-index:9999;box-shadow:3px 3px 0 rgba(0,0,0,.1);min-width:110px;}
 .fmt-pop-opt{display:block;width:100%;padding:8px 12px;background:transparent;border:none;border-bottom:1px solid rgba(0,0,0,.08);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-align:left;white-space:nowrap;}
 .hr-style-btn.on{background:#f0f0f0!important;border-color:#000!important;border-width:2px!important;}
 .img-fit-btn{padding:4px 8px;border:1.5px solid rgba(0,0,0,.25);background:transparent;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:#000;}
@@ -846,15 +846,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
               <div class="mini-rte-wrap">
                 <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
-                  <button class="fmt-btn" id="fmt-bold-gbk-desc" onpointerdown="epd(event)" onclick="fmtCmd('gbk-desc','bold')"><b>B</b></button>
-                  <button class="fmt-btn" id="fmt-sz-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','gbk-desc')">Aa</button>
-                  <button class="fmt-btn" id="fmt-al-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','gbk-desc')">≡</button>
-                  <button class="fmt-btn" id="fmt-clr-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','gbk-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-gbk-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-                  <button class="fmt-btn" id="fmt-bg-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','gbk-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-gbk-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
-                  <button class="fmt-btn" id="fmt-link-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','gbk-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
-                  <button class="fmt-btn" id="fmt-hr-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','gbk-desc')" title="구분선" style="font-size:11px;">—</button>
-                  <button class="fmt-btn" id="fmt-var-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','gbk-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
-                  <button class="fmt-btn" id="fmt-img-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','gbk-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bold-gbk-desc" onpointerdown="epd(event)" onclick="fmtCmd('gbk-desc','bold')"><b>B</b></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','gbk-desc')">Aa</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-al-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','gbk-desc')">≡</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','gbk-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-gbk-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bg-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','gbk-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-gbk-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-link-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','gbk-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-hr-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','gbk-desc')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-var-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','gbk-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-img-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','gbk-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
                 <div class="mini-rte" id="ed-gbk-desc" contenteditable="true" data-ph="사용자에게 보여줄 설명을 입력하세요" onmouseup="saveRange(this)" ontouchend="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
@@ -1022,15 +1022,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl">일정 설명</div>
               <div class="mini-rte-wrap">
                 <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
-                  <button class="fmt-btn" id="fmt-bold-sc-desc" onpointerdown="epd(event)" onclick="fmtCmd('sc-desc','bold')"><b>B</b></button>
-                  <button class="fmt-btn" id="fmt-sz-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','sc-desc')">Aa</button>
-                  <button class="fmt-btn" id="fmt-al-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','sc-desc')">≡</button>
-                  <button class="fmt-btn" id="fmt-clr-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','sc-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-sc-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-                  <button class="fmt-btn" id="fmt-bg-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','sc-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-sc-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
-                  <button class="fmt-btn" id="fmt-link-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','sc-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
-                  <button class="fmt-btn" id="fmt-hr-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','sc-desc')" title="구분선" style="font-size:11px;">—</button>
-                  <button class="fmt-btn" id="fmt-var-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','sc-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
-                  <button class="fmt-btn" id="fmt-img-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','sc-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bold-sc-desc" onpointerdown="epd(event)" onclick="fmtCmd('sc-desc','bold')"><b>B</b></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','sc-desc')">Aa</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-al-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','sc-desc')">≡</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','sc-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-sc-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bg-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','sc-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-sc-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-link-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','sc-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-hr-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','sc-desc')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-var-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','sc-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-img-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','sc-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
                 <div class="mini-rte" id="ed-sc-desc" contenteditable="true" data-ph="예: 30분간 1:1 상담을 진행합니다." onmouseup="saveRange(this)" ontouchend="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
@@ -1120,15 +1120,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl">완료 안내 문구</div>
               <div class="mini-rte-wrap">
                 <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
-                  <button class="fmt-btn" id="fmt-bold-sc-confirm-msg" onpointerdown="epd(event)" onclick="fmtCmd('sc-confirm-msg','bold')"><b>B</b></button>
-                  <button class="fmt-btn" id="fmt-sz-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','sc-confirm-msg')">Aa</button>
-                  <button class="fmt-btn" id="fmt-al-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','sc-confirm-msg')">≡</button>
-                  <button class="fmt-btn" id="fmt-clr-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','sc-confirm-msg')" style="padding:5px 7px;"><span id="fmt-clr-dot-sc-confirm-msg" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-                  <button class="fmt-btn" id="fmt-bg-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','sc-confirm-msg')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-sc-confirm-msg" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
-                  <button class="fmt-btn" id="fmt-link-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','sc-confirm-msg')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
-                  <button class="fmt-btn" id="fmt-hr-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','sc-confirm-msg')" title="구분선" style="font-size:11px;">—</button>
-                  <button class="fmt-btn" id="fmt-var-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','sc-confirm-msg')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
-                  <button class="fmt-btn" id="fmt-img-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','sc-confirm-msg')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bold-sc-confirm-msg" onpointerdown="epd(event)" onclick="fmtCmd('sc-confirm-msg','bold')"><b>B</b></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','sc-confirm-msg')">Aa</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-al-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','sc-confirm-msg')">≡</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','sc-confirm-msg')" style="padding:5px 7px;"><span id="fmt-clr-dot-sc-confirm-msg" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bg-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','sc-confirm-msg')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-sc-confirm-msg" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-link-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','sc-confirm-msg')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-hr-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','sc-confirm-msg')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-var-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','sc-confirm-msg')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-img-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','sc-confirm-msg')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
                 <div class="mini-rte" id="ed-sc-confirm-msg" contenteditable="true" data-ph="예약해 주셔서 감사해요!" onmouseup="saveRange(this)" ontouchend="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
@@ -1187,15 +1187,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl">설명 <span style="font-weight:400;color:rgba(0,0,0,.45);">(사용자에게 보여지는 안내문)</span></div>
               <div class="mini-rte-wrap">
                 <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
-                  <button class="fmt-btn" id="fmt-bold-yt-plc-desc" onpointerdown="epd(event)" onclick="fmtCmd('yt-plc-desc','bold')"><b>B</b></button>
-                  <button class="fmt-btn" id="fmt-sz-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','yt-plc-desc')">Aa</button>
-                  <button class="fmt-btn" id="fmt-al-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','yt-plc-desc')">≡</button>
-                  <button class="fmt-btn" id="fmt-clr-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','yt-plc-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-yt-plc-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-                  <button class="fmt-btn" id="fmt-bg-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','yt-plc-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-yt-plc-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
-                  <button class="fmt-btn" id="fmt-link-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','yt-plc-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
-                  <button class="fmt-btn" id="fmt-hr-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','yt-plc-desc')" title="구분선" style="font-size:11px;">—</button>
-                  <button class="fmt-btn" id="fmt-var-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','yt-plc-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
-                  <button class="fmt-btn" id="fmt-img-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','yt-plc-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bold-yt-plc-desc" onpointerdown="epd(event)" onclick="fmtCmd('yt-plc-desc','bold')"><b>B</b></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','yt-plc-desc')">Aa</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-al-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','yt-plc-desc')">≡</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','yt-plc-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-yt-plc-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bg-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','yt-plc-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-yt-plc-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-link-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','yt-plc-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-hr-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','yt-plc-desc')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-var-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','yt-plc-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-img-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','yt-plc-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
                 <div class="mini-rte" id="ed-yt-plc-desc" contenteditable="true" data-ph="예: 행사에서 듣고 싶은 곡을 검색해서 신청해주세요." onmouseup="saveRange(this)" ontouchend="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
@@ -1215,15 +1215,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl">제출 완료 안내 문구 <span style="font-weight:400;color:rgba(0,0,0,.45);">({count} = 곡 수)</span></div>
               <div class="mini-rte-wrap">
                 <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
-                  <button class="fmt-btn" id="fmt-bold-yt-plc-done-sub" onpointerdown="epd(event)" onclick="fmtCmd('yt-plc-done-sub','bold')"><b>B</b></button>
-                  <button class="fmt-btn" id="fmt-sz-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','yt-plc-done-sub')">Aa</button>
-                  <button class="fmt-btn" id="fmt-al-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','yt-plc-done-sub')">≡</button>
-                  <button class="fmt-btn" id="fmt-clr-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','yt-plc-done-sub')" style="padding:5px 7px;"><span id="fmt-clr-dot-yt-plc-done-sub" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-                  <button class="fmt-btn" id="fmt-bg-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','yt-plc-done-sub')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-yt-plc-done-sub" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
-                  <button class="fmt-btn" id="fmt-link-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','yt-plc-done-sub')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
-                  <button class="fmt-btn" id="fmt-hr-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','yt-plc-done-sub')" title="구분선" style="font-size:11px;">—</button>
-                  <button class="fmt-btn" id="fmt-var-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','yt-plc-done-sub')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
-                  <button class="fmt-btn" id="fmt-img-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','yt-plc-done-sub')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bold-yt-plc-done-sub" onpointerdown="epd(event)" onclick="fmtCmd('yt-plc-done-sub','bold')"><b>B</b></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','yt-plc-done-sub')">Aa</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-al-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','yt-plc-done-sub')">≡</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','yt-plc-done-sub')" style="padding:5px 7px;"><span id="fmt-clr-dot-yt-plc-done-sub" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bg-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','yt-plc-done-sub')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-yt-plc-done-sub" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-link-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','yt-plc-done-sub')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-hr-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','yt-plc-done-sub')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-var-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','yt-plc-done-sub')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-img-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','yt-plc-done-sub')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
                 <div class="mini-rte" id="ed-yt-plc-done-sub" contenteditable="true" data-ph="{count}곡을 신청해 주셔서 감사해요." onmouseup="saveRange(this)" ontouchend="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
@@ -1279,15 +1279,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
               <div class="mini-rte-wrap">
                 <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
-                  <button class="fmt-btn" id="fmt-bold-tf-desc" onpointerdown="epd(event)" onclick="fmtCmd('tf-desc','bold')"><b>B</b></button>
-                  <button class="fmt-btn" id="fmt-sz-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','tf-desc')">Aa</button>
-                  <button class="fmt-btn" id="fmt-al-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','tf-desc')">≡</button>
-                  <button class="fmt-btn" id="fmt-clr-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','tf-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-tf-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-                  <button class="fmt-btn" id="fmt-bg-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','tf-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-tf-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
-                  <button class="fmt-btn" id="fmt-link-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','tf-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
-                  <button class="fmt-btn" id="fmt-hr-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','tf-desc')" title="구분선" style="font-size:11px;">—</button>
-                  <button class="fmt-btn" id="fmt-var-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','tf-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
-                  <button class="fmt-btn" id="fmt-img-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','tf-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bold-tf-desc" onpointerdown="epd(event)" onclick="fmtCmd('tf-desc','bold')"><b>B</b></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','tf-desc')">Aa</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-al-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','tf-desc')">≡</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','tf-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-tf-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bg-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','tf-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-tf-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-link-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','tf-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-hr-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','tf-desc')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-var-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','tf-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-img-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','tf-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
                 <div class="mini-rte" id="ed-tf-desc" contenteditable="true" data-ph="폼에 대한 안내 문구를 입력하세요." onmouseup="saveRange(this)" ontouchend="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
@@ -1305,15 +1305,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl">완료 메시지</div>
               <div class="mini-rte-wrap">
                 <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
-                  <button class="fmt-btn" id="fmt-bold-tf-submit-msg" onpointerdown="epd(event)" onclick="fmtCmd('tf-submit-msg','bold')"><b>B</b></button>
-                  <button class="fmt-btn" id="fmt-sz-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','tf-submit-msg')">Aa</button>
-                  <button class="fmt-btn" id="fmt-al-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','tf-submit-msg')">≡</button>
-                  <button class="fmt-btn" id="fmt-clr-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','tf-submit-msg')" style="padding:5px 7px;"><span id="fmt-clr-dot-tf-submit-msg" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-                  <button class="fmt-btn" id="fmt-bg-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','tf-submit-msg')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-tf-submit-msg" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
-                  <button class="fmt-btn" id="fmt-link-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','tf-submit-msg')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
-                  <button class="fmt-btn" id="fmt-hr-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','tf-submit-msg')" title="구분선" style="font-size:11px;">—</button>
-                  <button class="fmt-btn" id="fmt-var-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','tf-submit-msg')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
-                  <button class="fmt-btn" id="fmt-img-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','tf-submit-msg')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bold-tf-submit-msg" onpointerdown="epd(event)" onclick="fmtCmd('tf-submit-msg','bold')"><b>B</b></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','tf-submit-msg')">Aa</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-al-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','tf-submit-msg')">≡</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','tf-submit-msg')" style="padding:5px 7px;"><span id="fmt-clr-dot-tf-submit-msg" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bg-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','tf-submit-msg')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-tf-submit-msg" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-link-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','tf-submit-msg')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-hr-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','tf-submit-msg')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-var-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','tf-submit-msg')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-img-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','tf-submit-msg')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
                 <div class="mini-rte" id="ed-tf-submit-msg" contenteditable="true" data-ph="제출이 완료됐어요!" onmouseup="saveRange(this)" ontouchend="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
@@ -1553,15 +1553,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
               <div class="mini-rte-wrap">
                 <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
-                  <button class="fmt-btn" id="fmt-bold-cg-desc" onpointerdown="epd(event)" onclick="fmtCmd('cg-desc','bold')"><b>B</b></button>
-                  <button class="fmt-btn" id="fmt-sz-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','cg-desc')">Aa</button>
-                  <button class="fmt-btn" id="fmt-al-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','cg-desc')">≡</button>
-                  <button class="fmt-btn" id="fmt-clr-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','cg-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-cg-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-                  <button class="fmt-btn" id="fmt-bg-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','cg-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-cg-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
-                  <button class="fmt-btn" id="fmt-link-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','cg-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
-                  <button class="fmt-btn" id="fmt-hr-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','cg-desc')" title="구분선" style="font-size:11px;">—</button>
-                  <button class="fmt-btn" id="fmt-var-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','cg-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
-                  <button class="fmt-btn" id="fmt-img-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','cg-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bold-cg-desc" onpointerdown="epd(event)" onclick="fmtCmd('cg-desc','bold')"><b>B</b></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','cg-desc')">Aa</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-al-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','cg-desc')">≡</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','cg-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-cg-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bg-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','cg-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-cg-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-link-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','cg-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-hr-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','cg-desc')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-var-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','cg-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-img-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','cg-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
                 <div class="mini-rte" id="ed-cg-desc" contenteditable="true" data-ph="사용자에게 표시될 설명" onmouseup="saveRange(this)" ontouchend="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
@@ -1605,15 +1605,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl" style="margin-bottom:4px;">배경 및 컨텍스트</div>
               <div class="mini-rte-wrap">
                 <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
-                  <button class="fmt-btn" id="fmt-bold-cg-ai-context" onpointerdown="epd(event)" onclick="fmtCmd('cg-ai-context','bold')"><b>B</b></button>
-                  <button class="fmt-btn" id="fmt-sz-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','cg-ai-context')">Aa</button>
-                  <button class="fmt-btn" id="fmt-al-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','cg-ai-context')">≡</button>
-                  <button class="fmt-btn" id="fmt-clr-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','cg-ai-context')" style="padding:5px 7px;"><span id="fmt-clr-dot-cg-ai-context" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-                  <button class="fmt-btn" id="fmt-bg-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','cg-ai-context')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-cg-ai-context" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
-                  <button class="fmt-btn" id="fmt-link-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','cg-ai-context')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
-                  <button class="fmt-btn" id="fmt-hr-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','cg-ai-context')" title="구분선" style="font-size:11px;">—</button>
-                  <button class="fmt-btn" id="fmt-var-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','cg-ai-context')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
-                  <button class="fmt-btn" id="fmt-img-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','cg-ai-context')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bold-cg-ai-context" onpointerdown="epd(event)" onclick="fmtCmd('cg-ai-context','bold')"><b>B</b></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','cg-ai-context')">Aa</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-al-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','cg-ai-context')">≡</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','cg-ai-context')" style="padding:5px 7px;"><span id="fmt-clr-dot-cg-ai-context" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bg-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','cg-ai-context')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-cg-ai-context" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-link-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','cg-ai-context')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-hr-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','cg-ai-context')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-var-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','cg-ai-context')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-img-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','cg-ai-context')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
                 <div class="mini-rte" id="ed-cg-ai-context" contenteditable="true" data-ph="예: 이 문구는 인스타그램 신메뉴 런칭에 사용됩니다. 브랜드 키워드는 '느림', '건강', '지속가능성'입니다." style="min-height:80px;" onmouseup="saveRange(this)" ontouchend="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
@@ -1783,15 +1783,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl">상세 설명 <span style="font-weight:400;opacity:.55;">(선택 · 결제창에 표시)</span></div>
               <div class="mini-rte-wrap">
                 <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
-                  <button class="fmt-btn" id="fmt-bold-py-desc" onpointerdown="epd(event)" onclick="fmtCmd('py-desc','bold')"><b>B</b></button>
-                  <button class="fmt-btn" id="fmt-sz-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','py-desc')">Aa</button>
-                  <button class="fmt-btn" id="fmt-al-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','py-desc')">≡</button>
-                  <button class="fmt-btn" id="fmt-clr-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','py-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-py-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-                  <button class="fmt-btn" id="fmt-bg-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','py-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-py-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
-                  <button class="fmt-btn" id="fmt-link-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','py-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
-                  <button class="fmt-btn" id="fmt-hr-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','py-desc')" title="구분선" style="font-size:11px;">—</button>
-                  <button class="fmt-btn" id="fmt-var-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','py-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
-                  <button class="fmt-btn" id="fmt-img-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','py-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bold-py-desc" onpointerdown="epd(event)" onclick="fmtCmd('py-desc','bold')"><b>B</b></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','py-desc')">Aa</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-al-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','py-desc')">≡</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','py-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-py-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bg-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','py-desc')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-py-desc" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-link-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','py-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-hr-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','py-desc')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-var-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','py-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-img-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','py-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
                 <div class="mini-rte" id="ed-py-desc" contenteditable="true" data-ph="결제 전 사용자에게 보여줄 설명" style="min-height:100px;" onmouseup="saveRange(this)" ontouchend="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
@@ -1805,15 +1805,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="ed-lbl">결제 완료 메시지 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
               <div class="mini-rte-wrap">
                 <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:0;gap:3px;">
-                  <button class="fmt-btn" id="fmt-bold-py-success" onpointerdown="epd(event)" onclick="fmtCmd('py-success','bold')"><b>B</b></button>
-                  <button class="fmt-btn" id="fmt-sz-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','py-success')">Aa</button>
-                  <button class="fmt-btn" id="fmt-al-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','py-success')">≡</button>
-                  <button class="fmt-btn" id="fmt-clr-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','py-success')" style="padding:5px 7px;"><span id="fmt-clr-dot-py-success" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-                  <button class="fmt-btn" id="fmt-bg-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','py-success')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-py-success" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
-                  <button class="fmt-btn" id="fmt-link-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','py-success')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
-                  <button class="fmt-btn" id="fmt-hr-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','py-success')" title="구분선" style="font-size:11px;">—</button>
-                  <button class="fmt-btn" id="fmt-var-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','py-success')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
-                  <button class="fmt-btn" id="fmt-img-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','py-success')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bold-py-success" onpointerdown="epd(event)" onclick="fmtCmd('py-success','bold')"><b>B</b></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','py-success')">Aa</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-al-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','py-success')">≡</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','py-success')" style="padding:5px 7px;"><span id="fmt-clr-dot-py-success" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bg-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','py-success')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-py-success" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-link-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','py-success')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-hr-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','py-success')" title="구분선" style="font-size:11px;">—</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-var-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','py-success')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-img-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','py-success')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
                 <div class="mini-rte" id="ed-py-success" contenteditable="true" data-ph="예: 결제가 완료되었어요. 이제 프로 콘텐츠를 볼 수 있어요." onmouseup="saveRange(this)" ontouchend="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
@@ -2019,15 +2019,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     </div>
     <div id="bpanel-text">
       <div class="fmt-bar">
-        <button class="fmt-btn" id="fmt-bold-text" onpointerdown="epd(event)" onclick="fmtCmd('text','bold')"><b>B</b></button>
-        <button class="fmt-btn" id="fmt-sz-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','text')">Aa</button>
-        <button class="fmt-btn" id="fmt-al-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','text')">≡</button>
-        <button class="fmt-btn" id="fmt-clr-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','text')" style="padding:5px 7px;"><span id="fmt-clr-dot-text" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-        <button class="fmt-btn" id="fmt-bg-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','text')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-text" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
-        <button class="fmt-btn" id="fmt-link-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','text')" title="텍스트 링크" style="font-size:13px;padding:4px 7px;">🔗</button>
-        <button class="fmt-btn" id="fmt-hr-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','text')" title="구분선 삽입" style="font-size:11px;">—</button>
-        <button class="fmt-btn" id="fmt-var-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','text')" style="display:none;font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
-        <button class="fmt-btn" id="fmt-img-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','text')" title="이미지 삽입" style="font-size:13px;padding:4px 7px;">🖼</button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bold-text" onpointerdown="epd(event)" onclick="fmtCmd('text','bold')"><b>B</b></button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','text')">Aa</button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-al-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','text')">≡</button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','text')" style="padding:5px 7px;"><span id="fmt-clr-dot-text" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bg-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','text')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-text" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-link-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','text')" title="텍스트 링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-hr-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','text')" title="구분선 삽입" style="font-size:11px;">—</button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-var-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','text')" style="display:none;font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-img-text" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','text')" title="이미지 삽입" style="font-size:13px;padding:4px 7px;">🖼</button>
       </div>
       <div class="ced-wrap">
         <div class="ced" id="ced-text" contenteditable="true" data-ph="텍스트를 입력하세요…" onkeyup="saveRange(this);syncFmtBar('text')" onmouseup="saveRange(this);syncFmtBar('text')"></div>
@@ -2178,11 +2178,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <img id="form-post-img-prev" class="img-prev">
         <div class="ed-lbl" style="opacity:.55;margin-top:10px;margin-bottom:4px;">메시지 <span style="font-weight:400;">(줄바꿈 가능)</span></div>
         <div class="fmt-bar">
-          <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtCmd('formpost','bold')"><b>B</b></button>
-          <button class="fmt-btn" id="fmt-sz-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','formpost')">Aa</button>
-          <button class="fmt-btn" id="fmt-al-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','formpost')">≡</button>
-          <button class="fmt-btn" id="fmt-clr-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','formpost')" style="padding:5px 7px;"><span id="fmt-clr-dot-formpost" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-          <button class="fmt-btn" id="fmt-bg-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','formpost')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-formpost" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+          <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="fmtCmd('formpost','bold')"><b>B</b></button>
+          <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','formpost')">Aa</button>
+          <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-al-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','formpost')">≡</button>
+          <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','formpost')" style="padding:5px 7px;"><span id="fmt-clr-dot-formpost" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+          <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bg-formpost" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','formpost')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-formpost" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
         </div>
         <div class="ced" id="ced-formpost" contenteditable="true" data-ph="제출 완료 후 표시할 메시지를 입력하세요…" onkeyup="saveRange(this)" onmouseup="saveRange(this)" style="min-height:80px;"></div>
       </div>
@@ -2269,15 +2269,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       </div>
       <div class="ed-lbl" style="margin-top:10px;margin-bottom:8px;">텍스트</div>
       <div class="fmt-bar">
-        <button class="fmt-btn" id="fmt-bold-mixed" onpointerdown="epd(event)" onclick="fmtCmd('mixed','bold')"><b>B</b></button>
-        <button class="fmt-btn" id="fmt-sz-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','mixed')">Aa</button>
-        <button class="fmt-btn" id="fmt-al-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','mixed')">≡</button>
-        <button class="fmt-btn" id="fmt-clr-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','mixed')" style="padding:5px 7px;"><span id="fmt-clr-dot-mixed" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-        <button class="fmt-btn" id="fmt-bg-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','mixed')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-mixed" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
-        <button class="fmt-btn" id="fmt-link-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','mixed')" title="텍스트 링크" style="font-size:13px;padding:4px 7px;">🔗</button>
-        <button class="fmt-btn" id="fmt-hr-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','mixed')" title="구분선 삽입" style="font-size:11px;">—</button>
-        <button class="fmt-btn" id="fmt-var-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','mixed')" style="display:none;font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
-        <button class="fmt-btn" id="fmt-img-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','mixed')" title="이미지 삽입" style="font-size:13px;padding:4px 7px;">🖼</button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bold-mixed" onpointerdown="epd(event)" onclick="fmtCmd('mixed','bold')"><b>B</b></button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','mixed')">Aa</button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-al-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','mixed')">≡</button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','mixed')" style="padding:5px 7px;"><span id="fmt-clr-dot-mixed" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bg-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','mixed')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-mixed" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-link-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','mixed')" title="텍스트 링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-hr-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','mixed')" title="구분선 삽입" style="font-size:11px;">—</button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-var-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','mixed')" style="display:none;font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-img-mixed" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','mixed')" title="이미지 삽입" style="font-size:13px;padding:4px 7px;">🖼</button>
       </div>
       <div class="ced-wrap">
         <div class="ced" id="ced-mixed" contenteditable="true" data-ph="텍스트를 입력하세요…" onkeyup="saveRange(this);syncFmtBar('mixed')" onmouseup="saveRange(this);syncFmtBar('mixed')"></div>
@@ -2466,12 +2466,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <!-- 텍스트 -->
           <div id="arep-panel-text">
             <div class="fmt-bar">
-              <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtCmd('arep-txt','bold')"><b>B</b></button>
-              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','arep-txt')">Aa</button>
-              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','arep-txt')">≡</button>
-              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','arep-txt')" style="padding:5px 7px;"><span id="fmt-clr-dot-arep-txt" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','arep-txt')" style="font-size:13px;padding:4px 7px;">🔗</button>
-              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','arep-txt')" style="font-size:13px;padding:4px 7px;">🖼</button>
+              <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="fmtCmd('arep-txt','bold')"><b>B</b></button>
+              <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','arep-txt')">Aa</button>
+              <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','arep-txt')">≡</button>
+              <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','arep-txt')" style="padding:5px 7px;"><span id="fmt-clr-dot-arep-txt" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+              <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','arep-txt')" style="font-size:13px;padding:4px 7px;">🔗</button>
+              <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','arep-txt')" style="font-size:13px;padding:4px 7px;">🖼</button>
             </div>
             <div class="ced-wrap">
               <div class="ced" id="ced-arep-txt" contenteditable="true" data-ph="텍스트를 입력하세요…" onkeyup="saveRange(this);syncFmtBar('arep-txt')" onmouseup="saveRange(this);syncFmtBar('arep-txt')"></div>
@@ -2527,11 +2527,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <input class="fi-sm" id="arep-mixed-img-height" type="number" min="60" max="1200" placeholder="200" style="width:80px;margin-bottom:8px;" oninput="scheduleBmPreview()">
             <div class="ed-lbl">텍스트</div>
             <div class="fmt-bar">
-              <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtCmd('arep-mixed-txt','bold')"><b>B</b></button>
-              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','arep-mixed-txt')">Aa</button>
-              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','arep-mixed-txt')">≡</button>
-              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','arep-mixed-txt')" style="padding:5px 7px;"><span id="fmt-clr-dot-arep-mixed-txt" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-              <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','arep-mixed-txt')" style="font-size:13px;padding:4px 7px;">🔗</button>
+              <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="fmtCmd('arep-mixed-txt','bold')"><b>B</b></button>
+              <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','arep-mixed-txt')">Aa</button>
+              <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','arep-mixed-txt')">≡</button>
+              <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','arep-mixed-txt')" style="padding:5px 7px;"><span id="fmt-clr-dot-arep-mixed-txt" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+              <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','arep-mixed-txt')" style="font-size:13px;padding:4px 7px;">🔗</button>
             </div>
             <div class="ced-wrap">
               <div class="ced" id="ced-arep-mixed-txt" contenteditable="true" data-ph="텍스트를 입력하세요…" onkeyup="saveRange(this);syncFmtBar('arep-mixed-txt')" onmouseup="saveRange(this);syncFmtBar('arep-mixed-txt')"></div>
@@ -2583,12 +2583,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <!-- 텍스트 -->
               <div id="rep-panel-text">
                 <div class="fmt-bar">
-                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtCmd('rep-txt','bold')"><b>B</b></button>
-                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','rep-txt')">Aa</button>
-                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','rep-txt')">≡</button>
-                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','rep-txt')" style="padding:5px 7px;"><span id="fmt-clr-dot-rep-txt" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','rep-txt')" style="font-size:13px;padding:4px 7px;">🔗</button>
-                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','rep-txt')" style="font-size:13px;padding:4px 7px;">🖼</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="fmtCmd('rep-txt','bold')"><b>B</b></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','rep-txt')">Aa</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','rep-txt')">≡</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','rep-txt')" style="padding:5px 7px;"><span id="fmt-clr-dot-rep-txt" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','rep-txt')" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','rep-txt')" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
                 <div class="ced-wrap">
                   <div class="ced" id="ced-rep-txt" contenteditable="true" data-ph="텍스트를 입력하세요…" onkeyup="saveRange(this);syncFmtBar('rep-txt')" onmouseup="saveRange(this);syncFmtBar('rep-txt')"></div>
@@ -2644,11 +2644,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <input class="fi-sm" id="rep-mixed-img-height" type="number" min="60" max="1200" placeholder="200" style="width:80px;margin-bottom:8px;" oninput="scheduleBmPreview()">
                 <div class="ed-lbl">텍스트</div>
                 <div class="fmt-bar">
-                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="fmtCmd('rep-mixed-txt','bold')"><b>B</b></button>
-                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','rep-mixed-txt')">Aa</button>
-                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','rep-mixed-txt')">≡</button>
-                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','rep-mixed-txt')" style="padding:5px 7px;"><span id="fmt-clr-dot-rep-mixed-txt" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
-                  <button class="fmt-btn" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','rep-mixed-txt')" style="font-size:13px;padding:4px 7px;">🔗</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="fmtCmd('rep-mixed-txt','bold')"><b>B</b></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','rep-mixed-txt')">Aa</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','rep-mixed-txt')">≡</button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','rep-mixed-txt')" style="padding:5px 7px;"><span id="fmt-clr-dot-rep-mixed-txt" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                  <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','rep-mixed-txt')" style="font-size:13px;padding:4px 7px;">🔗</button>
                 </div>
                 <div class="ced-wrap">
                   <div class="ced" id="ced-rep-mixed-txt" contenteditable="true" data-ph="텍스트를 입력하세요…" onkeyup="saveRange(this);syncFmtBar('rep-mixed-txt')" onmouseup="saveRange(this);syncFmtBar('rep-mixed-txt')"></div>
@@ -3146,7 +3146,11 @@ function _btnFlash(btn, label='저장됨 ✓', ms=1500) {
 function epd(e) {
   // pointerdown 시점(click보다 먼저)에 selection을 캡처 — 이후 팝업 열려도 복원 가능
   if (!_fmtPopType) {
-    const active = document.activeElement;
+    let active = document.activeElement;
+    // 일부 모바일에서 pointerdown 시점에 이미 focus가 editor에서 벗어난 경우 → savedRange.el로 fallback
+    if ((!active || !active.isContentEditable) && savedRange && savedRange.el && savedRange.el.isContentEditable) {
+      active = savedRange.el;
+    }
     if (active && active.isContentEditable) {
       const s = window.getSelection();
       if (s && s.rangeCount) {
@@ -3155,11 +3159,12 @@ function epd(e) {
           savedRange = {el: active, range: r};
           _fmtCtxRange = {el: active, range: r.cloneRange()};
         } catch(_) {}
+      } else if (savedRange && savedRange.el === active) {
+        // 선택이 사라졌지만 직전 저장값이 같은 editor면 그대로 사용
+        _fmtCtxRange = savedRange;
       }
     }
-    // 팝업이 닫혀 있을 때만 포커스 유지를 위해 preventDefault
-    // 팝업 내부 버튼(색상 스와치, 크기 프리셋 등)에서는 preventDefault 금지 → 모바일 click 이벤트 정상 발화
-    e.preventDefault();
+    // e.preventDefault() 제거 — 포커스 유지는 각 버튼의 onmousedown="event.preventDefault()"로 처리
   }
 }
 function closeModal(id) { document.getElementById(id).classList.remove('on'); }
@@ -7192,7 +7197,12 @@ function openFmtDd(btn,type,ctx){
   const _ed=getEd(ctx);
   if(_ed){
     const _s=window.getSelection();
-    if(_s&&_s.rangeCount){try{_fmtCtxRange={el:_ed,range:_s.getRangeAt(0).cloneRange()};}catch(_){}}
+    if(_s&&_s.rangeCount){
+      try{_fmtCtxRange={el:_ed,range:_s.getRangeAt(0).cloneRange()};}catch(_){}
+    } else if(savedRange&&savedRange.el===_ed){
+      // 선택이 이미 사라진 경우 → onmouseup/onkeyup에서 미리 저장된 savedRange로 복구
+      _fmtCtxRange=savedRange;
+    }
     saveRange(_ed);
   }
   _fmtPopType=type;_fmtPopCtx=ctx;_fmtPopBtn=btn;
@@ -7319,11 +7329,17 @@ function openFmtDd(btn,type,ctx){
   </div>`;
   }
   document.getElementById('fmt-popup-inner').innerHTML=html;
+  // 팝업 내 버튼들이 에디터 포커스·선택 영역을 빼앗지 않도록 (포맷 바 버튼과 동일한 패턴)
+  document.querySelectorAll('#fmt-popup-inner button').forEach(btn=>{
+    btn.addEventListener('mousedown',e=>e.preventDefault());
+  });
   pop.style.display='block';
   const r=btn.getBoundingClientRect();
   pop.style.left=r.left+'px';pop.style.top=(r.bottom+3)+'px';
   const pr=pop.getBoundingClientRect();
   if(pr.right>window.innerWidth-6) pop.style.left=(window.innerWidth-pr.width-6)+'px';
+  if(pr.bottom>window.innerHeight-6) pop.style.top=Math.max(6,r.top-pr.height-3)+'px'; // 아래 화면 밖이면 위로 뒤집기
+  if(parseInt(pop.style.left)<6) pop.style.left='6px';
 }
 function closeFmtPopup(){
   document.getElementById('fmt-popup').style.display='none';
@@ -11699,7 +11715,7 @@ async function deleteGbkEntry(configId, entryId) {
     </div>
   </div>
 </div>
-<div id="fmt-popup" style="display:none;position:fixed;background:#fff;border:2px solid #000;z-index:600;box-shadow:3px 3px 0 rgba(0,0,0,.1);min-width:110px;"><div id="fmt-popup-inner"></div></div>
+<div id="fmt-popup" style="display:none;position:fixed;background:#fff;border:2px solid #000;z-index:9999;box-shadow:3px 3px 0 rgba(0,0,0,.1);min-width:110px;"><div id="fmt-popup-inner"></div></div>
 <div id="rte-img-tb" style="display:none;position:fixed;z-index:700;background:#fff;border:1.5px solid #000;box-shadow:2px 2px 0 rgba(0,0,0,.12);padding:3px 4px;gap:3px;align-items:center;flex-wrap:wrap;"></div>
 </body>
 </html>
