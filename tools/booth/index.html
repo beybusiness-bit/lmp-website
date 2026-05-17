@@ -1796,34 +1796,35 @@ function _dataUrlToBlob(dataUrl) {
 }
 
 function downloadExport() {
-  // _exportSafeDataUrl: openExport()에서 미리 CORS-clean 캔버스로 렌더링한 버전 (우선 사용)
-  // tainted canvas에서 직접 toDataURL() 하면 SecurityError → Firebase Storage CORS 미설정 시 발생
-  let dataUrl = _exportSafeDataUrl;
+  // 1순위: display canvas (최고 화질, tainted면 SecurityError)
+  // 2순위: _exportSafeDataUrl (CORS-clean, Firebase Storage CORS 미설정 시 배경이 흰색)
+  const canvas = document.getElementById('export-canvas');
+  let dataUrl;
+  try {
+    dataUrl = canvas.toDataURL('image/png');
+  } catch(e) {
+    dataUrl = _exportSafeDataUrl;
+  }
+
   if (!dataUrl) {
-    // CORS 렌더링이 아직 완료 안 됐거나 실패한 경우 → display canvas에서 시도 (로컬 이미지만 있으면 성공)
-    const canvas = document.getElementById('export-canvas');
-    try {
-      dataUrl = canvas.toDataURL('image/png');
-    } catch(err) {
-      alert('저장 준비 중이에요. 잠시 후 다시 눌러주세요.');
-      return;
-    }
+    alert('저장 준비 중이에요. 잠시 후 다시 눌러주세요.');
+    return;
   }
 
   const blob = _dataUrlToBlob(dataUrl);
   const file = new File([blob], '내부스꾸미기.png', {type: 'image/png'});
 
-  // Web Share API (iOS/Android 네이티브 공유 시트) — 동기 컨텍스트에서 호출하므로 iOS에서도 정상
-  if (navigator.share && navigator.canShare && navigator.canShare({files: [file]})) {
+  // 모바일에서만 Web Share API (iOS/Android 네이티브 공유 시트)
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (isMobile && navigator.share && navigator.canShare && navigator.canShare({files: [file]})) {
     navigator.share({files: [file], title: toolTitle || '내 부스 꾸미기'}).catch(e => {
-      if (e.name === 'AbortError') return; // 사용자가 공유 취소
-      // 공유 실패 시 다운로드 폴백
+      if (e.name === 'AbortError') return;
       _triggerDownload(blob);
     });
     return;
   }
 
-  // 데스크탑 / Android fallback
+  // 데스크탑 / 공유 미지원 기기 → 직접 다운로드
   _triggerDownload(blob);
 }
 
@@ -1845,11 +1846,20 @@ async function saveAndDownload() {
 
 async function saveToGallery() {
   const btn = document.getElementById('btn-save-gallery');
-  const canvas = document.getElementById('export-canvas');
   btn.disabled = true;
   btn.textContent = '저장 중…';
   try {
-    const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    // _exportSafeDataUrl 우선 사용 (tainted canvas 오류 방지)
+    let blob;
+    if (_exportSafeDataUrl) {
+      blob = _dataUrlToBlob(_exportSafeDataUrl);
+    } else {
+      const canvas = document.getElementById('export-canvas');
+      blob = await new Promise((resolve, reject) => {
+        try { canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob null')), 'image/png'); }
+        catch(e) { reject(e); }
+      });
+    }
     const ts = Date.now();
     const uid = ctxUserId || 'anon';
     const path = `booth_gallery/${CONFIG_ID}/${uid}_${ts}.png`;
@@ -1868,9 +1878,9 @@ async function saveToGallery() {
     setTimeout(() => { btn.disabled = false; btn.textContent = '저장하기'; }, 3000);
   } catch(e) {
     console.error(e);
+    // SecurityError(tainted canvas) 포함 모든 에러는 조용히 리셋
     btn.disabled = false;
-    btn.textContent = '저장 실패';
-    setTimeout(() => { btn.textContent = '저장하기'; }, 2000);
+    btn.textContent = '저장하기';
   }
 }
 
