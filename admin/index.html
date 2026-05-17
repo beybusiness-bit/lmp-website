@@ -2370,6 +2370,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <div style="display:flex;flex-direction:column;align-items:center;gap:2px;"><span style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;">왼</span><input class="fi-sm" id="blk-padding-l" type="number" min="0" max="400" placeholder="0" oninput="scheduleBmPreview()" style="margin-bottom:0;text-align:center;padding:4px 2px;"></div>
       </div>
     </div>
+    <!-- 홈 위젯 카드 테두리 (홈 블록 모드에서만 표시) -->
+    <div id="blk-card-border-section" style="display:none;margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
+      <div class="ed-lbl">카드 테두리</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px;">
+        <div><div style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;margin-bottom:3px;">모서리 둥글기 (px)</div><input class="fi-sm" id="blk-card-border-radius" type="number" min="0" max="100" placeholder="0" style="margin-bottom:0;width:100%;text-align:center;padding:4px 2px;"></div>
+        <div><div style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;margin-bottom:3px;">테두리 굵기 (px)</div><input class="fi-sm" id="blk-card-border-width" type="number" min="0" max="20" placeholder="0" style="margin-bottom:0;width:100%;text-align:center;padding:4px 2px;"></div>
+        <div><div style="font-size:9px;color:rgba(0,0,0,.4);font-weight:700;margin-bottom:3px;">테두리 색상</div><input type="color" id="blk-card-border-color" value="#000000" style="width:100%;height:32px;border:1.5px solid #ddd;padding:0;cursor:pointer;"></div>
+      </div>
+    </div>
     <!-- 공통: 슬라이드 세로 정렬 -->
     <div style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
       <div class="ed-lbl">슬라이드 세로 정렬 <span style="font-weight:400;opacity:.6;">(슬라이드형 스테이지에서만 적용)</span></div>
@@ -6274,6 +6283,7 @@ function openBlockModal(idx,insertAt){
     const btn=document.getElementById('btab-'+k); if(btn) btn.style.display=_isHb?'none':'';
   });
   const _hbCheckSec=document.getElementById('blk-check-section'); if(_hbCheckSec&&_isHb) _hbCheckSec.style.display='none';
+  const _cbSec=document.getElementById('blk-card-border-section'); if(_cbSec) _cbSec.style.display=_isHb?'':'none';
   const _cedT=document.getElementById('ced-text');
   _cedT.innerHTML=b.type==='text'?(b.textContent||''):''; _cedT.style.height='';
   document.getElementById('text-link-url').value=b.type==='text'?(b.linkUrl||''):'';
@@ -6401,6 +6411,8 @@ function openBlockModal(idx,insertAt){
   _sv('blk-txtpadding-t',b.txtPaddingTop??''); _sv('blk-txtpadding-r',b.txtPaddingRight??'');
   _sv('blk-txtpadding-b',b.txtPaddingBottom??''); _sv('blk-txtpadding-l',b.txtPaddingLeft??'');
   /* txtpadding 위치는 switchBlkTab에서 처리 — 여기선 건드리지 않음 */
+  _sv('blk-card-border-radius',b.cardBorderRadius??''); _sv('blk-card-border-width',b.cardBorderWidth??'');
+  const _cbcEl=document.getElementById('blk-card-border-color'); if(_cbcEl) _cbcEl.value=b.cardBorderColor||'#000000';
   setBlkVerticalAlign(b.verticalAlign||'center');
   renderBlkKeyColors();
   /* 변수 버튼: 인증 활성화 + 필드 있을 때만 표시 */
@@ -6410,7 +6422,7 @@ function openBlockModal(idx,insertAt){
   if (!_isHb && !_navRestore) history.pushState({v:'block', blkIdx:idx, insertAt:insertAt??null, projId:curProjId, stageIdx:curEditingStageIdx}, '', '#edit/'+curProjId+'/stages/'+(curEditingStageIdx??0)+'/block');
   updateBmPreview();
 }
-function closeBlockModal(){closeModal('form-field-modal');document.getElementById('block-modal').classList.remove('on');_hbMode=false;_hbEditId=null;['tool','form','spacer','divider'].forEach(k=>{const btn=document.getElementById('btab-'+k);if(btn)btn.style.display='';});const _cs=document.getElementById('blk-check-section');if(_cs)_cs.style.display='';}
+function closeBlockModal(){closeModal('form-field-modal');document.getElementById('block-modal').classList.remove('on');_hbMode=false;_hbEditId=null;['tool','form','spacer','divider'].forEach(k=>{const btn=document.getElementById('btab-'+k);if(btn)btn.style.display='';});const _cs=document.getElementById('blk-check-section');if(_cs)_cs.style.display='';const _cbSec2=document.getElementById('blk-card-border-section');if(_cbSec2)_cbSec2.style.display='none';}
 /* ── 블록 모달 실시간 미리보기 ── */
 let bmPreviewTimer=null;
 function scheduleBmPreview(){
@@ -6759,6 +6771,10 @@ function saveBlock(){
     delete b.requiredTier; delete b.tierLockMode; delete b.tierReplaceBlock;
   }
   if(_hbMode){
+    const _iv3=id=>parseInt(document.getElementById(id)?.value)||0;
+    const _cbr=_iv3('blk-card-border-radius'); if(_cbr>0) b.cardBorderRadius=_cbr; else delete b.cardBorderRadius;
+    const _cbw=_iv3('blk-card-border-width');  if(_cbw>0) b.cardBorderWidth=_cbw;  else delete b.cardBorderWidth;
+    b.cardBorderColor=document.getElementById('blk-card-border-color')?.value||'#000000';
     const _targetId=_hbEditId||existingId;
     b.id=_targetId;
     if(_hbEditId){
@@ -8176,6 +8192,12 @@ window.addEventListener('load', () => {
     const pr=pop.getBoundingClientRect();
     if(pr.right>window.innerWidth-6) pop.style.left=(window.innerWidth-pr.width-6)+'px';
   },{passive:true});
+  /* mini-rte 포맷바 동작을 위한 이벤트 위임 — ced 요소와 동일하게 saveRange + syncFmtBar 보장 */
+  document.querySelectorAll('.mini-rte[id^="ed-"]').forEach(function(ed){
+    const ctx=ed.id.slice(3);
+    ed.addEventListener('mouseup',function(){saveRange(ed);syncFmtBar(ctx);});
+    ed.addEventListener('keyup',function(){saveRange(ed);syncFmtBar(ctx);});
+  });
   const pev = document.getElementById('proj-edit-view');
   if (pev) {
     pev.addEventListener('input', e => {

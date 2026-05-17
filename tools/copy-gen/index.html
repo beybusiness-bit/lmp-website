@@ -414,7 +414,7 @@ async function init() {
     // 제목 / 설명
     if (config.title || config.description) {
       document.getElementById('cg-title').textContent = config.title || '';
-      document.getElementById('cg-desc').textContent = config.description || '';
+      document.getElementById('cg-desc').innerHTML = config.description || '';
       document.getElementById('cg-desc').style.display = config.description ? '' : 'none';
       document.getElementById('cg-header').style.display = '';
     }

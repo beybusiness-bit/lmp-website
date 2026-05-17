@@ -257,6 +257,7 @@ function switchTab(tab) {
   document.getElementById('pane-selected').style.display = tab === 'selected' ? '' : 'none';
   document.getElementById('pane-submitted').style.display = tab === 'submitted' ? '' : 'none';
   if (tab === 'selected') renderSelectedList();
+  if (tab === 'submitted') loadPrevSubmissions();
 }
 
 function updateBadge() {
