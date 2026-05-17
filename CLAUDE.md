@@ -791,12 +791,8 @@ closeHelpPanel();
 
 ~~**❓ 질문/요청 2: 반응형 레이아웃 전략 및 CTA 버튼 잘림 방지**~~ ✅ 완료 (이전 세션)
 
-**🔧 미해결: admin 결제 관리 탭 일부 컬럼 미표시**
-- 위치: admin → 도구 탭 → 결제 → "결제 관리" 탭
-- 전체 결제 내역 테이블은 표시됨 ✓
-- 결제수단(`cardName`)과 승인시각(`authDatetime`), 주문번호 컬럼 값이 표시 안 됨
-- 원인 추정: `pyLoadAllRecords()` 함수에서 Firestore 문서 필드명 불일치 (읽어오는 필드명이 실제 저장된 필드명과 다를 가능성)
-- 다음 세션에서 `pyLoadAllRecords` 함수 내 필드 매핑 전수 확인 필요
+~~**🔧 미해결: admin 결제 관리 탭 일부 컬럼 미표시**~~ ✅ 완료 (이번 세션)
+- `pyLoadAllRecords()` `r.orderId` → `r.transactionId`로 수정 (실제 저장 필드명 불일치)
 
 #### Firestore 보안 규칙 (적용 완료)
 ```
@@ -809,20 +805,26 @@ match /cms_payment_records/{doc} { allow read: if true; }
 
 #### 다음 세션 시작점 🔲
 
-**다음 세션: 미해결 항목 처리**
-
-**🟡 미해결:**
-1. admin 결제 관리 탭 — 결제수단·승인시각·주문번호 컬럼 값 미표시 (`pyLoadAllRecords` 필드명 불일치 추정)
+**다음 세션: 미완료 항목 처리 + 사용자 피드백 반영**
 
 **미완료 항목:**
 - **GAS 재배포 필요**: updateFormRow + bulkAppend + Calendar 액션 코드는 추가됐으나 GAS 편집기에서 "새 버전" 배포 안 됨 → script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
 - **환불 처리 기능**: 페이업 환불 API 연동 미구현 — 현재 수동 처리 (페이업 대시보드에서 직접)
-- **꾸미기 도구 테스트 필요**: 이번 세션 5가지 개선 후 실기기 검증 필요 (아래 테스트 체크리스트 참조)
+- **꾸미기 도구 자르기 기능 실기기 테스트**: 이번 세션 crop 기능 추가 후 실기기 검증 필요
 
 **기타:**
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 
 #### 이번 세션 완료 항목
+- **admin RTE 모바일 포맷 버튼 완전 수정** ✅: `epd()` 함수에서 `e.preventDefault()`를 `if(!_fmtPopType)` 블록 안으로 이동 → 팝업 열린 상태에서 버튼 클릭 이벤트 차단되던 문제 해결. mini-rte 13개에 `ontouchend="saveRange(this)"` 추가 → 모바일 Safari 텍스트 선택 즉시 savedRange 갱신 (admin/index.html)
+- **꾸미기 도구 CONFIG_ID 버그 수정** ✅: 플레이어가 `?id=` 파라미터로 전달하는데 도구가 `?config=`만 읽던 문제 → `?config=` || `?id=` 모두 수신하도록 수정 (tools/booth/index.html)
+- **꾸미기 도구 배경 탭 순서 변경** ✅: "직접 업로드" 탭이 먼저, "무료 이미지" 탭이 두 번째로 (tools/booth/index.html)
+- **꾸미기 도구 회전 핸들 기호 추가** ✅: `.handle.rot` 에 `↻` 기호 표시 (tools/booth/index.html)
+- **꾸미기 도구 iOS Safari 저장 수정** ✅: `navigator.share({ files: [file] })` Web Share API 우선 시도 → 실패 시 `<a download>` fallback (tools/booth/index.html)
+- **꾸미기 도구 인스턴스별 허용 도구 설정** ✅: admin에 이미지/도형/그리기 체크박스 추가, `allowedTools` Firestore 필드, 부스 도구에서 설정에 따라 버튼 표시/숨김 (admin/index.html + tools/booth/index.html)
+- **꾸미기 도구 이미지 자르기(Crop) 기능 추가** ✅: 이미지 아이템 선택 후 "✂ 자르기" 버튼 → 4방향 핸들(상/하/좌/우) 드래그로 잘라내기, 취소/완료 버튼, 잘린 상태 Canvas 내보내기 반영, 리사이즈 시 crop 값 비율 자동 보정 (tools/booth/index.html)
+- **admin 결제 관리 탭 필드명 버그 수정** ✅: `pyLoadAllRecords()`에서 `r.orderId` → `r.transactionId` (실제 저장 필드명 불일치 수정) (admin/index.html)
+- **결제 후 tier 동기화 버그 수정** ✅: 결제 성공 후 `paidTiers`가 세션에 반영 안 되던 문제 → `_syncPaidTiers()` 함수 추가, `lmp-tool-complete` 수신 시 payment 타입이면 Firestore에서 최신 paidTiers 조회 후 sessionStorage 갱신 + 블록 즉시 재렌더 (p/ + 3파일 동기화)
 - **결제 기록 미표시 버그 수정** ✅: `selectedOption.stockRemaining: undefined` → Firestore 저장 실패 버그. `recordPayment()`에서 저장 시 label/price/tier 3필드만 포함하는 안전한 객체로 변환. 모바일·데스크탑 팝업 결제 모두 동일 코드 경로 → 두 케이스 모두 수정 (tools/payment/index.html)
 - **admin RTE 도구 편집기 버튼 수정** ✅: mini-rte contenteditable 13개에 `onmouseup="saveRange(this)" onkeyup="saveRange(this)"` 추가. 텍스트 선택 즉시 savedRange 갱신 → 팝업 기반 포맷 버튼(색상/크기/정렬 등) 정상 동작. 볼드만 되던 문제 해결 (admin/index.html)
 - **꾸미기 도구 5가지 개선** ✅ (tools/booth/index.html + admin/index.html):
