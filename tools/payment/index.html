@@ -302,50 +302,63 @@ function loadSdk() {
 }
 
 async function init() {
-  // 성공/실패 리다이렉트 경로: URL에 이미 projectId/userId 있으므로 lmp-context 대기 불필요
-  if (RESULT !== 'success' && RESULT !== 'fail') {
-    await Promise.race([ctxPromise, new Promise(r => setTimeout(r, 1500))]);
-  }
-
-  const ok = await loadConfig();
-  if (!ok) return;
-
-  if (RESULT === 'fail') {
-    showResult('fail', '결제가 실패했어요', FAIL_MSG || '결제를 다시 시도해주세요.', null);
-    return;
-  }
-
+  // 성공/실패 리다이렉트: 즉시 결과 표시 후 config/기록은 백그라운드 처리 (모바일 빈화면 방지)
   if (RESULT === 'success' && TRANSACTION_ID) {
     try {
-      try {
-        selectedOption  = JSON.parse(sessionStorage.getItem('py_selectedOption') || 'null');
-        questionAnswers = JSON.parse(sessionStorage.getItem('py_questionAnswers') || '{}');
-        selectedQty     = parseInt(sessionStorage.getItem('py_selectedQty') || '1') || 1;
-        sessionStorage.removeItem('py_selectedOption');
-        sessionStorage.removeItem('py_questionAnswers');
-        sessionStorage.removeItem('py_selectedQty');
-      } catch(e) {}
+      selectedOption  = JSON.parse(sessionStorage.getItem('py_selectedOption')  || 'null');
+      questionAnswers = JSON.parse(sessionStorage.getItem('py_questionAnswers') || '{}');
+      selectedQty     = parseInt(sessionStorage.getItem('py_selectedQty') || '1') || 1;
+      sessionStorage.removeItem('py_selectedOption');
+      sessionStorage.removeItem('py_questionAnswers');
+      sessionStorage.removeItem('py_selectedQty');
+    } catch(_) {}
 
-      setStatus('결제 완료 처리 중…');
-      await recordPayment({
+    // 즉시 결과 화면 표시 (Firestore 로드 전)
+    showResult('success', '결제가 완료되었어요', '결제하신 권한이 부여되었어요.',
+      { amount: AMOUNT_FROM_URL, orderName: '', method: CARD_NAME,
+        approvedAt: AUTH_DATETIME, selectedOption: selectedOption?.label || '' });
+    window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+    try { if (window.opener) window.opener.postMessage({ type: 'lmp-tool-complete' }, '*'); } catch(_) {}
+
+    // 백그라운드: config 로드 → 성공 메시지 업데이트 → 기록 저장 → SMS
+    loadConfig().then(() => {
+      if (CONFIG) {
+        const msgEl = document.getElementById('r-msg');
+        if (msgEl) msgEl.innerHTML = applyVars(CONFIG.successMessage || '결제하신 권한이 부여되었어요.');
+        const rcptEl = document.getElementById('r-receipt');
+        if (rcptEl && rcptEl.style.display !== 'none' && CONFIG.productName) {
+          const lines = [];
+          if (selectedOption?.label) lines.push(`<div>선택 옵션: <b>${esc(selectedOption.label)}</b></div>`);
+          lines.push(`<div><b>${esc(CONFIG.productName)}</b></div>`);
+          if (AMOUNT_FROM_URL != null) lines.push(`<div>금액: ${Number(AMOUNT_FROM_URL).toLocaleString()}원</div>`);
+          if (CARD_NAME) lines.push(`<div>결제카드: ${esc(CARD_NAME)}</div>`);
+          if (AUTH_DATETIME) { const dt=String(AUTH_DATETIME); const fmt=dt.length>=12?`${dt.slice(0,4)}-${dt.slice(4,6)}-${dt.slice(6,8)} ${dt.slice(8,10)}:${dt.slice(10,12)}`:dt; lines.push(`<div>승인: ${esc(fmt)}</div>`); }
+          rcptEl.innerHTML = lines.join('');
+        }
+      }
+      return recordPayment({
         transactionId: TRANSACTION_ID,
         amount:        AMOUNT_FROM_URL,
         cardName:      CARD_NAME,
         authDatetime:  AUTH_DATETIME,
         authNumber:    AUTH_NUMBER,
       });
-      fireSmsWebhook(AMOUNT_FROM_URL, CONFIG.productName || CONFIG.title || '', selectedQty);
-      window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
-      try { if (window.opener) window.opener.postMessage({ type: 'lmp-tool-complete' }, '*'); } catch(e) {}
-      showResult('success', '결제가 완료되었어요',
-        CONFIG.successMessage || '결제하신 권한이 부여되었어요.',
-        { amount: AMOUNT_FROM_URL, orderName: CONFIG.productName, method: CARD_NAME,
-          approvedAt: AUTH_DATETIME, selectedOption: selectedOption?.label || '' });
-    } catch(e) {
-      showResult('fail', '결제 처리 중 오류가 발생했어요', e.message || '다시 시도해주세요.', null);
-    }
+    }).then(() => {
+      fireSmsWebhook(AMOUNT_FROM_URL, CONFIG?.productName || CONFIG?.title || '', selectedQty);
+    }).catch(e => console.warn('[payment] bg init error:', e));
     return;
   }
+
+  if (RESULT === 'fail') {
+    showResult('fail', '결제가 실패했어요', FAIL_MSG || '결제를 다시 시도해주세요.', null);
+    return;
+  }
+
+  // 정상 로드: lmp-context 대기 후 config 로드
+  await Promise.race([ctxPromise, new Promise(r => setTimeout(r, 1500))]);
+
+  const ok = await loadConfig();
+  if (!ok) return;
 
   // 글로벌 품절 체크 (옵션 없는 상품만 — 옵션 있으면 옵션별로 처리)
   const hasOpts = (CONFIG.options || []).length > 0;
@@ -734,6 +747,7 @@ async function onPayClick() {
 
   window._payupSubmitCalled = false;
   window._payupCloseCalled  = false;
+  window._payupPopupOpen    = false;  // 결제창이 실제로 열렸는지 여부
 
   // SDK 취소 알림("결제가 취소 되었습니다.") 가로채기:
   // alert가 닫히면 즉시 payupPaymentClose()로 UI 리셋
@@ -746,11 +760,12 @@ async function onPayClick() {
     }
   };
 
-  // PayUp SDK 런타임 오류 캐치 → UI 전체 리셋 (PC 메시지는 8초 타임아웃에서)
+  // PayUp SDK 런타임 오류 캐치: 결제창이 열리기 전 오류만 처리
+  // _payupPopupOpen=true 이후(결제 진행 중) 발생하는 SDK 내부 오류는 무시
   const _origOnError = window.onerror;
   window._payupErrorCaught = false;
   window.onerror = (msg, src, line, col, err) => {
-    if (src && src.includes('payup_standard') && !window._payupSubmitCalled && !window._payupErrorCaught) {
+    if (src && src.includes('payup_standard') && !window._payupSubmitCalled && !window._payupErrorCaught && !window._payupPopupOpen) {
       window._payupErrorCaught = true;
       window.onerror = _origOnError;
       window.alert = _origAlert;
@@ -760,9 +775,12 @@ async function onPayClick() {
     return _origOnError ? _origOnError(msg, src, line, col, err) : false;
   };
 
+  // 결제창 열기 전에 플래그 설정 (이후 SDK 오류는 무시됨)
+  window._payupPopupOpen = true;
   try {
     goPayupPay(data);
   } catch (e) {
+    window._payupPopupOpen = false;
     window.onerror = _origOnError;
     window.alert = _origAlert;
     _cleanupPayupDom();
@@ -880,14 +898,14 @@ async function recordPayment(d) {
   try {
     await db.collection('cms_payment_records').doc(d.transactionId).set({
       transactionId:   d.transactionId,
-      orderName:       CONFIG.productName || CONFIG.title || '',
+      orderName:       CONFIG?.productName || CONFIG?.title || '',
       amount:          Number(d.amount),
       cardName:        d.cardName     || '',
       authNumber:      d.authNumber   || '',
       authDatetime:    d.authDatetime || '',
       configId:        CONFIG_ID,
-      configTitle:     CONFIG.title || '',
-      tier:            selectedOption?.tier || CONFIG.tier || '',
+      configTitle:     CONFIG?.title || '',
+      tier:            selectedOption?.tier || CONFIG?.tier || '',
       projectId:       ctxProjectId,
       userId:          ctxUserId,
       userFields:      ctxUserFields || {},
@@ -905,21 +923,21 @@ async function recordPayment(d) {
       const update = {
         [`${p}.paidAt`]:          firebase.firestore.FieldValue.serverTimestamp(),
         [`${p}.amount`]:          Number(d.amount),
-        [`${p}.tier`]:            selectedOption?.tier || CONFIG.tier || '',
+        [`${p}.tier`]:            selectedOption?.tier || CONFIG?.tier || '',
         [`${p}.transactionId`]:   d.transactionId,
         [`${p}.selectedOption`]:  selectedOption?.label || '',
         [`${p}.questionAnswers`]: questionAnswers || {},
         [`${p}.lastQty`]:         selectedQty,
         [`${p}.totalQty`]:        firebase.firestore.FieldValue.increment(selectedQty),
       };
-      const effectiveTier = selectedOption?.tier || CONFIG.tier || '';
+      const effectiveTier = selectedOption?.tier || CONFIG?.tier || '';
       if (effectiveTier) update.paidTiers = firebase.firestore.FieldValue.arrayUnion(effectiveTier);
       await db.collection('cms_users_' + ctxProjectId).doc(ctxUserId).update(update);
     } catch (e) { console.error('user update failed:', e); }
   }
 
   // 재고 차감 (트랜잭션)
-  if (CONFIG.stockEnabled) {
+  if (CONFIG?.stockEnabled) {
     try {
       const configRef = db.collection('cms_payment_configs').doc(CONFIG_ID);
       if (selectedOption) {

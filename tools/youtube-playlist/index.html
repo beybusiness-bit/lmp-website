@@ -560,16 +560,16 @@ async function loadPrevSubmissions() {
     const snap = await db.collection('cms_youtube_submissions')
       .doc(PLAYLIST_ID).collection('songs')
       .where('userId', '==', ctxUserId)
-      .orderBy('submittedAt', 'desc')
       .limit(50)
       .get();
     if (snap.empty) {
-      document.getElementById('prev-list').innerHTML = '';
+      document.getElementById('prev-list').innerHTML = `<div style="font-size:11px;color:rgba(0,0,0,.35);padding:10px 0 0;">userId: ${ctxUserId||'(없음)'}</div>`;
       document.getElementById('prev-empty-msg').style.display = '';
       document.getElementById('submitted-count-badge').textContent = '';
       return;
     }
     submittedItems = snap.docs.map(d => d.data());
+    submittedItems.sort((a,b)=>(b.submittedAt?.toMillis?.()??0)-(a.submittedAt?.toMillis?.()??0));
     submittedItems.forEach(v => v.videoId && submittedVideoIds.add(v.videoId));
 
     document.getElementById('submitted-count-badge').textContent = `(${submittedItems.length})`;
@@ -585,8 +585,8 @@ async function loadPrevSubmissions() {
     refreshResultButtons();
   } catch(e) {
     console.error('[loadPrevSubmissions]', e);
-    document.getElementById('prev-list').innerHTML = '';
-    document.getElementById('prev-empty-msg').style.display = '';
+    document.getElementById('prev-list').innerHTML = `<div style="font-size:12px;color:#f95548;padding:12px 0;">${e.code==='permission-denied'?'읽기 권한이 없습니다. Firebase 보안 규칙을 확인해 주세요.':'조회 오류: '+e.message}</div>`;
+    document.getElementById('prev-empty-msg').style.display = 'none';
   }
 }
 
