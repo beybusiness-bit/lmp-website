@@ -668,6 +668,17 @@ async function loadProjectSettings(){
     ]);
     if(!doc.exists){ showError('프로젝트를 찾을 수 없어요.','관리자에게 문의해주세요.'); return; }
     if(siteDoc.exists) _siteSettings = siteDoc.data();
+    if(_siteSettings.googleAnalyticsId){
+      const _gaId = _siteSettings.googleAnalyticsId;
+      const _gas = document.createElement('script');
+      _gas.async = true;
+      _gas.src = 'https://www.googletagmanager.com/gtag/js?id=' + _gaId;
+      document.head.appendChild(_gas);
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function(){dataLayer.push(arguments);};
+      window.gtag('js', new Date());
+      window.gtag('config', _gaId);
+    }
     applySettings(doc.data());
   }catch(e){ showError('연결에 실패했어요.','잠시 후 다시 시도해주세요.'); }
 }

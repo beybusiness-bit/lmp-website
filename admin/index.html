@@ -1849,6 +1849,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <div class="mini-rte" id="rte-terms" contenteditable="true" data-ph="이용약관 내용을 입력하세요" style="min-height:100px;padding:8px;"></div>
         </div>
 
+        <div class="sect-head" style="margin-top:24px;">분석 도구</div>
+        <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;line-height:1.6;">Google Analytics 4 측정 ID를 입력하면 방문자 출처(UTM 추적 포함)가 자동으로 기록됩니다.</div>
+        <div class="ed-lbl">Google Analytics 측정 ID</div>
+        <input class="fi" id="site-ga-id" placeholder="G-XXXXXXXXXX" style="font-family:monospace;">
+        <div style="font-size:10px;color:rgba(0,0,0,.35);margin-top:4px;">analytics.google.com → 속성 → 데이터 스트림에서 확인할 수 있어요.</div>
+
         <button class="btn" id="site-save-btn" onclick="saveSiteSettings()" style="margin-top:20px;">저장</button>
       </div>
     </div>
@@ -2909,6 +2915,7 @@ async function loadSiteSettings() {
     document.getElementById('site-copyright-year').value = s.footerCopyrightYear || new Date().getFullYear();
     rteSet('privacy', s.privacyHtml || '');
     rteSet('terms', s.termsHtml || '');
+    document.getElementById('site-ga-id').value = s.googleAnalyticsId || '';
     _siteLoaded = true;
   } catch(e) {
     console.error('loadSiteSettings:', e);
@@ -2933,6 +2940,7 @@ async function saveSiteSettings() {
     footerCopyrightYear: document.getElementById('site-copyright-year').value.trim(),
     privacyHtml: rteGet('privacy'),
     termsHtml: rteGet('terms'),
+    googleAnalyticsId: document.getElementById('site-ga-id').value.trim(),
     updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
   };
   try {
