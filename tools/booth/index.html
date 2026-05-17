@@ -842,11 +842,19 @@ function selectBgByUrl(url, label='', silent=false, refPx=0) {
   img1.src = url;
 }
 
+function drawImageCover(ctx, img, x, y, w, h) {
+  const iw = img.naturalWidth || img.width || w;
+  const ih = img.naturalHeight || img.height || h;
+  const scale = Math.max(w / iw, h / ih);
+  const sw = iw * scale;
+  const sh = ih * scale;
+  ctx.drawImage(img, x + (w - sw) / 2, y + (h - sh) / 2, sw, sh);
+}
+
 function drawBg() {
   if(!bgImage) return;
   bgCtx.clearRect(0,0,canvasW,canvasH);
-  // 캔버스가 이미지 비율과 동일하므로 그대로 채움 (자연 비율 유지)
-  bgCtx.drawImage(bgImage, 0, 0, canvasW, canvasH);
+  drawImageCover(bgCtx, bgImage, 0, 0, canvasW, canvasH);
 }
 
 function openBgModal() { document.getElementById('bg-modal').classList.add('on'); }
@@ -1613,9 +1621,9 @@ async function openExport() {
   const ctx = expCanvas.getContext('2d');
   const scale = expW / canvasW; // 화면→출력 배율 (가로/세로 동일)
 
-  // 1. 배경 (캔버스 비율이 이미지와 동일 → 정확히 채움)
+  // 1. 배경 (cover 방식 — 비율 유지하며 꽉 채움)
   if(bgImage) {
-    ctx.drawImage(bgImage, 0, 0, expW, expH);
+    drawImageCover(ctx, bgImage, 0, 0, expW, expH);
   }
 
   // 2. 아이템들 (순서대로)
@@ -1717,17 +1725,51 @@ async function downloadExport() {
   const canvas = document.getElementById('export-canvas');
   const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
   const file = new File([blob], '내부스꾸미기.png', { type: 'image/png' });
-  // iOS Safari: Web Share API (파일 공유)
+  const objUrl = URL.createObjectURL(blob);
+
+  // Web Share API (Android 등 — iOS는 async await 후엔 gesture 끊겨 NotAllowedError)
   if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-    try { await navigator.share({ files: [file], title: toolTitle || '내 부스 꾸미기' }); return; } catch(e) { if(e.name==='AbortError') return; }
+    try {
+      await navigator.share({ files: [file], title: toolTitle || '내 부스 꾸미기' });
+      URL.revokeObjectURL(objUrl);
+      return;
+    } catch(e) {
+      if (e.name === 'AbortError') { URL.revokeObjectURL(objUrl); return; }
+      // NotAllowedError 등 → fall through
+    }
   }
-  // 데스크탑 / Android: 링크 다운로드
-  const url = URL.createObjectURL(blob);
+
+  // iOS Safari: <a download> 미동작, 이미지 모달로 꾹눌러 저장 안내
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isIOS) {
+    showIOSSaveModal(objUrl);
+    return;
+  }
+
+  // 데스크탑 / Android
   const a = document.createElement('a');
-  a.href = url;
+  a.href = objUrl;
   a.download = '내부스꾸미기.png';
+  document.body.appendChild(a);
   a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(objUrl), 5000);
+}
+
+function showIOSSaveModal(blobUrl) {
+  const existing = document.getElementById('ios-save-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'ios-save-modal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;';
+  modal.innerHTML = `
+    <div style="color:#fff;font-size:15px;font-weight:800;text-align:center;">이미지를 꾹 눌러서 저장하세요</div>
+    <div style="color:rgba(255,255,255,.6);font-size:12px;text-align:center;">사진 앱에 저장하려면 이미지를 길게 누르세요</div>
+    <img src="${blobUrl}" style="max-width:85vw;max-height:60vh;object-fit:contain;border:2px solid rgba(255,255,255,.25);border-radius:4px;display:block;">
+    <button onclick="document.getElementById('ios-save-modal').remove();URL.revokeObjectURL('${blobUrl}')" style="background:#fff;color:#000;border:none;padding:11px 28px;font-size:14px;font-weight:800;cursor:pointer;border-radius:4px;margin-top:4px;">닫기</button>
+  `;
+  document.body.appendChild(modal);
 }
 
 async function saveAndDownload() {

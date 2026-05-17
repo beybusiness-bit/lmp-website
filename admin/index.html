@@ -3157,9 +3157,9 @@ function epd(e) {
         } catch(_) {}
       }
     }
-    // 팝업이 닫혀 있을 때만 포커스 유지를 위해 preventDefault
-    // 팝업 내부 버튼(색상 스와치, 크기 프리셋 등)에서는 preventDefault 금지 → 모바일 click 이벤트 정상 발화
-    e.preventDefault();
+    // 데스크탑(mouse)에서만 preventDefault — 포커스 유지를 위해
+    // touch 이벤트에서 preventDefault하면 iOS Safari가 click을 차단해 fmtCmd/openFmtDd 미실행
+    if (e.pointerType !== 'touch') e.preventDefault();
   }
 }
 function closeModal(id) { document.getElementById(id).classList.remove('on'); }
