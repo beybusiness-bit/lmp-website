@@ -52,7 +52,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .handle.tr{top:0;right:0;transform:translate(50%,-50%);}
 .handle.bl{bottom:0;left:0;transform:translate(-50%,50%);}
 .handle.br{bottom:0;right:0;transform:translate(50%,50%);cursor:se-resize;}
-.handle.rot{top:-28px;left:50%;transform:translateX(-50%);cursor:grab;background:#fff;border:2px solid #000;}
+.handle.rot{top:-28px;left:50%;transform:translateX(-50%);cursor:grab;background:#fff;border:2px solid #000;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;user-select:none;}
 .item-del{position:absolute;top:-10px;right:-10px;width:22px;height:22px;background:#000;border:2px solid #fff;border-radius:50%;color:#fff;font-size:13px;cursor:pointer;display:none;align-items:center;justify-content:center;line-height:1;z-index:10;}
 .deco-item.selected .item-del{display:flex;}
 .deco-item canvas,.deco-item img{display:block;width:100%;height:100%;}
@@ -349,21 +349,21 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
       <button onclick="closeBgModal()">✕</button>
     </div>
     <div class="bg-tabs">
-      <button class="bg-tab active" onclick="switchBgTab('free',this)">무료 이미지</button>
-      <button class="bg-tab" onclick="switchBgTab('upload',this)">직접 업로드</button>
+      <button class="bg-tab active" onclick="switchBgTab('upload',this)">직접 업로드</button>
+      <button class="bg-tab" onclick="switchBgTab('free',this)">무료 이미지</button>
     </div>
     <div class="bg-tab-content">
-      <!-- 무료 이미지 탭 -->
-      <div id="bg-tab-free" class="bg-tab-panel active">
-        <div id="bg-grid"></div>
-      </div>
       <!-- 직접 업로드 탭 -->
-      <div id="bg-tab-upload" class="bg-tab-panel">
+      <div id="bg-tab-upload" class="bg-tab-panel active">
         <div id="bg-upload-zone" onclick="document.getElementById('bg-upload-input').click()">
           탭하여 이미지 선택
           <div style="margin-top:8px;font-size:11px;font-weight:400;color:rgba(0,0,0,.4);">권장 최소 크기: 1080×1350px</div>
         </div>
         <input type="file" id="bg-upload-input" accept="image/*" onchange="onBgUpload(event)">
+      </div>
+      <!-- 무료 이미지 탭 -->
+      <div id="bg-tab-free" class="bg-tab-panel">
+        <div id="bg-grid"></div>
       </div>
     </div>
   </div>
@@ -529,8 +529,9 @@ function resizeCanvases() {
   if(bgImage) drawBg();
 }
 
-// ── 설정 ID (URL 파라미터 ?config=xxx, 기본값 'booth') ──
-const CONFIG_ID = new URLSearchParams(location.search).get('config') || 'booth';
+// ── 설정 ID (URL 파라미터 ?config=xxx 또는 ?id=xxx, 기본값 'booth') ──
+const _bParams = new URLSearchParams(location.search);
+const CONFIG_ID = _bParams.get('config') || _bParams.get('id') || 'booth';
 
 // ── 배경 로드 (Firestore) ──
 async function loadBackgrounds() {
@@ -548,6 +549,16 @@ async function loadBackgrounds() {
       if(data.saveLabel) {
         const btn = document.getElementById('btn-save-gallery');
         if(btn) btn.textContent = data.saveLabel;
+      }
+      // allowedTools: 허용된 도구 버튼만 표시
+      const at = data.allowedTools;
+      if(at) {
+        const imgBtn = document.getElementById('btn-img');
+        const shpBtn = document.getElementById('btn-shape');
+        const drwBtn = document.getElementById('btn-draw');
+        if(imgBtn) imgBtn.style.display = at.image===false ? 'none' : '';
+        if(shpBtn) shpBtn.style.display = at.shape===false ? 'none' : '';
+        if(drwBtn) drwBtn.style.display = at.draw===false ? 'none' : '';
       }
       // lmp-context가 먼저 도착한 경우: fieldKey가 확정된 지금 다시 값 추출
       if(lastContextData) {
@@ -1066,7 +1077,7 @@ function renderItems() {
     // 핸들 (크기 고정 아이템은 resize 핸들 숨김)
     el.innerHTML += `
       <div class="item-handles">
-        <div class="handle rot" data-action="rot"></div>
+        <div class="handle rot" data-action="rot">↻</div>
         ${item._sizeFixed ? '' : '<div class="handle br" data-action="resize"></div>'}
       </div>
       <button class="item-del" onclick="deleteItemById(${item.id})">✕</button>`;
@@ -1540,16 +1551,25 @@ function loadImageCORS(src) {
   });
 }
 
-function downloadExport() {
+async function downloadExport() {
   const canvas = document.getElementById('export-canvas');
+  const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+  const file = new File([blob], '내부스꾸미기.png', { type: 'image/png' });
+  // iOS Safari: Web Share API (파일 공유)
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: toolTitle || '내 부스 꾸미기' }); return; } catch(e) { if(e.name==='AbortError') return; }
+  }
+  // 데스크탑 / Android: 링크 다운로드
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = canvas.toDataURL('image/png');
+  a.href = url;
   a.download = '내부스꾸미기.png';
   a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
 async function saveAndDownload() {
-  downloadExport();
+  await downloadExport();
   await saveToGallery();
 }
 
