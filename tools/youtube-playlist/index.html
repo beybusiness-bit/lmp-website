@@ -563,7 +563,7 @@ async function loadPrevSubmissions() {
       .limit(50)
       .get();
     if (snap.empty) {
-      document.getElementById('prev-list').innerHTML = '';
+      document.getElementById('prev-list').innerHTML = `<div style="font-size:11px;color:rgba(0,0,0,.35);padding:10px 0 0;">userId: ${ctxUserId||'(없음)'}</div>`;
       document.getElementById('prev-empty-msg').style.display = '';
       document.getElementById('submitted-count-badge').textContent = '';
       return;
