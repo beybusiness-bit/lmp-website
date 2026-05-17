@@ -1627,6 +1627,8 @@ async function openExport() {
   // ── 미리보기용 렌더 (비CORS 폴백 허용 — 화면에 보여주기 위함) ──
   if(bgImage) drawImageCover(ctx, bgImage, 0, 0, expW, expH);
   for(const item of items) await drawItemOnCanvas(ctx, item, scale);
+  // 그리기 레이어도 미리보기에 포함
+  if(drawCanvas.width > 0) ctx.drawImage(drawCanvas, 0, 0, expW, expH);
 
   document.getElementById('export-modal').classList.add('on');
 
@@ -1648,30 +1650,44 @@ async function _buildCorsExportDataUrl(expW, expH, scale) {
     else if(bgSrc.startsWith('data:') && bgImage) drawImageCover(ctx, bgImage, 0, 0, expW, expH);
   }
 
-  // 아이템들
+  // 아이템들 (도형 포함 — 도형은 CORS 불필요)
   for(const item of items) {
+    ctx.save();
+    const sw = item.w * scale, sh = item.h * scale;
+    ctx.translate((item.x + item.w/2)*scale, (item.y + item.h/2)*scale);
+    ctx.rotate((item.rot||0)*Math.PI/180);
+
+    if(item.type === 'shape') {
+      // 도형은 외부 이미지 없이 순수 canvas 연산 — 바로 렌더
+      drawShapeToCtx(ctx, item.shape, sw, sh, item.fillColor, item.strokeColor, (item.strokeWidth||0)*scale);
+      ctx.restore();
+      continue;
+    }
+
     const src = item.src;
-    if(!src) continue;
+    if(!src) { ctx.restore(); continue; }
+
     const corsImg = await loadImageCORSOnly(src);
     if(corsImg) {
-      // drawItemOnCanvas와 동일한 변환 적용
-      ctx.save();
-      const sw = item.w * scale, sh = item.h * scale;
-      ctx.translate((item.x + item.w/2)*scale, (item.y + item.h/2)*scale);
-      ctx.rotate((item.rot||0)*Math.PI/180);
-      if(item.crop) {
-        const cl=(item.crop.l||0)*scale, cr=(item.crop.r||0)*scale, ct=(item.crop.t||0)*scale, cb=(item.crop.b||0)*scale;
-        ctx.beginPath(); ctx.rect(-sw/2+cl, -sh/2+ct, sw-cl-cr, sh-ct-cb); ctx.clip();
+      const cropL=(item.crop?.l||0)*scale, cropR=(item.crop?.r||0)*scale,
+            cropT=(item.crop?.t||0)*scale, cropB=(item.crop?.b||0)*scale;
+      const iW = sw + cropL + cropR, iH = sh + cropT + cropB;
+      if(cropL||cropR||cropT||cropB){
+        ctx.beginPath(); ctx.rect(-sw/2,-sh/2,sw,sh); ctx.clip();
       }
-      ctx.drawImage(corsImg, -sw/2, -sh/2, sw, sh);
-      ctx.restore();
+      applyFrameClip(ctx, item.frame, sw, sh);
+      ctx.drawImage(corsImg, -sw/2-cropL, -sh/2-cropT, iW, iH);
     }
+    ctx.restore();
   }
+
+  // 그리기 레이어 (draw-canvas는 순수 캔버스 — 오염 없음)
+  if(drawCanvas.width > 0) ctx.drawImage(drawCanvas, 0, 0, expW, expH);
 
   try {
     _exportSafeDataUrl = corsCanvas.toDataURL('image/png');
   } catch(e) {
-    _exportSafeDataUrl = null; // CORS 실패 → Firebase Storage CORS 미설정
+    _exportSafeDataUrl = null;
   }
 }
 
