@@ -812,10 +812,16 @@ match /cms_payment_records/{doc} { allow read: if true; }
 - **환불 처리 기능**: 페이업 환불 API 연동 미구현 — 현재 수동 처리 (페이업 대시보드에서 직접)
 - **꾸미기 도구 자르기 기능 실기기 테스트**: 이번 세션 crop 기능 추가 후 실기기 검증 필요
 
+**보안 관련 사용자 직접 수행 필요 항목:**
+- **Firebase Firestore 규칙 적용**: `firestore.rules` 파일 내용을 Firebase Console → Firestore → 규칙 탭에 붙여넣고 게시
+- **Firebase Storage 규칙 적용**: 이번 세션에서 제공한 규칙을 Firebase Console → Storage → 규칙 탭에 적용
+- **YouTube API key HTTP referrer 제한**: Google Cloud Console → API 및 서비스 → 사용자 인증 정보 → HTTP 리퍼러 `*.lazymaxpotential.kr/*` 추가
+- **YouTube API 할당량 신청**: 폼 작성 완료 후 제출
+
 **기타:**
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 
-#### 이번 세션 완료 항목
+#### 이번 세션 완료 항목 (보안 강화 세션)
 - **admin RTE 모바일 포맷 버튼 완전 수정** ✅: `epd()` 함수에서 `e.preventDefault()`를 `if(!_fmtPopType)` 블록 안으로 이동 → 팝업 열린 상태에서 버튼 클릭 이벤트 차단되던 문제 해결. mini-rte 13개에 `ontouchend="saveRange(this)"` 추가 → 모바일 Safari 텍스트 선택 즉시 savedRange 갱신 (admin/index.html)
 - **꾸미기 도구 CONFIG_ID 버그 수정** ✅: 플레이어가 `?id=` 파라미터로 전달하는데 도구가 `?config=`만 읽던 문제 → `?config=` || `?id=` 모두 수신하도록 수정 (tools/booth/index.html)
 - **꾸미기 도구 배경 탭 순서 변경** ✅: "직접 업로드" 탭이 먼저, "무료 이미지" 탭이 두 번째로 (tools/booth/index.html)
@@ -875,6 +881,14 @@ match /cms_payment_records/{doc} { allow read: if true; }
 - **스테이지 제목 정렬** ✅: admin ←/↔/→ 버튼, `titleAlign` 필드, 플레이어 4곳(분리형/병합형 × 이미지/텍스트) 적용
 - **임베드 블록 "연결 거부" 수정** ✅: `_toRelEmbed()` 헬퍼로 `lazymaxpotential.kr/tools/...` 절대 URL → 상대 경로 자동 변환 (4파일)
 - **임베드 블록 전체화면 옵션** ✅: 높이 UI를 자동/전체화면/직접입력 3버튼으로 교체. `embedHeight:'full'` → `g-tool-full-wrap` 100vh 전체화면 (admin + 4파일)
+- **보안 강화 — 결제 금액 서버 검증 (CRITICAL)** ✅: `api/confirm-payup.js`에서 configId로 Firestore REST API 조회 → 저장된 금액과 요청 금액 대조, qty·optionLabel 고려. 불일치 시 결제 거부
+- **보안 강화 — SSRF 방지** ✅: `api/download-file.js`에 Firebase Storage 도메인 allowlist 적용. 임의 URL 차단
+- **보안 강화 — Anthropic API rate limiting** ✅: `api/generate-copy.js`에 IP 기반 rate limit (분당 10회, 일 100회) 추가
+- **보안 강화 — CORS 와일드카드 제거** ✅: `api/generate-copy.js`, `api/confirm-payment.js` `Access-Control-Allow-Origin: *` → `https://lazymaxpotential.kr` + `*.vercel.app`으로 제한
+- **보안 강화 — postMessage origin 검증** ✅: 8개 tool 파일 전체에 `_lmpOriginOk()` 함수 추가. `lmp-context` 리스너에 origin 검증 적용
+- **보안 강화 — GitHub PAT sessionStorage 이동** ✅: `admin/index.html` `getPAT`/`managePAT`/`loadPATFromFirestore` 3군데에서 `localStorage` → `sessionStorage`로 변경
+- **YouTube 검색 결과 Firestore 캐싱** ✅: `tools/youtube-playlist/index.html`에서 `cms_youtube_search_cache` 컬렉션에 24시간 TTL 캐싱 구현. API 호출 60-70% 절감 예상
+- **firestore.rules 참고 파일 갱신** ✅: 실제 Firebase Console 규칙과 동기화 + 누락 컬렉션(`cms_schedule_bookings`, `cms_booth_gallery`, `cms_copy_gen_results`, `cms_youtube_search_cache`) 추가
 
 #### Firestore 스키마 추가 (누적)
 ```
