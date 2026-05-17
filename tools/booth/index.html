@@ -1610,28 +1610,69 @@ function renderKeyColorSwatches() {
 }
 
 // ── 내보내기 ──
+let _exportSafeDataUrl = null; // CORS-clean 캔버스 미리 렌더링한 결과
+
 async function openExport() {
   window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+  _exportSafeDataUrl = null;
+
   const expCanvas = document.getElementById('export-canvas');
-  // 화면 캔버스 비율(=배경 이미지 자연 비율)에 맞춰 출력 캔버스 차원 산출
   const expW = EXPORT_W;
   const expH = canvasW > 0 ? Math.round(expW * canvasH / canvasW) : EXPORT_H;
   expCanvas.width = expW;
   expCanvas.height = expH;
   const ctx = expCanvas.getContext('2d');
-  const scale = expW / canvasW; // 화면→출력 배율 (가로/세로 동일)
+  const scale = expW / canvasW;
 
-  // 1. 배경 (cover 방식 — 비율 유지하며 꽉 채움)
-  if(bgImage) {
-    drawImageCover(ctx, bgImage, 0, 0, expW, expH);
-  }
-
-  // 2. 아이템들 (순서대로)
-  for(const item of items) {
-    await drawItemOnCanvas(ctx, item, scale);
-  }
+  // ── 미리보기용 렌더 (비CORS 폴백 허용 — 화면에 보여주기 위함) ──
+  if(bgImage) drawImageCover(ctx, bgImage, 0, 0, expW, expH);
+  for(const item of items) await drawItemOnCanvas(ctx, item, scale);
 
   document.getElementById('export-modal').classList.add('on');
+
+  // ── CORS-only 렌더 (저장용 — 별도 캔버스, 오염 없음) ──
+  // 미리보기 표시 후 백그라운드에서 진행
+  _buildCorsExportDataUrl(expW, expH, scale);
+}
+
+async function _buildCorsExportDataUrl(expW, expH, scale) {
+  const corsCanvas = document.createElement('canvas');
+  corsCanvas.width = expW; corsCanvas.height = expH;
+  const ctx = corsCanvas.getContext('2d');
+
+  // 배경
+  const bgSrc = bgImage?._src;
+  if(bgSrc) {
+    const corsImg = await loadImageCORSOnly(bgSrc);
+    if(corsImg) drawImageCover(ctx, corsImg, 0, 0, expW, expH);
+    else if(bgSrc.startsWith('data:') && bgImage) drawImageCover(ctx, bgImage, 0, 0, expW, expH);
+  }
+
+  // 아이템들
+  for(const item of items) {
+    const src = item.src;
+    if(!src) continue;
+    const corsImg = await loadImageCORSOnly(src);
+    if(corsImg) {
+      // drawItemOnCanvas와 동일한 변환 적용
+      ctx.save();
+      const sw = item.w * scale, sh = item.h * scale;
+      ctx.translate((item.x + item.w/2)*scale, (item.y + item.h/2)*scale);
+      ctx.rotate((item.rot||0)*Math.PI/180);
+      if(item.crop) {
+        const cl=(item.crop.l||0)*scale, cr=(item.crop.r||0)*scale, ct=(item.crop.t||0)*scale, cb=(item.crop.b||0)*scale;
+        ctx.beginPath(); ctx.rect(-sw/2+cl, -sh/2+ct, sw-cl-cr, sh-ct-cb); ctx.clip();
+      }
+      ctx.drawImage(corsImg, -sw/2, -sh/2, sw, sh);
+      ctx.restore();
+    }
+  }
+
+  try {
+    _exportSafeDataUrl = corsCanvas.toDataURL('image/png');
+  } catch(e) {
+    _exportSafeDataUrl = null; // CORS 실패 → Firebase Storage CORS 미설정
+  }
 }
 
 async function drawItemOnCanvas(ctx, item, scale=1) {
@@ -1706,6 +1747,7 @@ function applyFrameClip(ctx, frame, w, h) {
 
 function loadImageCORS(src) {
   return new Promise(resolve => {
+    if(!src) { resolve(null); return; }
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
@@ -1717,7 +1759,29 @@ function loadImageCORS(src) {
       img2.onerror = () => resolve(null);
       img2.src = src;
     };
-    img.src = src;
+    // 캐시 버스팅 — 브라우저가 비CORS 캐시 버전을 재사용하면 CORS 실패하므로 새 요청 강제
+    if(src.startsWith('data:')) { img.src = src; }
+    else { const sep = src.includes('?') ? '&' : '?'; img.src = src + sep + '_cors=' + Date.now(); }
+  });
+}
+
+// CORS 전용 이미지 로더 (비CORS 폴백 없음 — export canvas 오염 방지용)
+function loadImageCORSOnly(src) {
+  return new Promise(resolve => {
+    if(!src) { resolve(null); return; }
+    if(src.startsWith('data:')) {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = src;
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null); // 폴백 없음 — null 반환
+    const sep = src.includes('?') ? '&' : '?';
+    img.src = src + sep + '_cors=' + Date.now();
   });
 }
 
@@ -1732,18 +1796,22 @@ function _dataUrlToBlob(dataUrl) {
 }
 
 function downloadExport() {
-  // toDataURL()은 동기 실행 → 유저 제스처 컨텍스트 유지 → iOS navigator.share() 정상 동작
-  const canvas = document.getElementById('export-canvas');
-  let dataUrl, blob, file;
-  try {
-    dataUrl = canvas.toDataURL('image/png');
-    blob = _dataUrlToBlob(dataUrl);
-    file = new File([blob], '내부스꾸미기.png', {type: 'image/png'});
-  } catch(err) {
-    // SecurityError: 크로스오리진 이미지로 캔버스가 오염된 경우 — CORS 재시도로 재export
-    alert('이미지 저장 준비 중 오류가 발생했어요. 다시 시도해 주세요.');
-    return;
+  // _exportSafeDataUrl: openExport()에서 미리 CORS-clean 캔버스로 렌더링한 버전 (우선 사용)
+  // tainted canvas에서 직접 toDataURL() 하면 SecurityError → Firebase Storage CORS 미설정 시 발생
+  let dataUrl = _exportSafeDataUrl;
+  if (!dataUrl) {
+    // CORS 렌더링이 아직 완료 안 됐거나 실패한 경우 → display canvas에서 시도 (로컬 이미지만 있으면 성공)
+    const canvas = document.getElementById('export-canvas');
+    try {
+      dataUrl = canvas.toDataURL('image/png');
+    } catch(err) {
+      alert('저장 준비 중이에요. 잠시 후 다시 눌러주세요.');
+      return;
+    }
   }
+
+  const blob = _dataUrlToBlob(dataUrl);
+  const file = new File([blob], '내부스꾸미기.png', {type: 'image/png'});
 
   // Web Share API (iOS/Android 네이티브 공유 시트) — 동기 컨텍스트에서 호출하므로 iOS에서도 정상
   if (navigator.share && navigator.canShare && navigator.canShare({files: [file]})) {

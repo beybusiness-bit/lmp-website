@@ -3146,7 +3146,11 @@ function _btnFlash(btn, label='저장됨 ✓', ms=1500) {
 function epd(e) {
   // pointerdown 시점(click보다 먼저)에 selection을 캡처 — 이후 팝업 열려도 복원 가능
   if (!_fmtPopType) {
-    const active = document.activeElement;
+    let active = document.activeElement;
+    // 일부 모바일에서 pointerdown 시점에 이미 focus가 editor에서 벗어난 경우 → savedRange.el로 fallback
+    if ((!active || !active.isContentEditable) && savedRange && savedRange.el && savedRange.el.isContentEditable) {
+      active = savedRange.el;
+    }
     if (active && active.isContentEditable) {
       const s = window.getSelection();
       if (s && s.rangeCount) {
@@ -3155,10 +3159,12 @@ function epd(e) {
           savedRange = {el: active, range: r};
           _fmtCtxRange = {el: active, range: r.cloneRange()};
         } catch(_) {}
+      } else if (savedRange && savedRange.el === active) {
+        // 선택이 사라졌지만 직전 저장값이 같은 editor면 그대로 사용
+        _fmtCtxRange = savedRange;
       }
     }
     // e.preventDefault() 제거 — 포커스 유지는 각 버튼의 onmousedown="event.preventDefault()"로 처리
-    // (pointerdown.preventDefault()는 Safari에서 click 이벤트를 차단하는 부작용 있음)
   }
 }
 function closeModal(id) { document.getElementById(id).classList.remove('on'); }
@@ -7191,7 +7197,12 @@ function openFmtDd(btn,type,ctx){
   const _ed=getEd(ctx);
   if(_ed){
     const _s=window.getSelection();
-    if(_s&&_s.rangeCount){try{_fmtCtxRange={el:_ed,range:_s.getRangeAt(0).cloneRange()};}catch(_){}}
+    if(_s&&_s.rangeCount){
+      try{_fmtCtxRange={el:_ed,range:_s.getRangeAt(0).cloneRange()};}catch(_){}
+    } else if(savedRange&&savedRange.el===_ed){
+      // 선택이 이미 사라진 경우 → onmouseup/onkeyup에서 미리 저장된 savedRange로 복구
+      _fmtCtxRange=savedRange;
+    }
     saveRange(_ed);
   }
   _fmtPopType=type;_fmtPopCtx=ctx;_fmtPopBtn=btn;
@@ -7323,6 +7334,8 @@ function openFmtDd(btn,type,ctx){
   pop.style.left=r.left+'px';pop.style.top=(r.bottom+3)+'px';
   const pr=pop.getBoundingClientRect();
   if(pr.right>window.innerWidth-6) pop.style.left=(window.innerWidth-pr.width-6)+'px';
+  if(pr.bottom>window.innerHeight-6) pop.style.top=Math.max(6,r.top-pr.height-3)+'px'; // 아래 화면 밖이면 위로 뒤집기
+  if(parseInt(pop.style.left)<6) pop.style.left='6px';
 }
 function closeFmtPopup(){
   document.getElementById('fmt-popup').style.display='none';
