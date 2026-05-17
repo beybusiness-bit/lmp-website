@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 기존 gmbf 플리마켓 규칙 (유지)
+    match /{document=**} {
+      allow read, write: if request.auth != null
+        && request.auth.token.email == 'baekeun0@gmail.com';
+    }
+    match /gmbf_sellers/{doc} {
+      allow read: if true;
+    }
+    match /gmbf_settings/{doc} {
+      allow read: if true;
+    }
+    match /gmbf_event_log/{doc} {
+      allow write: if true;
+    }
+
+    // CMS 프로젝트
+    match /cms_projects/{document=**} {
+      allow read, write: if true;
+    }
+    match /cms_guides/{doc} {
+      allow read, write: if true;
+    }
+
+    // admin 전역 설정
+    match /cms_admin_settings/{document=**} {
+      allow read, write: if true;
+    }
+
+    // 폼
+    match /cms_form_configs/{document=**} {
+      allow read, write: if true;
+    }
+    match /cms_form_responses/{document=**} {
+      allow read, write: if true;
+    }
+
+    // 결제
+    match /cms_payment_configs/{document=**} {
+      allow read, write: if true;
+    }
+    match /cms_payment_records/{document=**} {
+      allow read, write: if true;
+    }
+
+    // 일정 잡기
+    match /cms_schedule_configs/{document=**} {
+      allow read, write: if true;
+    }
+    match /cms_schedule_bookings/{document=**} {
+      allow read, write: if true;
+    }
+
+    // 문구 생성기
+    match /cms_copy_gen_configs/{document=**} {
+      allow read, write: if true;
+    }
+    match /cms_copy_gen_usages/{document=**} {
+      allow read, write: if true;
+    }
+    match /cms_copy_gen_results/{document=**} {
+      allow read, write: if true;
+    }
+
+    // 유튜브 재생목록
+    match /cms_youtube_submissions/{document=**} {
+      allow read, write: if true;
+    }
+    match /cms_youtube_playlists/{document=**} {
+      allow read, write: if true;
+    }
+    match /cms_youtube_search_cache/{document=**} {
+      allow read, write: if true;
+    }
+
+    // 꾸미기(부스) 도구
+    match /cms_booth_gallery/{document=**} {
+      allow read, write: if true;
+    }
+
+    // 방명록
+    match /cms_guestbook_configs/{document=**} {
+      allow read, write: if true;
+    }
+    match /cms_guestbook_entries/{document=**} {
+      allow read, write: if true;
+    }
+
+    // 게임/도구 설정
+    match /game_configs/{document=**} {
+      allow read, write: if true;
+    }
+
+    // 프로젝트별 사용자 컬렉션 (동적 이름: cms_users_{projectId})
+    match /{col}/{doc} {
+      allow read, write: if col.matches('cms_users_.*');
+    }
+  }
+}

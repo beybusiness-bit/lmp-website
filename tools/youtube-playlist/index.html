@@ -219,8 +219,16 @@ let ctxReceived = false;
 let resolveCtx;
 const ctxPromise = new Promise(res => { resolveCtx = res; });
 
+function _lmpOriginOk(o) {
+  if (!o) return true;
+  if (o === 'https://lazymaxpotential.kr' || o === 'https://www.lazymaxpotential.kr') return true;
+  if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(o)) return true;
+  if (/^http:\/\/localhost(:\d+)?$/.test(o)) return true;
+  return false;
+}
 window.addEventListener('message', e => {
   if (e.data?.type !== 'lmp-context') return;
+  if (!_lmpOriginOk(e.origin)) return;
   ctxProjectId = e.data.projectId || '';
   ctxUserId = e.data.userId || e.data.userFields?._id || '';
   ctxUserFields = e.data.userFields || {};
@@ -239,6 +247,30 @@ let lastQuery = '';
 let curPreviewId = '';
 let seenResultIds = new Set();  // pagination 중복 방지
 let _searchEpoch = 0;           // race condition 방지: 오래된 응답 무시
+
+// ── 검색 결과 캐싱 (API 할당량 절약) ─────────────────────────
+const _CACHE_TTL = 24 * 60 * 60 * 1000; // 24시간
+
+function _cacheKey(q) {
+  return q.toLowerCase().trim().slice(0, 100).replace(/\//g, '_');
+}
+async function _getCachedSearch(q) {
+  try {
+    const doc = await db.collection('cms_youtube_search_cache').doc(_cacheKey(q)).get();
+    if (!doc.exists) return null;
+    const d = doc.data();
+    if (Date.now() - (d.cachedAt?.toMillis?.() || 0) > _CACHE_TTL) return null;
+    return d;
+  } catch(e) { return null; }
+}
+async function _setCachedSearch(q, items, npt) {
+  try {
+    await db.collection('cms_youtube_search_cache').doc(_cacheKey(q)).set({
+      query: q, items, nextPageToken: npt || '',
+      cachedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch(e) { /* 캐시 저장 실패는 무시 */ }
+}
 
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -290,18 +322,36 @@ async function doSearch(pageToken) {
     myEpoch = _searchEpoch;
   }
   try {
-    const params = new URLSearchParams({
-      part: 'snippet', q, type: 'video', videoCategoryId: '10',
-      maxResults: '10', key: YT_API_KEY,
-      ...(pageToken ? { pageToken } : {})
-    });
-    const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
-    const data = await res.json();
-    if (_searchEpoch !== myEpoch) return; // 새 검색이 시작됐으면 이 응답 무시
-    if (data.error) {
-      document.getElementById('result-list').innerHTML = `<div class="empty-msg">검색 오류: ${esc(data.error.message)}</div>`;
-      return;
+    let apiData;
+
+    // 첫 페이지 검색만 캐시 사용 (다음 페이지는 캐시 불필요)
+    if (!pageToken) {
+      const cached = await _getCachedSearch(q);
+      if (cached && _searchEpoch === myEpoch) {
+        apiData = { items: cached.items || [], nextPageToken: cached.nextPageToken || '' };
+      }
     }
+
+    if (!apiData) {
+      const params = new URLSearchParams({
+        part: 'snippet', q, type: 'video', videoCategoryId: '10',
+        maxResults: '10', key: YT_API_KEY,
+        ...(pageToken ? { pageToken } : {})
+      });
+      const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
+      apiData = await res.json();
+      if (_searchEpoch !== myEpoch) return; // 새 검색이 시작됐으면 이 응답 무시
+      if (apiData.error) {
+        document.getElementById('result-list').innerHTML = `<div class="empty-msg">검색 오류: ${esc(apiData.error.message)}</div>`;
+        return;
+      }
+      // 첫 페이지 결과를 캐시에 저장 (다음 사람이 같은 검색어 입력 시 API 호출 생략)
+      if (!pageToken && (apiData.items || []).length) {
+        _setCachedSearch(q, apiData.items, apiData.nextPageToken || '');
+      }
+    }
+
+    const data = apiData;
     // videoId 있는 것만, 그리고 이미 본 ID는 제외 (페이지네이션 중복 방지)
     const rawItems = (data.items || []).filter(it => it.id?.videoId);
     const items = rawItems.filter(it => !seenResultIds.has(it.id.videoId));

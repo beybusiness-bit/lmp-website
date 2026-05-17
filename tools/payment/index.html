@@ -245,8 +245,16 @@ let selectedQty = 1;
 let qtyMaxAllowed = null;   // per-user remaining (null = unlimited)
 let _waitingForLogin = false;
 
+function _lmpOriginOk(o) {
+  if (!o) return true; // same-origin (no origin header)
+  if (o === 'https://lazymaxpotential.kr' || o === 'https://www.lazymaxpotential.kr') return true;
+  if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(o)) return true;
+  if (/^http:\/\/localhost(:\d+)?$/.test(o)) return true;
+  return false;
+}
 window.addEventListener('message', e => {
   if (e.data?.type !== 'lmp-context') return;
+  if (!_lmpOriginOk(e.origin)) return;
   ctxProjectId  = e.data.projectId  || ctxProjectId;
   ctxUserId     = e.data.userId     || ctxUserId;
   ctxUserFields = e.data.userFields || {};
@@ -329,6 +337,7 @@ async function init() {
     }
     window.addEventListener('message', async function onPopupInit(e) {
       if (e.data?.type !== 'payup-popup-init') return;
+      if (!_lmpOriginOk(e.origin)) return;
       window.removeEventListener('message', onPopupInit);
       const pd = e.data;
       ctxProjectId    = pd.projectId || '';
@@ -775,6 +784,8 @@ async function onPayClick() {
   confirmBase.searchParams.set('orderNumber', orderNumber);
   if (ctxProjectId) confirmBase.searchParams.set('projectId', ctxProjectId);
   if (ctxUserId)    confirmBase.searchParams.set('userId',    ctxUserId);
+  confirmBase.searchParams.set('qty', String(selectedQty));
+  if (selectedOption?.label) confirmBase.searchParams.set('optionLabel', selectedOption.label);
 
   const data = {
     merchantId:  MERCHANT_ID,
