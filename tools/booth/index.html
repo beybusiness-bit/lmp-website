@@ -483,7 +483,7 @@ const cursorCtx = cursorCanvas.getContext('2d');
 const itemsLayer = document.getElementById('items-layer');
 const canvasWrap = document.getElementById('canvas-wrap');
 const canvasArea = document.getElementById('canvas-area');
-let currentAspectRatio = 1;
+let currentAspectRatio = 1080/1350; // 항상 4:5 고정 — 배경 이미지 업로드해도 변경 안 함
 
 // ── 초기화 ──
 async function init() {
@@ -667,7 +667,7 @@ function onBgUpload(e) {
       bgImage = img; bgImage._src = ev.target.result;
       currentBgLabel = '내가 업로드한 배경';
       document.getElementById('no-bg-msg').style.display = 'none';
-      currentAspectRatio = img.naturalWidth / img.naturalHeight;
+      // currentAspectRatio는 변경하지 않음 — 캔버스는 항상 4:5 고정, 이미지를 크롭해서 채움
       requestAnimationFrame(() => {
         resizeCanvases();
         drawBg();
@@ -817,7 +817,7 @@ function selectBgByUrl(url, label='', silent=false, refPx=0) {
   function applyBgImage(img) {
     bgImage = img; bgImage._src = url;
     document.getElementById('no-bg-msg').style.display = 'none';
-    currentAspectRatio = img.naturalWidth / img.naturalHeight;
+    // currentAspectRatio는 변경하지 않음 — 캔버스는 항상 4:5 고정, 이미지를 크롭해서 채움
     requestAnimationFrame(() => { resizeCanvases(); drawBg(); updateMetaBar(); });
     if(!silent) closeBgModal();
   }
@@ -1721,33 +1721,39 @@ function loadImageCORS(src) {
   });
 }
 
-async function downloadExport() {
+function _dataUrlToBlob(dataUrl) {
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8 = new Uint8Array(n);
+  while (n--) u8[n] = bstr.charCodeAt(n);
+  return new Blob([u8], {type: mime});
+}
+
+function downloadExport() {
+  // toDataURL()은 동기 실행 → 유저 제스처 컨텍스트 유지 → iOS navigator.share() 정상 동작
   const canvas = document.getElementById('export-canvas');
-  const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
-  const file = new File([blob], '내부스꾸미기.png', { type: 'image/png' });
-  const objUrl = URL.createObjectURL(blob);
+  const dataUrl = canvas.toDataURL('image/png');
+  const blob = _dataUrlToBlob(dataUrl);
+  const file = new File([blob], '내부스꾸미기.png', {type: 'image/png'});
 
-  // Web Share API (Android 등 — iOS는 async await 후엔 gesture 끊겨 NotAllowedError)
-  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file], title: toolTitle || '내 부스 꾸미기' });
-      URL.revokeObjectURL(objUrl);
-      return;
-    } catch(e) {
-      if (e.name === 'AbortError') { URL.revokeObjectURL(objUrl); return; }
-      // NotAllowedError 등 → fall through
-    }
-  }
-
-  // iOS Safari: <a download> 미동작, 이미지 모달로 꾹눌러 저장 안내
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  if (isIOS) {
-    showIOSSaveModal(objUrl);
+  // Web Share API (iOS/Android 네이티브 공유 시트) — 동기 컨텍스트에서 호출하므로 iOS에서도 정상
+  if (navigator.share && navigator.canShare && navigator.canShare({files: [file]})) {
+    navigator.share({files: [file], title: toolTitle || '내 부스 꾸미기'}).catch(e => {
+      if (e.name === 'AbortError') return; // 사용자가 공유 취소
+      // 공유 실패 시 다운로드 폴백
+      _triggerDownload(blob);
+    });
     return;
   }
 
-  // 데스크탑 / Android
+  // 데스크탑 / Android fallback
+  _triggerDownload(blob);
+}
+
+function _triggerDownload(blob) {
+  const objUrl = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = objUrl;
   a.download = '내부스꾸미기.png';
@@ -1757,23 +1763,8 @@ async function downloadExport() {
   setTimeout(() => URL.revokeObjectURL(objUrl), 5000);
 }
 
-function showIOSSaveModal(blobUrl) {
-  const existing = document.getElementById('ios-save-modal');
-  if (existing) existing.remove();
-  const modal = document.createElement('div');
-  modal.id = 'ios-save-modal';
-  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;';
-  modal.innerHTML = `
-    <div style="color:#fff;font-size:15px;font-weight:800;text-align:center;">이미지를 꾹 눌러서 저장하세요</div>
-    <div style="color:rgba(255,255,255,.6);font-size:12px;text-align:center;">사진 앱에 저장하려면 이미지를 길게 누르세요</div>
-    <img src="${blobUrl}" style="max-width:85vw;max-height:60vh;object-fit:contain;border:2px solid rgba(255,255,255,.25);border-radius:4px;display:block;">
-    <button onclick="document.getElementById('ios-save-modal').remove();URL.revokeObjectURL('${blobUrl}')" style="background:#fff;color:#000;border:none;padding:11px 28px;font-size:14px;font-weight:800;cursor:pointer;border-radius:4px;margin-top:4px;">닫기</button>
-  `;
-  document.body.appendChild(modal);
-}
-
 async function saveAndDownload() {
-  await downloadExport();
+  downloadExport(); // 동기 함수 — await 불필요
   await saveToGallery();
 }
 
