@@ -3115,7 +3115,23 @@ function _btnFlash(btn, label='저장됨 ✓', ms=1500) {
   btn.style.background = '#1a7a4a'; btn.style.borderColor = '#1a7a4a';
   setTimeout(() => { btn.disabled = false; btn.textContent = orig; btn.style.background = ''; btn.style.borderColor = ''; }, ms);
 }
-function epd(e) { e.preventDefault(); }
+function epd(e) {
+  // pointerdown 시점(click보다 먼저)에 selection을 캡처 — 이후 팝업 열려도 복원 가능
+  if (!_fmtPopType) {
+    const active = document.activeElement;
+    if (active && active.isContentEditable) {
+      const s = window.getSelection();
+      if (s && s.rangeCount) {
+        try {
+          const r = s.getRangeAt(0).cloneRange();
+          savedRange = {el: active, range: r};
+          _fmtCtxRange = {el: active, range: r.cloneRange()};
+        } catch(_) {}
+      }
+    }
+  }
+  e.preventDefault();
+}
 function closeModal(id) { document.getElementById(id).classList.remove('on'); }
 
 /* ── PAT ── */
@@ -7052,7 +7068,7 @@ function getEd(ctx){
   // 도구 설명 필드: ed-{ctx} 우선, rte-{ctx} 폴백
   return document.getElementById('ed-'+ctx)||document.getElementById('rte-'+ctx)||null;
 }
-function focusEd(ctx){const ed=getEd(ctx);ed.focus();restoreRange(ed);}
+function focusEd(ctx){const ed=getEd(ctx);ed.focus({preventScroll:true});restoreRange(ed);}
 /* 커서 위치(선택 없음)에 포맷을 쌓아두는 pending span 반환 또는 생성 */
 function _getPendingSpan(ctx){
   const sel=window.getSelection();
@@ -7667,9 +7683,7 @@ function insertHr(ctx){
   const thickness=_hrThickness||parseInt(document.getElementById('hr-thickness')?.value)||1;
   const color=_hrColor||'#000000';
   const style=_hrStyle||'solid';
-  const ed=getEd(ctx);
-  ed.focus();
-  if(savedRange&&savedRange.el===ed){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}
+  focusEd(ctx);
   const html=`<hr style="border:none;border-top:${thickness}px ${style} ${color};margin:8px 0;" contenteditable="false">`;
   document.execCommand('insertHTML',false,html);
   closeFmtPopup();
@@ -7713,9 +7727,7 @@ function applyFmtBg(ctx,clr){
 function applyFmtLink(ctx,url,newText){
   if(!url||!url.trim())return;
   const ed=getEd(ctx);
-  ed.focus();
-  // 선택 범위를 강제 복원 (URL 입력란 클릭 시 선택이 날아가는 버그 방지)
-  if(savedRange&&savedRange.el===ed){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}
+  focusEd(ctx); // focus + 저장된 selection 복원 (_fmtCtxRange → savedRange 순으로)
   const sel2=window.getSelection();
   if(sel2.rangeCount){
     const range=sel2.getRangeAt(0);
@@ -7736,8 +7748,7 @@ function applyFmtLink(ctx,url,newText){
   closeFmtPopup();scheduleBmPreview();
 }
 function removeFmtLink(ctx){
-  const ed=getEd(ctx);ed.focus();
-  if(savedRange&&savedRange.el===ed){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}
+  const ed=getEd(ctx);focusEd(ctx);
   document.execCommand('unlink',false,null);
   closeFmtPopup();scheduleBmPreview();
 }
