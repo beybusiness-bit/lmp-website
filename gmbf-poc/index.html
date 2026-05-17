@@ -1207,7 +1207,7 @@ function renderSeparateStages(){
       } else {
         const hb=hbMap[item.id];
         if(!hb) return '';
-        return `<div class="home-blk-wrap">${blockHtml(hb)}</div>`;
+        return `<div class="home-blk-wrap" ${_hbWrapStyle(hb)}>${blockHtml(hb)}</div>`;
       }
     }).join('');
   } else {
@@ -1263,7 +1263,7 @@ function renderMergedStages(){
       } else {
         const hb=hbMap[item.id];
         if(!hb) return '';
-        return `<div class="home-blk-wrap">${blockHtml(hb)}</div>`;
+        return `<div class="home-blk-wrap" ${_hbWrapStyle(hb)}>${blockHtml(hb)}</div>`;
       }
     }).join('');
   } else {
@@ -2254,13 +2254,16 @@ function renderGuideSlide(blocks){
   sb.onmouseleave=()=>{ mDragging=false; };
 }
 function updateDots(){
+  const dotsEl=document.getElementById('guide-dots');
+  if(gSlideTotal<=1){dotsEl.style.display='none';return;}
+  dotsEl.style.display='';
   const prev=gSlideIdx>0, next=gSlideIdx<gSlideTotal-1;
   const aS='font-size:20px;font-weight:900;cursor:pointer;padding:0 10px;user-select:none;-webkit-tap-highlight-color:transparent;';
   const dots=Array.from({length:gSlideTotal},(_,i)=>`<div class="guide-dot${i===gSlideIdx?' on':''}" onclick="goSlide(${i})"></div>`).join('');
-  document.getElementById('guide-dots').innerHTML=
-    `<span onclick="goSlide(${gSlideIdx-1})" style="${aS}opacity:${prev?1:.2};">‹</span>${dots}<span onclick="goSlide(${gSlideIdx+1})" style="${aS}opacity:${next?1:.2};">›</span>`;
+  dotsEl.innerHTML=`<span onclick="goSlide(${gSlideIdx-1})" style="${aS}opacity:${prev?1:.2};">‹</span>${dots}<span onclick="goSlide(${gSlideIdx+1})" style="${aS}opacity:${next?1:.2};">›</span>`;
 }
 function goSlide(i){ gSlideIdx=Math.max(0,Math.min(i,gSlideTotal-1)); document.getElementById('guide-slide-track').style.transform='translateX('+(-gSlideIdx*(100/gSlideTotal))+'%)'; updateDots(); }
+function _hbWrapStyle(hb){const bw=hb.cardBorderWidth&&hb.cardBorderWidth>0;const br=hb.cardBorderRadius&&hb.cardBorderRadius>0;if(!bw&&!br)return '';const s=(bw?`border:${hb.cardBorderWidth}px solid ${hb.cardBorderColor||'#000'};`:'')+(br?`border-radius:${hb.cardBorderRadius}px;overflow:hidden;`:'');return `style="${s}"`;}
 
 /* ── Checkable block render helper ── */
 function renderCheckEl(b,checked,pos){
