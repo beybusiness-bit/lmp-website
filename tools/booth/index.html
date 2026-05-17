@@ -52,10 +52,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .handle.tr{top:0;right:0;transform:translate(50%,-50%);}
 .handle.bl{bottom:0;left:0;transform:translate(-50%,50%);}
 .handle.br{bottom:0;right:0;transform:translate(50%,50%);cursor:se-resize;}
-.handle.rot{top:-28px;left:50%;transform:translateX(-50%);cursor:grab;background:#fff;border:2px solid #000;}
+.handle.rot{top:-28px;left:50%;transform:translateX(-50%);cursor:grab;background:#fff;border:2px solid #000;display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;user-select:none;}
 .item-del{position:absolute;top:-10px;right:-10px;width:22px;height:22px;background:#000;border:2px solid #fff;border-radius:50%;color:#fff;font-size:13px;cursor:pointer;display:none;align-items:center;justify-content:center;line-height:1;z-index:10;}
 .deco-item.selected .item-del{display:flex;}
 .deco-item canvas,.deco-item img{display:block;width:100%;height:100%;}
+/* 자르기 핸들 */
+.crop-handle{position:absolute;background:#fff;border:2px solid #000;z-index:20;touch-action:none;user-select:none;}
+.ch-t,.ch-b{width:36px;height:12px;left:50%;transform:translateX(-50%);cursor:ns-resize;}
+.ch-l,.ch-r{width:12px;height:36px;top:50%;transform:translateY(-50%);cursor:ew-resize;}
+.ch-t{top:0;transform:translate(-50%,-50%);}
+.ch-b{bottom:0;transform:translate(-50%,50%);}
+.ch-l{left:0;transform:translate(-50%,-50%);}
+.ch-r{right:0;transform:translate(50%,-50%);}
+.deco-item.crop-mode{outline:2px solid #000!important;cursor:default;}
+.deco-item.crop-mode .item-handles,.deco-item.crop-mode .item-del{display:none!important;}
 
 /* 프레임 클립 */
 .frame-circle{border-radius:50%;overflow:hidden;}
@@ -295,8 +305,17 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
       <button class="frame-btn" data-frame="frame-squirt" onclick="setFrame(this,'frame-squirt')">⬡</button>
     </div>
     <div class="panel-row" style="justify-content:flex-end;">
+      <button class="lmp-btn" onclick="startCropMode()">✂ 자르기</button>
       <button class="lmp-btn" onclick="deleteSelectedItem()">삭제</button>
       <button class="lmp-btn" onclick="deselectAll()" style="background:#000;color:var(--lmp-block-bg);">완료</button>
+    </div>
+  </div>
+  <!-- 자르기 모드 -->
+  <div id="panel-crop" style="display:none;flex-direction:column;gap:8px;">
+    <div style="text-align:center;font-size:11px;color:rgba(0,0,0,.5);font-weight:700;">가장자리 핸들을 드래그해서 잘라내세요</div>
+    <div class="panel-row" style="justify-content:center;gap:8px;">
+      <button class="lmp-btn" onclick="endCropMode(false)">취소</button>
+      <button class="lmp-btn" style="background:#000;color:var(--lmp-block-bg);" onclick="endCropMode(true)">완료</button>
     </div>
   </div>
   <!-- 도형 선택 상태 -->
@@ -349,21 +368,21 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
       <button onclick="closeBgModal()">✕</button>
     </div>
     <div class="bg-tabs">
-      <button class="bg-tab active" onclick="switchBgTab('free',this)">무료 이미지</button>
-      <button class="bg-tab" onclick="switchBgTab('upload',this)">직접 업로드</button>
+      <button class="bg-tab active" onclick="switchBgTab('upload',this)">직접 업로드</button>
+      <button class="bg-tab" onclick="switchBgTab('free',this)">무료 이미지</button>
     </div>
     <div class="bg-tab-content">
-      <!-- 무료 이미지 탭 -->
-      <div id="bg-tab-free" class="bg-tab-panel active">
-        <div id="bg-grid"></div>
-      </div>
       <!-- 직접 업로드 탭 -->
-      <div id="bg-tab-upload" class="bg-tab-panel">
+      <div id="bg-tab-upload" class="bg-tab-panel active">
         <div id="bg-upload-zone" onclick="document.getElementById('bg-upload-input').click()">
           탭하여 이미지 선택
           <div style="margin-top:8px;font-size:11px;font-weight:400;color:rgba(0,0,0,.4);">권장 최소 크기: 1080×1350px</div>
         </div>
         <input type="file" id="bg-upload-input" accept="image/*" onchange="onBgUpload(event)">
+      </div>
+      <!-- 무료 이미지 탭 -->
+      <div id="bg-tab-free" class="bg-tab-panel">
+        <div id="bg-grid"></div>
       </div>
     </div>
   </div>
@@ -440,6 +459,8 @@ let commonPresetImages = []; // 필드값 무관 공통 꾸미기 소스
 let lastContextData = null; // lmp-context 원본 저장 (loadBackgrounds 이후 재처리용)
 let items = [];       // 데코 아이템 목록
 let selectedItem = null;
+let cropModeItem = null;  // 자르기 모드 중인 아이템
+let _cropModeBefore = null;
 let drawMode = false;
 let drawColor = '#000000';
 let drawSize = 8;
@@ -511,6 +532,12 @@ function resizeCanvases() {
     items.forEach(item => {
       item.x = item.x * scaleX;
       item.y = item.y * scaleY;
+      if(item.crop) {
+        item.crop.l = (item.crop.l||0) * scaleX;
+        item.crop.r = (item.crop.r||0) * scaleX;
+        item.crop.t = (item.crop.t||0) * scaleY;
+        item.crop.b = (item.crop.b||0) * scaleY;
+      }
       if(item._sizeFixed && item._exportFixedW) {
         const ratio = item.h / item.w;
         item.w = item._exportFixedW * w / EXPORT_W;
@@ -529,8 +556,9 @@ function resizeCanvases() {
   if(bgImage) drawBg();
 }
 
-// ── 설정 ID (URL 파라미터 ?config=xxx, 기본값 'booth') ──
-const CONFIG_ID = new URLSearchParams(location.search).get('config') || 'booth';
+// ── 설정 ID (URL 파라미터 ?config=xxx 또는 ?id=xxx, 기본값 'booth') ──
+const _bParams = new URLSearchParams(location.search);
+const CONFIG_ID = _bParams.get('config') || _bParams.get('id') || 'booth';
 
 // ── 배경 로드 (Firestore) ──
 async function loadBackgrounds() {
@@ -548,6 +576,16 @@ async function loadBackgrounds() {
       if(data.saveLabel) {
         const btn = document.getElementById('btn-save-gallery');
         if(btn) btn.textContent = data.saveLabel;
+      }
+      // allowedTools: 허용된 도구 버튼만 표시
+      const at = data.allowedTools;
+      if(at) {
+        const imgBtn = document.getElementById('btn-img');
+        const shpBtn = document.getElementById('btn-shape');
+        const drwBtn = document.getElementById('btn-draw');
+        if(imgBtn) imgBtn.style.display = at.image===false ? 'none' : '';
+        if(shpBtn) shpBtn.style.display = at.shape===false ? 'none' : '';
+        if(drwBtn) drwBtn.style.display = at.draw===false ? 'none' : '';
       }
       // lmp-context가 먼저 도착한 경우: fieldKey가 확정된 지금 다시 값 추출
       if(lastContextData) {
@@ -1050,26 +1088,53 @@ function renderItems() {
     if(item.type === 'shape') {
       el.innerHTML = shapeSvgEl(item.shape, item.fillColor, item.strokeColor, item.strokeWidth);
     } else {
-    // 프레임 설정
-    const frameClass = item.frame || '';
-    const needsInner = ['frame-triangle','frame-heart','frame-star','frame-squirt'].includes(frameClass);
-    const objFit = frameClass ? 'cover' : 'fill';
-    if(needsInner) {
-      el.innerHTML = `<div class="frame-inner" style="width:100%;height:100%;"><img src="${item.src}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>`;
-      el.classList.add(frameClass);
-    } else {
-      el.innerHTML = `<img src="${item.src}" style="width:100%;height:100%;object-fit:${objFit};display:block;">`;
-      if(frameClass) el.classList.add(frameClass);
-    }
+      const cropL = item.crop?.l || 0, cropR = item.crop?.r || 0;
+      const cropT = item.crop?.t || 0, cropB = item.crop?.b || 0;
+      const hasCrop = cropL || cropR || cropT || cropB;
+      const frameClass = item.frame || '';
+
+      if(hasCrop) {
+        // 자르기 적용: clip-wrap 내에서 이미지 오프셋
+        const origW = item.w + cropL + cropR;
+        const origH = item.h + cropT + cropB;
+        let wrapStyle = 'position:absolute;inset:0;overflow:hidden;';
+        if(frameClass==='frame-circle') wrapStyle+='border-radius:50%;';
+        else if(frameClass==='frame-round') wrapStyle+='border-radius:16px;';
+        else if(frameClass==='frame-triangle') wrapStyle+='clip-path:polygon(50% 0%,100% 100%,0% 100%);';
+        else if(frameClass==='frame-heart') wrapStyle+='clip-path:url(#clip-heart);';
+        else if(frameClass==='frame-star') wrapStyle+='clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);';
+        else if(frameClass==='frame-squirt') wrapStyle+='clip-path:polygon(25% 0%,75% 0%,100% 25%,100% 75%,75% 100%,25% 100%,0% 75%,0% 25%);';
+        el.innerHTML = `<div style="${wrapStyle}"><img data-crop-img src="${item.src}" style="position:absolute;left:-${cropL}px;top:-${cropT}px;width:${origW}px;height:${origH}px;object-fit:fill;display:block;pointer-events:none;"></div>`;
+      } else {
+        const needsInner = ['frame-triangle','frame-heart','frame-star','frame-squirt'].includes(frameClass);
+        const objFit = frameClass ? 'cover' : 'fill';
+        if(needsInner) {
+          el.innerHTML = `<div class="frame-inner" style="width:100%;height:100%;"><img src="${item.src}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>`;
+          el.classList.add(frameClass);
+        } else {
+          el.innerHTML = `<img src="${item.src}" style="width:100%;height:100%;object-fit:${objFit};display:block;">`;
+          if(frameClass) el.classList.add(frameClass);
+        }
+      }
     }
 
     // 핸들 (크기 고정 아이템은 resize 핸들 숨김)
     el.innerHTML += `
       <div class="item-handles">
-        <div class="handle rot" data-action="rot"></div>
+        <div class="handle rot" data-action="rot">↻</div>
         ${item._sizeFixed ? '' : '<div class="handle br" data-action="resize"></div>'}
       </div>
       <button class="item-del" onclick="deleteItemById(${item.id})">✕</button>`;
+
+    // 자르기 모드 핸들
+    if(cropModeItem && cropModeItem.id === item.id) {
+      el.classList.add('crop-mode');
+      el.innerHTML += `
+        <div class="crop-handle ch-t" data-action="crop-t"></div>
+        <div class="crop-handle ch-r" data-action="crop-r"></div>
+        <div class="crop-handle ch-b" data-action="crop-b"></div>
+        <div class="crop-handle ch-l" data-action="crop-l"></div>`;
+    }
 
     setupItemEvents(el, item);
     itemsLayer.appendChild(el);
@@ -1091,6 +1156,11 @@ function setupItemEvents(el, item) {
   // 리사이즈 핸들
   const resHandle = el.querySelector('[data-action="resize"]');
   if(resHandle) resHandle.addEventListener('pointerdown', e => { e.stopPropagation(); startResizeItem(e, item); });
+  // 자르기 핸들
+  el.querySelectorAll('[data-action^="crop-"]').forEach(h => {
+    const side = h.dataset.action.replace('crop-', '');
+    h.addEventListener('pointerdown', e => { e.stopPropagation(); startCropHandle(e, item, side); });
+  });
 }
 
 // ── 드래그 이동 ──
@@ -1161,6 +1231,7 @@ function selectItemById(id) {
 }
 
 function deselectAll() {
+  if(cropModeItem) { endCropMode(true); return; }
   selectedItem = null;
   renderItems();
   updatePanelForSelection();
@@ -1187,9 +1258,13 @@ function updatePanelForSelection() {
   const pImage = document.getElementById('panel-image');
   const pShape = document.getElementById('panel-shape');
   const pDraw  = document.getElementById('panel-draw');
-  [pImage,pShape,pDraw].forEach(el => el.style.display='none');
+  const pCrop  = document.getElementById('panel-crop');
+  [pImage,pShape,pDraw,pCrop].forEach(el => { if(el) el.style.display='none'; });
   if(drawMode) {
     pDraw.style.display='flex';
+    panel.classList.add('open');
+  } else if(cropModeItem) {
+    if(pCrop) pCrop.style.display='flex';
     panel.classList.add('open');
   } else if(selectedItem?.type === 'shape') {
     pShape.style.display='flex';
@@ -1243,6 +1318,91 @@ function setFrame(btn, frame) {
   // 선택 유지
   const el = itemsLayer.querySelector(`[data-id="${selectedItem.id}"]`);
   if(el) el.classList.add('selected');
+}
+
+// ── 자르기 (Crop) ──
+function startCropMode() {
+  if(!selectedItem || selectedItem.type !== 'image') return;
+  cropModeItem = selectedItem;
+  if(!cropModeItem.crop) cropModeItem.crop = {l:0, r:0, t:0, b:0};
+  _cropModeBefore = {
+    x: cropModeItem.x, y: cropModeItem.y,
+    w: cropModeItem.w, h: cropModeItem.h,
+    crop: {...cropModeItem.crop},
+  };
+  renderItems();
+  updatePanelForSelection();
+}
+
+function endCropMode(confirm) {
+  if(!cropModeItem) return;
+  if(!confirm && _cropModeBefore) {
+    cropModeItem.x = _cropModeBefore.x; cropModeItem.y = _cropModeBefore.y;
+    cropModeItem.w = _cropModeBefore.w; cropModeItem.h = _cropModeBefore.h;
+    cropModeItem.crop = {..._cropModeBefore.crop};
+  }
+  const c = cropModeItem.crop;
+  if(c && !c.l && !c.r && !c.t && !c.b) delete cropModeItem.crop;
+  const done = cropModeItem;
+  cropModeItem = null; _cropModeBefore = null;
+  selectedItem = done;
+  renderItems();
+  updatePanelForSelection();
+}
+
+function startCropHandle(e, item, side) {
+  e.stopPropagation();
+  if(!item.crop) item.crop = {l:0, r:0, t:0, b:0};
+  const startCX = e.clientX, startCY = e.clientY;
+  const wrapRect = canvasWrap.getBoundingClientRect();
+  const scaleX = canvasW / wrapRect.width;
+  const scaleY = canvasH / wrapRect.height;
+  const origW = item.w + (item.crop.l||0) + (item.crop.r||0);
+  const origH = item.h + (item.crop.t||0) + (item.crop.b||0);
+  const startCL = item.crop.l||0, startCR = item.crop.r||0;
+  const startCT = item.crop.t||0, startCB = item.crop.b||0;
+  const startX = item.x, startY = item.y;
+  const MIN = 30;
+
+  function onMove(ev) {
+    const dx = (ev.clientX - startCX) * scaleX;
+    const dy = (ev.clientY - startCY) * scaleY;
+    if(side === 't') {
+      const nCT = Math.max(0, Math.min(origH - startCB - MIN, startCT + dy));
+      item.crop.t = nCT; item.y = startY + (nCT - startCT); item.h = origH - nCT - startCB;
+    } else if(side === 'b') {
+      const nCB = Math.max(0, Math.min(origH - startCT - MIN, startCB - dy));
+      item.crop.b = nCB; item.h = origH - startCT - nCB;
+    } else if(side === 'l') {
+      const nCL = Math.max(0, Math.min(origW - startCR - MIN, startCL + dx));
+      item.crop.l = nCL; item.x = startX + (nCL - startCL); item.w = origW - nCL - startCR;
+    } else if(side === 'r') {
+      const nCR = Math.max(0, Math.min(origW - startCL - MIN, startCR - dx));
+      item.crop.r = nCR; item.w = origW - startCL - nCR;
+    }
+    // DOM 즉시 업데이트
+    const el = itemsLayer.querySelector(`[data-id="${item.id}"]`);
+    if(el) {
+      el.style.left = item.x + 'px'; el.style.top = item.y + 'px';
+      el.style.width = item.w + 'px'; el.style.height = item.h + 'px';
+      const img = el.querySelector('[data-crop-img]');
+      if(img) {
+        const nOrigW = item.w + (item.crop.l||0) + (item.crop.r||0);
+        const nOrigH = item.h + (item.crop.t||0) + (item.crop.b||0);
+        img.style.left = -(item.crop.l||0) + 'px';
+        img.style.top  = -(item.crop.t||0) + 'px';
+        img.style.width = nOrigW + 'px';
+        img.style.height = nOrigH + 'px';
+      }
+    }
+  }
+  function onUp() {
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
+    renderItems();
+  }
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
 }
 
 // ── 드로잉 ──
@@ -1481,10 +1641,23 @@ async function drawItemOnCanvas(ctx, item, scale=1) {
   const img = await loadImageCORS(item.src);
   if(!img) { ctx.restore(); return; }
 
+  const cropL = (item.crop?.l||0) * scale;
+  const cropR = (item.crop?.r||0) * scale;
+  const cropT = (item.crop?.t||0) * scale;
+  const cropB = (item.crop?.b||0) * scale;
+  const iW = sw + cropL + cropR;
+  const iH = sh + cropT + cropB;
+
+  // 자르기 클립 (가시 영역만 렌더)
+  if(cropL || cropR || cropT || cropB) {
+    ctx.beginPath();
+    ctx.rect(-sw/2, -sh/2, sw, sh);
+    ctx.clip();
+  }
   // 프레임 클립
   applyFrameClip(ctx, item.frame, sw, sh);
 
-  ctx.drawImage(img, -sw/2, -sh/2, sw, sh);
+  ctx.drawImage(img, -sw/2 - cropL, -sh/2 - cropT, iW, iH);
   ctx.restore();
 }
 
@@ -1540,16 +1713,25 @@ function loadImageCORS(src) {
   });
 }
 
-function downloadExport() {
+async function downloadExport() {
   const canvas = document.getElementById('export-canvas');
+  const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+  const file = new File([blob], '내부스꾸미기.png', { type: 'image/png' });
+  // iOS Safari: Web Share API (파일 공유)
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: toolTitle || '내 부스 꾸미기' }); return; } catch(e) { if(e.name==='AbortError') return; }
+  }
+  // 데스크탑 / Android: 링크 다운로드
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = canvas.toDataURL('image/png');
+  a.href = url;
   a.download = '내부스꾸미기.png';
   a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
 async function saveAndDownload() {
-  downloadExport();
+  await downloadExport();
   await saveToGallery();
 }
 

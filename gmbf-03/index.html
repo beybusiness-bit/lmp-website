@@ -1961,6 +1961,34 @@ function _isTierLocked(b){
   const required=b.requiredTier.split(',').map(t=>t.trim()).filter(Boolean);
   return !required.some(r=>tiers.includes(r));
 }
+// 결제 완료 후 Firestore에서 최신 paidTiers 읽어 세션 갱신 → tier 잠금 블록 즉시 재렌더
+async function _syncPaidTiers(){
+  if(!USER_DOC_ID||!PROJECT_ID) return;
+  try{
+    const doc=await db.collection('cms_users_'+PROJECT_ID).doc(USER_DOC_ID).get();
+    if(!doc.exists) return;
+    const data=doc.data();
+    const newTiers=Array.isArray(data.paidTiers)?data.paidTiers:[];
+    const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+    const oldTiers=Array.isArray(saved.paidTiers)?saved.paidTiers:[];
+    const changed=newTiers.some(t=>!oldTiers.includes(t));
+    if(changed){
+      saved.paidTiers=newTiers;
+      sessionStorage.setItem('userSession',JSON.stringify(saved));
+      // 현재 스테이지 재렌더
+      const stage=STAGES[curStageIdx];
+      if(stage){
+        const blocks=_stageBlocksCache[stage.id];
+        if(blocks){
+          const scrollBody=document.getElementById('guide-scroll-body');
+          const slideBody=document.getElementById('guide-slide-body');
+          if(scrollBody&&scrollBody.style.display!=='none') renderGuideScroll(blocks);
+          else if(slideBody&&slideBody.style.display!=='none') renderGuideSlide(blocks);
+        }
+      }
+    }
+  }catch(_){}
+}
 function blockHtml(b){
   const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
   const bgImgS=_blkBgImgCss(b);
@@ -2075,7 +2103,7 @@ function blockHtml(b){
     const trigger=b.completeTrigger||'tool-signal';
     const onloadAttr=trigger==='open'?` onload="if(this.src&&this.src!=='about:blank')autoCheckBlock('${b.id}')"`:'';
     const wrapCls=isFull?'g-block-embed g-tool-full-wrap':'g-block-embed';
-    return `<div class="${wrapCls}" style="${mS}${bgS}${bgImgS}${pS}${wrapH}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}" data-block-bg="${b.bgColor||''}" data-block-bg-image="${b.bgImageUrl||''}" data-block-bg-fit="${b.bgImageFit||'cover'}" data-block-bg-pos="${b.bgImagePos||'center'}" data-complete-trigger="${trigger}"${onloadAttr}></iframe></div>`;
+    return `<div class="${wrapCls}" style="${mS}${bgS}${bgImgS}${pS}${wrapH}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}" data-tool-type="${b.toolType||''}" data-block-bg="${b.bgColor||''}" data-block-bg-image="${b.bgImageUrl||''}" data-block-bg-fit="${b.bgImageFit||'cover'}" data-block-bg-pos="${b.bgImagePos||'center'}" data-complete-trigger="${trigger}"${onloadAttr}></iframe></div>`;
   }
   if(b.type==='spacer'){
     const h=b.spacerHeight||40;
@@ -2168,8 +2196,12 @@ window.addEventListener('message',e=>{
   if(e.data?.type==='lmp-tool-complete'){
     document.querySelectorAll('iframe[data-tool-block]').forEach(f=>{
       try{
-        if(f.contentWindow===e.source&&f.getAttribute('data-complete-trigger')!=='manual')
-          autoCheckBlock(f.getAttribute('data-tool-block'));
+        if(f.contentWindow===e.source){
+          if(f.getAttribute('data-complete-trigger')!=='manual')
+            autoCheckBlock(f.getAttribute('data-tool-block'));
+          // 결제 완료 시 세션의 paidTiers 갱신 → tier 잠금 블록 즉시 해제
+          if(f.getAttribute('data-tool-type')==='payment') _syncPaidTiers();
+        }
       }catch(_){}
     });
     return;
