@@ -886,7 +886,14 @@ async function loadStats(){
     const parts = await Promise.all(STATS.map(async s => {
       const ct = s.countType || 'count';
       let count = 0;
-      if(ct === 'project-users-total'){
+      if(ct === 'page-views-total'){
+        const snap = await db.collection('cms_page_views').doc(PROJECT_ID).collection('views').get();
+        count = snap.size;
+      } else if(ct === 'page-views-today'){
+        const snap = await db.collection('cms_page_views').doc(PROJECT_ID).collection('views')
+          .where('viewedAt','>=',todayMidnight).get();
+        count = snap.size;
+      } else if(ct === 'project-users-total'){
         const snap = await db.collection('cms_users_'+PROJECT_ID).get();
         count = snap.size;
       } else if(ct === 'project-users-today'){
@@ -1868,7 +1875,7 @@ function goToStage(i){
 }
 
 /* ── Guide viewer ── */
-let gSlideIdx=0,gSlideTotal=0,gTouchX=0;
+let gSlideIdx=0,gSlideTotal=0,gTouchX=0,gTouchY=0;
 async function openStageContent(stage){
   document.getElementById('guide-title-bar').textContent=stage.title||'안내';
   document.getElementById('guide-scroll-body').style.display='none';
@@ -2287,8 +2294,8 @@ function renderGuideSlide(blocks){
   updateDots(); document.getElementById('guide-slide-body').style.display='flex';
   _sendContextToEmbeds();
   const sb=document.getElementById('guide-slide-body');
-  sb.ontouchstart=e=>{ gTouchX=e.touches[0].clientX; };
-  sb.ontouchend  =e=>{ const dx=e.changedTouches[0].clientX-gTouchX; if(Math.abs(dx)>40) goSlide(gSlideIdx+(dx<0?1:-1)); };
+  sb.ontouchstart=e=>{ gTouchX=e.touches[0].clientX; gTouchY=e.touches[0].clientY; };
+  sb.ontouchend  =e=>{ const dx=e.changedTouches[0].clientX-gTouchX; const dy=e.changedTouches[0].clientY-gTouchY; if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>50) goSlide(gSlideIdx+(dx<0?1:-1)); };
   let mStartX=0,mDragging=false;
   sb.onmousedown =e=>{ mDragging=true; mStartX=e.clientX; };
   sb.onmousemove =e=>{ if(mDragging) e.preventDefault(); };
@@ -2516,8 +2523,18 @@ async function submitForm(formId){
 }
 
 /* ── Init ── */
+function _recordPageView(){
+  if(!PROJECT_ID||IS_ADMIN_PREVIEW) return;
+  try {
+    db.collection('cms_page_views').doc(PROJECT_ID).collection('views').add({
+      viewedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e){}
+}
+
 async function init(){
   setCss('--c',nextColor());
+  _recordPageView();
   await loadProjectSettings();
   loadUserProgress();
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
