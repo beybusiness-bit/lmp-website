@@ -302,11 +302,10 @@ function loadSdk() {
 }
 
 async function init() {
-  // 결제 완료/실패 결과 화면은 lmp-context 필요 없으므로 최소 대기만
-  const ctxWait = (RESULT === 'success' || RESULT === 'fail')
-    ? 200
-    : 1500;
-  await Promise.race([ctxPromise, new Promise(r => setTimeout(r, ctxWait))]);
+  // 성공/실패 리다이렉트 경로: URL에 이미 projectId/userId 있으므로 lmp-context 대기 불필요
+  if (RESULT !== 'success' && RESULT !== 'fail') {
+    await Promise.race([ctxPromise, new Promise(r => setTimeout(r, 1500))]);
+  }
 
   const ok = await loadConfig();
   if (!ok) return;
@@ -318,30 +317,33 @@ async function init() {
 
   if (RESULT === 'success' && TRANSACTION_ID) {
     try {
-      selectedOption  = JSON.parse(sessionStorage.getItem('py_selectedOption') || 'null');
-      questionAnswers = JSON.parse(sessionStorage.getItem('py_questionAnswers') || '{}');
-      selectedQty     = parseInt(sessionStorage.getItem('py_selectedQty') || '1') || 1;
-      sessionStorage.removeItem('py_selectedOption');
-      sessionStorage.removeItem('py_questionAnswers');
-      sessionStorage.removeItem('py_selectedQty');
-    } catch(e) {}
+      try {
+        selectedOption  = JSON.parse(sessionStorage.getItem('py_selectedOption') || 'null');
+        questionAnswers = JSON.parse(sessionStorage.getItem('py_questionAnswers') || '{}');
+        selectedQty     = parseInt(sessionStorage.getItem('py_selectedQty') || '1') || 1;
+        sessionStorage.removeItem('py_selectedOption');
+        sessionStorage.removeItem('py_questionAnswers');
+        sessionStorage.removeItem('py_selectedQty');
+      } catch(e) {}
 
-    setStatus('결제 완료 처리 중…');
-    await recordPayment({
-      transactionId: TRANSACTION_ID,
-      amount:        AMOUNT_FROM_URL,
-      cardName:      CARD_NAME,
-      authDatetime:  AUTH_DATETIME,
-      authNumber:    AUTH_NUMBER,
-    });
-    fireSmsWebhook(AMOUNT_FROM_URL, CONFIG.productName || CONFIG.title || '', selectedQty);
-    window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
-    try { if (window.opener) window.opener.postMessage({ type: 'lmp-tool-complete' }, '*'); } catch(e) {}
-    showResult('success', '결제가 완료되었어요',
-      CONFIG.successMessage || '결제하신 권한이 부여되었어요.',
-      { amount: AMOUNT_FROM_URL, orderName: CONFIG.productName, method: CARD_NAME,
-        approvedAt: AUTH_DATETIME, selectedOption: selectedOption?.label || '' });
-    // 자동 이동 제거 — 사용자가 직접 버튼을 눌러야 이동
+      setStatus('결제 완료 처리 중…');
+      await recordPayment({
+        transactionId: TRANSACTION_ID,
+        amount:        AMOUNT_FROM_URL,
+        cardName:      CARD_NAME,
+        authDatetime:  AUTH_DATETIME,
+        authNumber:    AUTH_NUMBER,
+      });
+      fireSmsWebhook(AMOUNT_FROM_URL, CONFIG.productName || CONFIG.title || '', selectedQty);
+      window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+      try { if (window.opener) window.opener.postMessage({ type: 'lmp-tool-complete' }, '*'); } catch(e) {}
+      showResult('success', '결제가 완료되었어요',
+        CONFIG.successMessage || '결제하신 권한이 부여되었어요.',
+        { amount: AMOUNT_FROM_URL, orderName: CONFIG.productName, method: CARD_NAME,
+          approvedAt: AUTH_DATETIME, selectedOption: selectedOption?.label || '' });
+    } catch(e) {
+      showResult('fail', '결제 처리 중 오류가 발생했어요', e.message || '다시 시도해주세요.', null);
+    }
     return;
   }
 
@@ -731,21 +733,29 @@ async function onPayClick() {
   window._payupOrderNumber = orderNumber;
 
   window._payupSubmitCalled = false;
+  window._payupCloseCalled  = false;
 
-  // PayUp SDK 런타임 에러를 캐치해 버튼 즉시 복원
+  // SDK 취소 알림("결제가 취소 되었습니다.") 가로채기:
+  // alert가 닫히면 즉시 payupPaymentClose()로 UI 리셋
+  const _origAlert = window.alert;
+  window.alert = (msg) => {
+    _origAlert.call(window, msg);
+    window.alert = _origAlert;
+    if (!window._payupSubmitCalled) {
+      setTimeout(() => payupPaymentClose(), 50);
+    }
+  };
+
+  // PayUp SDK 런타임 오류 캐치 → UI 전체 리셋 (PC 메시지는 8초 타임아웃에서)
   const _origOnError = window.onerror;
   window._payupErrorCaught = false;
   window.onerror = (msg, src, line, col, err) => {
     if (src && src.includes('payup_standard') && !window._payupSubmitCalled && !window._payupErrorCaught) {
       window._payupErrorCaught = true;
       window.onerror = _origOnError;
-      btn.disabled = false;
-      btn.textContent = '결제 진행하기';
-      // PC 환경에서 PayUp SDK 오류 → 안내 메시지
-      const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-      if (!isMobile) {
-        alert('PC 환경에서는 결제창이 열리지 않을 수 있어요.\n모바일 기기에서 다시 시도해주세요.');
-      }
+      window.alert = _origAlert;
+      _cleanupPayupDom();
+      payupPaymentClose();
     }
     return _origOnError ? _origOnError(msg, src, line, col, err) : false;
   };
@@ -754,22 +764,31 @@ async function onPayClick() {
     goPayupPay(data);
   } catch (e) {
     window.onerror = _origOnError;
-    btn.disabled = false;
-    btn.textContent = '결제 진행하기';
+    window.alert = _origAlert;
+    _cleanupPayupDom();
+    payupPaymentClose();
     const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
     if (!isMobile) {
-      alert('PC 환경에서는 결제창이 열리지 않을 수 있어요.\n모바일 기기에서 다시 시도해주세요.');
+      _origAlert.call(window, 'PC 환경에서는 결제창이 열리지 않을 수 있어요.\n모바일 기기에서 다시 시도해주세요.');
     } else {
-      alert('결제 요청 실패: ' + (e?.message || e));
+      _origAlert.call(window, '결제 요청 실패: ' + (e?.message || e));
     }
     return;
   }
-  // 8초 후에도 콜백이 없으면 버튼 복원 (결제창 열기 실패 or 취소 감지)
+  // 8초 후에도 submit 콜백이 없으면 UI 강제 리셋
   setTimeout(() => {
     window.onerror = _origOnError;
-    if (!window._payupSubmitCalled && btn.disabled) {
-      btn.disabled = false;
-      btn.textContent = '결제 진행하기';
+    window.alert = _origAlert;
+    if (!window._payupSubmitCalled) {
+      _cleanupPayupDom();
+      payupPaymentClose();
+      // SDK가 정상 취소 콜백을 호출했으면 _payupCloseCalled=true → 메시지 생략
+      if (!window._payupCloseCalled) {
+        const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+        if (!isMobile) {
+          _origAlert.call(window, 'PC 환경에서는 결제창이 열리지 않을 수 있어요.\n모바일 기기에서 다시 시도해주세요.');
+        }
+      }
     }
   }, 8000);
 }
@@ -832,7 +851,17 @@ async function payupPaymentSubmit(formId) {
   }
 }
 
+function _cleanupPayupDom() {
+  const pl = document.getElementById('payup_layer');
+  if (pl) pl.innerHTML = '';
+  const bl = document.getElementById('bg_layer');
+  if (bl) bl.innerHTML = '';
+  document.querySelectorAll('iframe[src*="payup"]').forEach(el => el.remove());
+}
+
 function payupPaymentClose() {
+  window._payupCloseCalled = true;
+  _cleanupPayupDom();
   // PayUp 결제창이 닫혔을 때 (취소 또는 오류)
   const btn = document.getElementById('pc-ok-btn');
   if (btn) {
