@@ -826,20 +826,17 @@ match /cms_payment_records/{doc} { allow read: if true; }
 
 **다음 세션: 남은 버그 수정 + 기능 추가**
 
-**🔴 즉시 수정 (UX에 심각한 영향):**
-1. CTA 버튼 잘림 방지 (모바일 크롬 — 어떤 환경에서도 잘리면 안 됨)
-
 **🟡 중요 수정:**
-2. 도구 admin 텍스트 편집기 줄바꿈 미표시 (전 도구 확인)
-3. 스테이지 제목 정렬 미적용 (분리형/병합형 × 이미지/텍스트 4곳 전수 확인)
+1. 도구 admin 텍스트 편집기 줄바꿈 미표시 (전 도구 확인)
+2. 스테이지 제목 정렬 미적용 (분리형/병합형 × 이미지/텍스트 4곳 전수 확인)
 
 **🟢 기능 추가:**
-4. 유튜브 재생목록 기제출 음악 내역 표시 (탭/모달 방식, 검색 결과에 "이미 신청됨" 배지)
-5. 도구 admin RTE 이미지 업로드 개선 (가능 여부 먼저 판단)
-6. 반응형 레이아웃 전략 답변 및 개선
+3. 유튜브 재생목록 기제출 음악 내역 표시 (탭/모달 방식, 검색 결과에 "이미 신청됨" 배지)
+4. 도구 admin RTE 이미지 업로드 개선 (가능 여부 먼저 판단)
+5. 반응형 레이아웃 전략 답변 및 개선 (CTA 버튼 잘림 포함)
 
 **미완료 항목:**
-- **결제 메인 도메인 재테스트 필요**: PayUp은 등록된 도메인에서만 결제 처리됨 — lazymaxpotential.kr 에서 실제 결제 흐름 확인 필요 (모바일 사파리는 이미 성공 확인)
+- **결제 데스크탑 팝업 테스트 필요**: lazymaxpotential.kr 에서 데스크탑 결제 팝업 창 흐름 확인 (새 탭→PayUp→결과 전달→탭 닫힘)
 - **GAS 재배포 필요**: updateFormRow + bulkAppend + Calendar 액션 코드는 추가됐으나 GAS 편집기에서 "새 버전" 배포 안 됨 → script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
 - **환불 처리 기능**: 페이업 환불 API 연동 미구현 — 현재 수동 처리 (페이업 대시보드에서 직접)
 
@@ -847,6 +844,13 @@ match /cms_payment_records/{doc} { allow read: if true; }
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 
 #### 이번 세션 완료 항목
+- **플레이어 ↑버튼(return-btn) 제거** ✅: `#return-btn` / `#return-greeting` 요소 제거, showReturnBtn/hideReturnBtn 빈함수 교체 (p/ + 3파일 동기화)
+- **지연로그인 등록 CTA 숨김** ✅: `_refreshRegCta()` 함수 추가 — on-demand + selfRegCtaSeparate 조합에서 로그인 사용자에게 등록 CTA 숨김, 로그인 성공 직후 즉시 적용 (4파일 동기화)
+- **CTA 클릭 on-demand 동작 수정** ✅: `onCtaClick`에서 on-demand 모드 `openPrep()` → `reopenPrep()` (4파일 동기화)
+- **결제 도구 iframe→top 이동 수정** ✅: `retryPayment()` `window.top.location.href` + `URL_PROJECT_ID` fallback
+- **결제 도구 데스크탑 팝업 창 방식** ✅: 데스크탑+iframe 환경에서 `window.open('?popup=1')` 새 창으로 PayUp 결제, `lmp-payment-result` postMessage로 결과 전달
+- **admin 결제 관리 탭 추가** ✅: 결제 섹션에 "결제 관리" 3번째 서브탭 — 인스턴스 무관 전체 결제 내역 테이블 (`pyLoadAllRecords`)
+- **admin 결제 내역 필드명 버그 수정** ✅: `pyViewRecords()` `r.approvedAt` → `r.authDatetime`, `r.method` → `r.cardName`
 - **admin RTE 포맷바 2차 수정** ✅: `epd()` pointerdown 시점에 `_fmtCtxRange` 캡처 (click보다 먼저) → Aa/정렬/색상/이미지/링크 모두 동작. `focusEd()` `{preventScroll:true}` 추가. insertHr/applyFmtLink/removeFmtLink `focusEd(ctx)` 통일 (admin/index.html)
 - **admin 포맷바 Aa/정렬/색상 수정** ✅: `_fmtCtxRange` 변수로 버튼 클릭 시점 selection 명시 캡처 → mini-rte 팝업 열려도 selection 유지 (admin/index.html)
 - **위젯 카드 테두리 설정** ✅: admin 위젯 탭에 테두리 굵기(px)·테두리 색 입력 추가, `WIDGET.borderWidth`/`borderColor` Firestore 필드, 플레이어 4파일 동기화
