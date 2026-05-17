@@ -935,7 +935,9 @@ async function loadWidget() {
     const showPager = WIDGET.pager !== false;
     const speed = WIDGET.speed || 400;
     const gap = 8;
-    const border = 'border:2px solid #000;';
+    const bw = WIDGET.borderWidth ?? 2;
+    const bc = WIDGET.borderColor || '#000000';
+    const border = bw > 0 ? `border:${bw}px solid ${bc};` : '';
     const _wesc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
     let boothImages = [];

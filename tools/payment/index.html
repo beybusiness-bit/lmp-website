@@ -760,6 +760,18 @@ async function onPayClick() {
     }
   };
 
+  // SDK 취소 확인창("결제를 취소하시겠습니까?") 가로채기:
+  // 사용자가 확인(OK)을 누르면 payupPaymentClose()로 UI 리셋
+  const _origConfirm = window.confirm;
+  window.confirm = (msg) => {
+    const result = _origConfirm.call(window, msg);
+    window.confirm = _origConfirm;
+    if (result && !window._payupSubmitCalled) {
+      setTimeout(() => payupPaymentClose(), 50);
+    }
+    return result;
+  };
+
   // PayUp SDK 런타임 오류 캐치: 결제창이 열리기 전 오류만 처리
   // _payupPopupOpen=true 이후(결제 진행 중) 발생하는 SDK 내부 오류는 무시
   const _origOnError = window.onerror;
@@ -769,6 +781,7 @@ async function onPayClick() {
       window._payupErrorCaught = true;
       window.onerror = _origOnError;
       window.alert = _origAlert;
+      window.confirm = _origConfirm;
       _cleanupPayupDom();
       payupPaymentClose();
     }
@@ -783,6 +796,7 @@ async function onPayClick() {
     window._payupPopupOpen = false;
     window.onerror = _origOnError;
     window.alert = _origAlert;
+    window.confirm = _origConfirm;
     _cleanupPayupDom();
     payupPaymentClose();
     const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
@@ -797,6 +811,7 @@ async function onPayClick() {
   setTimeout(() => {
     window.onerror = _origOnError;
     window.alert = _origAlert;
+    window.confirm = _origConfirm;
     if (!window._payupSubmitCalled) {
       _cleanupPayupDom();
       payupPaymentClose();
