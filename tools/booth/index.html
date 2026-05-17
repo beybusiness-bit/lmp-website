@@ -67,8 +67,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .frame-squirt .frame-inner{clip-path:polygon(25% 0%,75% 0%,100% 25%,100% 75%,75% 100%,25% 100%,0% 75%,0% 25%);overflow:hidden;width:100%;height:100%;}
 
 /* ── 하단 패널 ── */
-#bottom-panel{width:100%;max-width:480px;background:transparent;border-top:2px solid #000;padding:10px 12px;padding-bottom:max(10px,env(safe-area-inset-bottom,0px));z-index:100;flex-shrink:0;}
-#panel-default{display:flex;gap:6px;justify-content:center;align-items:center;}
+#bottom-panel{display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:2px solid #000;padding:10px 12px;padding-bottom:max(10px,env(safe-area-inset-bottom,0px));z-index:150;box-shadow:0 -4px 20px rgba(0,0,0,.15);}
+#bottom-panel.open{display:block;}
 #panel-image{display:none;flex-direction:column;gap:10px;}
 #panel-draw{display:none;flex-direction:column;gap:8px;}
 #draw-size-num{width:58px;text-align:center;border:2px solid #000;font-size:12px;font-weight:700;padding:4px 6px;font-family:inherit;border-radius:0;background:#fff;}
@@ -275,18 +275,13 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   </div>
 </div>
 
-<!-- 하단 패널 -->
+<!-- 하단 패널 (position:fixed 플로팅 — 캔버스 크기에 영향 없음) -->
 <div id="bottom-panel">
-  <!-- 기본 상태 -->
-  <div id="panel-default">
-    <span style="font-size:12px;font-weight:700;color:rgba(0,0,0,.3);letter-spacing:-.2px;">아이템을 탭하면 편집할 수 있어요</span>
-  </div>
   <!-- 이미지/드로잉 선택 상태 -->
   <div id="panel-image">
     <div class="panel-row">
       <span class="panel-label">크기</span>
       <input type="range" id="img-size-range" min="20" max="400" value="120" oninput="onItemSizeChange(this.value)">
-      <span id="img-size-cm" style="font-size:11px;font-weight:700;color:rgba(0,0,0,.45);min-width:44px;text-align:right;white-space:nowrap;"></span>
     </div>
     <div class="panel-row">
       <span class="panel-label">프레임</span>
@@ -318,7 +313,6 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
     <div class="panel-row">
       <span class="panel-label">크기</span>
       <input type="range" id="shape-size-range" min="20" max="400" value="120" oninput="onShapeSizeChange(this.value)">
-      <span id="shape-size-cm" style="font-size:11px;font-weight:700;color:rgba(0,0,0,.45);min-width:44px;text-align:right;white-space:nowrap;"></span>
       <button class="lmp-btn" onclick="deleteSelectedItem()">삭제</button>
       <button class="lmp-btn" onclick="deselectAll()" style="background:#000;color:var(--lmp-block-bg);">완료</button>
     </div>
@@ -379,9 +373,7 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
 <div id="export-modal">
   <canvas id="export-canvas"></canvas>
   <div class="export-btns">
-    <button class="exp-btn primary" onclick="downloadExport()">다운로드</button>
-    <button class="exp-btn" id="btn-save-gallery" onclick="saveToGallery()">저장하기</button>
-    <button class="exp-btn" onclick="shareExport()">공유</button>
+    <button class="exp-btn primary" id="btn-save-gallery" onclick="saveAndDownload()">저장하기</button>
     <button class="exp-btn" onclick="closeExport()">닫기</button>
   </div>
 </div>
@@ -442,7 +434,6 @@ let canvasW = 0, canvasH = 0;
 let bgImage = null;
 let backgrounds = []; // [{type, label, urls:[]}]
 let fieldKey = 'name'; // config에서 로드 (빈칸이면 'name' 기본)
-let currentRefPx = 0; // 출력 이미지(1080px 기준) 픽셀 수 = 10cm; 0이면 표시 안 함
 let currentBgLabel = ''; // 선택된 배경 이미지 라벨 (메타 바 표시용)
 let _hasDesc = false; // 현재 설명 보유 여부 (오버레이 토글 상태 관리)
 let commonPresetImages = []; // 필드값 무관 공통 꾸미기 소스
@@ -506,6 +497,7 @@ function hideBgBtn() {
 }
 
 function resizeCanvases() {
+  const oldW = canvasW, oldH = canvasH;
   const areaRect = canvasArea.getBoundingClientRect();
   const areaW = Math.round(areaRect.width);
   const areaH = Math.round(areaRect.height);
@@ -514,6 +506,22 @@ function resizeCanvases() {
   let w, h;
   if(areaW / ar <= areaH) { w = areaW; h = Math.round(w / ar); }
   else { h = areaH; w = Math.round(h * ar); }
+  if(oldW > 0 && oldH > 0 && (Math.abs(oldW - w) > 0.5 || Math.abs(oldH - h) > 0.5)) {
+    const scaleX = w / oldW, scaleY = h / oldH;
+    items.forEach(item => {
+      item.x = item.x * scaleX;
+      item.y = item.y * scaleY;
+      if(item._sizeFixed && item._exportFixedW) {
+        const ratio = item.h / item.w;
+        item.w = item._exportFixedW * w / EXPORT_W;
+        item.h = item.w * ratio;
+      } else {
+        item.w = item.w * scaleX;
+        item.h = item.h * scaleY;
+      }
+    });
+    if(items.length) renderItems();
+  }
   canvasWrap.style.width = w + 'px';
   canvasWrap.style.height = h + 'px';
   canvasW = w; canvasH = h;
@@ -765,7 +773,6 @@ function selectBg(i, silent=false) {
 }
 
 function selectBgByUrl(url, label='', silent=false, refPx=0) {
-  currentRefPx = refPx;
   currentBgLabel = label||'';
   showBgDesc('');
 
@@ -849,7 +856,7 @@ function addPresetImage(presetIdx) {
   img.crossOrigin = 'anonymous';
   img.onload = () => {
     const naturalRatio = (img.naturalHeight / img.naturalWidth) || 1;
-    const targetW = p.lockSize ? (p.fixedSize || 120) : Math.min(canvasW * 0.4, 150);
+    const targetW = p.lockSize ? (p.fixedSize || 120) * canvasW / EXPORT_W : Math.min(canvasW * 0.4, 150);
     const targetH = targetW * naturalRatio;
     const x = canvasW/2 - targetW/2;
     const y = canvasH/2 - targetH/2;
@@ -857,6 +864,7 @@ function addPresetImage(presetIdx) {
       id: Date.now(), type:'image', src: p.url,
       x, y, w: targetW, h: targetH, rot:0, frame:'', naturalRatio,
       _sizeFixed: p.lockSize || false,
+      _exportFixedW: p.lockSize ? (p.fixedSize || 120) : undefined,
     };
     items.push(item);
     renderItems();
@@ -980,7 +988,6 @@ function onShapeSizeChange(val) {
   selectedItem.h = +val;
   const el = itemsLayer.querySelector(`[data-id="${selectedItem.id}"]`);
   if(el) { el.style.width = val+'px'; el.style.height = val+'px'; }
-  refreshSizeCm(+val, 'shape-size-cm');
 }
 
 // Canvas2D 도형 그리기 (내보내기용)
@@ -1137,7 +1144,6 @@ function startResizeItem(e, item) {
     if(el) { el.style.width = item.w+'px'; el.style.height = item.h+'px'; }
     const rangeEl = document.getElementById('img-size-range');
     if(rangeEl) rangeEl.value = item.w;
-    refreshSizeCm(item.w, 'img-size-cm');
   }
   function onUp() {
     window.removeEventListener('pointermove', onMove);
@@ -1177,25 +1183,26 @@ canvasWrap.addEventListener('pointerdown', e => {
 });
 
 function updatePanelForSelection() {
-  const pDefault = document.getElementById('panel-default');
-  const pImage   = document.getElementById('panel-image');
-  const pShape   = document.getElementById('panel-shape');
-  const pDraw    = document.getElementById('panel-draw');
-  const hide = el => el.style.display='none';
-  [pDefault,pImage,pShape,pDraw].forEach(hide);
+  const panel  = document.getElementById('bottom-panel');
+  const pImage = document.getElementById('panel-image');
+  const pShape = document.getElementById('panel-shape');
+  const pDraw  = document.getElementById('panel-draw');
+  [pImage,pShape,pDraw].forEach(el => el.style.display='none');
   if(drawMode) {
     pDraw.style.display='flex';
+    panel.classList.add('open');
   } else if(selectedItem?.type === 'shape') {
     pShape.style.display='flex';
+    panel.classList.add('open');
     document.getElementById('shape-size-range').value = selectedItem.w;
     document.getElementById('shape-fill-color').value = selectedItem.fillColor==='none'?'#ff6b6b':selectedItem.fillColor;
     document.getElementById('shape-fill-none').classList.toggle('active', selectedItem.fillColor==='none');
     document.getElementById('shape-stroke-color').value = selectedItem.strokeColor||'#000000';
     document.getElementById('shape-stroke-w').value = selectedItem.strokeWidth||3;
     document.getElementById('shape-sw-val').textContent = selectedItem.strokeWidth||3;
-    refreshSizeCm(selectedItem.w, 'shape-size-cm');
   } else if(selectedItem) {
     pImage.style.display='flex';
+    panel.classList.add('open');
     const sizeRange = document.getElementById('img-size-range');
     const sizeRow = sizeRange.closest('.panel-row');
     sizeRange.value = Math.round(selectedItem.w);
@@ -1204,23 +1211,9 @@ function updatePanelForSelection() {
     document.querySelectorAll('.frame-btn').forEach(b=>{
       b.classList.toggle('active', b.dataset.frame===(selectedItem.frame||''));
     });
-    refreshSizeCm(selectedItem.w, 'img-size-cm');
   } else {
-    pDefault.style.display='flex';
+    panel.classList.remove('open');
   }
-}
-
-// ── 실제 크기(cm) 변환 ──
-function pxToCm(screenPx) {
-  if(!currentRefPx || !canvasW) return '';
-  const cm = screenPx * EXPORT_W / canvasW / currentRefPx * 10;
-  return cm.toFixed(1) + 'cm';
-}
-
-function refreshSizeCm(screenPx, elId) {
-  const el = document.getElementById(elId);
-  if(!el) return;
-  el.textContent = pxToCm(screenPx);
 }
 
 function onItemSizeChange(val) {
@@ -1230,7 +1223,6 @@ function onItemSizeChange(val) {
   selectedItem.h = +val * ratio;
   const el = itemsLayer.querySelector(`[data-id="${selectedItem.id}"]`);
   if(el) { el.style.width = selectedItem.w+'px'; el.style.height = selectedItem.h+'px'; }
-  refreshSizeCm(+val, 'img-size-cm');
 }
 
 function setFrame(btn, frame) {
@@ -1554,6 +1546,11 @@ function downloadExport() {
   a.href = canvas.toDataURL('image/png');
   a.download = '내부스꾸미기.png';
   a.click();
+}
+
+async function saveAndDownload() {
+  downloadExport();
+  await saveToGallery();
 }
 
 async function saveToGallery() {
