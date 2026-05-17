@@ -1,9 +1,26 @@
+// Firebase Storage URL만 허용 — SSRF 방지
+const ALLOWED_STORAGE_HOSTS = [
+  'firebasestorage.googleapis.com',
+  'storage.googleapis.com',
+];
+function isAllowedStorageUrl(rawUrl) {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol !== 'https:') return false;
+    return ALLOWED_STORAGE_HOSTS.some(h => parsed.hostname === h || parsed.hostname.endsWith('.' + h));
+  } catch { return false; }
+}
+
 export default async function handler(req, res) {
   const { url } = req.query;
   if (!url) return res.status(400).end('url required');
 
   let decoded;
   try { decoded = decodeURIComponent(url); } catch { decoded = url; }
+
+  if (!isAllowedStorageUrl(decoded)) {
+    return res.status(400).json({ error: 'URL not allowed' });
+  }
 
   try {
     const upstream = await fetch(decoded);

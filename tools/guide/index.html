@@ -121,8 +121,16 @@ const params = new URLSearchParams(location.search);
 const FORM_ID = params.get('id');
 
 /* lmp-context: blockBg 수신 → CSS 변수 설정 */
+function _lmpOriginOk(o) {
+  if (!o) return true;
+  if (o === 'https://lazymaxpotential.kr' || o === 'https://www.lazymaxpotential.kr') return true;
+  if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(o)) return true;
+  if (/^http:\/\/localhost(:\d+)?$/.test(o)) return true;
+  return false;
+}
 window.addEventListener('message', e => {
   if (e.data?.type !== 'lmp-context') return;
+  if (!_lmpOriginOk(e.origin)) return;
   if (e.data.blockBg) { document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg); document.documentElement.style.setProperty('--lmp-input-bg', e.data.blockBg); }
   if (e.data.blockBgImage) { const _f=e.data.blockBgFit||'cover',_p=e.data.blockBgPos||'center'; document.body.style.backgroundImage=`url('${e.data.blockBgImage}')`; document.body.style.backgroundSize=_f==='natural'?'contain':_f; document.body.style.backgroundPosition=_p; document.body.style.backgroundRepeat='no-repeat'; }
 });

@@ -50,6 +50,8 @@ export default async function handler(req, res) {
   const configId      = body.configId      || query.id            || '';
   const projectId     = body.projectId     || query.projectId     || '';
   const userId        = body.userId        || query.userId        || '';
+  const qty           = Math.max(1, parseInt(body.qty        || query.qty        || '1') || 1);
+  const optionLabel   = body.optionLabel   || query.optionLabel   || '';
 
   const toolBase = `/tools/payment/?id=${encodeURIComponent(configId)}`;
 
@@ -65,6 +67,46 @@ export default async function handler(req, res) {
       allBodyKeys: Object.keys(body),
     });
     return fail('결제가 완료되지 않았어요. 결제창에서 취소하셨거나 오류가 발생했어요.');
+  }
+
+  // 서버 사이드 금액 검증: Firestore에서 설정값 로드 후 클라이언트 전달 금액과 대조
+  if (configId) {
+    try {
+      const fbProject = 'beyhome-admin';
+      const fbApiKey  = process.env.FIREBASE_API_KEY || 'AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI';
+      const cfgUrl    = `https://firestore.googleapis.com/v1/projects/${fbProject}/databases/(default)/documents/cms_payment_configs/${encodeURIComponent(configId)}?key=${encodeURIComponent(fbApiKey)}`;
+      const cfgRes    = await fetch(cfgUrl, { signal: AbortSignal.timeout(5000) });
+      if (cfgRes.ok) {
+        const cfgDoc = await cfgRes.json();
+        const f      = cfgDoc.fields || {};
+        const fsNum  = (fld) => parseInt(fld?.integerValue ?? fld?.doubleValue ?? '0') || 0;
+        const fsStr  = (fld) => fld?.stringValue || '';
+
+        const baseAmount = fsNum(f.amount);
+        const options    = f.options?.arrayValue?.values || [];
+
+        let unitPrice = baseAmount;
+        if (optionLabel && options.length > 0) {
+          const matched = options.find(o => fsStr(o.mapValue?.fields?.label) === optionLabel);
+          if (matched) {
+            const optPrice = fsNum(matched.mapValue?.fields?.price);
+            if (optPrice > 0) unitPrice = optPrice;
+          }
+        }
+
+        if (unitPrice > 0) {
+          const expectedAmount  = unitPrice * qty;
+          const requestedAmount = parseInt(amount) || 0;
+          if (requestedAmount !== expectedAmount) {
+            console.error('[confirm-payup] amount mismatch', { configId, expected: expectedAmount, requested: requestedAmount, optionLabel, qty });
+            return fail('결제 금액이 올바르지 않아요. 처음부터 다시 시도해 주세요.');
+          }
+        }
+      }
+    } catch (cfgErr) {
+      // 설정 조회 실패 시 차단하지 않고 계속 진행 (결제 플로우 보호)
+      console.warn('[confirm-payup] config validation skipped:', cfgErr.message);
+    }
   }
 
   try {

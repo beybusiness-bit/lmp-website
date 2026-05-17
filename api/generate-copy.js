@@ -1,9 +1,33 @@
+// IP 기반 rate limiting (인메모리, 서버리스이므로 인스턴스별 독립 동작)
+const _rateBuckets = new Map();
+function _checkRateLimit(ip) {
+  const now   = Date.now();
+  const entry = _rateBuckets.get(ip) || { min: now, minCount: 0, day: now, dayCount: 0 };
+  if (now - entry.min > 60_000)  { entry.min = now; entry.minCount = 0; }
+  if (now - entry.day > 86_400_000) { entry.day = now; entry.dayCount = 0; }
+  entry.minCount++;
+  entry.dayCount++;
+  _rateBuckets.set(ip, entry);
+  if (entry.minCount > 10)  return '분당 요청이 너무 많아요. 잠시 후 다시 시도해주세요.';
+  if (entry.dayCount > 100) return '오늘 사용 한도를 초과했어요. 내일 다시 시도해주세요.';
+  return null;
+}
+
+const ALLOWED_ORIGINS = ['https://lazymaxpotential.kr', 'https://www.lazymaxpotential.kr'];
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin || '';
+  const isAllowed = !origin || ALLOWED_ORIGINS.includes(origin) || /^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(origin);
+  res.setHeader('Access-Control-Allow-Origin', isAllowed ? (origin || ALLOWED_ORIGINS[0]) : ALLOWED_ORIGINS[0]);
   res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Vary', 'Origin');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+
+  const ip = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
+  const rateLimitMsg = _checkRateLimit(ip);
+  if (rateLimitMsg) return res.status(429).json({ error: rateLimitMsg });
 
   const { fields, styleSelections, references, outputConfig, existingPhrases, referenceRole, aiContext, speakerDesc } = req.body || {};
 

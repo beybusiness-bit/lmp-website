@@ -170,8 +170,16 @@ const _IMG_EXTS = new Set(['jpg','jpeg','png','gif','webp','heic','heif','bmp','
 let resolveCtx;
 const ctxPromise = new Promise(res => { resolveCtx = res; });
 
+function _lmpOriginOk(o) {
+  if (!o) return true;
+  if (o === 'https://lazymaxpotential.kr' || o === 'https://www.lazymaxpotential.kr') return true;
+  if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/.test(o)) return true;
+  if (/^http:\/\/localhost(:\d+)?$/.test(o)) return true;
+  return false;
+}
 window.addEventListener('message', e => {
   if (e.data?.type !== 'lmp-context') return;
+  if (!_lmpOriginOk(e.origin)) return;
   ctxProjectId = e.data.projectId || '';
   ctxUserId = e.data.userId || '';
   ctxUserFields = e.data.userFields || {};

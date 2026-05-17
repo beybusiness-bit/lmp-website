@@ -1,0 +1,97 @@
+// ============================================================
+// Firestore 보안 규칙 — 강화 버전
+// 적용 방법: Firebase Console → Firestore → 규칙 탭에 붙여넣기
+//
+// ⚠️ 현재 적용된 규칙보다 훨씬 엄격합니다.
+//    단계적으로 테스트 후 적용하세요.
+// ============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── 프로젝트 설정 (공개 읽기, 쓰기 금지) ──────────────────
+    match /cms_projects/{projectId} {
+      allow read: if true;
+      allow write: if false; // 관리자만 → Firebase Admin SDK or Console
+    }
+    match /cms_projects/{projectId}/stage_content/{stageId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── 사용자 데이터 (본인만 읽기·쓰기) ─────────────────────
+    // 컬렉션명: cms_users_{projectId}
+    match /{userCol}/{userId} {
+      allow read, write: if userCol.matches('cms_users_.*');
+      // ⚠️ 현재 모든 사용자가 다른 사용자 문서도 읽고 쓸 수 있음
+      // 이상적: request.auth != null && request.auth.uid == userId
+      // 그러나 이 앱은 Firebase Auth를 사용하지 않으므로 일단 유지
+    }
+
+    // ── 폼 설정 (공개 읽기) ──────────────────────────────────
+    match /cms_form_configs/{formId} {
+      allow read: if true;
+      allow write: if false; // 관리자만
+    }
+
+    // ── 폼 응답 (쓰기 공개, 읽기 공개) ──────────────────────
+    // ⚠️ 이상적으로는 write만 허용하고 read는 관리자로 제한해야 하나
+    //    관리자 패널이 Firebase Auth 없이 동작하므로 일단 유지
+    match /cms_form_responses/{formId}/responses/{responseId} {
+      allow read, write: if true;
+    }
+    match /cms_form_responses/{document=**} {
+      allow read, write: if true;
+    }
+
+    // ── 결제 설정 (공개 읽기) ────────────────────────────────
+    match /cms_payment_configs/{configId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── 결제 기록 (쓰기 공개, 읽기 공개) ────────────────────
+    match /cms_payment_records/{paymentKey} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ── 게임(꾸미기) 설정 (공개 읽기) ───────────────────────
+    match /game_configs/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ── admin 설정 (읽기 공개, 쓰기 금지) ───────────────────
+    // ⚠️ 현재 GitHub PAT, 결제 API 키 등 민감 정보 포함
+    //    이상적: allow read: if false; 하지만 클라이언트가 읽어야 해서 일단 공개
+    match /cms_admin_settings/{document=**} {
+      allow read: if true;
+      allow write: if false; // 반드시 Firebase Admin SDK or Console에서만
+    }
+
+    // ── 유튜브 제출 ─────────────────────────────────────────
+    match /cms_youtube_submissions/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ── 문구 생성 사용량 ─────────────────────────────────────
+    match /cms_copy_gen_usages/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ── 방명록 ───────────────────────────────────────────────
+    match /cms_guestbook_entries/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // ── 기본: 위에서 매칭되지 않은 모든 경로는 차단 ─────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

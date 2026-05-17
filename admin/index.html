@@ -3164,8 +3164,8 @@ function epd(e) {
 }
 function closeModal(id) { document.getElementById(id).classList.remove('on'); }
 
-/* ── PAT ── */
-function getPAT() { return localStorage.getItem('ghPAT') || ''; }
+/* ── PAT (sessionStorage: 탭 닫으면 소거 — XSS 탈취 위험 최소화) ── */
+function getPAT() { return sessionStorage.getItem('ghPAT') || ''; }
 function updatePATBtn() {
   const btn = document.getElementById('pat-btn');
   if (!btn) return;
@@ -3178,10 +3178,10 @@ async function managePAT() {
   if (val === null) return;
   const token = val.trim();
   if (token) {
-    localStorage.setItem('ghPAT', token);
+    sessionStorage.setItem('ghPAT', token);
     try { await db.collection('cms_admin_settings').doc('github').set({pat: token}, {merge:true}); } catch(e) {}
   } else {
-    localStorage.removeItem('ghPAT');
+    sessionStorage.removeItem('ghPAT');
     try { await db.collection('cms_admin_settings').doc('github').set({pat: ''}, {merge:true}); } catch(e) {}
   }
   updatePATBtn();
@@ -3190,7 +3190,7 @@ async function loadPATFromFirestore() {
   try {
     const doc = await db.collection('cms_admin_settings').doc('github').get();
     if (doc.exists && doc.data().pat) {
-      localStorage.setItem('ghPAT', doc.data().pat);
+      sessionStorage.setItem('ghPAT', doc.data().pat);
       updatePATBtn();
     }
   } catch(e) {}
