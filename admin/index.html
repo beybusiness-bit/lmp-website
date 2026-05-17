@@ -7329,6 +7329,10 @@ function openFmtDd(btn,type,ctx){
   </div>`;
   }
   document.getElementById('fmt-popup-inner').innerHTML=html;
+  // 팝업 내 버튼들이 에디터 포커스·선택 영역을 빼앗지 않도록 (포맷 바 버튼과 동일한 패턴)
+  document.querySelectorAll('#fmt-popup-inner button').forEach(btn=>{
+    btn.addEventListener('mousedown',e=>e.preventDefault());
+  });
   pop.style.display='block';
   const r=btn.getBoundingClientRect();
   pop.style.left=r.left+'px';pop.style.top=(r.bottom+3)+'px';
