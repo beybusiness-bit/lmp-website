@@ -1,7 +1,15 @@
 // 페이업(Payup) 결제 승인 서버 엔드포인트
 // Mode A: JSON POST (fetch from payupPaymentSubmit) → JSON 응답
-// Mode B: GET/form-POST (브라우저 리다이렉트) → redirect 응답
+// Mode B: GET/form-POST (브라우저 리다이렉트) → HTML + JS redirect (빈화면 방지)
 export default async function handler(req, res) {
+  const _htmlRedirect = (url) => {
+    const safeUrl = JSON.stringify(url);
+    res.status(200).setHeader('Content-Type', 'text/html; charset=utf-8').send(
+      `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">` +
+      `<style>body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif;background:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;font-size:14px;color:rgba(0,0,0,.5);font-weight:600;text-align:center;}</style>` +
+      `</head><body>결제 처리 중…<script>location.replace(${safeUrl});</script></body></html>`
+    );
+  };
   const IS_TEST = process.env.PAYUP_TEST === 'true';
   const BASE    = IS_TEST
     ? 'https://standard.testpayup.co.kr'
@@ -47,7 +55,7 @@ export default async function handler(req, res) {
 
   const fail = (msg) => isJsonMode
     ? res.status(200).json({ success: false, message: msg })
-    : res.redirect(`${toolBase}&result=fail&message=${encodeURIComponent(msg)}&projectId=${encodeURIComponent(projectId)}&userId=${encodeURIComponent(userId)}`);
+    : _htmlRedirect(`${toolBase}&result=fail&message=${encodeURIComponent(msg)}&projectId=${encodeURIComponent(projectId)}&userId=${encodeURIComponent(userId)}`);
 
   if (!transactionId || !orderNumber || !amount) {
     console.error('[confirm-payup] missing params', {
@@ -117,7 +125,7 @@ export default async function handler(req, res) {
         projectId,
         userId,
       });
-      return res.redirect(`/tools/payment/?${params.toString()}`);
+      return _htmlRedirect(`/tools/payment/?${params.toString()}`);
     }
 
     return fail(payData.data?.responseMsg || payData.message || '결제 승인 실패');
