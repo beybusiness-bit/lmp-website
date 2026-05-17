@@ -461,6 +461,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 </div>
                 <div style="display:flex;gap:8px;margin-bottom:10px;">
                   <div style="flex:1;">
+                    <div class="ed-lbl" style="margin-bottom:4px;">테두리 굵기 (px)</div>
+                    <input class="fi" id="p-widget-border-width" type="number" min="0" value="2" style="margin-bottom:0;">
+                  </div>
+                  <div style="flex:1;">
+                    <div class="ed-lbl" style="margin-bottom:4px;">테두리 색</div>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <input type="color" id="p-widget-border-color" value="#000000" style="width:36px;height:32px;border:1.5px solid rgba(0,0,0,.2);padding:1px;cursor:pointer;border-radius:3px;flex-shrink:0;" oninput="document.getElementById('p-widget-border-color-hex').value=this.value.toUpperCase()">
+                      <input class="fi" id="p-widget-border-color-hex" value="#000000" style="margin-bottom:0;font-size:12px;" oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value))document.getElementById('p-widget-border-color').value=this.value">
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px;margin-bottom:10px;">
+                  <div style="flex:1;">
                     <div class="ed-lbl" style="margin-bottom:4px;">전환 속도 (ms)</div>
                     <input class="fi" id="p-widget-speed" type="number" placeholder="400" value="400" style="margin-bottom:0;">
                   </div>
@@ -3604,9 +3617,15 @@ function loadWidgetConfig(w) {
   document.getElementById('p-widget-pager').checked = w.pager !== false;
   document.getElementById('p-widget-click-action').value = w.clickAction || 'none';
   document.getElementById('p-widget-order').value = w.order || 'desc';
+  const bw = w.borderWidth ?? 2;
+  const bc = w.borderColor || '#000000';
+  document.getElementById('p-widget-border-width').value = bw;
+  document.getElementById('p-widget-border-color').value = bc;
+  document.getElementById('p-widget-border-color-hex').value = bc.toUpperCase();
 }
 
 function getWidgetConfig() {
+  const bc = document.getElementById('p-widget-border-color').value || '#000000';
   return {
     enabled: document.getElementById('p-widget-enabled').checked,
     toolType: document.getElementById('p-widget-tool-type').value,
@@ -3614,6 +3633,8 @@ function getWidgetConfig() {
     height: parseInt(document.getElementById('p-widget-height').value) || 200,
     itemsPerView: parseInt(document.getElementById('p-widget-items-per-view').value) || 2,
     radius: parseInt(document.getElementById('p-widget-radius').value) ?? 4,
+    borderWidth: parseInt(document.getElementById('p-widget-border-width').value) ?? 2,
+    borderColor: bc,
     speed: parseInt(document.getElementById('p-widget-speed').value) || 400,
     interval: parseInt(document.getElementById('p-widget-interval').value) || 3000,
     loop: document.getElementById('p-widget-loop').checked,
@@ -6192,7 +6213,12 @@ function cedResizeStart(e,cedId){
   handle.onpointermove=ev=>{ced.style.height=Math.max(100,startH+ev.clientY-startY)+'px';};
   handle.onpointerup=()=>{handle.onpointermove=null;handle.onpointerup=null;};
 }
-function restoreRange(el){if(!savedRange||savedRange.el!==el)return;const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange.range);}
+function restoreRange(el){
+  const store=(_fmtCtxRange&&_fmtCtxRange.el===el)?_fmtCtxRange:savedRange;
+  if(!store||store.el!==el)return;
+  const sel=window.getSelection();
+  try{sel.removeAllRanges();sel.addRange(store.range.cloneRange());}catch(_){}
+}
 function renderBlkKeyColors(){
   const kc = curKeyColors.length ? curKeyColors.map(k=>k.color||k) : ['#00CE6B','#FFF100'];
   const bgEl = document.getElementById('blk-kc-bg');
@@ -7105,11 +7131,16 @@ function fmtClr(ctx,clr){
 function prevImg(id,url){const el=document.getElementById(id);if(url&&url.startsWith('http')){el.src=url;el.style.display='block';}else el.style.display='none';}
 
 /* ── 포맷 드롭다운 팝업 ── */
-let _fmtPopCtx=null,_fmtPopType=null,_fmtPopBtn=null;
+let _fmtPopCtx=null,_fmtPopType=null,_fmtPopBtn=null,_fmtCtxRange=null;
 function openFmtDd(btn,type,ctx){
   const pop=document.getElementById('fmt-popup');
   if(pop.style.display!=='none'&&_fmtPopType===type&&_fmtPopCtx===ctx){closeFmtPopup();return;}
-  const _ed=getEd(ctx);if(_ed)saveRange(_ed);
+  const _ed=getEd(ctx);
+  if(_ed){
+    const _s=window.getSelection();
+    if(_s&&_s.rangeCount){try{_fmtCtxRange={el:_ed,range:_s.getRangeAt(0).cloneRange()};}catch(_){}}
+    saveRange(_ed);
+  }
   _fmtPopType=type;_fmtPopCtx=ctx;_fmtPopBtn=btn;
   let html='';
   if(type==='sz'){
@@ -7243,7 +7274,7 @@ function openFmtDd(btn,type,ctx){
 function closeFmtPopup(){
   document.getElementById('fmt-popup').style.display='none';
   const _prevCtx=_fmtPopCtx;
-  _fmtPopType=null;_fmtPopCtx=null;
+  _fmtPopType=null;_fmtPopCtx=null;_fmtCtxRange=null;
   if(_prevCtx){
     const ed=getEd(_prevCtx);
     if(ed&&savedRange&&savedRange.el===ed){
@@ -8206,6 +8237,11 @@ window.addEventListener('load', () => {
     const ctx=ed.id.slice(3);
     ed.addEventListener('mouseup',function(){saveRange(ed);syncFmtBar(ctx);});
     ed.addEventListener('keyup',function(){saveRange(ed);syncFmtBar(ctx);});
+    ed.addEventListener('blur',function(){
+      if(_fmtPopType)return;
+      const s=window.getSelection();
+      if(s&&s.rangeCount){try{_fmtCtxRange={el:ed,range:s.getRangeAt(0).cloneRange()};}catch(_){}}
+    });
   });
   const pev = document.getElementById('proj-edit-view');
   if (pev) {
