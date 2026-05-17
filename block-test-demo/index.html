@@ -2099,7 +2099,7 @@ function blockHtml(b){
     const trigger=b.completeTrigger||'tool-signal';
     const onloadAttr=trigger==='open'?` onload="if(this.src&&this.src!=='about:blank')autoCheckBlock('${b.id}')"`:'';
     const wrapCls=isFull?'g-block-embed g-tool-full-wrap':'g-block-embed';
-    return `<div class="${wrapCls}" style="${mS}${bgS}${bgImgS}${pS}${wrapH}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen data-tool-block="${b.id}" data-tool-type="${b.toolType||''}" data-block-bg="${b.bgColor||''}" data-block-bg-image="${b.bgImageUrl||''}" data-block-bg-fit="${b.bgImageFit||'cover'}" data-block-bg-pos="${b.bgImagePos||'center'}" data-complete-trigger="${trigger}"${onloadAttr}></iframe></div>`;
+    return `<div class="${wrapCls}" style="${mS}${bgS}${bgImgS}${pS}${wrapH}"><iframe src="${src}" style="width:100%;${heightCss};border:none;display:block;" allowfullscreen allow="web-share" data-tool-block="${b.id}" data-tool-type="${b.toolType||''}" data-block-bg="${b.bgColor||''}" data-block-bg-image="${b.bgImageUrl||''}" data-block-bg-fit="${b.bgImageFit||'cover'}" data-block-bg-pos="${b.bgImagePos||'center'}" data-complete-trigger="${trigger}"${onloadAttr}></iframe></div>`;
   }
   if(b.type==='spacer'){
     const h=b.spacerHeight||40;

@@ -1734,9 +1734,16 @@ function _dataUrlToBlob(dataUrl) {
 function downloadExport() {
   // toDataURL()은 동기 실행 → 유저 제스처 컨텍스트 유지 → iOS navigator.share() 정상 동작
   const canvas = document.getElementById('export-canvas');
-  const dataUrl = canvas.toDataURL('image/png');
-  const blob = _dataUrlToBlob(dataUrl);
-  const file = new File([blob], '내부스꾸미기.png', {type: 'image/png'});
+  let dataUrl, blob, file;
+  try {
+    dataUrl = canvas.toDataURL('image/png');
+    blob = _dataUrlToBlob(dataUrl);
+    file = new File([blob], '내부스꾸미기.png', {type: 'image/png'});
+  } catch(err) {
+    // SecurityError: 크로스오리진 이미지로 캔버스가 오염된 경우 — CORS 재시도로 재export
+    alert('이미지 저장 준비 중 오류가 발생했어요. 다시 시도해 주세요.');
+    return;
+  }
 
   // Web Share API (iOS/Android 네이티브 공유 시트) — 동기 컨텍스트에서 호출하므로 iOS에서도 정상
   if (navigator.share && navigator.canShare && navigator.canShare({files: [file]})) {
