@@ -816,13 +816,21 @@ match /cms_payment_records/{doc} { allow read: if true; }
 **미완료 항목:**
 - **GAS 재배포 필요**: updateFormRow + bulkAppend + Calendar 액션 코드는 추가됐으나 GAS 편집기에서 "새 버전" 배포 안 됨 → script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
 - **환불 처리 기능**: 페이업 환불 API 연동 미구현 — 현재 수동 처리 (페이업 대시보드에서 직접)
+- **꾸미기 도구 테스트 필요**: 이번 세션 5가지 개선 후 실기기 검증 필요 (아래 테스트 체크리스트 참조)
 
 **기타:**
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 
 #### 이번 세션 완료 항목
-- **결제 기록 미표시 버그 수정** ✅: `selectedOption.stockRemaining: undefined` → Firestore 저장 실패 버그. `recordPayment()`에서 저장 시 label/price/tier 3필드만 포함하는 안전한 객체로 변환. 모바일·데스크탑 팝업 결제 모두 동일 코드 경로 → 두 케이스 모두 수정 (tools/payment/index.html line 1123)
+- **결제 기록 미표시 버그 수정** ✅: `selectedOption.stockRemaining: undefined` → Firestore 저장 실패 버그. `recordPayment()`에서 저장 시 label/price/tier 3필드만 포함하는 안전한 객체로 변환. 모바일·데스크탑 팝업 결제 모두 동일 코드 경로 → 두 케이스 모두 수정 (tools/payment/index.html)
 - **admin RTE 도구 편집기 버튼 수정** ✅: mini-rte contenteditable 13개에 `onmouseup="saveRange(this)" onkeyup="saveRange(this)"` 추가. 텍스트 선택 즉시 savedRange 갱신 → 팝업 기반 포맷 버튼(색상/크기/정렬 등) 정상 동작. 볼드만 되던 문제 해결 (admin/index.html)
+- **꾸미기 도구 5가지 개선** ✅ (tools/booth/index.html + admin/index.html):
+  - fixedSize를 출력 1080px 기준으로 해석 (`fixedSize * canvasW / EXPORT_W`), `_exportFixedW` 보존
+  - 실제 크기(cm) 표시 기능 제거 (currentRefPx/pxToCm/refreshSizeCm 완전 제거)
+  - 하단 패널 → position:fixed 플로팅 (.open 클래스 토글), 캔버스 크기가 패널에 영향받지 않음
+  - 캔버스 리사이즈 시 아이템 위치·크기 자동 보정 (resizeCanvases에 rescale 로직 추가)
+  - 완성 버튼 정리: 저장하기 1개만 유지 (saveAndDownload = download + Firebase 갤러리), 공유 제거
+  - admin: refPx 입력 필드 제거, fixedSize 레이블 "출력 1080px 기준" 명시, 배경 "권장 크기: 1080×1350px" 힌트 추가
 - **플레이어 ↑버튼(return-btn) 제거** ✅: `#return-btn` / `#return-greeting` 요소 제거, showReturnBtn/hideReturnBtn 빈함수 교체 (p/ + 3파일 동기화)
 - **지연로그인 등록 CTA 숨김** ✅: `_refreshRegCta()` 함수 추가 — on-demand + selfRegCtaSeparate 조합에서 로그인 사용자에게 등록 CTA 숨김, 로그인 성공 직후 즉시 적용 (4파일 동기화)
 - **CTA 클릭 on-demand 동작 수정** ✅: `onCtaClick`에서 on-demand 모드 `openPrep()` → `reopenPrep()` (4파일 동기화)
