@@ -886,7 +886,14 @@ async function loadStats(){
     const parts = await Promise.all(STATS.map(async s => {
       const ct = s.countType || 'count';
       let count = 0;
-      if(ct === 'project-users-total'){
+      if(ct === 'page-views-total'){
+        const snap = await db.collection('cms_page_views').doc(PROJECT_ID).collection('views').get();
+        count = snap.size;
+      } else if(ct === 'page-views-today'){
+        const snap = await db.collection('cms_page_views').doc(PROJECT_ID).collection('views')
+          .where('viewedAt','>=',todayMidnight).get();
+        count = snap.size;
+      } else if(ct === 'project-users-total'){
         const snap = await db.collection('cms_users_'+PROJECT_ID).get();
         count = snap.size;
       } else if(ct === 'project-users-today'){
@@ -2516,8 +2523,18 @@ async function submitForm(formId){
 }
 
 /* ── Init ── */
+function _recordPageView(){
+  if(!PROJECT_ID||IS_ADMIN_PREVIEW) return;
+  try {
+    db.collection('cms_page_views').doc(PROJECT_ID).collection('views').add({
+      viewedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  } catch(e){}
+}
+
 async function init(){
   setCss('--c',nextColor());
+  _recordPageView();
   await loadProjectSettings();
   loadUserProgress();
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');

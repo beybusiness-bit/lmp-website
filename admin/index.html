@@ -3619,6 +3619,8 @@ function renderStatList() {
       <div style="margin-bottom:6px;">
         <select class="fi-sm" style="margin-bottom:0;width:100%;" onchange="curStats[${i}].countType=this.value;renderStatList();">
           <option value="count"${ct==='count'?' selected':''}>커스텀 컬렉션 문서 수</option>
+          <option value="page-views-total"${ct==='page-views-total'?' selected':''}>페이지 방문 누적 (전체)</option>
+          <option value="page-views-today"${ct==='page-views-today'?' selected':''}>페이지 방문 오늘</option>
           <option value="project-users-total"${ct==='project-users-total'?' selected':''}>이 프로젝트 사용자 누적 (전체)</option>
           <option value="project-users-today"${ct==='project-users-today'?' selected':''}>이 프로젝트 사용자 오늘 (당일 접속)</option>
           <option value="ext-project"${ct==='ext-project'?' selected':''}>다른 프로젝트 지표 선택 →</option>
