@@ -104,14 +104,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .submit-row{margin-top:20px;}
 .submit-count-label{font-size:12px;font-weight:700;opacity:.5;margin-bottom:8px;text-align:center;}
 
-/* 신청한 곡 탭 */
-.prev-list{display:flex;flex-direction:column;gap:0;}
-.prev-item{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid rgba(0,0,0,.07);align-items:center;}
-.prev-item:last-child{border-bottom:none;}
-.prev-thumb{width:48px;height:32px;object-fit:cover;flex-shrink:0;border:1px solid rgba(0,0,0,.08);background:#f0f0f0;}
-.prev-info{flex:1;min-width:0;}
-.prev-title{font-size:12px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;}
-.prev-ch{font-size:10px;color:rgba(0,0,0,.4);}
+/* 전체 재생목록 탭 */
+.full-list{display:flex;flex-direction:column;gap:0;}
+.full-item{display:flex;gap:8px;padding:9px 0;border-bottom:1px solid rgba(0,0,0,.08);align-items:center;}
+.full-item:last-child{border-bottom:none;}
+.full-thumb{width:56px;height:36px;object-fit:cover;flex-shrink:0;border:1px solid rgba(0,0,0,.08);background:#f0f0f0;}
+.full-info{flex:1;min-width:0;}
+.full-title{font-size:12px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;}
+.full-ch{font-size:10px;color:rgba(0,0,0,.4);}
+.mine-badge{display:inline-block;font-size:9px;font-weight:800;padding:2px 5px;background:rgba(0,0,0,.15);color:rgba(0,0,0,.7);letter-spacing:.2px;margin-left:5px;vertical-align:middle;line-height:1.4;}
 
 /* 스피너 */
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -136,13 +137,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
   <!-- 탭 -->
   <div class="tab-row">
-    <button class="tab-btn on" id="tab-search" onclick="switchTab('search')">검색</button>
+    <button class="tab-btn on" id="tab-fullplaylist" onclick="switchTab('fullplaylist')">전체 재생목록 <span id="full-count-badge"></span></button>
+    <button class="tab-btn" id="tab-search" onclick="switchTab('search')">검색</button>
     <button class="tab-btn" id="tab-selected" onclick="switchTab('selected')">선택 목록 <span id="sel-count-badge"></span></button>
-    <button class="tab-btn" id="tab-submitted" onclick="switchTab('submitted')" style="display:none;">신청한 곡 <span id="submitted-count-badge"></span></button>
+  </div>
+
+  <!-- 전체 재생목록 탭 -->
+  <div id="pane-fullplaylist">
+    <div class="full-list" id="full-list">
+      <div class="empty-msg"><div class="spinner"></div>불러오는 중…</div>
+    </div>
   </div>
 
   <!-- 검색 탭 -->
-  <div id="pane-search">
+  <div id="pane-search" style="display:none;">
     <div class="search-row">
       <input class="search-inp" id="search-inp" type="text" placeholder="곡 이름, 아티스트 검색…" onkeydown="if(event.key==='Enter')doSearch()">
       <button class="search-btn" onclick="doSearch()">검색</button>
@@ -177,12 +185,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <div class="submit-count-label" id="submit-count-label"></div>
       <button class="lmp-btn" id="submit-btn" onclick="submitSelected()">신청하기</button>
     </div>
-  </div>
-
-  <!-- 신청한 곡 탭 -->
-  <div id="pane-submitted" style="display:none;">
-    <div class="prev-list" id="prev-list"></div>
-    <div class="empty-msg" id="prev-empty-msg" style="display:none;">아직 신청한 곡이 없어요.</div>
   </div>
 
 </div>
@@ -239,14 +241,14 @@ window.addEventListener('message', e => {
 
 // state
 let playlistConfig = null;
-let selectedVideos = [];        // pending 선택 (아직 미제출)
-let submittedVideoIds = new Set(); // 이미 제출된 videoId
-let submittedItems = [];        // 제출 이력 [{videoId,title,channelTitle,thumbnailUrl,...}]
+let selectedVideos = [];              // pending 선택 (아직 미제출)
+let allSubmittedVideoIds = new Set(); // 전체 재생목록의 videoId (중복 제거 후)
+let mySubmittedVideoIds = new Set();  // 현재 사용자가 제출한 videoId
 let nextPageToken = '';
 let lastQuery = '';
 let curPreviewId = '';
-let seenResultIds = new Set();  // pagination 중복 방지
-let _searchEpoch = 0;           // race condition 방지: 오래된 응답 무시
+let seenResultIds = new Set();        // pagination 중복 방지
+let _searchEpoch = 0;                 // race condition 방지: 오래된 응답 무시
 
 // ── 검색 결과 캐싱 (API 할당량 절약) ─────────────────────────
 const _CACHE_TTL = 24 * 60 * 60 * 1000; // 24시간
@@ -282,14 +284,13 @@ function showErr(msg) {
 }
 
 function switchTab(tab) {
+  document.getElementById('tab-fullplaylist').classList.toggle('on', tab === 'fullplaylist');
   document.getElementById('tab-search').classList.toggle('on', tab === 'search');
   document.getElementById('tab-selected').classList.toggle('on', tab === 'selected');
-  document.getElementById('tab-submitted').classList.toggle('on', tab === 'submitted');
+  document.getElementById('pane-fullplaylist').style.display = tab === 'fullplaylist' ? '' : 'none';
   document.getElementById('pane-search').style.display = tab === 'search' ? '' : 'none';
   document.getElementById('pane-selected').style.display = tab === 'selected' ? '' : 'none';
-  document.getElementById('pane-submitted').style.display = tab === 'submitted' ? '' : 'none';
   if (tab === 'selected') renderSelectedList();
-  if (tab === 'submitted') loadPrevSubmissions();
 }
 
 function updateBadge() {
@@ -392,7 +393,7 @@ function renderResultItem(item) {
   const ch = item.snippet.channelTitle;
   const thumb = item.snippet.thumbnails?.medium?.url || item.snippet.thumbnails?.default?.url || '';
   const isAdded = selectedVideos.some(v => v.videoId === vid);
-  const isSubmitted = submittedVideoIds.has(vid);
+  const isSubmitted = allSubmittedVideoIds.has(vid);
   const eTitle = esc(title);
   const eCh = esc(ch);
   const ttlJsArg = title.replace(/['\\]/g, '\\$&');
@@ -402,7 +403,7 @@ function renderResultItem(item) {
   const submittedBadge = isSubmitted ? `<span class="submitted-badge">신청완료</span>` : '';
   let btnHtml;
   if (isSubmitted) {
-    btnHtml = `<button class="result-add-btn submitted" disabled title="이미 신청한 곡">✓</button>`;
+    btnHtml = `<button class="result-add-btn submitted" disabled title="이미 신청된 곡">✓</button>`;
   } else {
     btnHtml = `<button class="result-add-btn${isAdded?' added':''}" onclick="event.stopPropagation();toggleAdd('${esc(vid)}','${esc(ttlJsArg)}','${esc(chJsArg)}','${esc(thumb)}')" title="${isAdded?'제거':'추가'}">${isAdded?'✓':'+'}</button>`;
   }
@@ -473,7 +474,7 @@ function togglePreviewCollapse() {
 
 // ── 선택 추가/제거 ──
 function toggleAdd(videoId, title, channelTitle, thumbnailUrl) {
-  if (submittedVideoIds.has(videoId)) return; // 이미 제출됨 방어
+  if (allSubmittedVideoIds.has(videoId)) return; // 이미 재생목록에 있음 방어
   const idx = selectedVideos.findIndex(v => v.videoId === videoId);
   if (idx >= 0) {
     selectedVideos.splice(idx, 1);
@@ -545,7 +546,7 @@ async function submitSelected() {
     const colRef = db.collection('cms_youtube_submissions').doc(PLAYLIST_ID).collection('songs');
 
     for (const v of selectedVideos) {
-      if (submittedVideoIds.has(v.videoId)) continue;
+      if (allSubmittedVideoIds.has(v.videoId)) continue;
       const docRef = colRef.doc();
       const data = {
         videoId: v.videoId,
@@ -564,7 +565,11 @@ async function submitSelected() {
     window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
 
     const count = selectedVideos.length;
-    selectedVideos.forEach(v => submittedVideoIds.add(v.videoId));
+    // 즉시 Sets에 반영 (다음 렌더 시 "신청완료" 표시)
+    selectedVideos.forEach(v => {
+      allSubmittedVideoIds.add(v.videoId);
+      if (ctxUserId) mySubmittedVideoIds.add(v.videoId);
+    });
     selectedVideos = [];
     updateBadge();
 
@@ -575,7 +580,7 @@ async function submitSelected() {
     document.getElementById('app').style.display = 'none';
     document.getElementById('done-screen').classList.add('on');
 
-    loadPrevSubmissions();
+    loadFullPlaylist(); // 백그라운드에서 목록 갱신
   } catch(e) {
     console.error('[submit]', e);
     btn.disabled = false;
@@ -587,7 +592,7 @@ async function submitSelected() {
 function resetForMore() {
   document.getElementById('done-screen').classList.remove('on');
   document.getElementById('app').style.display = '';
-  switchTab('search');
+  switchTab('fullplaylist');
   document.getElementById('search-inp').value = '';
   document.getElementById('result-list').innerHTML = '<div class="empty-msg">검색어를 입력하고 검색 버튼을 눌러주세요.</div>';
   closePreview();
@@ -596,47 +601,59 @@ function resetForMore() {
   seenResultIds = new Set();
 }
 
-// ── 사용자의 이전 제출 곡 ──
-async function loadPrevSubmissions() {
-  submittedVideoIds = new Set();
-  submittedItems = [];
-  const tabBtn = document.getElementById('tab-submitted');
-  if (!PLAYLIST_ID || !ctxUserId) {
-    tabBtn.style.display = 'none';
-    return;
-  }
-  tabBtn.style.display = '';
+// ── 전체 재생목록 (모든 사용자, 중복 제거) ──
+async function loadFullPlaylist() {
+  if (!PLAYLIST_ID) return;
+  const listEl = document.getElementById('full-list');
+  listEl.innerHTML = '<div class="empty-msg"><div class="spinner"></div>불러오는 중…</div>';
   try {
     const snap = await db.collection('cms_youtube_submissions')
       .doc(PLAYLIST_ID).collection('songs')
-      .where('userId', '==', ctxUserId)
-      .limit(50)
+      .orderBy('submittedAt', 'desc')
+      .limit(500)
       .get();
-    if (snap.empty) {
-      document.getElementById('prev-list').innerHTML = `<div style="font-size:11px;color:rgba(0,0,0,.35);padding:10px 0 0;">userId: ${ctxUserId||'(없음)'}</div>`;
-      document.getElementById('prev-empty-msg').style.display = '';
-      document.getElementById('submitted-count-badge').textContent = '';
+
+    // videoId 기준 중복 제거 (submittedAt 내림차순이므로 첫 번째가 가장 최근 제출)
+    const seen = new Set();
+    const items = [];
+    for (const doc of snap.docs) {
+      const d = doc.data();
+      if (!d.videoId || seen.has(d.videoId)) continue;
+      seen.add(d.videoId);
+      items.push(d);
+    }
+
+    // 검색 결과 indicator용 Set 갱신
+    allSubmittedVideoIds = new Set(items.map(d => d.videoId));
+    mySubmittedVideoIds = new Set(
+      items.filter(d => ctxUserId && d.userId === ctxUserId).map(d => d.videoId)
+    );
+
+    // 탭 카운트 배지
+    document.getElementById('full-count-badge').textContent = items.length ? `(${items.length})` : '';
+
+    if (!items.length) {
+      listEl.innerHTML = '<div class="empty-msg">아직 신청된 곡이 없어요.</div>';
       return;
     }
-    submittedItems = snap.docs.map(d => d.data());
-    submittedItems.sort((a,b)=>(b.submittedAt?.toMillis?.()??0)-(a.submittedAt?.toMillis?.()??0));
-    submittedItems.forEach(v => v.videoId && submittedVideoIds.add(v.videoId));
 
-    document.getElementById('submitted-count-badge').textContent = `(${submittedItems.length})`;
-    document.getElementById('prev-empty-msg').style.display = 'none';
-    document.getElementById('prev-list').innerHTML = submittedItems.map(v => `
-      <div class="prev-item">
-        <img class="prev-thumb" src="${esc(v.thumbnailUrl||'')}" alt="" loading="lazy" onerror="this.style.display='none'">
-        <div class="prev-info">
-          <div class="prev-title">${esc(v.title||'')}</div>
-          <div class="prev-ch">${esc(v.channelTitle||'')}</div>
+    listEl.innerHTML = items.map(v => {
+      const isMine = ctxUserId && v.userId === ctxUserId;
+      const mineBadge = isMine ? `<span class="mine-badge">내 곡</span>` : '';
+      return `<div class="full-item">
+        <img class="full-thumb" src="${esc(v.thumbnailUrl||'')}" alt="" loading="lazy" onerror="this.style.display='none'">
+        <div class="full-info">
+          <div class="full-title">${esc(v.title||'')}${mineBadge}</div>
+          <div class="full-ch">${esc(v.channelTitle||'')}</div>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
+
+    // 열려있는 검색 결과의 버튼 상태 갱신
     refreshResultButtons();
   } catch(e) {
-    console.error('[loadPrevSubmissions]', e);
-    document.getElementById('prev-list').innerHTML = `<div style="font-size:12px;color:#f95548;padding:12px 0;">${e.code==='permission-denied'?'읽기 권한이 없습니다. Firebase 보안 규칙을 확인해 주세요.':'조회 오류: '+e.message}</div>`;
-    document.getElementById('prev-empty-msg').style.display = 'none';
+    console.error('[loadFullPlaylist]', e);
+    listEl.innerHTML = `<div class="empty-msg" style="color:#c00;">${e.code==='permission-denied'?'읽기 권한이 없습니다.':'목록 로드 실패: '+e.message}</div>`;
   }
 }
 
@@ -678,13 +695,13 @@ async function init() {
     showErr('재생목록 ID가 없습니다.\nURL에 ?id=재생목록ID 형식으로 접근해주세요.');
     return;
   }
-  // context 대기 (이전 제출 조회에 필요)
+  // context 대기 (userId 기반 "내 곡" 배지에 필요)
   if (!ctxReceived) {
     await Promise.race([ctxPromise, new Promise(r => setTimeout(r, 800))]);
   }
   const ok = await loadPlaylistConfig();
   if (!ok) return;
-  await loadPrevSubmissions();
+  await loadFullPlaylist();
   document.getElementById('loading').style.display = 'none';
   document.getElementById('app').style.display = '';
   updateBadge();
