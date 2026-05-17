@@ -856,7 +856,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button class="fmt-btn" id="fmt-var-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','gbk-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
                   <button class="fmt-btn" id="fmt-img-gbk-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','gbk-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="ed-gbk-desc" contenteditable="true" data-ph="사용자에게 보여줄 설명을 입력하세요"></div>
+                <div class="mini-rte" id="ed-gbk-desc" contenteditable="true" data-ph="사용자에게 보여줄 설명을 입력하세요" onmouseup="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
             </div>
             <div class="ed-sect">
@@ -1032,7 +1032,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button class="fmt-btn" id="fmt-var-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','sc-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
                   <button class="fmt-btn" id="fmt-img-sc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','sc-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="ed-sc-desc" contenteditable="true" data-ph="예: 30분간 1:1 상담을 진행합니다."></div>
+                <div class="mini-rte" id="ed-sc-desc" contenteditable="true" data-ph="예: 30분간 1:1 상담을 진행합니다." onmouseup="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
             </div>
             <div class="ed-sect">
@@ -1130,7 +1130,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button class="fmt-btn" id="fmt-var-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','sc-confirm-msg')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
                   <button class="fmt-btn" id="fmt-img-sc-confirm-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','sc-confirm-msg')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="ed-sc-confirm-msg" contenteditable="true" data-ph="예약해 주셔서 감사해요!"></div>
+                <div class="mini-rte" id="ed-sc-confirm-msg" contenteditable="true" data-ph="예약해 주셔서 감사해요!" onmouseup="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
             </div>
 
@@ -1197,7 +1197,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button class="fmt-btn" id="fmt-var-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','yt-plc-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
                   <button class="fmt-btn" id="fmt-img-yt-plc-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','yt-plc-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="ed-yt-plc-desc" contenteditable="true" data-ph="예: 행사에서 듣고 싶은 곡을 검색해서 신청해주세요."></div>
+                <div class="mini-rte" id="ed-yt-plc-desc" contenteditable="true" data-ph="예: 행사에서 듣고 싶은 곡을 검색해서 신청해주세요." onmouseup="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
             </div>
             <div class="sect-head" style="margin-top:20px;margin-bottom:8px;">제출 설정</div>
@@ -1225,7 +1225,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button class="fmt-btn" id="fmt-var-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','yt-plc-done-sub')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
                   <button class="fmt-btn" id="fmt-img-yt-plc-done-sub" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','yt-plc-done-sub')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="ed-yt-plc-done-sub" contenteditable="true" data-ph="{count}곡을 신청해 주셔서 감사해요."></div>
+                <div class="mini-rte" id="ed-yt-plc-done-sub" contenteditable="true" data-ph="{count}곡을 신청해 주셔서 감사해요." onmouseup="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
             </div>
             <div style="margin-top:24px;padding-top:16px;border-top:1.5px solid rgba(0,0,0,.1);">
@@ -1289,7 +1289,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button class="fmt-btn" id="fmt-var-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','tf-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
                   <button class="fmt-btn" id="fmt-img-tf-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','tf-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="ed-tf-desc" contenteditable="true" data-ph="폼에 대한 안내 문구를 입력하세요."></div>
+                <div class="mini-rte" id="ed-tf-desc" contenteditable="true" data-ph="폼에 대한 안내 문구를 입력하세요." onmouseup="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
             </div>
             <div class="sect-head" style="margin-bottom:8px;">필드</div>
@@ -1315,7 +1315,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button class="fmt-btn" id="fmt-var-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','tf-submit-msg')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
                   <button class="fmt-btn" id="fmt-img-tf-submit-msg" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','tf-submit-msg')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="ed-tf-submit-msg" contenteditable="true" data-ph="제출이 완료됐어요!"></div>
+                <div class="mini-rte" id="ed-tf-submit-msg" contenteditable="true" data-ph="제출이 완료됐어요!" onmouseup="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
             </div>
             <div class="ed-sect">
@@ -1544,7 +1544,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button class="fmt-btn" id="fmt-var-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','cg-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
                   <button class="fmt-btn" id="fmt-img-cg-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','cg-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="ed-cg-desc" contenteditable="true" data-ph="사용자에게 표시될 설명"></div>
+                <div class="mini-rte" id="ed-cg-desc" contenteditable="true" data-ph="사용자에게 표시될 설명" onmouseup="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
             </div>
             <!-- 입력 필드 -->
@@ -1596,7 +1596,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button class="fmt-btn" id="fmt-var-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','cg-ai-context')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
                   <button class="fmt-btn" id="fmt-img-cg-ai-context" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','cg-ai-context')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="ed-cg-ai-context" contenteditable="true" data-ph="예: 이 문구는 인스타그램 신메뉴 런칭에 사용됩니다. 브랜드 키워드는 '느림', '건강', '지속가능성'입니다." style="min-height:80px;"></div>
+                <div class="mini-rte" id="ed-cg-ai-context" contenteditable="true" data-ph="예: 이 문구는 인스타그램 신메뉴 런칭에 사용됩니다. 브랜드 키워드는 '느림', '건강', '지속가능성'입니다." style="min-height:80px;" onmouseup="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
             </div>
             <!-- 참고 문구 -->
@@ -1774,7 +1774,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button class="fmt-btn" id="fmt-var-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','py-desc')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
                   <button class="fmt-btn" id="fmt-img-py-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','py-desc')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="ed-py-desc" contenteditable="true" data-ph="결제 전 사용자에게 보여줄 설명" style="min-height:100px;"></div>
+                <div class="mini-rte" id="ed-py-desc" contenteditable="true" data-ph="결제 전 사용자에게 보여줄 설명" style="min-height:100px;" onmouseup="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
             </div>
             <div class="ed-sect">
@@ -1796,7 +1796,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <button class="fmt-btn" id="fmt-var-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'var','py-success')" title="변수" style="font-size:9px;font-weight:900;letter-spacing:-.5px;padding:5px 6px;">&#123;x&#125;</button>
                   <button class="fmt-btn" id="fmt-img-py-success" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','py-success')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
                 </div>
-                <div class="mini-rte" id="ed-py-success" contenteditable="true" data-ph="예: 결제가 완료되었어요. 이제 프로 콘텐츠를 볼 수 있어요."></div>
+                <div class="mini-rte" id="ed-py-success" contenteditable="true" data-ph="예: 결제가 완료되었어요. 이제 프로 콘텐츠를 볼 수 있어요." onmouseup="saveRange(this)" onkeyup="saveRange(this)"></div>
               </div>
             </div>
             <!-- 결제 내역 인라인 (결제 내역 버튼 클릭 시 표시) -->
@@ -1857,7 +1857,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <button onmousedown="event.preventDefault();rteCmd('rte-privacy','italic')"><i>I</i></button>
             <button onmousedown="event.preventDefault();rteLinkCmd('rte-privacy')">🔗</button>
           </div>
-          <div class="mini-rte" id="rte-privacy" contenteditable="true" data-ph="개인정보처리방침 내용을 입력하세요" style="min-height:100px;padding:8px;"></div>
+          <div class="mini-rte" id="rte-privacy" contenteditable="true" data-ph="개인정보처리방침 내용을 입력하세요" style="min-height:100px;padding:8px;" onmouseup="saveRange(this)" onkeyup="saveRange(this)"></div>
         </div>
 
         <div class="sect-head" style="margin-top:20px;display:flex;align-items:center;gap:8px;">이용약관 <button class="prev-btn" onclick="fillTermsTemplate()" style="font-size:10px;padding:2px 8px;margin-left:auto;">기본 내용 채우기</button></div>
@@ -1868,7 +1868,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <button onmousedown="event.preventDefault();rteCmd('rte-terms','italic')"><i>I</i></button>
             <button onmousedown="event.preventDefault();rteLinkCmd('rte-terms')">🔗</button>
           </div>
-          <div class="mini-rte" id="rte-terms" contenteditable="true" data-ph="이용약관 내용을 입력하세요" style="min-height:100px;padding:8px;"></div>
+          <div class="mini-rte" id="rte-terms" contenteditable="true" data-ph="이용약관 내용을 입력하세요" style="min-height:100px;padding:8px;" onmouseup="saveRange(this)" onkeyup="saveRange(this)"></div>
         </div>
 
         <div class="sect-head" style="margin-top:24px;">분석 도구</div>
