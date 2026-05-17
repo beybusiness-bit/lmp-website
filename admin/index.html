@@ -2609,6 +2609,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         </div>
       </div>
     </div>
+    <!-- 홈 블록 전용: 카드 테두리 설정 -->
+    <div id="blk-card-border-section" style="display:none;margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
+      <div class="ed-lbl" style="font-size:11px;font-weight:700;margin-bottom:8px;">🃏 카드 테두리 <span style="font-weight:400;opacity:.6;">(홈 화면 위젯 카드)</span></div>
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:10px;color:rgba(0,0,0,.5);margin-bottom:3px;">모서리 둥글기 (px)</div>
+          <input class="fi-sm" id="blk-card-radius" type="number" min="0" max="40" placeholder="0" style="width:70px;margin-bottom:0;" oninput="scheduleBmPreview()">
+        </div>
+        <div>
+          <div style="font-size:10px;color:rgba(0,0,0,.5);margin-bottom:3px;">테두리 굵기 (px)</div>
+          <input class="fi-sm" id="blk-card-border-width" type="number" min="0" max="10" placeholder="0" style="width:70px;margin-bottom:0;" oninput="scheduleBmPreview()">
+        </div>
+        <div>
+          <div style="font-size:10px;color:rgba(0,0,0,.5);margin-bottom:3px;">테두리 색상</div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="color" id="blk-card-border-color" value="#000000" oninput="document.getElementById('blk-card-border-hex').value=this.value;scheduleBmPreview()" style="width:32px;height:28px;border:1.5px solid #000;padding:0;cursor:pointer;">
+            <input class="fi-sm" id="blk-card-border-hex" placeholder="#000000" style="width:84px;margin-bottom:0;" oninput="const v=this.value;if(/^#[0-9a-fA-F]{6}$/.test(v)){document.getElementById('blk-card-border-color').value=v;}scheduleBmPreview()">
+          </div>
+        </div>
+      </div>
+    </div>
     </div><!-- /ed-inner -->
   </div>
   <!-- 블록 편집 실시간 미리보기 패널 -->
@@ -6274,6 +6295,7 @@ function openBlockModal(idx,insertAt){
     const btn=document.getElementById('btab-'+k); if(btn) btn.style.display=_isHb?'none':'';
   });
   const _hbCheckSec=document.getElementById('blk-check-section'); if(_hbCheckSec&&_isHb) _hbCheckSec.style.display='none';
+  const _hbCardSec=document.getElementById('blk-card-border-section'); if(_hbCardSec) _hbCardSec.style.display=_isHb?'':'none';
   const _cedT=document.getElementById('ced-text');
   _cedT.innerHTML=b.type==='text'?(b.textContent||''):''; _cedT.style.height='';
   document.getElementById('text-link-url').value=b.type==='text'?(b.linkUrl||''):'';
@@ -6379,6 +6401,14 @@ function openBlockModal(idx,insertAt){
   const chkTP=document.getElementById('blk-check-text-color'); if(chkTP) chkTP.value=curBlkCheckTextColor||'#ffffff';
   const chkTH=document.getElementById('blk-check-text-hex');   if(chkTH) chkTH.value=(curBlkCheckTextColor||'').toUpperCase();
   setCheckPos(b.checkPosition||'bottom-center');
+  // 카드 테두리 (홈 블록 전용)
+  if(_isHb){
+    const _cr=document.getElementById('blk-card-radius'); if(_cr) _cr.value=b.cardBorderRadius??'';
+    const _cw=document.getElementById('blk-card-border-width'); if(_cw) _cw.value=b.cardBorderWidth??'';
+    const _cc=b.cardBorderColor||'#000000';
+    const _ccp=document.getElementById('blk-card-border-color'); if(_ccp) _ccp.value=_cc;
+    const _cch=document.getElementById('blk-card-border-hex'); if(_cch) _cch.value=_cc;
+  }
   // authMode 로드 (backward compat: requireAuth:true → 'lock')
   const authM=(b.authMode||(b.requireAuth?'lock':'none'));
   document.querySelectorAll('input[name="blk-auth-mode"]').forEach(r=>{r.checked=(r.value===authM);});
@@ -6410,7 +6440,7 @@ function openBlockModal(idx,insertAt){
   if (!_isHb && !_navRestore) history.pushState({v:'block', blkIdx:idx, insertAt:insertAt??null, projId:curProjId, stageIdx:curEditingStageIdx}, '', '#edit/'+curProjId+'/stages/'+(curEditingStageIdx??0)+'/block');
   updateBmPreview();
 }
-function closeBlockModal(){closeModal('form-field-modal');document.getElementById('block-modal').classList.remove('on');_hbMode=false;_hbEditId=null;['tool','form','spacer','divider'].forEach(k=>{const btn=document.getElementById('btab-'+k);if(btn)btn.style.display='';});const _cs=document.getElementById('blk-check-section');if(_cs)_cs.style.display='';}
+function closeBlockModal(){closeModal('form-field-modal');document.getElementById('block-modal').classList.remove('on');_hbMode=false;_hbEditId=null;['tool','form','spacer','divider'].forEach(k=>{const btn=document.getElementById('btab-'+k);if(btn)btn.style.display='';});const _cs=document.getElementById('blk-check-section');if(_cs)_cs.style.display='';const _cbs=document.getElementById('blk-card-border-section');if(_cbs)_cbs.style.display='none';}
 /* ── 블록 모달 실시간 미리보기 ── */
 let bmPreviewTimer=null;
 function scheduleBmPreview(){
@@ -6759,6 +6789,12 @@ function saveBlock(){
     delete b.requiredTier; delete b.tierLockMode; delete b.tierReplaceBlock;
   }
   if(_hbMode){
+    // 카드 테두리 저장
+    const _cr=parseInt(document.getElementById('blk-card-radius')?.value)||0;
+    const _cw=parseInt(document.getElementById('blk-card-border-width')?.value)||0;
+    const _cc=(document.getElementById('blk-card-border-color')?.value||'#000000');
+    if(_cr) b.cardBorderRadius=_cr; else delete b.cardBorderRadius;
+    if(_cw){b.cardBorderWidth=_cw;b.cardBorderColor=_cc;}else{delete b.cardBorderWidth;delete b.cardBorderColor;}
     const _targetId=_hbEditId||existingId;
     b.id=_targetId;
     if(_hbEditId){
@@ -8197,6 +8233,16 @@ window.addEventListener('load', () => {
     bm.addEventListener('input', () => scheduleBmPreview());
     bm.addEventListener('change', () => scheduleBmPreview());
   }
+  // mini-rte 도구 설명 필드에 saveRange + syncFmtBar 이벤트 위임
+  ['mouseup','keyup'].forEach(evName => {
+    document.addEventListener(evName, e => {
+      const ed = e.target.closest && e.target.closest('.mini-rte[id^="ed-"]');
+      if (!ed) return;
+      const ctx = ed.id.replace('ed-', '');
+      saveRange(ed);
+      syncFmtBar(ctx);
+    });
+  });
   window.addEventListener('beforeunload', e => {
     if(projDirty || stageDirty) { e.preventDefault(); e.returnValue=''; }
   });

@@ -1211,7 +1211,7 @@ function renderSeparateStages(){
       } else {
         const hb=hbMap[item.id];
         if(!hb) return '';
-        return `<div class="home-blk-wrap">${blockHtml(hb)}</div>`;
+        const _hbStyle=(hb.cardBorderRadius||hb.cardBorderWidth)?`border-radius:${hb.cardBorderRadius||0}px;${hb.cardBorderWidth?`border:${hb.cardBorderWidth}px solid ${hb.cardBorderColor||'#000'};overflow:hidden;`:''}`:'';;return `<div class="home-blk-wrap" style="${_hbStyle}">${blockHtml(hb)}</div>`;
       }
     }).join('');
   } else {
@@ -1267,7 +1267,7 @@ function renderMergedStages(){
       } else {
         const hb=hbMap[item.id];
         if(!hb) return '';
-        return `<div class="home-blk-wrap">${blockHtml(hb)}</div>`;
+        const _hbStyle=(hb.cardBorderRadius||hb.cardBorderWidth)?`border-radius:${hb.cardBorderRadius||0}px;${hb.cardBorderWidth?`border:${hb.cardBorderWidth}px solid ${hb.cardBorderColor||'#000'};overflow:hidden;`:''}`:'';;return `<div class="home-blk-wrap" style="${_hbStyle}">${blockHtml(hb)}</div>`;
       }
     }).join('');
   } else {
@@ -2259,10 +2259,13 @@ function renderGuideSlide(blocks){
   sb.onmouseleave=()=>{ mDragging=false; };
 }
 function updateDots(){
+  const dotsEl=document.getElementById('guide-dots');
+  if(gSlideTotal<=1){dotsEl.innerHTML='';dotsEl.style.display='none';return;}
+  dotsEl.style.display='';
   const prev=gSlideIdx>0, next=gSlideIdx<gSlideTotal-1;
   const aS='font-size:20px;font-weight:900;cursor:pointer;padding:0 10px;user-select:none;-webkit-tap-highlight-color:transparent;';
   const dots=Array.from({length:gSlideTotal},(_,i)=>`<div class="guide-dot${i===gSlideIdx?' on':''}" onclick="goSlide(${i})"></div>`).join('');
-  document.getElementById('guide-dots').innerHTML=
+  dotsEl.innerHTML=
     `<span onclick="goSlide(${gSlideIdx-1})" style="${aS}opacity:${prev?1:.2};">‹</span>${dots}<span onclick="goSlide(${gSlideIdx+1})" style="${aS}opacity:${next?1:.2};">›</span>`;
 }
 function goSlide(i){ gSlideIdx=Math.max(0,Math.min(i,gSlideTotal-1)); document.getElementById('guide-slide-track').style.transform='translateX('+(-gSlideIdx*(100/gSlideTotal))+'%)'; updateDots(); }
