@@ -884,7 +884,6 @@ function openPresetModal() {
     <div onclick="addPresetImage(${i})" style="cursor:pointer;position:relative;border:1.5px solid rgba(0,0,0,.12);overflow:hidden;">
       <img src="${p.url}" loading="lazy" style="width:100%;aspect-ratio:1/1;object-fit:cover;display:block;" onerror="this.style.opacity='.3'">
       ${p.name ? `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:700;padding:3px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>` : ''}
-      ${p.lockSize ? `<div style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,.65);color:#fff;font-size:9px;font-weight:700;padding:2px 4px;border-radius:3px;">🔒</div>` : ''}
     </div>`).join('');
   document.getElementById('preset-img-modal').style.display = 'flex';
 }
@@ -1781,7 +1780,8 @@ function loadImageCORS(src) {
   });
 }
 
-// CORS 전용 이미지 로더 (비CORS 폴백 없음 — export canvas 오염 방지용)
+// CORS 전용 이미지 로더 (export canvas 오염 방지용)
+// Firebase Storage URL: 서버 프록시(/api/proxy-image)를 경유해 CORS 헤더 확보
 function loadImageCORSOnly(src) {
   return new Promise(resolve => {
     if(!src) { resolve(null); return; }
@@ -1792,12 +1792,19 @@ function loadImageCORSOnly(src) {
       img.src = src;
       return;
     }
+    // Firebase Storage → 프록시 경유 (서버 fetch는 CORS 제한 없음)
+    let loadSrc = src;
+    if(src.includes('firebasestorage.googleapis.com')) {
+      loadSrc = '/api/proxy-image?url=' + encodeURIComponent(src);
+    }
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
-    img.onerror = () => resolve(null); // 폴백 없음 — null 반환
-    const sep = src.includes('?') ? '&' : '?';
-    img.src = src + sep + '_cors=' + Date.now();
+    img.onerror = () => resolve(null);
+    // 원본이 Firebase URL이면 프록시를 쓰므로 캐시 버스팅 불필요 (서버 캐시 활용)
+    const isFirebase = src.includes('firebasestorage.googleapis.com');
+    img.src = isFirebase ? loadSrc
+            : loadSrc + (loadSrc.includes('?') ? '&' : '?') + '_cors=' + Date.now();
   });
 }
 
