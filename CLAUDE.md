@@ -772,11 +772,7 @@ closeHelpPanel();
 
 > 이 목록은 세션 종료 시 사용자가 전달한 내용 그대로를 기록한 것이다. 다음 세션 시작 시 이 목록을 그대로 인용해 처리 계획을 세운다.
 
-**🐛 버그 1: 도구 admin 텍스트 편집기 줄바꿈 미표시**
-- 재현: admin 도구 편집 페이지(예: 유튜브 재생목록 도구의 "설명" 필드)에서 엔터로 줄바꿈을 입력해도 플레이어 화면에서 줄바꿈이 표시되지 않음
-- 범위: 유튜브 재생목록 도구에서 확인됨. 다른 도구(폼, 결제, 문구생성기, 일정잡기 등)에서도 같은 RTE 필드가 있으면 전수 확인 후 모두 수정 필요
-- 원인 추정: RTE HTML에 `<br>` 또는 `<p>` 태그로 줄바꿈이 들어오는데, 플레이어 렌더링 시 CSS가 이를 무시할 가능성 (`white-space` 미설정, 또는 `innerHTML` 삽입 방식 문제)
-- 수정 방향: 플레이어에서 RTE 텍스트를 `innerHTML`로 삽입하는 모든 위치에 줄바꿈이 정상 렌더되는지 확인. `<br>` → 줄바꿈, `<p>` → 단락 간격이 표시되어야 함
+~~**🐛 버그 1: 도구 admin 텍스트 편집기 줄바꿈 미표시**~~ ✅ 완료 (이전 세션)
 
 ~~**🐛 버그 2: 유튜브 재생목록 '곡 더 추가하기' 클릭 시 프로젝트 프레임 사라짐**~~ ✅ 완료
 - `resetForMore()` 함수로 URL 이동 없이 도구 내부 상태 초기화 방식으로 이미 구현됨
@@ -784,34 +780,22 @@ closeHelpPanel();
 ~~**🐛 버그 3: 사이드바 활동 내역에 유튜브 재생목록 곡 제출 내역 누락**~~ ✅ 완료
 - `loadMyActivity()`에서 `cms_youtube_submissions/{projectId}/songs` 이미 조회하도록 구현됨
 
-**🐛 버그 4: 스테이지 제목 정렬(좌/중/우) 플레이어 미적용**
-- 재현: admin에서 스테이지 제목 정렬을 좌/중/우로 변경해도, 플레이어에서 가끔 적용이 안 되는 경우가 있음 (몇 번은 정상 동작했으나 다시 보면 적용 안 됨)
-- 관련 필드: `cms_projects/{projectId}/stages[*].titleAlign` ('left'|'center'|'right')
-- 원인 추정: `_autoSaveStage` / `saveStageContent`에서 `_buildUpdatedStages()`로 스프레드 저장하는 방식은 이번 세션에서 수정했으므로, 플레이어 렌더링 측에서 `titleAlign`을 제대로 읽어 적용하는지 확인 필요. 또는 홈화면에서 `homeItemOrder` 기반으로 렌더링 시 `stages` 배열에서 찾아오는 과정에서 필드가 유실될 가능성
-- 수정 방향: `p/index.html` (+ 3개 동기화 파일) 에서 스테이지 카드 렌더링 코드 중 제목 표시 부분에 `titleAlign` 적용 여부 전수 확인 (분리형 이미지카드, 분리형 텍스트카드, 병합형 이미지카드, 병합형 텍스트카드 — 4곳)
+~~**🐛 버그 4: 스테이지 제목 정렬(좌/중/우) 플레이어 미적용**~~ ✅ 완료 (이전 세션)
 
-**🔲 미구현 기능: 유튜브 재생목록 — 로그인 사용자의 기제출 음악 내역 표시**
-- 요구: 로그인 사용자가 이전에 제출한 음악을 확인할 수 있는 UI가 필요
-- 구체적 스펙:
-  1. 탭 추가 또는 버튼/시트/모달 방식으로 "신청한 음악" 목록 표시 (방식 선택은 구현하는 쪽에서 결정)
-  2. 해당 사용자가 `cms_youtube_submissions/{projectId}/songs` 에 제출한 항목들 표시 (곡 제목, 아티스트, 제출 날짜)
-  3. 검색 결과 목록에서도 이미 제출한 곡은 "이미 신청됨" 또는 이미 선택된 상태로 시각적으로 구분 표시 (예: 체크박스 체크됨, 혹은 "제출됨" 배지 등)
-- 데이터 출처: `cms_youtube_submissions/{projectId}/songs` 컬렉션에서 `userId === 현재사용자` 필터링
+~~**🔲 미구현 기능: 유튜브 재생목록 — 로그인 사용자의 기제출 음악 내역 표시**~~ ✅ 완료 (이전 세션)
 
-**📝 요청 1: 도구 admin 편집 페이지 텍스트 편집기 — 이미지 업로드 방식 개선**
-- 현상: 도구 admin 편집 페이지(RTE 필드 = 설명, 완료메시지 등)의 텍스트 편집기에서 이미지(🖼) 버튼을 누르면 URL 입력만 가능함
-- 요구: 블록 텍스트 편집기처럼 직접 파일 업로드도 가능하게 하거나, 아예 동일한 편집기 컴포넌트로 통일 원함
-- 판단 요청: 가능하면 구현, 불가능하면 "왜 안 되는지" 이유를 설명해줄 것
-- 관련 함수: `admin/index.html`의 `rteGet`, `rteSet`, `rteCmd`, `rteLinkCmd`, `rteInsertVar` (전역 RTE 헬퍼), 이 헬퍼를 사용하는 도구별 admin RTE 필드들
+~~**📝 요청 1: 도구 admin 편집 페이지 텍스트 편집기 — 볼드 외 버튼 미동작**~~ ✅ 완료 (이번 세션)
+- 원인: mini-rte 편집기에 `onmouseup`/`onkeyup` 핸들러 없어 `savedRange` 미갱신 → selection 복원 실패 → `document.execCommand` 동작 안 함
+- 수정: admin/index.html 13개 mini-rte div에 `onmouseup="saveRange(this)" onkeyup="saveRange(this)"` 추가
 
-**❓ 질문/요청 2: 반응형 레이아웃 전략 및 CTA 버튼 잘림 방지**
-- 배경: 특정 환경(예: 모바일 사파리)에 맞춰 레이아웃을 설계하면 다른 환경(모바일 크롬 등)에서 겹치거나 잘리거나 여백이 너무 큰 문제가 발생함
-- 사용자 제안: 가장 많이 사용하는 환경(모바일 — 안드로이드? 아이폰 사파리?)의 비율을 기준으로 정해놓고, 다른 환경에서 접속해도 세로로 긴 비율을 늘이거나 줄이지 않고 비율을 유지한 채로 전시하며, 어쩔 수 없이 생기는 여백에는 배경색을 채우는 방식을 선호
-- 답변 요청:
-  1. 이 제안 방식이 기술적으로 구현 가능한지
-  2. 가장 많이 사용하는 환경의 비율이 무엇인지 (표준 권장값 제시)
-  3. 현재 구현 방식(`max-width: 430px` 폰 프레임)과의 차이점
-- 추가 요구 (비조건부): 어떤 방식을 택하든 **CTA 버튼이 화면 밖으로 잘리는 일은 절대 없어야 함** (2번 캡쳐에서 모바일 크롬으로 봤을 때 아래쪽 CTA 버튼이 잘림 — 즉시 수정 필요한 버그에 해당)
+~~**❓ 질문/요청 2: 반응형 레이아웃 전략 및 CTA 버튼 잘림 방지**~~ ✅ 완료 (이전 세션)
+
+**🔧 미해결: admin 결제 관리 탭 일부 컬럼 미표시**
+- 위치: admin → 도구 탭 → 결제 → "결제 관리" 탭
+- 전체 결제 내역 테이블은 표시됨 ✓
+- 결제수단(`cardName`)과 승인시각(`authDatetime`), 주문번호 컬럼 값이 표시 안 됨
+- 원인 추정: `pyLoadAllRecords()` 함수에서 Firestore 문서 필드명 불일치 (읽어오는 필드명이 실제 저장된 필드명과 다를 가능성)
+- 다음 세션에서 `pyLoadAllRecords` 함수 내 필드 매핑 전수 확인 필요
 
 #### Firestore 보안 규칙 (적용 완료)
 ```
@@ -824,19 +808,12 @@ match /cms_payment_records/{doc} { allow read: if true; }
 
 #### 다음 세션 시작점 🔲
 
-**다음 세션: 남은 버그 수정 + 기능 추가**
+**다음 세션: 미해결 항목 처리**
 
-**🟡 중요 수정:**
-1. 도구 admin 텍스트 편집기 줄바꿈 미표시 (전 도구 확인)
-2. 스테이지 제목 정렬 미적용 (분리형/병합형 × 이미지/텍스트 4곳 전수 확인)
-
-**🟢 기능 추가:**
-3. 유튜브 재생목록 기제출 음악 내역 표시 (탭/모달 방식, 검색 결과에 "이미 신청됨" 배지)
-4. 도구 admin RTE 이미지 업로드 개선 (가능 여부 먼저 판단)
-5. 반응형 레이아웃 전략 답변 및 개선 (CTA 버튼 잘림 포함)
+**🟡 미해결:**
+1. admin 결제 관리 탭 — 결제수단·승인시각·주문번호 컬럼 값 미표시 (`pyLoadAllRecords` 필드명 불일치 추정)
 
 **미완료 항목:**
-- **결제 데스크탑 팝업 테스트 필요**: lazymaxpotential.kr 에서 데스크탑 결제 팝업 창 흐름 확인 (새 탭→PayUp→결과 전달→탭 닫힘)
 - **GAS 재배포 필요**: updateFormRow + bulkAppend + Calendar 액션 코드는 추가됐으나 GAS 편집기에서 "새 버전" 배포 안 됨 → script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
 - **환불 처리 기능**: 페이업 환불 API 연동 미구현 — 현재 수동 처리 (페이업 대시보드에서 직접)
 
@@ -844,6 +821,8 @@ match /cms_payment_records/{doc} { allow read: if true; }
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
 
 #### 이번 세션 완료 항목
+- **결제 기록 미표시 버그 수정** ✅: `selectedOption.stockRemaining: undefined` → Firestore 저장 실패 버그. `recordPayment()`에서 저장 시 label/price/tier 3필드만 포함하는 안전한 객체로 변환. 모바일·데스크탑 팝업 결제 모두 동일 코드 경로 → 두 케이스 모두 수정 (tools/payment/index.html line 1123)
+- **admin RTE 도구 편집기 버튼 수정** ✅: mini-rte contenteditable 13개에 `onmouseup="saveRange(this)" onkeyup="saveRange(this)"` 추가. 텍스트 선택 즉시 savedRange 갱신 → 팝업 기반 포맷 버튼(색상/크기/정렬 등) 정상 동작. 볼드만 되던 문제 해결 (admin/index.html)
 - **플레이어 ↑버튼(return-btn) 제거** ✅: `#return-btn` / `#return-greeting` 요소 제거, showReturnBtn/hideReturnBtn 빈함수 교체 (p/ + 3파일 동기화)
 - **지연로그인 등록 CTA 숨김** ✅: `_refreshRegCta()` 함수 추가 — on-demand + selfRegCtaSeparate 조합에서 로그인 사용자에게 등록 CTA 숨김, 로그인 성공 직후 즉시 적용 (4파일 동기화)
 - **CTA 클릭 on-demand 동작 수정** ✅: `onCtaClick`에서 on-demand 모드 `openPrep()` → `reopenPrep()` (4파일 동기화)

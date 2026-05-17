@@ -1120,7 +1120,7 @@ async function recordPayment(d) {
       projectId:       ctxProjectId,
       userId:          ctxUserId,
       userFields:      ctxUserFields || {},
-      selectedOption:  selectedOption  || null,
+      selectedOption:  selectedOption ? { label: selectedOption.label || '', price: selectedOption.price ?? null, tier: selectedOption.tier || '' } : null,
       questionAnswers: Object.keys(questionAnswers).length ? questionAnswers : null,
       qty:             selectedQty,
       pg:              'payup',
