@@ -810,7 +810,6 @@ match /cms_payment_records/{doc} { allow read: if true; }
 **미완료 항목:**
 - **GAS 재배포 필요**: updateFormRow + bulkAppend + Calendar 액션 코드는 추가됐으나 GAS 편집기에서 "새 버전" 배포 안 됨 → script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
 - **환불 처리 기능**: 페이업 환불 API 연동 미구현 — 현재 수동 처리 (페이업 대시보드에서 직접)
-- **꾸미기 도구 자르기 기능 실기기 테스트**: 이번 세션 crop 기능 추가 후 실기기 검증 필요
 
 **보안 관련 사용자 직접 수행 필요 항목:**
 - **Firebase Firestore 규칙 적용**: `firestore.rules` 파일 내용을 Firebase Console → Firestore → 규칙 탭에 붙여넣고 게시
@@ -820,6 +819,15 @@ match /cms_payment_records/{doc} { allow read: if true; }
 
 **기타:**
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
+
+#### 이번 세션 완료 항목 (꾸미기 도구 저장 + mini-RTE 수정 세션)
+- **꾸미기 도구 iOS 저장 수정** ✅: Web Share API 정상 동작, 이미지 실제 저장 가능
+- **꾸미기 도구 데스크탑 저장 퇴화 수정** ✅: `isMobile` 체크 추가 → 데스크탑에서 share sheet 대신 파일 저장 다이얼로그, display canvas 1순위 시도로 화질 개선
+- **꾸미기 도구 "저장실패" 버튼 제거** ✅: SecurityError 시 조용히 리셋 (tools/booth/index.html)
+- **꾸미기 도구 도형·그리기 레이어 export 누락 수정** ✅: `_buildCorsExportDataUrl`에 shape 렌더(`drawShapeToCtx`) + `draw-canvas` 합성 추가, `openExport` 미리보기에도 draw-canvas 포함 (tools/booth/index.html)
+- **꾸미기 도구 Firebase 이미지 export 수정** ✅: `/api/proxy-image.js` Vercel 함수 추가 — 서버 사이드에서 Firebase Storage 이미지 fetch 후 CORS 헤더 붙여 반환. `loadImageCORSOnly`에서 Firebase URL은 프록시 경유로 로드 (api/proxy-image.js + tools/booth/index.html)
+- **꾸미기 도구 이미지 선택 화면 🔒 자물쇠 아이콘 제거** ✅: lockSize 설정과 무관하게 썸네일에 자물쇠 배지 미표시 (tools/booth/index.html)
+- **admin mini-RTE 팝업 버튼 데스크탑 미동작 수정** ✅: 원인 — 팝업 내부 `<button>`에 `onmousedown="event.preventDefault()"` 없어서 클릭 시 에디터 포커스·selection 소멸 → `fmtSz` `sel.rangeCount===0` 조기 리턴. 수정 — `innerHTML` 설정 후 `#fmt-popup-inner button` 전체에 mousedown preventDefault 리스너 일괄 추가 (admin/index.html)
 
 #### 이번 세션 완료 항목 (보안 강화 세션)
 - **admin RTE 모바일 포맷 버튼 완전 수정** ✅: `epd()` 함수에서 `e.preventDefault()`를 `if(!_fmtPopType)` 블록 안으로 이동 → 팝업 열린 상태에서 버튼 클릭 이벤트 차단되던 문제 해결. mini-rte 13개에 `ontouchend="saveRange(this)"` 추가 → 모바일 Safari 텍스트 선택 즉시 savedRange 갱신 (admin/index.html)
