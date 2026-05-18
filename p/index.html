@@ -989,11 +989,12 @@ async function loadWidget() {
     }
 
     const itemCount = WIDGET.toolType==='booth' ? boothImages.length : gbCards.length;
-    const effectiveIpv = Math.min(ipv, itemCount);
-    const peek = itemCount > effectiveIpv ? 24 : 0;
-    const slideW = peek > 0
-      ? `calc((100% - ${gap * (effectiveIpv - 1) + peek}px) / ${effectiveIpv})`
-      : (effectiveIpv <= 1 ? '100%' : `calc(${100/effectiveIpv}% - ${gap*(effectiveIpv-1)/effectiveIpv}px)`);
+    const peek = itemCount > ipv ? 24 : 0;
+    const slideW = ipv <= 1
+      ? '100%'
+      : peek > 0
+        ? `calc((100% - ${gap * (ipv - 1) + peek}px) / ${ipv})`
+        : `calc(${100/ipv}% - ${gap*(ipv-1)/ipv}px)`;
 
     let trackHtml = '';
     if(WIDGET.toolType === 'booth') {
@@ -1026,7 +1027,7 @@ async function loadWidget() {
 
     const pagerHtml = showPager ? `<div class="ws-pager" style="display:flex;justify-content:center;gap:4px;padding:6px 0;"></div>` : '';
 
-    el.innerHTML = `<div class="ws-wrap" style="position:relative;overflow:hidden;touch-action:pan-y;">
+    el.innerHTML = `<div class="ws-wrap" style="width:100%;position:relative;overflow:hidden;touch-action:pan-y;">
       <div class="ws-track" style="display:flex;gap:${gap}px;will-change:transform;">${trackHtml}</div>
     </div>${pagerHtml}`;
 
