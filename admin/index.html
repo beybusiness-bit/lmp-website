@@ -1890,6 +1890,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <option value="shortlink">숏링크만</option>
                 </select>
               </div>
+              <div style="flex:0 0 auto;" id="utm-prefix-wrap">
+                <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">숏링크 접두사</div>
+                <select class="fi-sm" id="utm-link-prefix" onchange="utmUpdatePrefixDisplay();utmSinglePreview();" style="margin-bottom:0;font-size:12px;">
+                  <option value="go">go</option>
+                  <option value="r">r</option>
+                  <option value="l">l</option>
+                  <option value="s">s</option>
+                  <option value="n">n</option>
+                  <option value="ref">ref</option>
+                  <option value="link">link</option>
+                  <option value="lnk">lnk</option>
+                  <option value="join">join</option>
+                  <option value="in">in</option>
+                </select>
+              </div>
             </div>
           </div>
           <!-- 서브탭 -->
@@ -1931,9 +1946,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               </div>
             </div>
             <div id="utm-single-short-row" style="margin-bottom:10px;display:none;">
-              <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">숏링크 슬러그 <span style="opacity:.45;font-weight:400;">(/go/[이름])</span></div>
+              <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">숏링크 슬러그 <span style="opacity:.45;font-weight:400;">(<span class="utm-prefix-display">/go/</span>[이름])</span></div>
               <div style="display:flex;align-items:center;gap:4px;">
-                <span style="font-size:12px;color:rgba(0,0,0,.5);font-family:monospace;">/go/</span>
+                <span class="utm-prefix-display" style="font-size:12px;color:rgba(0,0,0,.5);font-family:monospace;">/go/</span>
                 <input class="fi-sm" id="utm-s-slug" placeholder="홍길동" oninput="utmSinglePreview()" style="margin-bottom:0;font-size:12px;flex:1;">
               </div>
             </div>
@@ -1950,7 +1965,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           </div>
           <!-- 대량 생성 탭 -->
           <div id="utm-bulk-screen" style="display:none;overflow-y:auto;flex:1;padding:14px 16px;">
-            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:10px;line-height:1.5;">닉네임 목록을 입력하면 <code>inflr_[닉네임]</code>을 source로 한 UTM 링크를 일괄 생성합니다. (최대 24명) <br><b>UTM+숏링크</b> 모드에서는 숏링크 <code>/go/inflr_[닉네임]</code>도 함께 생성됩니다.</div>
+            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:10px;line-height:1.5;">닉네임 목록을 입력하면 <code>[닉네임]</code>을 source로 한 UTM 링크를 일괄 생성합니다. (최대 24명) <br><b>UTM+숏링크</b> 모드에서는 숏링크 <code>/<span class="utm-prefix-display-text">go</span>/[닉네임]</code>도 함께 생성됩니다.</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
               <div>
                 <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">utm_medium</div>
@@ -8807,6 +8822,8 @@ async function utmOpenEdit(id){
     document.getElementById('utm-campaign-default').value=s.campaignName||'';
     document.getElementById('utm-mode-sel').value=s.mode||'both';
     utmCurMode=s.mode||'both';
+    document.getElementById('utm-link-prefix').value=s.linkPrefix||'go';
+    utmUpdatePrefixDisplay();
   }catch(e){}
   utmOnModeChange(); utmSwTab('single'); utmSingleReset();
 }
@@ -8823,7 +8840,8 @@ async function utmSaveConfig(e){
   const mode=document.getElementById('utm-mode-sel').value;
   utmCurMode=mode;
   try{
-    await db.collection('cms_utm_configs').doc(utmCurId).update({title,baseUrl,campaignName,mode,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    const linkPrefix=(document.getElementById('utm-link-prefix')?.value||'go').trim().replace(/[^a-z0-9-]/gi,'').toLowerCase()||'go';
+    await db.collection('cms_utm_configs').doc(utmCurId).update({title,baseUrl,campaignName,mode,linkPrefix,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
     _btnFlash(e.target,'저장됨 ✓',1200);
   }catch(err){alert('저장 실패: '+err.message);}
 }
@@ -8833,7 +8851,7 @@ function utmOnModeChange(){
   const isShort=utmCurMode==='shortlink'||utmCurMode==='both';
   const _s=(id,show)=>{const el=document.getElementById(id);if(el)el.style.display=show?'':'none';};
   _s('utm-preset-row',isUtm); _s('utm-single-utm-fields',isUtm); _s('utm-single-short-row',isShort);
-  _s('utm-vercel-btn',isShort); _s('utm-tab-bulk',isUtm);
+  _s('utm-vercel-btn',isShort); _s('utm-tab-bulk',isUtm); _s('utm-prefix-wrap',isShort);
   utmSinglePreview();
 }
 function utmSwTab(t){
@@ -8874,6 +8892,12 @@ function utmColorUrl(url){
     return `${sep}<span style="color:${c};font-weight:700;">${key}</span>=<span style="color:${c};">${decodeURIComponent(val)}</span>`;
   });
 }
+function utmGetPrefix(){return(document.getElementById('utm-link-prefix')?.value||'go').trim()||'go';}
+function utmUpdatePrefixDisplay(){
+  const p=utmGetPrefix();
+  document.querySelectorAll('.utm-prefix-display').forEach(el=>{el.textContent='/'+p+'/';});
+  document.querySelectorAll('.utm-prefix-display-text').forEach(el=>{el.textContent=p;});
+}
 function utmSinglePreview(){
   const baseUrl=document.getElementById('utm-base-url').value.trim()||'https://lazymaxpotential.kr/';
   const isUtm=utmCurMode==='utm'||utmCurMode==='both';
@@ -8887,7 +8911,8 @@ function utmSinglePreview(){
   }
   if(isShort){
     const slug=(document.getElementById('utm-s-slug').value.trim());
-    html+=slug?`<div><span style="color:#888;">/go/</span><span style="font-weight:700;">${slug}</span><span style="color:#888;font-size:10px;margin-left:4px;">→ ${isUtm?'위 URL':baseUrl}</span></div>`:`<div style="color:rgba(0,0,0,.35);">/go/[슬러그 입력 시 표시]</div>`;
+    const pfx=utmGetPrefix();
+    html+=slug?`<div><span style="color:#888;">/${pfx}/</span><span style="font-weight:700;">${slug}</span><span style="color:#888;font-size:10px;margin-left:4px;">→ ${isUtm?'위 URL':baseUrl}</span></div>`:`<div style="color:rgba(0,0,0,.35);">/${pfx}/[슬러그 입력 시 표시]</div>`;
   }
   box.innerHTML=html||'<span style="color:rgba(0,0,0,.35);">파라미터를 입력하면 URL이 표시됩니다</span>';
 }
@@ -8907,7 +8932,7 @@ async function utmSingleSave(e){
   const label=document.getElementById('utm-s-label').value.trim()||params.source||'링크';
   if(!utmUrl&&!slug){alert('생성된 URL 또는 슬러그를 입력해주세요.');return;}
   try{
-    await db.collection('cms_utm_links').add({configId:utmCurId,label,...params,utmUrl,shortPath:slug?'/go/'+slug:'',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    await db.collection('cms_utm_links').add({configId:utmCurId,label,...params,utmUrl,shortPath:slug?'/'+utmGetPrefix()+'/'+slug:'',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
     _btnFlash(e.target,'저장됨 ✓',1200);
     document.getElementById('utm-s-label').value='';
   }catch(err){alert('저장 실패: '+err.message);}
@@ -8929,7 +8954,7 @@ function utmBulkGenerate(){
   _utmBulkResults=names.map(name=>{
     const source=name;
     const url=utmBuildUrl(baseUrl,{source,medium,campaign,content,term:''});
-    const shortPath=isShort?('/go/'+encodeURIComponent(name)):'';
+    const shortPath=isShort?('/'+utmGetPrefix()+'/'+encodeURIComponent(name)):'';
     return {name,source,medium,campaign,content,url,shortPath};
   });
   const resultEl=document.getElementById('utm-bulk-result');
