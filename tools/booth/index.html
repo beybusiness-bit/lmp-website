@@ -1665,10 +1665,12 @@ function renderKeyColorSwatches() {
 
 // ── 내보내기 ──
 let _exportSafeDataUrl = null; // CORS-clean 캔버스 미리 렌더링한 결과
+let _preExportJpegBlob = null; // iOS navigator.share용 미리 준비된 JPEG blob (유저 제스처 체인 보존)
 
 async function openExport() {
   window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
   _exportSafeDataUrl = null;
+  _preExportJpegBlob = null;
 
   const expCanvas = document.getElementById('export-canvas');
   // 사용자 업로드 배경(Data URL)이면 원본 해상도 기준으로 export 크기 결정 (최대 4096)
@@ -1755,6 +1757,14 @@ async function _buildCorsExportDataUrl(expW, expH, scale) {
     _exportSafeDataUrl = corsCanvas.toDataURL('image/png');
   } catch(e) {
     _exportSafeDataUrl = null;
+  }
+
+  // iOS navigator.share용 JPEG blob 미리 준비 (유저 제스처 전에 만들어야 체인 유지)
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if(isMobile && navigator.share && navigator.canShare) {
+    try {
+      _preExportJpegBlob = await new Promise(resolve => corsCanvas.toBlob(b => resolve(b), 'image/jpeg', 0.95));
+    } catch(e) { _preExportJpegBlob = null; }
   }
 }
 
@@ -1941,13 +1951,20 @@ async function downloadExport() {
     return;
   }
 
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const isMobile = isIOS || isAndroid;
 
-  // 모바일: JPEG으로 공유 — iOS Photo Library가 PNG를 JPEG으로 재인코딩하는 품질 손실 방지
+  // 모바일: navigator.share로 이미지 공유 → iOS 사진첩 "이미지 저장", 안드로이드 갤러리 저장 가능
   if(isMobile && navigator.share && navigator.canShare) {
-    const jpegBlob = await new Promise(resolve =>
-      canvas.toBlob(b => resolve(b), 'image/jpeg', 0.95)
-    ).catch(() => null);
+    // iOS: _preExportJpegBlob 사용 (await 없음 → 유저 제스처 체인 보존 → "이미지 저장" 표시)
+    // Android Chrome: await canvas.toBlob() 허용 (제스처 체인 유지됨)
+    let jpegBlob = _preExportJpegBlob;
+    if(!jpegBlob && isAndroid) {
+      jpegBlob = await new Promise(resolve =>
+        canvas.toBlob(b => resolve(b), 'image/jpeg', 0.95)
+      ).catch(() => null);
+    }
     if(jpegBlob) {
       const file = new File([jpegBlob], '내부스꾸미기.jpg', {type: 'image/jpeg'});
       if(navigator.canShare({files: [file]})) {
@@ -1959,7 +1976,14 @@ async function downloadExport() {
     }
   }
 
-  // 데스크탑 / 공유 미지원 → PNG 직접 다운로드
+  // 모바일이지만 share 미지원 / blob 미준비 → 파일 다운로드
+  if(isMobile) {
+    const blob = _preExportJpegBlob || _dataUrlToBlob(pngDataUrl);
+    _triggerDownload(blob, '내부스꾸미기.jpg');
+    return;
+  }
+
+  // 데스크탑 → PNG 직접 다운로드
   _triggerDownload(_dataUrlToBlob(pngDataUrl), '내부스꾸미기.png');
 }
 

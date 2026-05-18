@@ -872,7 +872,7 @@ function renderTopGroup(d){
     } else if(key==='widget'){
       const el=document.createElement('div');
       el.id='widget-line';
-      el.style.cssText=`display:none;overflow:hidden;margin-bottom:${mb}px;`;
+      el.style.cssText=`display:none;overflow:hidden;margin-bottom:${mb}px;width:100%;`;
       tg.appendChild(el);
     }
   });
@@ -1036,17 +1036,56 @@ async function loadWidget() {
     const track = el.querySelector('.ws-track');
     const pager = el.querySelector('.ws-pager');
     const slideCount = track.querySelectorAll('.ws-slide').length;
+
+    // 무한 루프: 모든 슬라이드를 끝에 복제 → 복제 구간 진입 후 transitionend 시점에 원본으로 조용히 복귀
+    if(loop && slideCount > 1) {
+      track.innerHTML += track.innerHTML;
+    }
     let idx = 0;
+    let _jumping = false;
 
     function getSlideW() {
       const slide = track.querySelector('.ws-slide');
       return slide ? slide.offsetWidth + gap : 0;
     }
+    function _updatePager(displayIdx) {
+      if(pager) pager.querySelectorAll('.ws-dot').forEach((d,di) => d.style.opacity = di===displayIdx ? '1' : '0.3');
+    }
     function goTo(i, animated = true) {
-      idx = loop ? ((i % slideCount) + slideCount) % slideCount : Math.max(0, Math.min(i, slideCount - 1));
+      if(!loop) {
+        idx = Math.max(0, Math.min(i, slideCount - 1));
+      } else {
+        // 비루프 방향(뒤로) 처리: 음수면 복제 구간(slideCount~2*slideCount-1)의 끝으로 점프 후 이동
+        if(i < 0) {
+          track.style.transition = 'none';
+          idx = slideCount + ((i % slideCount + slideCount) % slideCount);
+          track.style.transform = `translateX(-${idx * getSlideW()}px)`;
+          // 강제 리플로우 후 애니메이션
+          track.getBoundingClientRect();
+          idx = idx - 1;
+          animated = true;
+        } else {
+          idx = i;
+        }
+      }
       track.style.transition = animated ? `transform ${speed}ms ease` : 'none';
       track.style.transform = `translateX(-${idx * getSlideW()}px)`;
-      if(pager) pager.querySelectorAll('.ws-dot').forEach((d,di) => d.style.opacity = di===idx ? '1' : '0.3');
+      _updatePager(idx % slideCount);
+    }
+
+    // 복제 구간(idx >= slideCount) 도달 시 원본 위치로 조용히 복귀
+    if(loop && slideCount > 1) {
+      track.addEventListener('transitionend', () => {
+        if(_jumping) return;
+        if(idx >= slideCount) {
+          _jumping = true;
+          const realIdx = idx - slideCount;
+          track.style.transition = 'none';
+          idx = realIdx;
+          track.style.transform = `translateX(-${idx * getSlideW()}px)`;
+          requestAnimationFrame(() => { _jumping = false; });
+        }
+      });
     }
 
     if(pager) {
