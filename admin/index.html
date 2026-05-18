@@ -485,11 +485,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <div style="display:flex;gap:8px;margin-bottom:10px;">
                   <div id="p-widget-click-action-wrap" style="flex:1;">
                     <div class="ed-lbl" style="margin-bottom:4px;">클릭 동작</div>
-                    <select class="fi" id="p-widget-click-action" style="margin-bottom:0;">
+                    <select class="fi" id="p-widget-click-action" style="margin-bottom:0;" onchange="onWidgetClickActionChange()">
                       <option value="none">동작 없음</option>
                       <option value="lightbox">원본 이미지 확대</option>
+                      <option value="stage">스테이지로 이동</option>
                     </select>
                   </div>
+                </div>
+                <div id="p-widget-click-stage-wrap" style="display:none;margin-bottom:10px;">
+                  <div class="ed-lbl" style="margin-bottom:4px;">이동할 스테이지</div>
+                  <select class="fi" id="p-widget-click-stage" style="margin-bottom:0;">
+                    <option value="">스테이지 선택…</option>
+                  </select>
                 </div>
                 <div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
                   <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;"><input type="checkbox" id="p-widget-loop" checked> 루프</label>
@@ -3856,6 +3863,13 @@ function loadWidgetConfig(w) {
   document.getElementById('p-widget-pager').checked = w.pager !== false;
   document.getElementById('p-widget-click-action').value = w.clickAction || 'none';
   document.getElementById('p-widget-order').value = w.order || 'desc';
+  // 스테이지 선택기 갱신
+  const stageSel = document.getElementById('p-widget-click-stage');
+  if(stageSel) {
+    stageSel.innerHTML = '<option value="">스테이지 선택…</option>' +
+      (curStages||[]).map(s => `<option value="${s.id}"${s.id===(w.clickStageId||'')?' selected':''}>${escHtml(s.title||'(제목 없음)')}</option>`).join('');
+  }
+  onWidgetClickActionChange();
   const bw = w.borderWidth ?? 2;
   const bc = w.borderColor || '#000000';
   document.getElementById('p-widget-border-width').value = bw;
@@ -3879,8 +3893,15 @@ function getWidgetConfig() {
     loop: document.getElementById('p-widget-loop').checked,
     pager: document.getElementById('p-widget-pager').checked,
     clickAction: document.getElementById('p-widget-click-action').value || 'none',
+    clickStageId: document.getElementById('p-widget-click-stage')?.value || '',
     order: document.getElementById('p-widget-order').value || 'desc',
   };
+}
+
+function onWidgetClickActionChange() {
+  const action = document.getElementById('p-widget-click-action').value;
+  const stageWrap = document.getElementById('p-widget-click-stage-wrap');
+  if(stageWrap) stageWrap.style.display = action === 'stage' ? '' : 'none';
 }
 
 async function onWidgetToolTypeChange(preselect) {
@@ -3904,7 +3925,7 @@ async function onWidgetToolTypeChange(preselect) {
   }
   if(toolType === 'guestbook') {
     if(lbl) lbl.textContent = '방명록 인스턴스';
-    if(caWrap) caWrap.style.display = 'none';
+    if(caWrap) caWrap.style.display = '';
     const snap = await db.collection('cms_guestbook_configs').orderBy('createdAt','desc').get();
     if(snap.empty) { sel.innerHTML = '<option value="">방명록이 없어요</option>'; return; }
     sel.innerHTML = snap.docs.map(d => `<option value="${d.id}"${preselect===d.id?' selected':''}>${d.data().title||d.id}</option>`).join('');
