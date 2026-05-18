@@ -811,6 +811,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div class="pi-name">방명록</div>
             <div class="pi-meta">방명록·기대평·후기 등 카드형 항목 수집 · 승인 관리</div>
           </div>
+          <div class="proj-item" onclick="openTool('utm')" style="cursor:pointer;">
+            <div class="pi-name">UTM 빌더 &amp; 숏링크</div>
+            <div class="pi-meta">채널별 UTM URL 생성 · 대량 생성 · /go/닉네임 숏링크 · vercel.json 내보내기</div>
+          </div>
         </div>
       </div>
 
@@ -1827,6 +1831,141 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           </div>
         </div>
       </div>
+
+      <!-- UTM 빌더 & 숏링크 관리 화면 -->
+      <div id="tool-utm-view" style="display:none;flex-direction:column;overflow:hidden;">
+        <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
+          <span class="back-btn" onclick="utmBack()">←</span>
+          <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">UTM 빌더 &amp; 숏링크</span>
+        </div>
+        <!-- 인스턴스 목록 -->
+        <div id="utm-list-screen" style="padding:16px;overflow-y:auto;flex:1;">
+          <div class="ed-lbl" style="color:rgba(0,0,0,.5);margin-bottom:12px;">캠페인·이벤트 단위로 인스턴스를 만들어 UTM 링크를 생성·저장할 수 있어요.</div>
+          <button class="save-btn" onclick="utmCreate()" style="width:100%;margin-bottom:16px;">+ 새 인스턴스 만들기</button>
+          <div id="utm-config-list"><div class="empty-msg">불러오는 중…</div></div>
+        </div>
+        <!-- 인스턴스 편집 화면 -->
+        <div id="utm-edit-screen" style="display:none;flex-direction:column;overflow:hidden;flex:1;">
+          <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;align-items:center;gap:6px;">
+            <button class="mbtn-cancel" style="flex:0 0 auto;" onclick="utmShowList()">← 목록</button>
+            <input class="fi" id="utm-title-inp" placeholder="인스턴스 이름 (예: 2025 여름 행사)" style="flex:1;margin-bottom:0;font-size:13px;">
+            <button class="save-btn" style="flex:0 0 auto;padding:7px 16px;" onclick="utmSaveConfig(event)">저장</button>
+          </div>
+          <!-- 기본 설정 -->
+          <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.08);flex-shrink:0;background:#fafafa;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+              <div style="flex:2;min-width:150px;">
+                <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">기본 목적지 URL</div>
+                <input class="fi-sm" id="utm-base-url" placeholder="https://lazymaxpotential.kr/…" oninput="utmSinglePreview()" style="margin-bottom:0;font-size:11px;font-family:monospace;">
+              </div>
+              <div style="flex:1;min-width:120px;">
+                <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">기본 캠페인명</div>
+                <input class="fi-sm" id="utm-campaign-default" placeholder="2025_행사명" oninput="utmSinglePreview()" style="margin-bottom:0;font-size:12px;">
+              </div>
+              <div style="flex:0 0 auto;">
+                <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">모드</div>
+                <select class="fi-sm" id="utm-mode-sel" onchange="utmOnModeChange()" style="margin-bottom:0;font-size:12px;">
+                  <option value="both">UTM + 숏링크</option>
+                  <option value="utm">UTM만</option>
+                  <option value="shortlink">숏링크만</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <!-- 서브탭 -->
+          <div style="display:flex;border-bottom:2px solid #000;flex-shrink:0;">
+            <button class="tgl-btn on" id="utm-tab-single" onclick="utmSwTab('single')" style="flex:1;border-radius:0;border:none;border-right:1px solid rgba(0,0,0,.15);font-size:12px;">단일 생성</button>
+            <button class="tgl-btn"    id="utm-tab-bulk"   onclick="utmSwTab('bulk')"   style="flex:1;border-radius:0;border:none;border-right:1px solid rgba(0,0,0,.15);font-size:12px;">대량 생성</button>
+            <button class="tgl-btn"    id="utm-tab-saved"  onclick="utmSwTab('saved')"  style="flex:1;border-radius:0;border:none;font-size:12px;">저장된 링크</button>
+          </div>
+          <!-- 단일 생성 탭 -->
+          <div id="utm-single-screen" style="overflow-y:auto;flex:1;padding:14px 16px;">
+            <div id="utm-preset-row" style="margin-bottom:12px;">
+              <div class="ed-lbl" style="font-size:10px;margin-bottom:5px;">채널 프리셋</div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px;" id="utm-preset-btns"></div>
+            </div>
+            <div id="utm-single-utm-fields">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                <div>
+                  <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">utm_source <span style="color:#e05c00;">*</span></div>
+                  <input class="fi-sm" id="utm-s-source" placeholder="instagram, inflr_홍길동…" oninput="utmSinglePreview()" style="margin-bottom:0;font-size:12px;">
+                </div>
+                <div>
+                  <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">utm_medium <span style="color:#e05c00;">*</span></div>
+                  <input class="fi-sm" id="utm-s-medium" placeholder="paid_social, influencer…" oninput="utmSinglePreview()" style="margin-bottom:0;font-size:12px;">
+                </div>
+              </div>
+              <div style="margin-bottom:8px;">
+                <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">utm_campaign <span style="color:#e05c00;">*</span></div>
+                <input class="fi-sm" id="utm-s-campaign" placeholder="2025_행사명" oninput="utmSinglePreview()" style="margin-bottom:0;font-size:12px;">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                <div>
+                  <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">utm_content <span style="opacity:.45;font-weight:400;">(선택)</span></div>
+                  <input class="fi-sm" id="utm-s-content" placeholder="reels_15s_v1…" oninput="utmSinglePreview()" style="margin-bottom:0;font-size:12px;">
+                </div>
+                <div>
+                  <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">utm_term <span style="opacity:.45;font-weight:400;">(선택)</span></div>
+                  <input class="fi-sm" id="utm-s-term" placeholder="20대_서울…" oninput="utmSinglePreview()" style="margin-bottom:0;font-size:12px;">
+                </div>
+              </div>
+            </div>
+            <div id="utm-single-short-row" style="margin-bottom:10px;display:none;">
+              <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">숏링크 슬러그 <span style="opacity:.45;font-weight:400;">(/go/[이름])</span></div>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <span style="font-size:12px;color:rgba(0,0,0,.5);font-family:monospace;">/go/</span>
+                <input class="fi-sm" id="utm-s-slug" placeholder="홍길동" oninput="utmSinglePreview()" style="margin-bottom:0;font-size:12px;flex:1;">
+              </div>
+            </div>
+            <div style="margin-bottom:10px;">
+              <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">저장 레이블 <span style="opacity:.45;font-weight:400;">(선택)</span></div>
+              <input class="fi-sm" id="utm-s-label" placeholder="예: 인스타 릴스 v1" style="margin-bottom:0;font-size:12px;">
+            </div>
+            <div id="utm-single-preview-box" style="background:#f5f5f5;border:1.5px solid rgba(0,0,0,.12);border-radius:6px;padding:10px;margin-bottom:10px;min-height:44px;word-break:break-all;font-size:11px;font-family:monospace;line-height:1.8;"></div>
+            <div style="display:flex;gap:6px;">
+              <button class="save-btn" onclick="utmSingleCopy(event)" style="flex:1;font-size:12px;padding:8px 0;">URL 복사</button>
+              <button class="prev-btn" onclick="utmSingleSave(event)" style="flex:1;font-size:12px;padding:8px 0;">저장하기</button>
+              <button class="mbtn-cancel" onclick="utmSingleReset()" style="font-size:12px;padding:8px 12px;">초기화</button>
+            </div>
+          </div>
+          <!-- 대량 생성 탭 -->
+          <div id="utm-bulk-screen" style="display:none;overflow-y:auto;flex:1;padding:14px 16px;">
+            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:10px;line-height:1.5;">닉네임 목록을 입력하면 <code>inflr_[닉네임]</code>을 source로 한 UTM 링크를 일괄 생성합니다. (최대 24명)</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+              <div>
+                <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">utm_medium</div>
+                <input class="fi-sm" id="utm-b-medium" value="influencer" style="margin-bottom:0;font-size:12px;">
+              </div>
+              <div>
+                <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">utm_content <span style="opacity:.45;font-weight:400;">(선택)</span></div>
+                <input class="fi-sm" id="utm-b-content" placeholder="youtube_shorts" style="margin-bottom:0;font-size:12px;">
+              </div>
+            </div>
+            <div style="margin-bottom:10px;">
+              <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">닉네임 목록 <span style="opacity:.45;font-weight:400;">(줄바꿈으로 구분)</span></div>
+              <textarea id="utm-b-names" rows="5" style="width:100%;border:1.5px solid #000;padding:8px;font-size:13px;font-family:inherit;resize:vertical;outline:none;" placeholder="홍길동&#10;김철수&#10;이영희"></textarea>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:12px;">
+              <button class="save-btn" onclick="utmBulkGenerate()" style="flex:1;font-size:12px;padding:8px 0;">일괄 생성</button>
+              <button class="prev-btn" onclick="utmBulkSaveAll(event)" id="utm-bulk-save-btn" style="flex:1;font-size:12px;padding:8px 0;display:none;">전체 저장</button>
+              <button class="prev-btn" onclick="utmBulkCsvDownload()" id="utm-bulk-csv-btn" style="flex:1;font-size:12px;padding:8px 0;display:none;">CSV 다운로드</button>
+            </div>
+            <div id="utm-bulk-result" style="overflow-x:auto;font-size:12px;"></div>
+          </div>
+          <!-- 저장된 링크 탭 -->
+          <div id="utm-saved-screen" style="display:none;overflow-y:auto;flex:1;padding:14px 16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div style="font-size:12px;font-weight:700;" id="utm-saved-count"></div>
+              <div style="display:flex;gap:6px;">
+                <button class="prev-btn" id="utm-vercel-btn" onclick="utmVercelExport()" style="font-size:11px;display:none;">vercel.json 다운로드</button>
+                <button class="prev-btn" onclick="utmLoadSavedLinks()" style="font-size:11px;">↻ 새로고침</button>
+              </div>
+            </div>
+            <div id="utm-saved-list"><div class="empty-msg">저장된 링크가 없어요</div></div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Site settings panel -->
@@ -8539,6 +8678,7 @@ function openTool(toolId) {
   if(toolId === 'copy-gen') { cgShowList(); }
   if(toolId === 'payment') { pyInit(); }
   if(toolId === 'guestbook') { gbkShowList(); }
+  if(toolId === 'utm') { utmInit(); }
 }
 
 function closeTool() {
@@ -8564,6 +8704,262 @@ function closeToolPreview() {
 }
 function refreshToolPreview() {
   if (_toolPvUrl) document.getElementById('tool-pv-frame').src = _toolPvUrl;
+}
+
+/* ════════════════════════════════════════════
+   UTM 빌더 & 숏링크 관리 (UTM Builder)
+════════════════════════════════════════════ */
+let utmCurId=null,utmCurMode='both';
+let _utmBulkResults=[];
+const UTM_PRESETS=[
+  {label:'Meta 광고',      fields:{source:'instagram',  medium:'paid_social',    content:'reels_15s_v1',   term:''}},
+  {label:'인플루언서',     fields:{source:'inflr_닉네임',medium:'influencer',     content:'youtube_shorts', term:''}},
+  {label:'자사 인스타',    fields:{source:'instagram',  medium:'organic_social',  content:'bio_link',       term:''}},
+  {label:'자사 유튜브',    fields:{source:'youtube',    medium:'organic_social',  content:'description_link',term:''}},
+  {label:'뉴스레터',       fields:{source:'newsletter', medium:'email',           content:'cta_btn',        term:''}},
+  {label:'오프라인 QR',    fields:{source:'offline',    medium:'qr',              content:'',               term:''}},
+];
+function utmBack(){closeTool();}
+async function utmInit(){
+  utmCurId=null;
+  document.getElementById('utm-list-screen').style.display='';
+  document.getElementById('utm-edit-screen').style.display='none';
+  utmRenderPresetBtns();
+  await utmLoadList();
+}
+async function utmLoadList(){
+  const el=document.getElementById('utm-config-list');
+  try{
+    const snap=await db.collection('cms_utm_configs').orderBy('createdAt','desc').get();
+    if(snap.empty){el.innerHTML='<div class="empty-msg">아직 인스턴스가 없어요</div>';return;}
+    const mL={utm:'UTM만',shortlink:'숏링크만',both:'UTM+숏링크'};
+    el.innerHTML=snap.docs.map(d=>{const s=d.data();return `<div class="proj-item" onclick="utmOpenEdit('${d.id}')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;"><div><div class="pi-name">${s.title||'(제목 없음)'}</div><div class="pi-meta">${mL[s.mode]||'UTM+숏링크'} · ${s.campaignName||''}</div></div><button onclick="event.stopPropagation();utmDelete('${d.id}')" style="background:none;border:none;font-size:14px;cursor:pointer;opacity:.4;padding:4px 8px;">✕</button></div>`;}).join('');
+  }catch(e){el.innerHTML=`<div class="empty-msg" style="color:#c00;">로드 실패: ${e.message}</div>`;}
+}
+async function utmCreate(){
+  const ref=db.collection('cms_utm_configs').doc();
+  await ref.set({title:'새 인스턴스',baseUrl:'https://lazymaxpotential.kr/',campaignName:'',mode:'both',createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+  utmOpenEdit(ref.id);
+}
+async function utmDelete(id){
+  if(!confirm('이 인스턴스와 저장된 링크를 모두 삭제할까요?')) return;
+  try{
+    const links=await db.collection('cms_utm_links').where('configId','==',id).get();
+    const batch=db.batch();
+    links.forEach(d=>batch.delete(d.ref));
+    batch.delete(db.collection('cms_utm_configs').doc(id));
+    await batch.commit(); utmLoadList();
+  }catch(e){alert('삭제 실패: '+e.message);}
+}
+async function utmOpenEdit(id){
+  utmCurId=id;
+  document.getElementById('utm-list-screen').style.display='none';
+  document.getElementById('utm-edit-screen').style.display='flex';
+  try{
+    const d=await db.collection('cms_utm_configs').doc(id).get();
+    const s=d.exists?d.data():{};
+    document.getElementById('utm-title-inp').value=s.title||'';
+    document.getElementById('utm-base-url').value=s.baseUrl||'https://lazymaxpotential.kr/';
+    document.getElementById('utm-campaign-default').value=s.campaignName||'';
+    document.getElementById('utm-mode-sel').value=s.mode||'both';
+    utmCurMode=s.mode||'both';
+  }catch(e){}
+  utmOnModeChange(); utmSwTab('single'); utmSingleReset();
+}
+function utmShowList(){
+  document.getElementById('utm-edit-screen').style.display='none';
+  document.getElementById('utm-list-screen').style.display='';
+  utmLoadList();
+}
+async function utmSaveConfig(e){
+  if(!utmCurId) return;
+  const title=document.getElementById('utm-title-inp').value.trim()||'새 인스턴스';
+  const baseUrl=document.getElementById('utm-base-url').value.trim();
+  const campaignName=document.getElementById('utm-campaign-default').value.trim();
+  const mode=document.getElementById('utm-mode-sel').value;
+  utmCurMode=mode;
+  try{
+    await db.collection('cms_utm_configs').doc(utmCurId).update({title,baseUrl,campaignName,mode,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    _btnFlash(e.target,'저장됨 ✓',1200);
+  }catch(err){alert('저장 실패: '+err.message);}
+}
+function utmOnModeChange(){
+  utmCurMode=document.getElementById('utm-mode-sel').value;
+  const isUtm=utmCurMode==='utm'||utmCurMode==='both';
+  const isShort=utmCurMode==='shortlink'||utmCurMode==='both';
+  const _s=(id,show)=>{const el=document.getElementById(id);if(el)el.style.display=show?'':'none';};
+  _s('utm-preset-row',isUtm); _s('utm-single-utm-fields',isUtm); _s('utm-single-short-row',isShort);
+  _s('utm-vercel-btn',isShort); _s('utm-tab-bulk',isUtm);
+  utmSinglePreview();
+}
+function utmSwTab(t){
+  ['single','bulk','saved'].forEach(k=>{
+    document.getElementById('utm-tab-'+k)?.classList.toggle('on',k===t);
+    document.getElementById('utm-'+k+'-screen').style.display=k===t?'':'none';
+  });
+  if(t==='saved') utmLoadSavedLinks();
+}
+function utmRenderPresetBtns(){
+  const c=document.getElementById('utm-preset-btns');if(!c)return;
+  c.innerHTML=UTM_PRESETS.map((p,i)=>`<button class="prev-btn" onclick="utmApplyPreset(${i})" style="font-size:11px;padding:4px 9px;">${p.label}</button>`).join('');
+}
+function utmApplyPreset(i){
+  const p=UTM_PRESETS[i];
+  document.getElementById('utm-s-source').value=p.fields.source||'';
+  document.getElementById('utm-s-medium').value=p.fields.medium||'';
+  document.getElementById('utm-s-campaign').value=document.getElementById('utm-campaign-default').value||'';
+  document.getElementById('utm-s-content').value=p.fields.content||'';
+  document.getElementById('utm-s-term').value=p.fields.term||'';
+  utmSinglePreview();
+}
+function utmBuildUrl(baseUrl,params){
+  try{
+    const u=new URL(baseUrl||'https://lazymaxpotential.kr/');
+    if(params.source)  u.searchParams.set('utm_source',  params.source);
+    if(params.medium)  u.searchParams.set('utm_medium',  params.medium);
+    if(params.campaign)u.searchParams.set('utm_campaign', params.campaign);
+    if(params.content) u.searchParams.set('utm_content',  params.content);
+    if(params.term)    u.searchParams.set('utm_term',     params.term);
+    return u.toString();
+  }catch(e){return '';}
+}
+function utmColorUrl(url){
+  const C={utm_source:'#e05c00',utm_medium:'#0060c0',utm_campaign:'#008060',utm_content:'#8040c0',utm_term:'#c04080'};
+  return url.replace(/([?&])(utm_\w+)=([^&]*)/g,(_,sep,key,val)=>{
+    const c=C[key]||'#333';
+    return `${sep}<span style="color:${c};font-weight:700;">${key}</span>=<span style="color:${c};">${decodeURIComponent(val)}</span>`;
+  });
+}
+function utmSinglePreview(){
+  const baseUrl=document.getElementById('utm-base-url').value.trim()||'https://lazymaxpotential.kr/';
+  const isUtm=utmCurMode==='utm'||utmCurMode==='both';
+  const isShort=utmCurMode==='shortlink'||utmCurMode==='both';
+  const box=document.getElementById('utm-single-preview-box');if(!box)return;
+  let html='';
+  if(isUtm){
+    const params={source:document.getElementById('utm-s-source').value.trim(),medium:document.getElementById('utm-s-medium').value.trim(),campaign:document.getElementById('utm-s-campaign').value.trim(),content:document.getElementById('utm-s-content').value.trim(),term:document.getElementById('utm-s-term').value.trim()};
+    const url=utmBuildUrl(baseUrl,params);
+    html+=`<div style="margin-bottom:${isShort?'8px':'0'};">${utmColorUrl(url)}</div>`;
+  }
+  if(isShort){
+    const slug=(document.getElementById('utm-s-slug').value.trim());
+    html+=slug?`<div><span style="color:#888;">/go/</span><span style="font-weight:700;">${slug}</span><span style="color:#888;font-size:10px;margin-left:4px;">→ ${isUtm?'위 URL':baseUrl}</span></div>`:`<div style="color:rgba(0,0,0,.35);">/go/[슬러그 입력 시 표시]</div>`;
+  }
+  box.innerHTML=html||'<span style="color:rgba(0,0,0,.35);">파라미터를 입력하면 URL이 표시됩니다</span>';
+}
+function utmSingleCopy(e){
+  const baseUrl=document.getElementById('utm-base-url').value.trim()||'https://lazymaxpotential.kr/';
+  const isUtm=utmCurMode==='utm'||utmCurMode==='both';
+  const url=isUtm?utmBuildUrl(baseUrl,{source:document.getElementById('utm-s-source').value.trim(),medium:document.getElementById('utm-s-medium').value.trim(),campaign:document.getElementById('utm-s-campaign').value.trim(),content:document.getElementById('utm-s-content').value.trim(),term:document.getElementById('utm-s-term').value.trim()}):baseUrl;
+  navigator.clipboard.writeText(url).then(()=>{_btnFlash(e.target,'복사됨 ✓',1200);}).catch(()=>{prompt('URL을 복사하세요:',url);});
+}
+async function utmSingleSave(e){
+  const baseUrl=document.getElementById('utm-base-url').value.trim()||'https://lazymaxpotential.kr/';
+  const isUtm=utmCurMode==='utm'||utmCurMode==='both';
+  const isShort=utmCurMode==='shortlink'||utmCurMode==='both';
+  const params={source:document.getElementById('utm-s-source').value.trim(),medium:document.getElementById('utm-s-medium').value.trim(),campaign:document.getElementById('utm-s-campaign').value.trim(),content:document.getElementById('utm-s-content').value.trim(),term:document.getElementById('utm-s-term').value.trim()};
+  const utmUrl=isUtm?utmBuildUrl(baseUrl,params):'';
+  const slug=isShort?document.getElementById('utm-s-slug').value.trim():'';
+  const label=document.getElementById('utm-s-label').value.trim()||params.source||'링크';
+  if(!utmUrl&&!slug){alert('생성된 URL 또는 슬러그를 입력해주세요.');return;}
+  try{
+    await db.collection('cms_utm_links').add({configId:utmCurId,label,...params,utmUrl,shortPath:slug?'/go/'+slug:'',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    _btnFlash(e.target,'저장됨 ✓',1200);
+    document.getElementById('utm-s-label').value='';
+  }catch(err){alert('저장 실패: '+err.message);}
+}
+function utmSingleReset(){
+  ['utm-s-source','utm-s-medium','utm-s-campaign','utm-s-content','utm-s-term','utm-s-slug','utm-s-label'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const camp=document.getElementById('utm-campaign-default')?.value;
+  if(camp) document.getElementById('utm-s-campaign').value=camp;
+  utmSinglePreview();
+}
+function utmBulkGenerate(){
+  const baseUrl=document.getElementById('utm-base-url').value.trim()||'https://lazymaxpotential.kr/';
+  const medium=document.getElementById('utm-b-medium').value.trim()||'influencer';
+  const campaign=document.getElementById('utm-campaign-default').value.trim();
+  const content=document.getElementById('utm-b-content').value.trim();
+  const names=document.getElementById('utm-b-names').value.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,24);
+  if(!names.length){alert('닉네임을 입력해주세요.');return;}
+  _utmBulkResults=names.map(name=>({name,source:'inflr_'+name,medium,campaign,content,url:utmBuildUrl(baseUrl,{source:'inflr_'+name,medium,campaign,content,term:''})}));
+  const resultEl=document.getElementById('utm-bulk-result');
+  resultEl.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:11px;min-width:400px;">
+    <thead><tr style="border-bottom:2px solid #000;"><th style="padding:6px 4px;text-align:left;">닉네임</th><th style="padding:6px 4px;text-align:left;">utm_source</th><th style="padding:6px 4px;text-align:left;">UTM URL</th></tr></thead>
+    <tbody>${_utmBulkResults.map((r,i)=>`<tr style="border-bottom:1px solid rgba(0,0,0,.07);">
+      <td style="padding:5px 4px;font-weight:700;">${r.name}</td>
+      <td style="padding:5px 4px;color:#e05c00;font-family:monospace;font-size:10px;">${r.source}</td>
+      <td style="padding:5px 4px;font-family:monospace;font-size:10px;word-break:break-all;">
+        ${r.url.length>50?r.url.slice(0,50)+'…':r.url}
+        <button data-url="${r.url.replace(/"/g,'&quot;')}" onclick="utmCopyText(this.dataset.url,this)" style="background:#000;color:#fff;border:none;font-size:10px;padding:2px 5px;cursor:pointer;border-radius:2px;margin-left:3px;vertical-align:middle;">복사</button>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+  document.getElementById('utm-bulk-save-btn').style.display='';
+  document.getElementById('utm-bulk-csv-btn').style.display='';
+}
+function utmCopyText(text,btn){
+  navigator.clipboard.writeText(text).then(()=>{const o=btn.textContent;btn.textContent='✓';setTimeout(()=>btn.textContent=o,1200);});
+}
+async function utmBulkSaveAll(e){
+  if(!_utmBulkResults.length) return;
+  const batch=db.batch();
+  _utmBulkResults.forEach(r=>{
+    const ref=db.collection('cms_utm_links').doc();
+    batch.set(ref,{configId:utmCurId,label:r.name,source:r.source,medium:r.medium,campaign:r.campaign,content:r.content,term:'',utmUrl:r.url,shortPath:'',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  });
+  try{await batch.commit();_btnFlash(e.target,'저장됨 ✓',1200);}catch(err){alert('저장 실패: '+err.message);}
+}
+function utmBulkCsvDownload(){
+  if(!_utmBulkResults.length) return;
+  const csv=['﻿닉네임,utm_source,URL',..._utmBulkResults.map(r=>`${r.name},${r.source},"${r.url}"`)].join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='utm_bulk.csv';a.click();
+}
+async function utmLoadSavedLinks(){
+  const el=document.getElementById('utm-saved-list');
+  const countEl=document.getElementById('utm-saved-count');
+  el.innerHTML='<div class="empty-msg">불러오는 중…</div>';
+  try{
+    const snap=await db.collection('cms_utm_links').where('configId','==',utmCurId).orderBy('createdAt','desc').get();
+    countEl.textContent=`총 ${snap.size}개의 링크`;
+    if(snap.empty){el.innerHTML='<div class="empty-msg">저장된 링크가 없어요</div>';return;}
+    const isShort=utmCurMode==='shortlink'||utmCurMode==='both';
+    el.innerHTML=`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;min-width:360px;">
+      <thead><tr style="border-bottom:2px solid #000;">
+        <th style="padding:6px 4px;text-align:left;font-size:10px;">레이블</th>
+        ${isShort?'<th style="padding:6px 4px;text-align:left;font-size:10px;">숏링크</th>':''}
+        <th style="padding:6px 4px;text-align:left;font-size:10px;">UTM URL</th>
+        <th style="padding:6px 4px;"></th>
+      </tr></thead>
+      <tbody>${snap.docs.map(d=>{
+        const r=d.data();
+        const urlCell=r.utmUrl?`<span style="font-family:monospace;color:#444;word-break:break-all;font-size:10px;">${r.utmUrl.length>55?r.utmUrl.slice(0,55)+'…':r.utmUrl}</span>`:'<span style="color:rgba(0,0,0,.3);">URL 없음</span>';
+        const shortCell=isShort?(r.shortPath?`<span style="font-family:monospace;color:#0060c0;font-size:11px;">${r.shortPath}</span>`:'<span style="color:rgba(0,0,0,.3);">-</span>'):'';
+        const urlForCopy=(r.utmUrl||'').replace(/"/g,'&quot;');
+        return `<tr style="border-bottom:1px solid rgba(0,0,0,.07);">
+          <td style="padding:5px 4px;font-weight:700;">${r.label||'-'}</td>
+          ${isShort?`<td style="padding:5px 4px;">${shortCell}</td>`:''}
+          <td style="padding:5px 4px;">${urlCell}</td>
+          <td style="padding:5px 4px;white-space:nowrap;">
+            ${r.utmUrl?`<button data-url="${urlForCopy}" onclick="utmCopyText(this.dataset.url,this)" style="background:#000;color:#fff;border:none;font-size:10px;padding:2px 5px;cursor:pointer;border-radius:2px;margin-right:3px;">복사</button>`:''}
+            <button onclick="utmDeleteLink('${d.id}')" style="background:none;border:none;font-size:13px;cursor:pointer;color:#c00;padding:2px 4px;line-height:1;">✕</button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+  }catch(e){el.innerHTML=`<div class="empty-msg" style="color:#c00;">로드 실패: ${e.message}</div>`;}
+}
+async function utmDeleteLink(id){
+  if(!confirm('이 링크를 삭제할까요?')) return;
+  try{await db.collection('cms_utm_links').doc(id).delete();utmLoadSavedLinks();}catch(e){alert('삭제 실패');}
+}
+async function utmVercelExport(){
+  try{
+    const snap=await db.collection('cms_utm_links').where('configId','==',utmCurId).get();
+    const redirects=snap.docs.filter(d=>d.data().shortPath).map(d=>{const r=d.data();return{source:r.shortPath,destination:r.utmUrl||document.getElementById('utm-base-url').value.trim()||'/',permanent:false};});
+    if(!redirects.length){alert('숏링크가 있는 저장된 링크가 없어요.');return;}
+    const json=JSON.stringify({redirects},null,2);
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));a.download='vercel-redirects.json';a.click();
+  }catch(e){alert('내보내기 실패: '+e.message);}
 }
 
 /* ════════════════════════════════════════════
