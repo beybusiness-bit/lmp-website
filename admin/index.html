@@ -1424,8 +1424,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
           <div style="margin-bottom:16px;">
             <div class="ed-lbl" style="margin-bottom:4px;">연결 필드 키</div>
-            <input class="fi" id="deco-field-key" placeholder="비워두면 name 사용 (사용자 인증의 이름 필드)" style="margin-bottom:4px;">
-            <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 사용자 인증 필드 중 어떤 필드값으로 배경을 자동 선택할지 키를 입력하세요. 예: <code>boothType</code>, <code>category</code></div>
+            <input class="fi" id="deco-field-key" placeholder="비워두면 공통 배경 모드 (전체 사용자에게 동일한 배경)" oninput="decoState.curConfig&&(decoState.curConfig.fieldKey=this.value.trim());decoToggleBgMode();" style="margin-bottom:4px;">
+            <div style="font-size:11px;color:rgba(0,0,0,.45);">💡 <b>비워두면</b> 공통 배경 모드 — 모든 사용자에게 동일한 배경 표시. 값이 있으면 해당 사용자 필드값에 따라 배경 자동 선택.</div>
           </div>
 
           <div style="margin-bottom:16px;">
@@ -1472,12 +1472,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div style="font-size:11px;color:rgba(0,0,0,.45);margin-top:5px;">💡 배경 이미지는 선택한 크기 이상으로 업로드하는 것을 권장합니다.</div>
           </div>
 
-          <div class="sect-head" style="margin-bottom:4px;">필드 값별 배경 이미지</div>
-          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">각 필드 값에 해당하는 배경 이미지를 설정하세요. 값이 일치하는 사용자에게 자동 적용됩니다. 이미지를 여러 장 등록하면 사용자가 직접 고릅니다. 권장 크기: 1080×1350px (4:5)</div>
-
-          <div style="display:flex;gap:8px;margin-bottom:20px;">
-            <input class="fi" id="new-booth-type" placeholder="필드 값 입력 (예: food, craft, beauty)" style="flex:1;margin-bottom:0;">
-            <button class="save-btn" onclick="addBoothType()">추가</button>
+          <div id="booth-per-field-wrap">
+            <div class="sect-head" style="margin-bottom:4px;">필드 값별 배경 이미지</div>
+            <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">각 필드 값에 해당하는 배경 이미지를 설정하세요. 값이 일치하는 사용자에게 자동 적용됩니다. 이미지를 여러 장 등록하면 사용자가 직접 고릅니다. 권장 크기: 1080×1350px (4:5)</div>
+            <div style="display:flex;gap:8px;margin-bottom:20px;">
+              <input class="fi" id="new-booth-type" placeholder="필드 값 입력 (예: food, craft, beauty)" style="flex:1;margin-bottom:0;">
+              <button class="save-btn" onclick="addBoothType()">추가</button>
+            </div>
+          </div>
+          <div id="booth-global-wrap" style="display:none;">
+            <div class="sect-head" style="margin-bottom:4px;">공통 배경 이미지 <span style="font-size:11px;font-weight:400;color:rgba(0,0,0,.45);">(모든 사용자 공통)</span></div>
+            <div class="ed-lbl" style="margin-bottom:12px;color:rgba(0,0,0,.5);">연결 필드 없이 모든 사용자에게 동일하게 보여줄 배경이에요. 여러 장 등록하면 사용자가 고릅니다. 등록하지 않으면 사용자가 직접 배경을 선택합니다. 권장 크기: 1080×1350px (4:5)</div>
+            <button class="prev-btn" id="btn-add-global-bg" onclick="ensureGlobalBgEntry()" style="font-size:12px;margin-bottom:12px;display:none;">+ 공통 배경 추가</button>
           </div>
           <div id="booth-bg-list">
             <div class="empty-msg">불러오는 중…</div>
@@ -10742,8 +10748,27 @@ async function loadBoothBgs(configId = 'booth') {
     if(ewEl) ewEl.checked = true;
     renderBoothBgList(decoState.curConfig.backgrounds);
     renderCommonPresetList(decoState.curConfig.commonPresetImages);
+    decoToggleBgMode();
   } catch(e) {
     el.innerHTML = '<div class="empty-msg">불러오기 실패: ' + e.message + '</div>';
+  }
+}
+
+function decoToggleBgMode() {
+  const isGlobal = !(document.getElementById('deco-field-key')?.value || '').trim();
+  const perFieldWrap = document.getElementById('booth-per-field-wrap');
+  const globalWrap = document.getElementById('booth-global-wrap');
+  if(perFieldWrap) perFieldWrap.style.display = isGlobal ? 'none' : '';
+  if(globalWrap) globalWrap.style.display = isGlobal ? '' : 'none';
+  if(decoState.curConfig) renderBoothBgList(decoState.curConfig.backgrounds || []);
+}
+
+function ensureGlobalBgEntry() {
+  if(!decoState.curConfig) return;
+  if(!decoState.curConfig.backgrounds) decoState.curConfig.backgrounds = [];
+  if(!decoState.curConfig.backgrounds.find(b => b.type === '_all')) {
+    decoState.curConfig.backgrounds.push({ type: '_all', label: '공통 배경', urls: [], description: '' });
+    renderBoothBgList(decoState.curConfig.backgrounds);
   }
 }
 
@@ -10801,11 +10826,26 @@ function deleteCommonPresetImg(idx) {
 
 function renderBoothBgList(bgs) {
   const el = document.getElementById('booth-bg-list');
-  if(!bgs.length) {
-    el.innerHTML = '<div class="empty-msg">등록된 배경이 없어요. 위에서 필드 값을 추가하고 이미지를 업로드하세요.</div>';
+  const isGlobalMode = !(document.getElementById('deco-field-key')?.value || '').trim();
+
+  // Show/hide the add button in global mode
+  const addBtn = document.getElementById('btn-add-global-bg');
+  const globalBg = bgs.find(b => b.type === '_all');
+  if(addBtn) addBtn.style.display = (isGlobalMode && !globalBg) ? '' : 'none';
+
+  // Filter bgs: in global mode show only _all; in field mode show only non-_all
+  const displayBgs = isGlobalMode
+    ? bgs.filter(b => b.type === '_all')
+    : bgs.filter(b => b.type !== '_all');
+
+  if(!displayBgs.length) {
+    el.innerHTML = isGlobalMode
+      ? '<div class="empty-msg">공통 배경 없음 — 사용자가 직접 배경을 선택합니다. 위 "+ 공통 배경 추가" 버튼으로 배경을 업로드하세요.</div>'
+      : '<div class="empty-msg">등록된 배경이 없어요. 위에서 필드 값을 추가하고 이미지를 업로드하세요.</div>';
     return;
   }
-  el.innerHTML = bgs.map((b, i) => {
+  el.innerHTML = displayBgs.map((b) => {
+    const i = bgs.indexOf(b); // real index in the full array
     const urls = b.urls || (b.url ? [b.url] : []);
     const names = b.urlNames || [];
     const thumbs = urls.map((url, j) => `
@@ -10831,10 +10871,13 @@ function renderBoothBgList(bgs) {
     const desc = (b.description||'').replace(/`/g,'\\`').replace(/\$/g,'\\$');
     return `<div class="booth-bg-item" data-idx="${i}">
       <div class="booth-bg-type">
-        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
-          <span style="font-size:11px;color:rgba(0,0,0,.5);white-space:nowrap;">필드값</span>
-          <input class="fi" value="${(b.type||'').replace(/"/g,'&quot;')}" style="font-size:12px;font-weight:700;padding:3px 6px;flex:1;min-width:0;" oninput="decoState.curConfig.backgrounds[${i}].type=this.value;decoState.curConfig.backgrounds[${i}].label=this.value">
-        </div>
+        ${b.type === '_all'
+          ? `<div style="flex:1;font-size:12px;font-weight:700;color:rgba(0,0,0,.6);">공통 배경 (모든 사용자)</div>`
+          : `<div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+              <span style="font-size:11px;color:rgba(0,0,0,.5);white-space:nowrap;">필드값</span>
+              <input class="fi" value="${(b.type||'').replace(/"/g,'&quot;')}" style="font-size:12px;font-weight:700;padding:3px 6px;flex:1;min-width:0;" oninput="decoState.curConfig.backgrounds[${i}].type=this.value;decoState.curConfig.backgrounds[${i}].label=this.value">
+            </div>`
+        }
         <button class="del-btn" style="margin:0;font-size:11px;padding:4px 8px;flex-shrink:0;" onclick="deleteBoothBg(${i})">항목 삭제</button>
       </div>
       <div class="booth-img-row">
