@@ -1,6 +1,11 @@
 // 숏링크 리다이렉터 — Firestore에서 shortPath 조회 후 UTM URL로 302 리다이렉트
+// vercel.json rewrite가 prefix/slug를 쿼리파라미터로 전달함
 export default async function handler(req, res) {
-  const urlPath = (req.url || '').split('?')[0]; // e.g. /go/닉네임
+  const prefix = (req.query.prefix || '').trim();
+  const slug   = (req.query.slug   || '').trim();
+  if (!prefix || !slug) return res.redirect(302, '/');
+
+  const shortPath = '/' + prefix + '/' + slug;
 
   const fbProject = 'beyhome-admin';
   const fbApiKey  = process.env.FIREBASE_API_KEY || 'AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI';
@@ -14,7 +19,7 @@ export default async function handler(req, res) {
           fieldFilter: {
             field: { fieldPath: 'shortPath' },
             op: 'EQUAL',
-            value: { stringValue: urlPath }
+            value: { stringValue: shortPath }
           }
         },
         limit: 1

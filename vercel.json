@@ -62,8 +62,8 @@
   ],
   "rewrites": [
     {
-      "source": "/:prefix(go|r|l|s|n|ref|link|lnk|join|in)/:slug*",
-      "destination": "/api/go"
+      "source": "/:prefix([a-z][a-z0-9-]*)/:slug([^/]+)",
+      "destination": "/api/go?prefix=:prefix&slug=:slug"
     }
   ]
 }
