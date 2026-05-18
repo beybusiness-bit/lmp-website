@@ -94,6 +94,14 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // UTM 설정 및 숏링크 (api/go.js 서버 함수가 인증 없이 읽어야 함)
+    match /cms_utm_configs/{document=**} {
+      allow read, write: if true;
+    }
+    match /cms_utm_links/{document=**} {
+      allow read, write: if true;
+    }
+
     // 프로젝트별 사용자 컬렉션 (동적 이름: cms_users_{projectId})
     match /{col}/{doc} {
       allow read, write: if col.matches('cms_users_.*');

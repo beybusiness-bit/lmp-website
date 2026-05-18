@@ -1891,9 +1891,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 </select>
               </div>
               <div style="flex:0 0 auto;" id="utm-prefix-wrap">
-                <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">숏링크 접두사</div>
+                <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">숏링크 접두사 <span onclick="utmShowPrefixHelp()" style="cursor:pointer;font-weight:400;color:#0060c0;font-size:10px;">규정 ?</span></div>
                 <input class="fi-sm" id="utm-link-prefix" type="text" value="go" placeholder="go" maxlength="20" oninput="utmUpdatePrefixDisplay();utmSinglePreview();" style="margin-bottom:0;font-size:12px;width:80px;">
-                <div style="font-size:10px;color:rgba(0,0,0,.4);margin-top:2px;">소문자·숫자·하이픈</div>
               </div>
             </div>
           </div>
@@ -1913,7 +1912,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
                 <div>
                   <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">utm_source <span style="color:#e05c00;">*</span></div>
-                  <input class="fi-sm" id="utm-s-source" placeholder="instagram, inflr_홍길동…" oninput="utmSinglePreview()" style="margin-bottom:0;font-size:12px;">
+                  <input class="fi-sm" id="utm-s-source" placeholder="instagram, 홍길동…" oninput="utmSinglePreview()" style="margin-bottom:0;font-size:12px;">
                 </div>
                 <div>
                   <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">utm_medium <span style="color:#e05c00;">*</span></div>
@@ -8762,7 +8761,7 @@ let utmCurId=null,utmCurMode='both';
 let _utmBulkResults=[];
 const UTM_PRESETS=[
   {label:'Meta 광고',      fields:{source:'instagram',  medium:'paid_social',    content:'reels_15s_v1',   term:''}},
-  {label:'인플루언서',     fields:{source:'inflr_닉네임',medium:'influencer',     content:'youtube_shorts', term:''}},
+  {label:'인플루언서',     fields:{source:'닉네임',medium:'influencer',     content:'youtube_shorts', term:''}},
   {label:'자사 인스타',    fields:{source:'instagram',  medium:'organic_social',  content:'bio_link',       term:''}},
   {label:'자사 유튜브',    fields:{source:'youtube',    medium:'organic_social',  content:'description_link',term:''}},
   {label:'뉴스레터',       fields:{source:'newsletter', medium:'email',           content:'cta_btn',        term:''}},
@@ -8881,6 +8880,17 @@ function utmColorUrl(url){
     const c=C[key]||'#333';
     return `${sep}<span style="color:${c};font-weight:700;">${key}</span>=<span style="color:${c};">${decodeURIComponent(val)}</span>`;
   });
+}
+function utmShowPrefixHelp(){
+  openHelpPanel('숏링크 접두사 규정',`
+    <p style="margin-bottom:10px;">숏링크 URL 구조: <code>lazymaxpotential.kr/<b>접두사</b>/슬러그</code></p>
+    <table style="width:100%;font-size:12px;border-collapse:collapse;margin-bottom:12px;">
+      <tr><th style="text-align:left;padding:4px 0;border-bottom:1px solid #eee;">가능</th><th style="text-align:left;padding:4px 0;border-bottom:1px solid #eee;">불가</th></tr>
+      <tr><td style="padding:4px 0;color:#1a7a1a;vertical-align:top;">소문자 영문 (a–z) ✓<br>숫자 (0–9) ✓<br>하이픈 (-) ✓<br>예: <code>go</code>, <code>join</code>, <code>my-brand</code>, <code>lmp2025</code></td>
+          <td style="padding:4px 0;color:#c0392b;vertical-align:top;">대문자 (A–Z) ✗<br>언더스코어 (_) ✗<br>점 (.) ✗<br>공백, 한글, 특수문자 ✗</td></tr>
+    </table>
+    <p style="font-size:11px;color:rgba(0,0,0,.5);">입력 시 허용되지 않는 문자는 자동으로 제거됩니다.<br>접두사는 반드시 소문자로 시작해야 합니다.</p>
+  `);
 }
 function utmGetPrefix(){return((document.getElementById('utm-link-prefix')?.value||'go').trim().toLowerCase().replace(/[^a-z0-9-]/g,'')||'go');}
 function utmUpdatePrefixDisplay(){
