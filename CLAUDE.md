@@ -803,6 +803,12 @@ match /cms_payment_records/{doc} { allow read: if true; }
 
 ---
 
+#### 이번 세션 완료 항목 (UTM 빌더 수정 + 꾸미기 도구 Firebase export 수정)
+- **UTM 저장된 링크 Firestore 인덱스 오류 수정** ✅: `orderBy('createdAt','desc')` 제거 → 클라이언트 정렬 (복합 인덱스 불필요) (admin/index.html)
+- **UTM 저장된 링크 탭 UI 개선** ✅: UTM 링크 / 숏링크 섹션 분리 표시, 각 항목에 1클릭 복사 버튼, 숏링크는 전체 URL 표시 (admin/index.html)
+- **UTM 대량 생성 숏링크 지원** ✅: UTM+숏링크 모드에서 일괄 생성 시 `/go/inflr_닉네임` 숏링크도 함께 생성, CSV 다운로드에 숏링크 열 포함 (admin/index.html)
+- **꾸미기 도구 Firebase 기본소스 이미지 export 누락 수정** ✅: `loadImageCORSOnly`를 `fetch+blob+ObjectURL` 방식으로 교체 (프록시 실패 시 Firebase 직접 CORS fetch로 2차 폴백, Object URL은 사용 후 revoke) (tools/booth/index.html + api/proxy-image.js)
+
 #### 다음 세션 시작점 🔲
 
 **다음 세션: 미완료 항목 처리 + 사용자 피드백 반영**
