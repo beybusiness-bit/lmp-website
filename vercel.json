@@ -59,5 +59,11 @@
       "destination": "/potential/events",
       "permanent": false
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/:prefix(go|r|l|s|n|ref|link|lnk|join|in)/:slug*",
+      "destination": "/api/go"
+    }
   ]
 }
