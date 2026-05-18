@@ -725,6 +725,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <button style="padding:4px 10px;background:transparent;border:1.5px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;" onclick="openUserModal(null)">+ 추가</button>
                 <button style="padding:4px 10px;background:transparent;border:1.5px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;" onclick="openBulkModal()">대량 입력</button>
                 <button style="padding:4px 10px;background:transparent;border:1.5px solid rgba(0,0,0,.3);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.5);" onclick="loadUsers()">새로고침</button>
+                <button style="padding:4px 10px;background:transparent;border:1.5px solid rgba(0,0,0,.3);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.5);" onclick="downloadUsersCsv()">CSV</button>
               </div>
               <div id="user-table-wrap"><div class="empty-msg">프로젝트를 먼저 저장하면 사용자를 관리할 수 있어요.</div></div>
             </div>
@@ -1450,6 +1451,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               </label>
             </div>
             <div style="font-size:11px;color:rgba(0,0,0,.45);margin-top:4px;">체크한 도구만 사용자에게 표시됩니다. 모두 해제하면 배경 선택만 가능해요.</div>
+          </div>
+
+          <div style="margin-bottom:20px;">
+            <div class="ed-lbl" style="margin-bottom:6px;">최종 저장 이미지 크기</div>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+                <input type="radio" name="deco-export-w" value="1080" checked style="cursor:pointer;">
+                <span><b>기본</b> — 1080 × 1350 px <span style="font-size:11px;color:rgba(0,0,0,.45);">(인스타그램 표준, 파일 작음)</span></span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+                <input type="radio" name="deco-export-w" value="1500" style="cursor:pointer;">
+                <span><b>고화질 ⭐</b> — 1500 × 1875 px <span style="font-size:11px;color:rgba(0,0,0,.45);">(레티나·고해상도 모바일에 선명, 균형)</span></span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+                <input type="radio" name="deco-export-w" value="2160" style="cursor:pointer;">
+                <span><b>인쇄용</b> — 2160 × 2700 px <span style="font-size:11px;color:rgba(0,0,0,.45);">(최고화질·A4 인쇄 가능, 파일 큼)</span></span>
+              </label>
+            </div>
+            <div style="font-size:11px;color:rgba(0,0,0,.45);margin-top:5px;">💡 배경 이미지는 선택한 크기 이상으로 업로드하는 것을 권장합니다.</div>
           </div>
 
           <div class="sect-head" style="margin-bottom:4px;">필드 값별 배경 이미지</div>
@@ -4644,6 +4664,30 @@ async function loadUsers() {
     curUsers = snap.docs.map(d=>({_id:d.id,...d.data()}));
     renderUserTable();
   } catch(e) { document.getElementById('user-table-wrap').innerHTML = '<div class="empty-msg">불러오기 실패</div>'; }
+}
+function downloadUsersCsv() {
+  if (!curUsers.length || !curAuthFields.length) { alert('사용자 데이터가 없어요.'); return; }
+  const _esc = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const progStages = (curStages||[]).filter(s => s.trackProgress && (s.checkableCount||0) > 0);
+  const headers = ['ID', ...curAuthFields.map(f=>f.label), '마지막 로그인', '로그인 횟수',
+                   ...progStages.map(s=>(s.title||s.id)+' 진행률(%)')];
+  const rows = curUsers.map(u => {
+    const fields = curAuthFields.map(f => _esc(u[f.key] ?? ''));
+    const lastLogin = u.lastLoginAt?.toDate ? u.lastLoginAt.toDate().toLocaleString('ko-KR') : (u.lastLoginAt || '');
+    const prog = progStages.map(s => {
+      const done = Math.min((u.stageProgress?.[s.id]||[]).length, s.checkableCount);
+      return _esc(Math.round(done / s.checkableCount * 100));
+    });
+    return [_esc(u._id), ...fields, _esc(lastLogin), _esc(u.loginCount ?? ''), ...prog].join(',');
+  });
+  const bom = '﻿';
+  const csv = bom + headers.map(_esc).join(',') + '\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (curProjId || 'users') + '_사용자목록.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 function renderUserTable() {
   const wrap = document.getElementById('user-table-wrap');
@@ -10652,6 +10696,7 @@ async function loadBoothBgs(configId = 'booth') {
       backgrounds: JSON.parse(JSON.stringify(data.backgrounds || [])),
       commonPresetImages: JSON.parse(JSON.stringify(data.commonPresetImages || [])),
       allowedTools: data.allowedTools ? {...defaultAllowed, ...data.allowedTools} : defaultAllowed,
+      exportW: data.exportW || 1080,
       _type: data._type,
     };
     document.getElementById('deco-config-name').value = decoState.curConfig.name;
@@ -10667,6 +10712,9 @@ async function loadBoothBgs(configId = 'booth') {
     if(aiEl) aiEl.checked = !!at.image;
     if(asEl) asEl.checked = !!at.shape;
     if(adEl) adEl.checked = !!at.draw;
+    // exportW 라디오 반영
+    const ewEl = document.querySelector(`input[name="deco-export-w"][value="${decoState.curConfig.exportW}"]`);
+    if(ewEl) ewEl.checked = true;
     renderBoothBgList(decoState.curConfig.backgrounds);
     renderCommonPresetList(decoState.curConfig.commonPresetImages);
   } catch(e) {
@@ -10707,7 +10755,7 @@ async function uploadCommonPresetImg(e) {
   const label = e.target.closest('label');
   if(label) label.textContent = '업로드 중…';
   try {
-    const compressed = await compressImage(file, { maxWidth: 800, quality: 0.85 });
+    const compressed = await compressImage(file, { maxWidth: 1500, quality: 0.9 });
     const ref = storage.ref('game_configs/booth_presets/common_' + Date.now() + '.webp');
     await ref.put(compressed, { contentType: 'image/webp' });
     const url = await ref.getDownloadURL();
@@ -10912,7 +10960,7 @@ async function uploadBoothPresetImg(e, bgIdx) {
   const label = e.target.closest('label');
   if(label) label.textContent = '업로드 중…';
   try {
-    const compressed = await compressImage(file, { maxWidth: 800, quality: 0.85 });
+    const compressed = await compressImage(file, { maxWidth: 1500, quality: 0.9 });
     const ref = storage.ref('game_configs/booth_presets/' + Date.now() + '.webp');
     await ref.put(compressed, { contentType: 'image/webp' });
     const url = await ref.getDownloadURL();
@@ -10940,6 +10988,7 @@ async function saveDecoConfig() {
   const saveBtn = document.getElementById('deco-save-btn');
   if(saveBtn) { saveBtn.textContent = '저장 중…'; saveBtn.disabled = true; }
   try {
+    const _ewEl = document.querySelector('input[name="deco-export-w"]:checked');
     const payload = {
       backgrounds: cfg.backgrounds || [],
       commonPresetImages: cfg.commonPresetImages || [],
@@ -10947,6 +10996,7 @@ async function saveDecoConfig() {
       saveLabel: (document.getElementById('deco-save-label')?.value || '').trim(),
       name: (document.getElementById('deco-config-name')?.value || '').trim() || cfg.name || '',
       allowedTools: cfg.allowedTools || { image: true, shape: true, draw: true },
+      exportW: _ewEl ? parseInt(_ewEl.value) : (cfg.exportW || 1080),
     };
     await db.collection('game_configs').doc(configId).set(payload, { merge: true });
     if(saveBtn) { saveBtn.textContent = '저장됨 ✓'; saveBtn.disabled = false; setTimeout(() => { if(saveBtn) saveBtn.textContent = '저장'; }, 1800); }

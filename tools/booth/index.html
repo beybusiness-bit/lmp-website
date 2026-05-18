@@ -444,9 +444,10 @@ const FREE_BG_IMAGES = [
   {label:'봄 벚꽃',    thumb:'https://picsum.photos/id/167/540/675',  url:'https://picsum.photos/id/167/1080/1350'},
 ];
 
-// ── 내보내기 목표 해상도 (인스타그램 포스트 4:5 표준) ──
-const EXPORT_W = 1080;
-const EXPORT_H = 1350;
+// ── 내보내기 목표 해상도 (admin에서 설정 가능, 기본 4:5) ──
+const BASE_W = 1080; // fixedSize 항상 이 값 기준
+let EXPORT_W = 1080;
+let EXPORT_H = 1350;
 
 // ── 앱 상태 ──
 let canvasW = 0, canvasH = 0;
@@ -540,7 +541,7 @@ function resizeCanvases() {
       }
       if(item._sizeFixed && item._exportFixedW) {
         const ratio = item.h / item.w;
-        item.w = item._exportFixedW * w / EXPORT_W;
+        item.w = item._exportFixedW * w / BASE_W;
         item.h = item.w * ratio;
       } else {
         item.w = item.w * scaleX;
@@ -569,6 +570,10 @@ async function loadBackgrounds() {
       backgrounds = data.backgrounds || [];
       commonPresetImages = data.commonPresetImages || [];
       fieldKey = data.fieldKey || 'name';
+      if(data.exportW && data.exportW !== EXPORT_W) {
+        EXPORT_W = data.exportW;
+        EXPORT_H = Math.round(data.exportW * 1350 / 1080);
+      }
       if(data.name) {
         document.getElementById('page-title').textContent = data.name;
         toolTitle = data.name;
@@ -901,7 +906,7 @@ function addPresetImage(presetIdx) {
   img.crossOrigin = 'anonymous';
   img.onload = () => {
     const naturalRatio = (img.naturalHeight / img.naturalWidth) || 1;
-    const targetW = p.lockSize ? (p.fixedSize || 120) * canvasW / EXPORT_W : Math.min(canvasW * 0.4, 150);
+    const targetW = p.lockSize ? (p.fixedSize || 120) * canvasW / BASE_W : Math.min(canvasW * 0.4, 150);
     const targetH = targetW * naturalRatio;
     const x = canvasW/2 - targetW/2;
     const y = canvasH/2 - targetH/2;
