@@ -1961,6 +1961,27 @@ function _repBlockHtml(rb,mS){
   if(t==='mixed'){const txt=applyVars(rb.textContent||'');const imgUrl=rb.imageUrl||'';const layout=rb.mixedLayout||'overlay';const order=rb.imageOrder||'img-first';const fit=rb.imageFit||'cover';const h=rb.imageHeight;const imgS=h?`width:100%;height:${h}px;object-fit:${fit==='natural'?'contain':fit==='fill'?'100% 100%':fit};display:block;`:'width:100%;display:block;';const imgEl=imgUrl?`<img src="${imgUrl}" alt="" loading="lazy" class="lb-img" onclick="openLightbox(this.src)" style="${imgS}">`:'';;if(layout==='split'){const content=order==='text-first'?`<div class="g-split-text" style="${bg}">${txt}</div><div class="g-split-img">${imgEl}</div>`:`<div class="g-split-img">${imgEl}</div><div class="g-split-text" style="${bg}">${txt}</div>`;return `<div class="g-block-mixed-split" style="${mS}">${content}</div>`;}return `<div class="g-block-mixed-overlay" style="${mS}${bg}">${imgEl}<div class="g-overlay-text" style="align-items:flex-end;background:rgba(0,0,0,.4);"><div class="g-overlay-text-inner">${txt}</div></div></div>`;}
   const txt=applyVars(rb.textContent||'');return `<div class="g-block-text" style="${mS}${bg}"><div class="g-block-text-inner">${txt}</div></div>`;
 }
+function _resolveVariant(b){
+  if(!b.variants?.length) return b;
+  const session=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+  for(const v of b.variants){
+    const conds=v.conditions||[];
+    if(!conds.length) continue;
+    const mode=v.conditionMode||'all';
+    const results=conds.map(c=>{
+      const fieldVal=String(session[c.field]??'');
+      const cVal=String(c.value??'');
+      if(c.operator==='==') return fieldVal===cVal;
+      if(c.operator==='!=') return fieldVal!==cVal;
+      if(c.operator==='contains') return fieldVal.includes(cVal);
+      if(c.operator==='not-contains') return !fieldVal.includes(cVal);
+      return false;
+    });
+    const matched=mode==='any'?results.some(Boolean):results.every(Boolean);
+    if(matched) return{...b,...v};
+  }
+  return b;
+}
 function _isTierLocked(b){
   if(!b.requiredTier || IS_ADMIN_PREVIEW) return false;
   const saved=JSON.parse(sessionStorage.getItem('userSession')||'{}');
@@ -1997,6 +2018,7 @@ async function _syncPaidTiers(){
   }catch(_){}
 }
 function blockHtml(b){
+  b=_resolveVariant(b);
   const bgS=b.bgColor?`background-color:${b.bgColor};`:'';
   const bgImgS=_blkBgImgCss(b);
   const txS=b.txtColor?`color:${b.txtColor};`:'';
