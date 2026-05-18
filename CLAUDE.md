@@ -823,6 +823,16 @@ match /cms_payment_records/{doc} { allow read: if true; }
 - **자르기 첫 동작 시각 버그 수정** ✅: `renderItems()`에서 `if(hasCrop)` → `if(hasCrop || inCropMode)` — 자르기 모드 진입 즉시 clip-wrap DOM 구조 적용 (tools/booth/index.html)
 - **크기 조절 핸들 4모서리 전체 추가** ✅: TL/TR/BL/BR 핸들, `data-corner` 속성, `startResizeItem(e, item, corner)` 반대 꼭짓점 고정 방식으로 코너별 리사이즈 (tools/booth/index.html)
 
+#### 이번 세션 완료 항목 (꾸미기 도구 화질 + 위젯 슬라이더 너비 + 페이지뷰 카운터)
+- **꾸미기 도구 툴바에 [새로 만들기] 버튼 추가** ✅: 완성 버튼 옆에 배치, confirm 후 `resetTool()` 호출 (tools/booth/index.html)
+- **Firestore cms_page_views 규칙 추가** ✅: `firestore.rules`에 `cms_page_views` 컬렉션 read/write 허용 → 페이지 방문 오늘/누적 카운터 정상 동작 (firestore.rules) ⚠️ Firebase Console에 수동 적용 필요
+- **위젯 카드 슬라이더 너비 버그 수정** ✅: `effectiveIpv = Math.min(ipv, itemCount)` 로직 제거 → 항상 설정값 `ipv` 그대로 사용. 카드 3개 설정 시 항상 1/3 너비 표시 (p/ + 3파일 동기화)
+- **꾸미기 도구 모바일 이미지 화질 저하 수정** ✅ 2가지 근본 원인 해결:
+  - iOS Safari Large Image Subsampling 버그: `new Image()`+Data URL 방식 → `createImageBitmap(blob)` GPU 디코딩으로 교체 (iOS 15+ 대응, 구형 fallback 포함)
+  - iOS 사진 앱 PNG→JPEG 재압축 버그: Web Share API로 JPEG(0.95) 직접 공유 → 화질 손상 없이 저장
+  - `imageSmoothingQuality='high'` 전역 적용, 사용자 업로드 배경 자연 해상도로 export canvas 크기 결정 (최대 4096px)
+  - `ImageBitmap.close()` GPU 메모리 해제 추가 (tools/booth/index.html)
+
 #### 다음 세션 시작점 🔲
 
 **미완료 항목:**
@@ -830,7 +840,7 @@ match /cms_payment_records/{doc} { allow read: if true; }
 - **환불 처리 기능**: 페이업 환불 API 연동 미구현 — 현재 수동 처리 (페이업 대시보드에서 직접)
 
 **보안 관련 사용자 직접 수행 필요 항목:**
-- **Firebase Firestore 규칙 적용**: `firestore.rules` 파일 내용을 Firebase Console → Firestore → 규칙 탭에 게시 (cms_utm_links allow read 추가됨)
+- **Firebase Firestore 규칙 적용**: `firestore.rules` 파일 내용을 Firebase Console → Firestore → 규칙 탭에 게시 (이번 세션: `cms_page_views` 컬렉션 read/write 허용 추가됨)
 - **Firebase Storage 규칙 적용**: Firebase Console → Storage → 규칙 탭에 적용
 - **YouTube API key HTTP referrer 제한**: Google Cloud Console → HTTP 리퍼러 `*.lazymaxpotential.kr/*` 추가
 
