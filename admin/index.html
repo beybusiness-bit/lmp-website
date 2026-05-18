@@ -4358,7 +4358,7 @@ function openFieldModal(idx) {
   document.getElementById('fm-req-sw').classList.toggle('on', fmReqOn);
   document.getElementById('fm-label').disabled = false;
   document.getElementById('fm-key').disabled   = idx===0;
-  document.getElementById('field-modal').classList.add('on');
+  const _fm=document.getElementById('field-modal'); document.body.appendChild(_fm); _fm.classList.add('on');
 }
 function saveField() {
   const label = document.getElementById('fm-label').value.trim();
@@ -4793,7 +4793,7 @@ function openBulkEditFieldModal() {
   document.getElementById('bulk-edit-count').textContent = selectedUserIds.size;
   document.getElementById('bulk-edit-field').innerHTML = curAuthFields.map(f=>`<option value="${f.key}">${f.label}</option>`).join('');
   document.getElementById('bulk-edit-value').value = '';
-  document.getElementById('bulk-edit-modal').classList.add('on');
+  const _bem=document.getElementById('bulk-edit-modal'); document.body.appendChild(_bem); _bem.classList.add('on');
 }
 async function saveBulkEditField() {
   const fieldKey = document.getElementById('bulk-edit-field').value;
@@ -4820,7 +4820,7 @@ function openUserModal(userId) {
       <input class="fi-sm" id="um-${f.key}" value="${(user[f.key]||'').toString().replace(/"/g,'&quot;')}"
              type="text" ${f.type==='number'?'inputmode="numeric"':''} placeholder="${f.label}" style="margin-bottom:0;">
     </div>`).join('');
-  document.getElementById('user-modal').classList.add('on');
+  const _um=document.getElementById('user-modal'); document.body.appendChild(_um); _um.classList.add('on');
 }
 async function saveUser() {
   const col = getAuthCol();
@@ -4851,7 +4851,7 @@ function openBulkModal() {
   const hint = curAuthFields.map(f=>f.label).join(', ');
   document.getElementById('bulk-hint').textContent = '헤더 순서: ' + hint;
   document.getElementById('bulk-input').value = '';
-  document.getElementById('bulk-modal').classList.add('on');
+  const _bm=document.getElementById('bulk-modal'); document.body.appendChild(_bm); _bm.classList.add('on');
 }
 async function saveBulkUsers() {
   const raw = document.getElementById('bulk-input').value.trim();
@@ -5777,7 +5777,7 @@ async function openCopyModal() {
   const sel = document.getElementById('copy-proj-sel');
   sel.innerHTML = '<option value="">불러오는 중…</option>';
   document.getElementById('copy-stage-sel').innerHTML = '';
-  document.getElementById('copy-modal').classList.add('on');
+  const _cm=document.getElementById('copy-modal'); document.body.appendChild(_cm); _cm.classList.add('on');
   try {
     const snap = await db.collection('cms_projects').orderBy('updatedAt','desc').get();
     copyAllProjects = snap.docs.map(d=>({id:d.id,name:d.data().name||d.id,stages:d.data().stages||[]}));
@@ -6044,7 +6044,7 @@ async function viewFormResponses(formId) {
   curRespFormId = formId; curRespData = [];
   curRespFormBlock = curBlocks.find(b=>b.formId===formId)||null;
   document.getElementById('form-resp-scroll').innerHTML = '<div class="empty-msg">불러오는 중…</div>';
-  document.getElementById('form-resp-modal').classList.add('on');
+  const _frm=document.getElementById('form-resp-modal'); document.body.appendChild(_frm); _frm.classList.add('on');
   updateRespSheetStatus();
   try {
     const snap = await db.collection('cms_form_responses').doc(formId).collection('responses')
@@ -8883,9 +8883,9 @@ function utmBulkGenerate(){
   if(!names.length){alert('닉네임을 입력해주세요.');return;}
   const isShort=utmCurMode==='both';
   _utmBulkResults=names.map(name=>{
-    const source='inflr_'+name;
+    const source=name;
     const url=utmBuildUrl(baseUrl,{source,medium,campaign,content,term:''});
-    const shortPath=isShort?('/go/inflr_'+encodeURIComponent(name)):'';
+    const shortPath=isShort?('/go/'+encodeURIComponent(name)):'';
     return {name,source,medium,campaign,content,url,shortPath};
   });
   const resultEl=document.getElementById('utm-bulk-result');
@@ -11275,7 +11275,7 @@ async function cgDeleteById(docId){
 }
 function cgViewResults(){ if(cgCurDocId) cgViewResultsById(cgCurDocId); }
 async function cgViewResultsById(configId){
-  document.getElementById('cg-results-modal').classList.add('on');
+  const _crm=document.getElementById('cg-results-modal'); document.body.appendChild(_crm); _crm.classList.add('on');
   const el=document.getElementById('cg-results-scroll');
   el.innerHTML='<div class="empty-msg">불러오는 중…</div>';
   try{

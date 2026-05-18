@@ -8,8 +8,7 @@ export default async function handler(req, res) {
   const { url } = req.query;
   if (!url) return res.status(400).end('url required');
 
-  let decoded;
-  try { decoded = decodeURIComponent(url); } catch { decoded = url; }
+  const decoded = url; // Vercel req.query already URL-decoded once
 
   // Firebase Storage URL만 허용 (오픈 프록시 방지)
   if (!decoded.startsWith('https://firebasestorage.googleapis.com/')) {
