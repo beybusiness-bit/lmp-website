@@ -254,6 +254,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   <button class="lmp-btn" id="btn-guide" onclick="expandDesc()" style="display:none;">안내</button>
   <div class="tool-sep"></div>
   <button class="lmp-btn" id="btn-export" onclick="openExport()" style="background:#000;color:var(--lmp-block-bg);">완성</button>
+  <div class="tool-sep"></div>
+  <button class="lmp-btn" id="btn-reset-toolbar" onclick="if(confirm('처음부터 다시 시작할까요?\n현재 작업이 모두 사라집니다.')) resetTool()">새로 만들기</button>
   <input type="file" id="img-file-input" accept="image/*" style="display:none;" onchange="onImageFileSelected(event)">
 </div>
 
