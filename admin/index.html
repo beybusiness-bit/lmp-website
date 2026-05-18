@@ -2673,6 +2673,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           </div>
         </div>
       </div>
+      <!-- 조건별 다른 내용 (Block Variants) -->
+      <div id="blk-variants-section" style="margin-top:14px;padding-top:14px;border-top:1.5px solid rgba(0,0,0,.1);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <div class="ed-lbl" style="font-size:11px;font-weight:700;margin:0;">👤 조건별 다른 내용 <span style="font-weight:400;opacity:.6;">(선택)</span></div>
+          <button class="prev-btn" onclick="addVariantItem()" style="font-size:11px;">+ 조건 추가</button>
+        </div>
+        <div id="blk-variants-list"></div>
+        <div style="font-size:10px;color:rgba(0,0,0,.45);margin-top:4px;line-height:1.4;">조건에 맞는 첫 번째 항목의 내용이 표시됩니다. 조건 불일치 시 기본 내용이 표시됩니다.</div>
+      </div>
     </div>
     </div><!-- /ed-inner -->
   </div>
@@ -6137,6 +6146,7 @@ let curBlkBgImagePos='center';
 let curBlkCheckColor='';
 let curBlkCheckTextColor='';
 let curBlkVerticalAlign='center';
+let _curVariants=[];
 let curImgFit='natural',curImgPos='center';
 let curMixedImgFit='cover',curMixedImgPos='center',curMixedHeightFull=false;
 let curMixedImgOrder='img-first';
@@ -6497,6 +6507,8 @@ function openBlockModal(idx,insertAt){
   const repSec=document.getElementById('blk-tier-replace-section');
   if(repSec) repSec.style.display=tlm==='replace'?'block':'none';
   _loadRepBlock(b.tierReplaceBlock);
+  _curVariants=JSON.parse(JSON.stringify(b.variants||[]));
+  renderVariantList();
   const bgH=document.getElementById('blk-bg-hex');  if(bgH) bgH.value=(curBlkBgColor||'').toUpperCase();
   const _sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v??'';};
   // 하위호환: marginTop 없으면 marginV 기본값으로
@@ -6772,6 +6784,49 @@ function updateBmPreview(){
   const S=previewWidth/430;
   el.innerHTML=gBlockHtml(_buildCurrentBlock(),S);
 }
+function _varEscAttr(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function _varGetFieldOptions(sel){
+  const fields=curAuthFields||[];
+  if(!fields.length) return `<option value="">필드 없음</option>`;
+  return fields.map(f=>`<option value="${_varEscAttr(f.key)}"${f.key===sel?' selected':''}>${_varEscAttr(f.label||f.key)}</option>`).join('');
+}
+function renderVariantList(){
+  const container=document.getElementById('blk-variants-list');
+  if(!container) return;
+  if(!_curVariants.length){container.innerHTML='';return;}
+  const isText=curBlkType==='text'||curBlkType==='mixed';
+  const isImg=curBlkType==='image'||curBlkType==='mixed';
+  container.innerHTML=_curVariants.map((v,i)=>{
+    const c=v.conditions?.[0]||{};
+    const ops=['==','!=','contains','not-contains'];
+    const opLabels={'==':'== 일치','!=':'!= 불일치','contains':'포함','not-contains':'미포함'};
+    return `<div style="border:1.5px solid rgba(0,0,0,.15);border-radius:8px;margin-bottom:8px;overflow:hidden;">
+      <div style="background:rgba(0,0,0,.04);padding:7px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(0,0,0,.1);">
+        <span style="font-size:12px;font-weight:700;">조건 ${i+1}</span>
+        <button class="prev-btn" onclick="removeVariantItem(${i})" style="color:#c00;font-size:11px;padding:2px 7px;">삭제</button>
+      </div>
+      <div style="padding:10px;">
+        <div style="display:grid;grid-template-columns:1fr 100px 1fr;gap:4px;margin-bottom:8px;">
+          <select class="fi-sm" style="margin-bottom:0;" onchange="_varSetCond(${i},'field',this.value)">${_varGetFieldOptions(c.field||'')}</select>
+          <select class="fi-sm" style="margin-bottom:0;" onchange="_varSetCond(${i},'operator',this.value)">${ops.map(op=>`<option value="${op}"${(c.operator||'==')==op?' selected':''}>${opLabels[op]}</option>`).join('')}</select>
+          <input class="fi-sm" style="margin-bottom:0;" placeholder="값" value="${_varEscAttr(c.value||'')}" oninput="_varSetCond(${i},'value',this.value)">
+        </div>
+        ${isText?`<div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">대체 텍스트 <span style="font-weight:400;opacity:.55;">(비워두면 기본값)</span></div>
+        <div class="ced" contenteditable="true" id="var-ced-${i}" data-ph="대체 텍스트 입력…" style="min-height:44px;font-size:13px;" onblur="_varSetText(${i},this.innerHTML)">${v.textContent||''}</div>`:''}
+        ${isImg?`<div class="ed-lbl" style="font-size:10px;margin-top:${isText?'8px':'0'};margin-bottom:3px;">대체 이미지 URL <span style="font-weight:400;opacity:.55;">(비워두면 기본값)</span></div>
+        <input class="fi-sm" type="url" style="margin-bottom:0;" placeholder="https://…" value="${_varEscAttr(v.imageUrl||'')}" oninput="_varSetField(${i},'imageUrl',this.value)">`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function addVariantItem(){
+  _curVariants.push({id:uid(),conditions:[{field:curAuthFields?.[0]?.key||'',operator:'==',value:''}],conditionMode:'all',textContent:'',imageUrl:''});
+  renderVariantList();
+}
+function removeVariantItem(i){_curVariants.splice(i,1);renderVariantList();}
+function _varSetCond(i,k,val){if(!_curVariants[i]) return;if(!_curVariants[i].conditions)_curVariants[i].conditions=[{}];_curVariants[i].conditions[0][k]=val;}
+function _varSetText(i,html){if(_curVariants[i])_curVariants[i].textContent=html;}
+function _varSetField(i,k,val){if(_curVariants[i])_curVariants[i][k]=val;}
 function saveBlock(){
   const existingId=(curBlkIdx!==null&&curBlocks[curBlkIdx]?.id)||uid();
   let b={id:existingId,type:curBlkType};
@@ -6866,6 +6921,15 @@ function saveBlock(){
   } else {
     delete b.requiredTier; delete b.tierLockMode; delete b.tierReplaceBlock;
   }
+  const _vList=_curVariants.filter(v=>(v.conditions?.[0]?.value||'').trim()||(v.textContent||'').trim()||(v.imageUrl||'').trim());
+  if(_vList.length){
+    b.variants=_vList.map(v=>{
+      const r={id:v.id||uid(),conditions:v.conditions||[],conditionMode:v.conditionMode||'all'};
+      if((v.textContent||'').trim()) r.textContent=v.textContent;
+      if((v.imageUrl||'').trim()) r.imageUrl=v.imageUrl.trim();
+      return r;
+    });
+  } else { delete b.variants; }
   if(_hbMode){
     const _iv3=id=>parseInt(document.getElementById(id)?.value)||0;
     const _cbr=_iv3('blk-card-border-radius'); if(_cbr>0) b.cardBorderRadius=_cbr; else delete b.cardBorderRadius;
@@ -6934,6 +6998,9 @@ function switchBlkTab(t){
       r.checked=r.value===curBlkCompleteTrigger;
     });
   }
+  const _varSec=document.getElementById('blk-variants-section');
+  if(_varSec) _varSec.style.display=(t==='text'||t==='image'||t==='mixed')?'':'none';
+  renderVariantList();
 }
 const SINGLE_TOOL_TYPES = []; // 모든 도구 인스턴스 선택형
 function switchToolType(tt){
