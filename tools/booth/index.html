@@ -1641,11 +1641,13 @@ async function _buildCorsExportDataUrl(expW, expH, scale) {
   corsCanvas.width = expW; corsCanvas.height = expH;
   const ctx = corsCanvas.getContext('2d');
 
+  const _releaseImg = img => { if(img?._objUrl) { URL.revokeObjectURL(img._objUrl); img._objUrl = null; } };
+
   // 배경
   const bgSrc = bgImage?._src;
   if(bgSrc) {
     const corsImg = await loadImageCORSOnly(bgSrc);
-    if(corsImg) drawImageCover(ctx, corsImg, 0, 0, expW, expH);
+    if(corsImg) { drawImageCover(ctx, corsImg, 0, 0, expW, expH); _releaseImg(corsImg); }
     else if(bgSrc.startsWith('data:') && bgImage) drawImageCover(ctx, bgImage, 0, 0, expW, expH);
   }
 
@@ -1657,7 +1659,6 @@ async function _buildCorsExportDataUrl(expW, expH, scale) {
     ctx.rotate((item.rot||0)*Math.PI/180);
 
     if(item.type === 'shape') {
-      // 도형은 외부 이미지 없이 순수 canvas 연산 — 바로 렌더
       drawShapeToCtx(ctx, item.shape, sw, sh, item.fillColor, item.strokeColor, (item.strokeWidth||0)*scale);
       ctx.restore();
       continue;
@@ -1676,6 +1677,7 @@ async function _buildCorsExportDataUrl(expW, expH, scale) {
       }
       applyFrameClip(ctx, item.frame, sw, sh);
       ctx.drawImage(corsImg, -sw/2-cropL, -sh/2-cropT, iW, iH);
+      _releaseImg(corsImg);
     }
     ctx.restore();
   }
@@ -1781,31 +1783,51 @@ function loadImageCORS(src) {
 }
 
 // CORS 전용 이미지 로더 (export canvas 오염 방지용)
-// Firebase Storage URL: 서버 프록시(/api/proxy-image)를 경유해 CORS 헤더 확보
-function loadImageCORSOnly(src) {
-  return new Promise(resolve => {
-    if(!src) { resolve(null); return; }
-    if(src.startsWith('data:')) {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => resolve(null);
-      img.src = src;
-      return;
-    }
-    // Firebase Storage → 프록시 경유 (서버 fetch는 CORS 제한 없음)
-    let loadSrc = src;
-    if(src.includes('firebasestorage.googleapis.com')) {
-      loadSrc = '/api/proxy-image?url=' + encodeURIComponent(src);
-    }
+// Firebase Storage: fetch → blob → Object URL (같은 출처 → 캔버스 오염 없음)
+async function loadImageCORSOnly(src) {
+  if(!src) return null;
+  if(src.startsWith('data:')) {
+    return new Promise(resolve => {
+      const img = new Image(); img.onload = ()=>resolve(img); img.onerror = ()=>resolve(null); img.src = src;
+    });
+  }
+  if(!src.includes('firebasestorage.googleapis.com')) {
+    // 비Firebase: crossOrigin=anonymous + 캐시 버스팅
+    return new Promise(resolve => {
+      const img = new Image(); img.crossOrigin = 'anonymous';
+      img.onload = ()=>resolve(img); img.onerror = ()=>resolve(null);
+      const sep = src.includes('?') ? '&' : '?';
+      img.src = src + sep + '_cors=' + Date.now();
+    });
+  }
+  // Firebase Storage: fetch → blob → Object URL
+  const _imgFromBlob = blob => new Promise(resolve => {
+    const objUrl = URL.createObjectURL(blob);
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    img._objUrl = objUrl; // 사용 후 revoke용
     img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
-    // 원본이 Firebase URL이면 프록시를 쓰므로 캐시 버스팅 불필요 (서버 캐시 활용)
-    const isFirebase = src.includes('firebasestorage.googleapis.com');
-    img.src = isFirebase ? loadSrc
-            : loadSrc + (loadSrc.includes('?') ? '&' : '?') + '_cors=' + Date.now();
+    img.onerror = () => { URL.revokeObjectURL(objUrl); resolve(null); };
+    img.src = objUrl;
   });
+  // 1차: 서버 프록시 (CORS 제한 없음)
+  try {
+    const r = await fetch('/api/proxy-image?url=' + encodeURIComponent(src));
+    if(r.ok) {
+      const blob = await r.blob();
+      if(blob.size > 0 && blob.type.startsWith('image/')) return await _imgFromBlob(blob);
+    }
+  } catch(e) { /* ignore, try next */ }
+  // 2차: Firebase 직접 요청 (Firebase Storage가 CORS 허용 시 작동)
+  try {
+    const sep = src.includes('?') ? '&' : '?';
+    const r2 = await fetch(src + sep + '_t=' + Date.now(), {mode:'cors', credentials:'omit'});
+    if(r2.ok) {
+      const blob2 = await r2.blob();
+      if(blob2.size > 0) return await _imgFromBlob(blob2);
+    }
+  } catch(e) { /* ignore */ }
+  console.warn('[booth] CORS load failed (export에서 이미지 누락):', src.slice(0,80));
+  return null;
 }
 
 function _dataUrlToBlob(dataUrl) {

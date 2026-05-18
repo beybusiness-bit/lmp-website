@@ -17,16 +17,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    const upstream = await fetch(decoded);
-    if (!upstream.ok) throw new Error(`upstream ${upstream.status}`);
+    const upstream = await fetch(decoded, { redirect: 'follow' });
+    if (!upstream.ok) {
+      return res.status(502).json({ error: `upstream ${upstream.status}` });
+    }
 
     const contentType = upstream.headers.get('content-type') || 'image/png';
-    const buf = await upstream.arrayBuffer();
+    if (!contentType.startsWith('image/')) {
+      return res.status(502).json({ error: `unexpected content-type: ${contentType}` });
+    }
+
+    const bytes = new Uint8Array(await upstream.arrayBuffer());
+    const buf = Buffer.from(bytes);
 
     res.setHeader('Content-Type', contentType);
-    res.setHeader('Cache-Control', 'public, max-age=86400'); // 24시간 캐시
-    res.status(200).send(Buffer.from(buf));
+    res.setHeader('Content-Length', buf.length);
+    res.setHeader('Cache-Control', 'public, s-maxage=86400, max-age=3600');
+    return res.status(200).end(buf);
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: e.message });
   }
 }

@@ -1930,7 +1930,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           </div>
           <!-- 대량 생성 탭 -->
           <div id="utm-bulk-screen" style="display:none;overflow-y:auto;flex:1;padding:14px 16px;">
-            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:10px;line-height:1.5;">닉네임 목록을 입력하면 <code>inflr_[닉네임]</code>을 source로 한 UTM 링크를 일괄 생성합니다. (최대 24명)</div>
+            <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:10px;line-height:1.5;">닉네임 목록을 입력하면 <code>inflr_[닉네임]</code>을 source로 한 UTM 링크를 일괄 생성합니다. (최대 24명) <br><b>UTM+숏링크</b> 모드에서는 숏링크 <code>/go/inflr_[닉네임]</code>도 함께 생성됩니다.</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
               <div>
                 <div class="ed-lbl" style="font-size:10px;margin-bottom:3px;">utm_medium</div>
@@ -8881,18 +8881,31 @@ function utmBulkGenerate(){
   const content=document.getElementById('utm-b-content').value.trim();
   const names=document.getElementById('utm-b-names').value.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,24);
   if(!names.length){alert('닉네임을 입력해주세요.');return;}
-  _utmBulkResults=names.map(name=>({name,source:'inflr_'+name,medium,campaign,content,url:utmBuildUrl(baseUrl,{source:'inflr_'+name,medium,campaign,content,term:''})}));
+  const isShort=utmCurMode==='both';
+  _utmBulkResults=names.map(name=>{
+    const source='inflr_'+name;
+    const url=utmBuildUrl(baseUrl,{source,medium,campaign,content,term:''});
+    const shortPath=isShort?('/go/inflr_'+encodeURIComponent(name)):'';
+    return {name,source,medium,campaign,content,url,shortPath};
+  });
   const resultEl=document.getElementById('utm-bulk-result');
+  const shortHd=isShort?`<th style="padding:6px 4px;text-align:left;">숏링크</th>`:'';
   resultEl.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:11px;min-width:400px;">
-    <thead><tr style="border-bottom:2px solid #000;"><th style="padding:6px 4px;text-align:left;">닉네임</th><th style="padding:6px 4px;text-align:left;">utm_source</th><th style="padding:6px 4px;text-align:left;">UTM URL</th></tr></thead>
-    <tbody>${_utmBulkResults.map((r,i)=>`<tr style="border-bottom:1px solid rgba(0,0,0,.07);">
-      <td style="padding:5px 4px;font-weight:700;">${r.name}</td>
-      <td style="padding:5px 4px;color:#e05c00;font-family:monospace;font-size:10px;">${r.source}</td>
-      <td style="padding:5px 4px;font-family:monospace;font-size:10px;word-break:break-all;">
-        ${r.url.length>50?r.url.slice(0,50)+'…':r.url}
-        <button data-url="${r.url.replace(/"/g,'&quot;')}" onclick="utmCopyText(this.dataset.url,this)" style="background:#000;color:#fff;border:none;font-size:10px;padding:2px 5px;cursor:pointer;border-radius:2px;margin-left:3px;vertical-align:middle;">복사</button>
-      </td>
-    </tr>`).join('')}</tbody>
+    <thead><tr style="border-bottom:2px solid #000;"><th style="padding:6px 4px;text-align:left;">닉네임</th>${shortHd}<th style="padding:6px 4px;text-align:left;">UTM URL</th></tr></thead>
+    <tbody>${_utmBulkResults.map(r=>{
+      const shortCell=isShort?`<td style="padding:5px 4px;">
+        <span style="font-family:monospace;color:#0060c0;font-size:10px;">…${r.shortPath}</span>
+        <button data-url="https://lazymaxpotential.kr${r.shortPath}" onclick="utmCopyText(this.dataset.url,this)" style="background:#0060c0;color:#fff;border:none;font-size:10px;padding:2px 5px;cursor:pointer;border-radius:2px;margin-left:3px;vertical-align:middle;">복사</button>
+      </td>`:'';
+      return `<tr style="border-bottom:1px solid rgba(0,0,0,.07);">
+        <td style="padding:5px 4px;font-weight:700;">${r.name}</td>
+        ${shortCell}
+        <td style="padding:5px 4px;font-family:monospace;font-size:10px;word-break:break-all;">
+          ${r.url.length>45?r.url.slice(0,45)+'…':r.url}
+          <button data-url="${r.url.replace(/"/g,'&quot;')}" onclick="utmCopyText(this.dataset.url,this)" style="background:#000;color:#fff;border:none;font-size:10px;padding:2px 5px;cursor:pointer;border-radius:2px;margin-left:3px;vertical-align:middle;">복사</button>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
   </table>`;
   document.getElementById('utm-bulk-save-btn').style.display='';
   document.getElementById('utm-bulk-csv-btn').style.display='';
@@ -8905,13 +8918,16 @@ async function utmBulkSaveAll(e){
   const batch=db.batch();
   _utmBulkResults.forEach(r=>{
     const ref=db.collection('cms_utm_links').doc();
-    batch.set(ref,{configId:utmCurId,label:r.name,source:r.source,medium:r.medium,campaign:r.campaign,content:r.content,term:'',utmUrl:r.url,shortPath:'',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    batch.set(ref,{configId:utmCurId,label:r.name,source:r.source,medium:r.medium,campaign:r.campaign,content:r.content,term:'',utmUrl:r.url,shortPath:r.shortPath||'',createdAt:firebase.firestore.FieldValue.serverTimestamp()});
   });
   try{await batch.commit();_btnFlash(e.target,'저장됨 ✓',1200);}catch(err){alert('저장 실패: '+err.message);}
 }
 function utmBulkCsvDownload(){
   if(!_utmBulkResults.length) return;
-  const csv=['﻿닉네임,utm_source,URL',..._utmBulkResults.map(r=>`${r.name},${r.source},"${r.url}"`)].join('\n');
+  const hasShort=!!_utmBulkResults[0]?.shortPath;
+  const header=hasShort?'닉네임,utm_source,UTM URL,숏링크':'닉네임,utm_source,UTM URL';
+  const rows=_utmBulkResults.map(r=>hasShort?`${r.name},${r.source},"${r.url}","https://lazymaxpotential.kr${r.shortPath}"`:`${r.name},${r.source},"${r.url}"`);
+  const csv=['﻿'+header,...rows].join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='utm_bulk.csv';a.click();
 }
 async function utmLoadSavedLinks(){
@@ -8919,33 +8935,60 @@ async function utmLoadSavedLinks(){
   const countEl=document.getElementById('utm-saved-count');
   el.innerHTML='<div class="empty-msg">불러오는 중…</div>';
   try{
-    const snap=await db.collection('cms_utm_links').where('configId','==',utmCurId).orderBy('createdAt','desc').get();
-    countEl.textContent=`총 ${snap.size}개의 링크`;
-    if(snap.empty){el.innerHTML='<div class="empty-msg">저장된 링크가 없어요</div>';return;}
-    const isShort=utmCurMode==='shortlink'||utmCurMode==='both';
-    el.innerHTML=`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;min-width:360px;">
-      <thead><tr style="border-bottom:2px solid #000;">
-        <th style="padding:6px 4px;text-align:left;font-size:10px;">레이블</th>
-        ${isShort?'<th style="padding:6px 4px;text-align:left;font-size:10px;">숏링크</th>':''}
-        <th style="padding:6px 4px;text-align:left;font-size:10px;">UTM URL</th>
-        <th style="padding:6px 4px;"></th>
-      </tr></thead>
-      <tbody>${snap.docs.map(d=>{
-        const r=d.data();
-        const urlCell=r.utmUrl?`<span style="font-family:monospace;color:#444;word-break:break-all;font-size:10px;">${r.utmUrl.length>55?r.utmUrl.slice(0,55)+'…':r.utmUrl}</span>`:'<span style="color:rgba(0,0,0,.3);">URL 없음</span>';
-        const shortCell=isShort?(r.shortPath?`<span style="font-family:monospace;color:#0060c0;font-size:11px;">${r.shortPath}</span>`:'<span style="color:rgba(0,0,0,.3);">-</span>'):'';
-        const urlForCopy=(r.utmUrl||'').replace(/"/g,'&quot;');
-        return `<tr style="border-bottom:1px solid rgba(0,0,0,.07);">
-          <td style="padding:5px 4px;font-weight:700;">${r.label||'-'}</td>
-          ${isShort?`<td style="padding:5px 4px;">${shortCell}</td>`:''}
-          <td style="padding:5px 4px;">${urlCell}</td>
-          <td style="padding:5px 4px;white-space:nowrap;">
-            ${r.utmUrl?`<button data-url="${urlForCopy}" onclick="utmCopyText(this.dataset.url,this)" style="background:#000;color:#fff;border:none;font-size:10px;padding:2px 5px;cursor:pointer;border-radius:2px;margin-right:3px;">복사</button>`:''}
-            <button onclick="utmDeleteLink('${d.id}')" style="background:none;border:none;font-size:13px;cursor:pointer;color:#c00;padding:2px 4px;line-height:1;">✕</button>
-          </td>
-        </tr>`;
-      }).join('')}</tbody>
-    </table></div>`;
+    // orderBy 제거 → 클라이언트 정렬 (Firestore 복합 인덱스 불필요)
+    const snap=await db.collection('cms_utm_links').where('configId','==',utmCurId).get();
+    const docs=snap.docs.map(d=>({id:d.id,...d.data()}));
+    docs.sort((a,b)=>{
+      const ta=a.createdAt?.toMillis?a.createdAt.toMillis():0;
+      const tb=b.createdAt?.toMillis?b.createdAt.toMillis():0;
+      return tb-ta;
+    });
+    countEl.textContent=`총 ${docs.length}개의 링크`;
+    if(!docs.length){el.innerHTML='<div class="empty-msg">저장된 링크가 없어요</div>';return;}
+    const utmDocs=docs.filter(r=>r.utmUrl);
+    const shortDocs=docs.filter(r=>r.shortPath);
+    let html='';
+    if(utmDocs.length){
+      html+=`<div style="font-size:11px;font-weight:700;margin-bottom:8px;padding-bottom:5px;border-bottom:2px solid #000;">UTM 링크 <span style="font-weight:400;opacity:.5;">${utmDocs.length}개</span></div>`;
+      html+=`<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:20px;">`;
+      html+=utmDocs.map(r=>{
+        const urlShort=r.utmUrl.length>60?r.utmUrl.slice(0,60)+'…':r.utmUrl;
+        const urlForCopy=r.utmUrl.replace(/"/g,'&quot;');
+        return `<div style="display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:6px;background:#fafafa;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:12px;margin-bottom:3px;">${r.label||'-'}</div>
+            <div style="font-family:monospace;font-size:10px;color:#555;word-break:break-all;">${urlShort}</div>
+          </div>
+          <div style="display:flex;gap:4px;flex-shrink:0;">
+            <button data-url="${urlForCopy}" onclick="utmCopyText(this.dataset.url,this)" style="background:#000;color:#fff;border:none;font-size:11px;padding:5px 10px;cursor:pointer;border-radius:4px;white-space:nowrap;">복사</button>
+            <button onclick="utmDeleteLink('${r.id}')" style="background:none;border:1px solid rgba(0,0,0,.15);font-size:11px;cursor:pointer;color:#c00;padding:5px 8px;border-radius:4px;line-height:1;">✕</button>
+          </div>
+        </div>`;
+      }).join('');
+      html+=`</div>`;
+    }
+    if(shortDocs.length){
+      html+=`<div style="font-size:11px;font-weight:700;margin-bottom:8px;padding-bottom:5px;border-bottom:2px solid #0060c0;color:#0060c0;">숏링크 <span style="font-weight:400;opacity:.6;">${shortDocs.length}개</span></div>`;
+      html+=`<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:16px;">`;
+      html+=shortDocs.map(r=>{
+        const fullShortUrl='https://lazymaxpotential.kr'+r.shortPath;
+        const shortForCopy=fullShortUrl.replace(/"/g,'&quot;');
+        return `<div style="display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid rgba(0,96,192,.2);border-radius:6px;background:#f0f5ff;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:12px;margin-bottom:3px;">${r.label||'-'}</div>
+            <div style="font-family:monospace;font-size:11px;color:#0060c0;font-weight:600;">${fullShortUrl}</div>
+            ${r.utmUrl?`<div style="font-family:monospace;font-size:10px;color:#888;margin-top:2px;word-break:break-all;">→ ${r.utmUrl.length>50?r.utmUrl.slice(0,50)+'…':r.utmUrl}</div>`:''}
+          </div>
+          <div style="display:flex;gap:4px;flex-shrink:0;">
+            <button data-url="${shortForCopy}" onclick="utmCopyText(this.dataset.url,this)" style="background:#0060c0;color:#fff;border:none;font-size:11px;padding:5px 10px;cursor:pointer;border-radius:4px;white-space:nowrap;">복사</button>
+            <button onclick="utmDeleteLink('${r.id}')" style="background:none;border:1px solid rgba(0,0,0,.15);font-size:11px;cursor:pointer;color:#c00;padding:5px 8px;border-radius:4px;line-height:1;">✕</button>
+          </div>
+        </div>`;
+      }).join('');
+      html+=`</div>`;
+    }
+    if(!utmDocs.length&&!shortDocs.length){html='<div class="empty-msg">저장된 링크가 없어요</div>';}
+    el.innerHTML=html;
   }catch(e){el.innerHTML=`<div class="empty-msg" style="color:#c00;">로드 실패: ${e.message}</div>`;}
 }
 async function utmDeleteLink(id){
