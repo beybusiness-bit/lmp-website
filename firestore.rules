@@ -89,6 +89,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // 페이지 방문 카운터
+    match /cms_page_views/{document=**} {
+      allow read, write: if true;
+    }
+
     // 게임/도구 설정
     match /game_configs/{document=**} {
       allow read, write: if true;

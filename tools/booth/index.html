@@ -254,6 +254,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   <button class="lmp-btn" id="btn-guide" onclick="expandDesc()" style="display:none;">안내</button>
   <div class="tool-sep"></div>
   <button class="lmp-btn" id="btn-export" onclick="openExport()" style="background:#000;color:var(--lmp-block-bg);">완성</button>
+  <div class="tool-sep"></div>
+  <button class="lmp-btn" id="btn-reset-toolbar" onclick="if(confirm('처음부터 다시 시작할까요?\n현재 작업이 모두 사라집니다.')) resetTool()">새로 만들기</button>
   <input type="file" id="img-file-input" accept="image/*" style="display:none;" onchange="onImageFileSelected(event)">
 </div>
 
@@ -870,6 +872,8 @@ function selectBgByUrl(url, label='', silent=false, refPx=0) {
 }
 
 function drawImageCover(ctx, img, x, y, w, h) {
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
   const iw = img.naturalWidth || img.width || w;
   const ih = img.naturalHeight || img.height || h;
   const scale = Math.max(w / iw, h / ih);
@@ -1667,11 +1671,15 @@ async function openExport() {
   _exportSafeDataUrl = null;
 
   const expCanvas = document.getElementById('export-canvas');
-  const expW = EXPORT_W;
+  // 사용자 업로드 배경(Data URL)이면 원본 해상도 기준으로 export 크기 결정 (최대 4096)
+  const bgNatW = (bgImage?._src?.startsWith('data:') && bgImage.naturalWidth > 0) ? bgImage.naturalWidth : 0;
+  const expW = bgNatW > EXPORT_W ? Math.min(bgNatW, 4096) : EXPORT_W;
   const expH = canvasW > 0 ? Math.round(expW * canvasH / canvasW) : EXPORT_H;
   expCanvas.width = expW;
   expCanvas.height = expH;
   const ctx = expCanvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
   const scale = expW / canvasW;
 
   // ── 미리보기용 렌더 (비CORS 폴백 허용 — 화면에 보여주기 위함) ──
@@ -1691,8 +1699,13 @@ async function _buildCorsExportDataUrl(expW, expH, scale) {
   const corsCanvas = document.createElement('canvas');
   corsCanvas.width = expW; corsCanvas.height = expH;
   const ctx = corsCanvas.getContext('2d');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
-  const _releaseImg = img => { if(img?._objUrl) { URL.revokeObjectURL(img._objUrl); img._objUrl = null; } };
+  const _releaseImg = img => {
+    if(img?._objUrl) { URL.revokeObjectURL(img._objUrl); img._objUrl = null; }
+    if(img?.close && typeof img.close === 'function') img.close(); // ImageBitmap 메모리 해제
+  };
 
   // 배경
   const bgSrc = bgImage?._src;
@@ -1727,6 +1740,8 @@ async function _buildCorsExportDataUrl(expW, expH, scale) {
         ctx.beginPath(); ctx.rect(-sw/2,-sh/2,sw,sh); ctx.clip();
       }
       applyFrameClip(ctx, item.frame, sw, sh);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(corsImg, -sw/2-cropL, -sh/2-cropT, iW, iH);
       _releaseImg(corsImg);
     }
@@ -1774,6 +1789,8 @@ async function drawItemOnCanvas(ctx, item, scale=1) {
   // 프레임 클립
   applyFrameClip(ctx, item.frame, sw, sh);
 
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(img, -sw/2 - cropL, -sh/2 - cropT, iW, iH);
   ctx.restore();
 }
@@ -1813,23 +1830,32 @@ function applyFrameClip(ctx, frame, w, h) {
   ctx.clip();
 }
 
-function loadImageCORS(src) {
+async function loadImageCORS(src) {
+  if(!src) return null;
+  // Data URL: createImageBitmap으로 iOS 서브샘플링 버그 우회
+  if(src.startsWith('data:')) {
+    if(typeof createImageBitmap !== 'undefined') {
+      try {
+        const blob = _dataUrlToBlob(src);
+        return await createImageBitmap(blob);
+      } catch(e) { /* fallback */ }
+    }
+    return new Promise(resolve => {
+      const img = new Image(); img.onload = ()=>resolve(img); img.onerror = ()=>resolve(null); img.src = src;
+    });
+  }
   return new Promise(resolve => {
-    if(!src) { resolve(null); return; }
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = () => {
-      // crossOrigin 실패 시 재시도 (data URL은 필요 없음)
-      if(src.startsWith('data:')) { resolve(null); return; }
       const img2 = new Image();
       img2.onload = () => resolve(img2);
       img2.onerror = () => resolve(null);
       img2.src = src;
     };
-    // 캐시 버스팅 — 브라우저가 비CORS 캐시 버전을 재사용하면 CORS 실패하므로 새 요청 강제
-    if(src.startsWith('data:')) { img.src = src; }
-    else { const sep = src.includes('?') ? '&' : '?'; img.src = src + sep + '_cors=' + Date.now(); }
+    const sep = src.includes('?') ? '&' : '?';
+    img.src = src + sep + '_cors=' + Date.now();
   });
 }
 
@@ -1838,6 +1864,14 @@ function loadImageCORS(src) {
 async function loadImageCORSOnly(src) {
   if(!src) return null;
   if(src.startsWith('data:')) {
+    // createImageBitmap: iOS Safari의 큰 이미지 서브샘플링 버그 우회
+    // (new Image()는 iOS에서 5MP 이상 이미지를 내부적으로 다운스케일함)
+    if(typeof createImageBitmap !== 'undefined') {
+      try {
+        const blob = _dataUrlToBlob(src);
+        return await createImageBitmap(blob);
+      } catch(e) { /* 구형 브라우저 fallback */ }
+    }
     return new Promise(resolve => {
       const img = new Image(); img.onload = ()=>resolve(img); img.onerror = ()=>resolve(null); img.src = src;
     });
@@ -1891,44 +1925,49 @@ function _dataUrlToBlob(dataUrl) {
   return new Blob([u8], {type: mime});
 }
 
-function downloadExport() {
+async function downloadExport() {
   // 1순위: display canvas (최고 화질, tainted면 SecurityError)
-  // 2순위: _exportSafeDataUrl (CORS-clean, Firebase Storage CORS 미설정 시 배경이 흰색)
+  // 2순위: _exportSafeDataUrl (CORS-clean)
   const canvas = document.getElementById('export-canvas');
-  let dataUrl;
+  let pngDataUrl;
   try {
-    dataUrl = canvas.toDataURL('image/png');
+    pngDataUrl = canvas.toDataURL('image/png');
   } catch(e) {
-    dataUrl = _exportSafeDataUrl;
+    pngDataUrl = _exportSafeDataUrl;
   }
 
-  if (!dataUrl) {
+  if (!pngDataUrl) {
     alert('저장 준비 중이에요. 잠시 후 다시 눌러주세요.');
     return;
   }
 
-  const blob = _dataUrlToBlob(dataUrl);
-  const file = new File([blob], '내부스꾸미기.png', {type: 'image/png'});
-
-  // 모바일에서만 Web Share API (iOS/Android 네이티브 공유 시트)
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  if (isMobile && navigator.share && navigator.canShare && navigator.canShare({files: [file]})) {
-    navigator.share({files: [file], title: toolTitle || '내 부스 꾸미기'}).catch(e => {
-      if (e.name === 'AbortError') return;
-      _triggerDownload(blob);
-    });
-    return;
+
+  // 모바일: JPEG으로 공유 — iOS Photo Library가 PNG를 JPEG으로 재인코딩하는 품질 손실 방지
+  if(isMobile && navigator.share && navigator.canShare) {
+    const jpegBlob = await new Promise(resolve =>
+      canvas.toBlob(b => resolve(b), 'image/jpeg', 0.95)
+    ).catch(() => null);
+    if(jpegBlob) {
+      const file = new File([jpegBlob], '내부스꾸미기.jpg', {type: 'image/jpeg'});
+      if(navigator.canShare({files: [file]})) {
+        navigator.share({files: [file], title: toolTitle || '내 부스 꾸미기'}).catch(e => {
+          if(e.name !== 'AbortError') _triggerDownload(jpegBlob, '내부스꾸미기.jpg');
+        });
+        return;
+      }
+    }
   }
 
-  // 데스크탑 / 공유 미지원 기기 → 직접 다운로드
-  _triggerDownload(blob);
+  // 데스크탑 / 공유 미지원 → PNG 직접 다운로드
+  _triggerDownload(_dataUrlToBlob(pngDataUrl), '내부스꾸미기.png');
 }
 
-function _triggerDownload(blob) {
+function _triggerDownload(blob, filename = '내부스꾸미기.png') {
   const objUrl = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = objUrl;
-  a.download = '내부스꾸미기.png';
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
