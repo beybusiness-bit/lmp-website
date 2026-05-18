@@ -806,22 +806,33 @@ match /cms_payment_records/{doc} { allow read: if true; }
 #### 이번 세션 완료 항목 (UTM 빌더 수정 + 꾸미기 도구 Firebase export 수정)
 - **UTM 저장된 링크 Firestore 인덱스 오류 수정** ✅: `orderBy('createdAt','desc')` 제거 → 클라이언트 정렬 (복합 인덱스 불필요) (admin/index.html)
 - **UTM 저장된 링크 탭 UI 개선** ✅: UTM 링크 / 숏링크 섹션 분리 표시, 각 항목에 1클릭 복사 버튼, 숏링크는 전체 URL 표시 (admin/index.html)
-- **UTM 대량 생성 숏링크 지원** ✅: UTM+숏링크 모드에서 일괄 생성 시 `/go/inflr_닉네임` 숏링크도 함께 생성, CSV 다운로드에 숏링크 열 포함 (admin/index.html)
-- **꾸미기 도구 Firebase 기본소스 이미지 export 누락 수정** ✅: `loadImageCORSOnly`를 `fetch+blob+ObjectURL` 방식으로 교체 (프록시 실패 시 Firebase 직접 CORS fetch로 2차 폴백, Object URL은 사용 후 revoke) (tools/booth/index.html + api/proxy-image.js)
+- **UTM 대량 생성 숏링크 지원** ✅: UTM+숏링크 모드에서 일괄 생성 시 숏링크도 함께 생성, CSV 다운로드에 숏링크 열 포함 (admin/index.html)
+- **꾸미기 도구 Firebase 기본소스 이미지 export 누락 수정** ✅: `loadImageCORSOnly`를 `fetch+blob+ObjectURL` 방식으로 교체 (api/proxy-image.js 이중 디코딩 버그 수정 포함) (tools/booth/index.html + api/proxy-image.js)
+
+#### 이번 세션 완료 항목 (UTM 숏링크 실제 동작 + 꾸미기 도구 긴급 픽스 + 개선)
+- **UTM `inflr_` 접두사 제거** ✅: 대량 생성 시 `source=name`, `shortPath=/prefix/name` (접두사 없음) (admin/index.html)
+- **UTM 숏링크 실제 동작 수정** ✅: `req.url` → `req.query` 방식으로 교체 (Vercel rewrite 후 url 변경 문제), `cms_utm_links` Firestore 규칙 `allow read: if true` 추가 (api/go.js + firestore.rules)
+- **UTM 숏링크 임의 접두사 지원** ✅: `<select>` → `<input type="text">` 자유 입력, 영문소문자·숫자·하이픈만 허용, ? 도움말 패널 (admin/index.html)
+- **admin 모달 즉시 열림 수정** ✅: `openFieldModal`, `openBulkEditFieldModal`, `openUserModal`, `openBulkModal`, `openCopyModal`, `viewFormResponses`, `cgViewResultsById` 7개에 `document.body.appendChild()` 패턴 적용 — z-index stacking context 이탈 (admin/index.html)
+- **프록시 이중 디코딩 버그 수정** ✅: `api/proxy-image.js`에서 불필요한 `decodeURIComponent` 제거 — Firebase Storage %2F 이중 디코딩 방지 (api/proxy-image.js)
+- **꾸미기 도구 화질 개선 + 출력 크기 설정** ✅: `EXPORT_W` 동적 변수(기본 1080, 관리자 1080/1500/2160 선택), 저장 시 고해상도 export canvas 사용 (tools/booth/index.html + admin/index.html)
+- **프로젝트 사용자 CSV 다운로드** ✅: admin 사용자 탭 헤더에 "CSV 다운로드" 버튼, `downloadUsersCsv()` 구현 — authFields 기반 동적 컬럼 (admin/index.html)
+- **꾸미기 도구 fieldKey 미설정 시 공통 배경 모드** ✅ (긴급 픽스): `fieldKey = data.fieldKey || ''` — 빈 문자열 기본값, `_applyGlobalBgMode()` 함수 추가 — `_all` 타입 배경 자동 선택 또는 배경 선택 모달 열기. 이전엔 `name` fallback으로 사용자 이름이 boothType으로 해석되어 빈 캔버스 표시됨 (tools/booth/index.html)
+- **admin 꾸미기 도구 공통/필드별 배경 섹션 전환** ✅: 연결 필드 키 비움 ↔ 입력 시 `booth-global-wrap` / `booth-per-field-wrap` 동적 표시, `decoToggleBgMode()` / `ensureGlobalBgEntry()` 추가 (admin/index.html)
+- **꾸미기 도구 "새로 만들기" 버튼** ✅: 완성 모달에 버튼 추가, `resetTool()` 함수 — 아이템·배경 초기화 후 처음 진입 상태로 복귀 (tools/booth/index.html)
+- **자르기 첫 동작 시각 버그 수정** ✅: `renderItems()`에서 `if(hasCrop)` → `if(hasCrop || inCropMode)` — 자르기 모드 진입 즉시 clip-wrap DOM 구조 적용 (tools/booth/index.html)
+- **크기 조절 핸들 4모서리 전체 추가** ✅: TL/TR/BL/BR 핸들, `data-corner` 속성, `startResizeItem(e, item, corner)` 반대 꼭짓점 고정 방식으로 코너별 리사이즈 (tools/booth/index.html)
 
 #### 다음 세션 시작점 🔲
-
-**다음 세션: 미완료 항목 처리 + 사용자 피드백 반영**
 
 **미완료 항목:**
 - **GAS 재배포 필요**: updateFormRow + bulkAppend + Calendar 액션 코드는 추가됐으나 GAS 편집기에서 "새 버전" 배포 안 됨 → script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
 - **환불 처리 기능**: 페이업 환불 API 연동 미구현 — 현재 수동 처리 (페이업 대시보드에서 직접)
 
 **보안 관련 사용자 직접 수행 필요 항목:**
-- **Firebase Firestore 규칙 적용**: `firestore.rules` 파일 내용을 Firebase Console → Firestore → 규칙 탭에 붙여넣고 게시
-- **Firebase Storage 규칙 적용**: 이번 세션에서 제공한 규칙을 Firebase Console → Storage → 규칙 탭에 적용
-- **YouTube API key HTTP referrer 제한**: Google Cloud Console → API 및 서비스 → 사용자 인증 정보 → HTTP 리퍼러 `*.lazymaxpotential.kr/*` 추가
-- **YouTube API 할당량 신청**: 폼 작성 완료 후 제출
+- **Firebase Firestore 규칙 적용**: `firestore.rules` 파일 내용을 Firebase Console → Firestore → 규칙 탭에 게시 (cms_utm_links allow read 추가됨)
+- **Firebase Storage 규칙 적용**: Firebase Console → Storage → 규칙 탭에 적용
+- **YouTube API key HTTP referrer 제한**: Google Cloud Console → HTTP 리퍼러 `*.lazymaxpotential.kr/*` 추가
 
 **기타:**
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
