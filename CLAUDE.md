@@ -833,15 +833,26 @@ match /cms_payment_records/{doc} { allow read: if true; }
   - `imageSmoothingQuality='high'` 전역 적용, 사용자 업로드 배경 자연 해상도로 export canvas 크기 결정 (최대 4096px)
   - `ImageBitmap.close()` GPU 메모리 해제 추가 (tools/booth/index.html)
 
+#### 이번 세션 완료 항목 (위젯 개선 + 갤러리 저장 버그 수정 세션)
+- **Stop hook 완전 삭제** ✅: `~/.claude/settings.json`에서 Stop hooks 제거 + `~/.claude/stop-hook-git-check.sh` 파일 삭제 — 세션 종료 시 강제 push 막는 hook 비활성화
+- **위젯 슬라이더 전체 너비(full-bleed)** ✅: `margin-left:-32px; width:calc(100% + 64px)` — 가로 여백 무시하고 화면 전체폭으로 표시 (p/ + 3파일 동기화)
+- **위젯 클릭→스테이지 이동** ✅: admin 위젯 설정에서 같은 프로젝트 스테이지 선택 가능, 방명록·꾸미기 위젯 모두 지원 (`_wgStageClickAttr` 패턴, 4파일 동기화)
+- **URL 직접 스테이지 진입** ✅: `#stage/{stageId}` 해시 포함 URL 공유 시 해당 스테이지 자동 진입 (`_pendingHashStageNav` + `_doHashNavIfPending()` 패턴, 4파일 동기화)
+- **꾸미기 도구 갤러리 저장 race condition 수정** ✅: `openExport()`에서 `_buildCorsExportDataUrl`을 `await`로 기다린 후 저장 버튼 활성화 — 이전엔 CORS 렌더 완료 전 저장 누르면 tainted canvas → SecurityError → 무음 실패 (tools/booth/index.html)
+- **갤러리 저장 실패 피드백 추가** ✅: 실패 시 "저장 실패 — 다시 시도" 표시 (이전엔 완전 무음)
+- **storage.rules 참고 파일 추가** ✅: `booth_gallery/` 경로 비인증 쓰기 허용 규칙 (Firebase Console에 적용 완료)
+
 #### 다음 세션 시작점 🔲
+
+**최우선 항목:**
+- **admin onSnapshot 리스너 누수 수정**: Chrome Memory 탭에서 ↑5.9 kB/s 지속 증가 확인 — admin 탭 전환 시 이전 Firestore 리스너가 unsubscribe되지 않고 쌓여서 장시간 사용 시 느려짐. `onSnapshot` 호출 결과를 변수에 저장하고 화면 전환 시 unsubscribe 호출하는 방식으로 수정
 
 **미완료 항목:**
 - **GAS 재배포 필요**: updateFormRow + bulkAppend + Calendar 액션 코드는 추가됐으나 GAS 편집기에서 "새 버전" 배포 안 됨 → script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
 - **환불 처리 기능**: 페이업 환불 API 연동 미구현 — 현재 수동 처리 (페이업 대시보드에서 직접)
 
 **보안 관련 사용자 직접 수행 필요 항목:**
-- **Firebase Firestore 규칙 적용**: `firestore.rules` 파일 내용을 Firebase Console → Firestore → 규칙 탭에 게시 (이번 세션: `cms_page_views` 컬렉션 read/write 허용 추가됨)
-- **Firebase Storage 규칙 적용**: Firebase Console → Storage → 규칙 탭에 적용
+- **Firebase Storage 규칙**: `storage.rules` 파일 내용 Firebase Console → Storage → 규칙 탭에 적용 (booth_gallery 비인증 쓰기 허용 — 이번 세션 적용 완료 ✅)
 - **YouTube API key HTTP referrer 제한**: Google Cloud Console → HTTP 리퍼러 `*.lazymaxpotential.kr/*` 추가
 
 **기타:**
