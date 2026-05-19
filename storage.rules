@@ -1,0 +1,18 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // 관리자 업로드 (Firebase Auth 필요)
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // 꾸미기 도구 갤러리 — 비인증 사용자도 업로드 허용
+    // (플레이어에서 Firebase Auth 없이 저장하는 구조)
+    match /booth_gallery/{configId}/{fileName} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

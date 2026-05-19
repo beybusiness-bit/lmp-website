@@ -525,6 +525,7 @@ let userProgress = {}; // {stageId: Set<blockId>}
 let curStageIdx = -1;
 let curStageId = '';
 const KEY_COLORS = ['#00CE6B','#FFF100','#F95548','#0BC6FF'];
+let _pendingHashStageNav = null;
 
 /* project settings */
 let LAYOUT_TYPE    = 'separate';
@@ -820,6 +821,17 @@ function applySettings(d){
   if(WIDGET.enabled) loadWidget();
   /* load site settings (footer) */
   loadSiteSettings();
+
+  setTimeout(() => {
+    const h = location.hash;
+    if(!h.startsWith('#stage/')) return;
+    _pendingHashStageNav = h.slice(7);
+    if(LAYOUT_TYPE === 'merged') {
+      _doHashNavIfPending();
+    } else if(!AUTH_ENABLED || AUTH_MODE === 'on-demand') {
+      openPrep();
+    }
+  }, 400);
 }
 
 function renderTopGroup(d){
@@ -877,7 +889,7 @@ function renderTopGroup(d){
     } else if(key==='widget'){
       const el=document.createElement('div');
       el.id='widget-line';
-      el.style.cssText=`display:none;overflow:hidden;margin-bottom:${mb}px;width:100%;`;
+      el.style.cssText=`display:none;overflow:hidden;margin-bottom:${mb}px;width:calc(100% + 64px);margin-left:-32px;`;
       tg.appendChild(el);
     }
   });
@@ -1001,10 +1013,19 @@ async function loadWidget() {
         ? `calc((100% - ${gap * (ipv - 1) + peek}px) / ${ipv})`
         : `calc(${100/ipv}% - ${gap*(ipv-1)/ipv}px)`;
 
+    // 클릭 → 스테이지 이동 공통 처리
+    let _wgStageClickAttr = '';
+    if(clickAction === 'stage' && WIDGET.clickStageId) {
+      const _wgIdx = STAGES.findIndex(s => s.id === WIDGET.clickStageId);
+      if(_wgIdx >= 0) _wgStageClickAttr = `onclick="goToStage(${_wgIdx})" style="cursor:pointer;"`;
+    }
+
     let trackHtml = '';
     if(WIDGET.toolType === 'booth') {
       trackHtml = boothImages.map(url => {
-        const clickAttr = clickAction === 'lightbox' ? `onclick="openLightbox('${url.replace(/'/g,"\\'")}')" style="cursor:pointer;"` : '';
+        const clickAttr = clickAction === 'lightbox'
+          ? `onclick="openLightbox('${url.replace(/'/g,"\\'")}')" style="cursor:pointer;"`
+          : _wgStageClickAttr;
         return `<div class="ws-slide" style="flex:0 0 ${slideW};height:${h}px;overflow:hidden;border-radius:${radius}px;${border}flex-shrink:0;box-sizing:border-box;">
           <img src="${url}" style="width:100%;height:100%;object-fit:cover;display:block;" ${clickAttr}>
         </div>`;
@@ -1017,7 +1038,8 @@ async function loadWidget() {
           ? `background-image:url('${c.bgImg.replace(/'/g,"\\'")}');background-size:cover;background-position:center;`
           : `background:${c.bg||'#fff'};`;
         const textColor = hasBg ? (c.bg || '#ffffff') : '#000';
-        return `<div class="ws-slide" style="flex:0 0 ${slideW};height:${h}px;overflow:hidden;border-radius:${radius}px;${border}flex-shrink:0;box-sizing:border-box;position:relative;${bgStyle}">
+        const cardClick = _wgStageClickAttr ? ` ${_wgStageClickAttr}` : '';
+        return `<div class="ws-slide" style="flex:0 0 ${slideW};height:${h}px;overflow:hidden;border-radius:${radius}px;${border}flex-shrink:0;box-sizing:border-box;position:relative;${bgStyle}"${cardClick}>
           ${hasBg ? `<div style="position:absolute;inset:0;background:${c.ovColor||'#000'};opacity:${c.ovOp};"></div>` : ''}
           <div style="height:100%;padding:10px 12px;display:flex;flex-direction:column;overflow:hidden;position:relative;z-index:1;color:${textColor};">
             ${c.name ? `<div style="font-size:12px;font-weight:800;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${_wesc(c.name)}</div>` : ''}
@@ -1599,6 +1621,13 @@ async function confirmAuth(){
 }
 
 /* ── Prep screen (separate) ── */
+function _doHashNavIfPending(){
+  if(!_pendingHashStageNav) return;
+  const sid = _pendingHashStageNav;
+  _pendingHashStageNav = null;
+  const idx = STAGES.findIndex(s => s.id === sid);
+  if(idx >= 0) setTimeout(() => goToStage(idx), 150);
+}
 function openPrep(){
   prepBg=KEY_COLORS[Math.floor(Math.random()*KEY_COLORS.length)];
   sessionStorage.setItem('prepBgColor',prepBg);
@@ -1607,11 +1636,13 @@ function openPrep(){
   document.getElementById('prep-screen').classList.add('open');
   hideReturnBtn();
   history.replaceState(null,'','#prep');
+  _doHashNavIfPending();
 }
 function reopenPrep(){
   setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
   document.getElementById('prep-screen').classList.add('open'); hideReturnBtn();
   history.replaceState(null,'','#prep');
+  _doHashNavIfPending();
 }
 function closePrep(){
   document.getElementById('prep-screen').classList.remove('open'); closeMenu();
