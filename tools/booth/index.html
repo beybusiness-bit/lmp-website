@@ -1690,11 +1690,24 @@ async function openExport() {
   // 그리기 레이어도 미리보기에 포함
   if(drawCanvas.width > 0) ctx.drawImage(drawCanvas, 0, 0, expW, expH);
 
+  // 저장 버튼 비활성화 — CORS 렌더 완료 후 활성화
+  const saveBtn = document.getElementById('btn-save-gallery');
+  if(saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '준비 중…'; }
+
   document.getElementById('export-modal').classList.add('on');
 
   // ── CORS-only 렌더 (저장용 — 별도 캔버스, 오염 없음) ──
-  // 미리보기 표시 후 백그라운드에서 진행
-  _buildCorsExportDataUrl(expW, expH, scale);
+  await _buildCorsExportDataUrl(expW, expH, scale);
+
+  if(saveBtn) {
+    if(_exportSafeDataUrl) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '저장하기';
+    } else {
+      saveBtn.textContent = '저장 준비 실패';
+      setTimeout(() => { saveBtn.disabled = false; saveBtn.textContent = '저장하기'; }, 2000);
+    }
+  }
 }
 
 async function _buildCorsExportDataUrl(expW, expH, scale) {
@@ -2036,10 +2049,9 @@ async function saveToGallery() {
     btn.textContent = '저장됨 ✓';
     setTimeout(() => { btn.disabled = false; btn.textContent = '저장하기'; }, 3000);
   } catch(e) {
-    console.error(e);
-    // SecurityError(tainted canvas) 포함 모든 에러는 조용히 리셋
-    btn.disabled = false;
-    btn.textContent = '저장하기';
+    console.error('saveToGallery error:', e);
+    btn.textContent = '저장 실패 — 다시 시도';
+    setTimeout(() => { btn.disabled = false; btn.textContent = '저장하기'; }, 2500);
   }
 }
 
