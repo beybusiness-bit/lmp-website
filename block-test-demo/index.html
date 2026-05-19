@@ -885,7 +885,7 @@ function renderTopGroup(d){
     } else if(key==='widget'){
       const el=document.createElement('div');
       el.id='widget-line';
-      el.style.cssText=`display:none;margin-bottom:${mb}px;`;
+      el.style.cssText=`display:none;margin-bottom:${mb}px;width:100%;`;
       tg.appendChild(el);
     }
   });
@@ -949,6 +949,8 @@ async function loadWidget() {
   if(!el || !WIDGET.enabled || !WIDGET.toolType || !WIDGET.instanceId) return;
   el.style.display = '';
   el.innerHTML = '<div style="height:8px;"></div>';
+  const _wgContainerPx = el.offsetWidth;
+  const _wgWrapPx = _wgContainerPx + 64;
   try {
     const h = WIDGET.height || 200;
     const ipv = Math.max(1, WIDGET.itemsPerView || 2);
@@ -1003,11 +1005,12 @@ async function loadWidget() {
 
     const itemCount = WIDGET.toolType==='booth' ? boothImages.length : gbCards.length;
     const peek = itemCount > ipv ? 24 : 0;
-    const slideW = ipv <= 1
-      ? '100%'
+    const _slideWpx = ipv <= 1
+      ? _wgWrapPx
       : peek > 0
-        ? `calc((100% - ${gap * (ipv - 1) + peek}px) / ${ipv})`
-        : `calc(${100/ipv}% - ${gap*(ipv-1)/ipv}px)`;
+        ? Math.floor((_wgWrapPx - gap * (ipv - 1) - peek) / ipv)
+        : Math.floor((_wgWrapPx - gap * (ipv - 1)) / ipv);
+    const slideW = `${_slideWpx}px`;
 
     // 클릭 → 스테이지 이동 공통 처리
     let _wgStageClickAttr = '';
