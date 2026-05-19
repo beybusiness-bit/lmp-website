@@ -889,7 +889,7 @@ function renderTopGroup(d){
     } else if(key==='widget'){
       const el=document.createElement('div');
       el.id='widget-line';
-      el.style.cssText=`display:none;overflow:hidden;margin-bottom:${mb}px;width:calc(100% + 64px);margin-left:-32px;`;
+      el.style.cssText=`display:none;margin-bottom:${mb}px;`;
       tg.appendChild(el);
     }
   });
@@ -1054,7 +1054,7 @@ async function loadWidget() {
 
     const pagerHtml = showPager ? `<div class="ws-pager" style="display:flex;justify-content:center;gap:4px;padding:6px 0;"></div>` : '';
 
-    el.innerHTML = `<div class="ws-wrap" style="width:100%;position:relative;overflow:hidden;touch-action:pan-y;">
+    el.innerHTML = `<div class="ws-wrap" style="width:calc(100% + 64px);margin-left:-32px;position:relative;overflow:hidden;touch-action:pan-y;">
       <div class="ws-track" style="display:flex;gap:${gap}px;will-change:transform;">${trackHtml}</div>
     </div>${pagerHtml}`;
 

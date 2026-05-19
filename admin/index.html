@@ -3103,7 +3103,15 @@ function signIn() {
 function doSignOut() { auth.signOut(); }
 
 /* ── Tabs ── */
+let _currentTab = 'proj';
 function switchTab(t) {
+  // 이전 탭의 대용량 데이터 해제 (Firestore SDK 캐시는 유지되지만 JS 힙은 해제)
+  if(_currentTab === 'proj' && t !== 'proj') {
+    curUsers = [];
+    const uw = document.getElementById('user-table-wrap');
+    if(uw) uw.innerHTML = '';
+  }
+  _currentTab = t;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('on', b.id === 'tabbtn-'+t));
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === 'panel-'+t));
   if (t === 'tools') closeTool();
@@ -3352,7 +3360,11 @@ function epd(e) {
     // e.preventDefault() 제거 — 포커스 유지는 각 버튼의 onmousedown="event.preventDefault()"로 처리
   }
 }
-function closeModal(id) { document.getElementById(id).classList.remove('on'); }
+function closeModal(id) {
+  document.getElementById(id).classList.remove('on');
+  // 폼 응답 모달 닫을 때 대용량 데이터 해제
+  if(id === 'form-resp-modal') { curRespData = []; curRespFormId = null; curRespFormBlock = null; }
+}
 
 /* ── PAT (sessionStorage: 탭 닫으면 소거 — XSS 탈취 위험 최소화) ── */
 function getPAT() { return sessionStorage.getItem('ghPAT') || ''; }
@@ -8759,6 +8771,9 @@ function openTool(toolId) {
 function closeTool() {
   if(curTool) {
     document.getElementById('tool-'+curTool+'-view').style.display = 'none';
+    // 도구별 대용량 데이터 해제 — GC가 빠르게 회수할 수 있도록
+    if(curTool === 'form-mgr') { tfRespData = []; tfRespFormConfig = {}; tfRespFields = []; }
+    if(curTool === 'youtube-playlist') { ytSubmissions = []; }
     curTool = null;
   }
   document.getElementById('tools-list-view').style.display = '';
