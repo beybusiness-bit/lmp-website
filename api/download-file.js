@@ -15,22 +15,19 @@ export default async function handler(req, res) {
   const { url } = req.query;
   if (!url) return res.status(400).end('url required');
 
-  let decoded;
-  try { decoded = decodeURIComponent(url); } catch { decoded = url; }
-
-  if (!isAllowedStorageUrl(decoded)) {
+  // Vercel query parser already decodes once — do NOT decodeURIComponent again
+  // (would turn %2F in Firebase Storage paths to / and break the URL)
+  if (!isAllowedStorageUrl(url)) {
     return res.status(400).json({ error: 'URL not allowed' });
   }
 
   try {
-    const upstream = await fetch(decoded);
+    const upstream = await fetch(url);
     if (!upstream.ok) throw new Error(`upstream ${upstream.status}`);
 
     const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
 
-    // Firebase Storage 경로에서 파일명 추출
-    // 예: .../o/forms%2Fuploads%2F1234_파일.pdf?alt=media&token=...
-    const pathPart = decoded.split('?')[0];
+    const pathPart = url.split('?')[0];
     const encodedName = pathPart.split('%2F').pop() || pathPart.split('/').pop() || 'file';
     let filename;
     try { filename = decodeURIComponent(encodedName); } catch { filename = encodedName; }

@@ -6275,25 +6275,40 @@ function _getRowFileUrls(row, cols) {
 }
 async function _downloadFiles(fileUrls) {
   if (!fileUrls.length) { alert('다운로드할 파일이 없어요.'); return; }
+  function _makeDlAnchor(blob, url) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const pathPart = url.split('?')[0];
+    const encodedName = pathPart.split('%2F').pop() || pathPart.split('/').pop() || 'file';
+    let fname; try { fname = decodeURIComponent(encodedName); } catch { fname = encodedName; }
+    a.download = fname.replace(/^\d+_/, '') || 'file';
+    return a;
+  }
   for (const {url} of fileUrls) {
+    let ok = false;
+    // 1순위: 프록시 (Content-Disposition: attachment 헤더로 강제 다운로드)
     try {
-      const proxyUrl = '/api/download-file?url=' + encodeURIComponent(url);
-      const r = await fetch(proxyUrl);
+      const r = await fetch('/api/download-file?url=' + encodeURIComponent(url));
       if (!r.ok) throw new Error(r.status);
-      const blob = await r.blob();
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      const pathPart = url.split('?')[0];
-      const encodedName = pathPart.split('%2F').pop() || pathPart.split('/').pop() || 'file';
-      let fname; try { fname = decodeURIComponent(encodedName); } catch { fname = encodedName; }
-      a.download = fname.replace(/^\d+_/, '') || 'file';
+      const a = _makeDlAnchor(await r.blob(), url);
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(a.href);
-      await new Promise(res=>setTimeout(res,200));
-    } catch(_) {
-      window.open(url,'_blank');
-      await new Promise(res=>setTimeout(res,500));
+      ok = true;
+    } catch(_) {}
+    // 2순위: Firebase Storage는 CORS 허용 — 직접 fetch
+    if (!ok) {
+      try {
+        const r = await fetch(url);
+        if (!r.ok) throw new Error(r.status);
+        const a = _makeDlAnchor(await r.blob(), url);
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+        ok = true;
+      } catch(_) {}
     }
+    // 3순위: 새 탭 열기 (수동 저장 필요)
+    if (!ok) window.open(url, '_blank');
+    await new Promise(res => setTimeout(res, 300));
   }
 }
 function _getRespCols(){
@@ -6323,7 +6338,7 @@ function renderRespTable() {
   const visBar = _colVisBar(allCols.map(c=>({key:c.key,label:c.label})), _rHidden, 'toggleRespColVis');
   const hasFileCol = cols.some(c=>c.isFile);
   const dlColHd = hasFileCol ? `<th style="white-space:nowrap;padding:6px 10px;background:#000;color:#fff;font-size:11px;text-align:left;font-weight:700;position:sticky;top:0;z-index:2;">파일</th>` : '';
-  el.innerHTML = chipBar + visBar + `<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
+  el.innerHTML = `<div style="font-size:12px;color:rgba(0,0,0,.45);padding:2px 2px 6px;">총 ${curRespData.length}개 응답</div>` + chipBar + visBar + `<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
     <thead><tr>${cols.map((c,idx)=>{
       const defaultW = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;` : _colWidthCss(c.type);
       const w = _respColStyle(c.key, defaultW);
@@ -9870,7 +9885,7 @@ function renderTfRespTable(){
   const visBar = _colVisBar(allCols.map(c=>({key:c.key,label:c.label})), _tfHidden, 'toggleTfColVis');
   const hasFileCol = cols.some(c=>c.isFile);
   const dlColHdTf = hasFileCol ? `<th style="white-space:nowrap;padding:6px 10px;background:#000;color:#fff;font-size:11px;text-align:left;font-weight:700;position:sticky;top:0;z-index:2;">파일</th>` : '';
-  el.innerHTML=chipBar+visBar+`<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
+  el.innerHTML=`<div style="font-size:12px;color:rgba(0,0,0,.45);padding:2px 2px 6px;">총 ${tfRespData.length}개 응답</div>`+chipBar+visBar+`<table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;">
     <thead><tr>${cols.map((c,idx)=>{
       const baseType=c.type==='_user'?'string':c.type;
       const defaultW = c.type==='timestamp' ? `width:${TS_W}px;min-width:${TS_W}px;max-width:${TS_W}px;` : _colWidthCss(baseType);
