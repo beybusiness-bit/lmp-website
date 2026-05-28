@@ -1407,9 +1407,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <div class="switch" id="tf-no-resubmit-sw" onclick="this.classList.toggle('on')"></div>
                 <span class="switch-lbl">중복 제출 방지</span>
               </div>
-              <div class="switch-row" style="margin-bottom:0;">
+              <div class="switch-row" style="margin-bottom:8px;">
                 <div class="switch" id="tf-allow-edit-sw" onclick="this.classList.toggle('on')"></div>
                 <span class="switch-lbl">응답 수정 허용 <span style="font-weight:400;opacity:.55;">(제출자가 이전 내역 확인·수정 가능)</span></span>
+              </div>
+              <div class="switch-row" style="margin-bottom:0;">
+                <div class="switch" id="tf-require-auth-sw" onclick="this.classList.toggle('on')"></div>
+                <span class="switch-lbl">로그인한 사용자만 제출 허용 <span style="font-weight:400;opacity:.55;">(비로그인은 폼 열람 가능, 제출 불가)</span></span>
               </div>
             </div>
             <!-- 결과 시각화 -->
@@ -9942,6 +9946,7 @@ async function toolFormEdit(docId){
     rteSet('tf-submit-msg',d.submitMsg||'');
     document.getElementById('tf-no-resubmit-sw').classList.toggle('on',!!d.noResubmit);
     document.getElementById('tf-allow-edit-sw').classList.toggle('on',!!d.allowEdit);
+    document.getElementById('tf-require-auth-sw').classList.toggle('on',!!d.requireAuthToSubmit);
     tfRespFormConfig={sheetId:d.sheetId||'',sheetTab:d.sheetTab||'응답',sheetUrl:d.sheetUrl||''};
     tfChartConfigs=d.chartConfigs||[];
     document.getElementById('tf-show-results-sw').classList.toggle('on',!!d.showResults);
@@ -10099,13 +10104,14 @@ async function toolFormSave(e=null){
   const submitMsg=rteGet('tf-submit-msg');
   const noResubmit=document.getElementById('tf-no-resubmit-sw')?.classList.contains('on')||false;
   const allowEdit=document.getElementById('tf-allow-edit-sw')?.classList.contains('on')||false;
+  const requireAuthToSubmit=document.getElementById('tf-require-auth-sw')?.classList.contains('on')||false;
   if(!title){alert('폼 이름을 입력해주세요.');return;}
   try{
     const showResults=document.getElementById('tf-show-results-sw')?.classList.contains('on')||false;
     const chartConfigs=_buildTfChartConfigs();
     const chartColorScheme=document.getElementById('tf-chart-color-scheme')?.value||'black';
     await db.collection('cms_form_configs').doc(tfCurDocId).update({
-      title,desc,fields:tfFields,submitBtnText,submitMsg,noResubmit,allowEdit,
+      title,desc,fields:tfFields,submitBtnText,submitMsg,noResubmit,allowEdit,requireAuthToSubmit,
       showResults,chartConfigs,chartColorScheme,
       sheetId:tfRespFormConfig.sheetId||'',
       sheetTab:tfRespFormConfig.sheetTab||'응답',
