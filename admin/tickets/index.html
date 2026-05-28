@@ -35,12 +35,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
 /* ── Body ── */
 .app-body{flex:1;overflow-y:auto;}
-.panel{max-width:640px;margin:0 auto;padding:20px 16px 100px;}
+.panel{max-width:680px;margin:0 auto;padding:20px 16px 100px;}
+
+/* ── Use context notice ── */
+.use-ctx-notice{background:#fff;border-left:3px solid #000;padding:8px 12px;margin-bottom:16px;font-size:12px;color:rgba(0,0,0,.6);}
+.use-ctx-notice strong{color:#000;}
 
 /* ── Register box ── */
 .reg-box{background:#fff;border:2px solid #000;padding:16px;margin-bottom:20px;}
 .reg-box-title{font-size:12px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:12px;}
-.reg-row{display:flex;gap:8px;align-items:flex-end;}
+.reg-row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;}
 .fi{width:100%;background:transparent;border:none;border-bottom:2px solid #000;font-size:15px;font-weight:600;color:#000;padding:8px 0;outline:none;font-family:inherit;}
 .fi::placeholder{color:rgba(0,0,0,.28);font-weight:400;}
 .fi-sm{width:100%;background:#fff;border:1.5px solid rgba(0,0,0,.25);font-size:13px;color:#000;padding:7px 10px;outline:none;font-family:inherit;}
@@ -48,38 +52,58 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .reg-btn{padding:9px 16px;background:#000;border:2px solid #000;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;}
 .reg-btn:disabled{opacity:.4;cursor:not-allowed;}
 .reg-err{font-size:12px;color:#c00;margin-top:6px;min-height:16px;}
+.ed-lbl{font-size:11px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:6px;margin-top:14px;}
 
 /* ── Search bar ── */
 .search-bar{display:flex;gap:8px;margin-bottom:16px;}
 .search-inp{flex:1;}
 .search-clear{padding:9px 12px;background:transparent;border:2px solid rgba(0,0,0,.3);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.5);}
 
-/* ── Ticket list ── */
+/* ── Ticket table ── */
 .tk-count{font-size:12px;color:rgba(0,0,0,.45);margin-bottom:10px;}
 .tk-table{width:100%;border-collapse:collapse;}
 .tk-table th{font-size:11px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.3px;text-align:left;padding:6px 8px;border-bottom:2px solid #000;white-space:nowrap;}
 .tk-table td{font-size:13px;padding:10px 8px;border-bottom:1px solid rgba(0,0,0,.1);vertical-align:middle;}
-.tk-table tr:hover td{background:rgba(0,0,0,.03);}
+.tk-table tr.data-row{cursor:pointer;}
+.tk-table tr.data-row:hover td{background:rgba(0,0,0,.03);}
 .tk-code{font-weight:700;font-size:14px;letter-spacing:.5px;}
 .status-badge{display:inline-block;padding:2px 7px;font-size:11px;font-weight:700;border:1.5px solid;border-radius:2px;}
 .status-active{color:#008000;border-color:#008000;background:rgba(0,128,0,.06);}
-.status-used{color:rgba(0,0,0,.4);border-color:rgba(0,0,0,.25);background:rgba(0,0,0,.03);}
-.status-cancelled{color:#c00;border-color:#c00;background:rgba(204,0,0,.05);text-decoration:line-through;}
-.cancel-btn{padding:4px 10px;background:transparent;border:1.5px solid rgba(0,0,0,.3);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.5);}
-.cancel-btn:hover{border-color:#c00;color:#c00;}
-.empty-msg{padding:32px 0;text-align:center;color:rgba(0,0,0,.35);font-size:13px;}
-.loading-msg{padding:32px 0;text-align:center;color:rgba(0,0,0,.35);font-size:13px;}
+.status-exhausted{color:rgba(0,0,0,.4);border-color:rgba(0,0,0,.25);background:rgba(0,0,0,.03);}
+.status-cancelled{color:#c00;border-color:#c00;background:rgba(204,0,0,.05);}
+/* uses counter */
+.uses-bar-wrap{display:flex;align-items:center;gap:6px;}
+.uses-bar{height:4px;background:rgba(0,0,0,.1);border-radius:2px;flex:1;min-width:40px;}
+.uses-bar-fill{height:100%;background:#000;border-radius:2px;transition:width .3s;}
+.uses-text{font-size:12px;font-weight:700;white-space:nowrap;}
+/* action buttons */
+.act-btn{padding:4px 8px;background:transparent;border:1.5px solid rgba(0,0,0,.3);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.6);}
+.act-btn:hover{border-color:#000;color:#000;}
+.act-btn.danger:hover{border-color:#c00;color:#c00;}
+.act-btns{display:flex;gap:4px;}
+/* use logs expanded row */
+.log-row td{background:#fafafa !important;padding:0 !important;border-bottom:2px solid #000;}
+.log-inner{padding:10px 12px;}
+.log-title{font-size:11px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.3px;margin-bottom:8px;}
+.log-item{display:flex;gap:12px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:12px;align-items:flex-start;}
+.log-item:last-child{border-bottom:none;}
+.log-num{font-weight:800;color:rgba(0,0,0,.35);min-width:20px;}
+.log-at{color:rgba(0,0,0,.5);white-space:nowrap;}
+.log-ctx{color:#000;word-break:break-all;}
+.log-session{font-size:11px;color:rgba(0,0,0,.3);}
+.log-empty{font-size:12px;color:rgba(0,0,0,.35);padding:8px 0;}
 
-/* ── Type modal ── */
+/* ── Modals ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;display:flex;align-items:center;justify-content:center;padding:24px;}
-.modal-box{background:#fff;border:2px solid #000;width:100%;max-width:380px;padding:28px 24px 24px;}
+.modal-box{background:#fff;border:2px solid #000;width:100%;max-width:400px;padding:28px 24px 24px;}
 .modal-title{font-size:16px;font-weight:900;margin-bottom:20px;}
 .modal-btns{display:flex;gap:8px;margin-top:20px;}
 .save-btn{padding:10px 20px;background:#000;border:2px solid #000;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 .cancel-btn2{padding:10px 16px;background:transparent;border:2px solid #000;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
-.ed-lbl{font-size:11px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:6px;margin-top:14px;}
 
-/* ── No type placeholder ── */
+/* ── Placeholders ── */
+.empty-msg{padding:32px 0;text-align:center;color:rgba(0,0,0,.35);font-size:13px;}
+.loading-msg{padding:32px 0;text-align:center;color:rgba(0,0,0,.35);font-size:13px;}
 .no-type-wrap{padding:60px 16px;text-align:center;}
 .no-type-msg{font-size:15px;font-weight:700;margin-bottom:8px;}
 .no-type-sub{font-size:13px;color:rgba(0,0,0,.45);margin-bottom:24px;}
@@ -110,33 +134,36 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <button class="hdr-btn" onclick="doSignOut()">로그아웃</button>
   </div>
 
-  <!-- Type tabs -->
   <div class="type-tab-bar" id="type-tab-bar">
     <button class="add-type-btn" onclick="openTypeModal()">+ 유형 추가</button>
   </div>
 
   <div class="app-body">
-    <!-- No types placeholder -->
     <div id="no-type-view" class="no-type-wrap" style="display:none;">
       <div class="no-type-msg">티켓 유형이 없어요</div>
       <div class="no-type-sub">유형을 먼저 추가하면 티켓을 등록할 수 있어요</div>
       <button class="no-type-btn" onclick="openTypeModal()">+ 첫 번째 유형 추가</button>
     </div>
 
-    <!-- Ticket panel (shown when a type is selected) -->
     <div id="ticket-panel" class="panel" style="display:none;">
+      <!-- 사용 기준 안내 -->
+      <div id="use-ctx-notice" class="use-ctx-notice" style="display:none;"></div>
 
       <!-- Register -->
       <div class="reg-box">
         <div class="reg-box-title">티켓 등록</div>
         <div class="reg-row">
-          <div style="flex:1.4;">
+          <div style="flex:1.6;min-width:130px;">
             <div class="ed-lbl" style="margin-top:0;">전화번호</div>
             <input class="fi" id="reg-code" type="tel" placeholder="01012345678" maxlength="11" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
           </div>
-          <div style="flex:1;">
+          <div style="flex:1;min-width:80px;">
             <div class="ed-lbl" style="margin-top:0;">메모 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
             <input class="fi" id="reg-memo" type="text" placeholder="홍길동">
+          </div>
+          <div style="min-width:64px;">
+            <div class="ed-lbl" style="margin-top:0;">사용 횟수</div>
+            <input class="fi" id="reg-uses" type="number" value="1" min="1" max="999" style="width:64px;text-align:center;">
           </div>
           <button class="reg-btn" id="reg-btn" onclick="registerTicket()">등록</button>
         </div>
@@ -145,22 +172,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
       <!-- Search -->
       <div class="search-bar">
-        <input class="fi-sm search-inp" id="search-inp" type="tel" placeholder="번호로 검색 (01012345678)" maxlength="11"
+        <input class="fi-sm search-inp" id="search-inp" type="tel" placeholder="번호로 검색" maxlength="11"
                oninput="this.value=this.value.replace(/[^0-9]/g,'');onSearchInput()"
-               onkeydown="if(event.key==='Escape'){clearSearch();}">
+               onkeydown="if(event.key==='Escape')clearSearch()">
         <button class="search-clear" id="search-clear-btn" onclick="clearSearch()" style="display:none;">✕</button>
       </div>
 
-      <!-- List -->
       <div class="tk-count" id="tk-count"></div>
-      <div id="ticket-list-wrap">
-        <div class="loading-msg">로딩 중…</div>
-      </div>
+      <div id="ticket-list-wrap"><div class="loading-msg">로딩 중…</div></div>
     </div>
   </div>
 </div>
 
-<!-- Type modal -->
+<!-- 유형 모달 -->
 <div class="modal-overlay" id="type-modal" style="display:none;" onclick="if(event.target===this)closeTypeModal()">
   <div class="modal-box">
     <div class="modal-title" id="type-modal-title">유형 추가</div>
@@ -168,10 +192,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <input class="fi" id="type-name-inp" placeholder="예: 행사 입장권">
     <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
     <input class="fi-sm" id="type-desc-inp" placeholder="간단한 설명">
+    <div class="ed-lbl">'사용' 기준 설명 <span style="font-weight:400;opacity:.55;">(앱 개발자용)</span></div>
+    <textarea class="fi-sm" id="type-use-ctx-inp" rows="2"
+      placeholder="예: 사진관 앱 — 최종 인쇄 확정 시점에 useTicket() 호출&#10;예: 입장 앱 — QR 스캔 성공 시점에 useTicket() 호출"
+      style="resize:vertical;"></textarea>
     <div class="modal-btns">
       <button class="save-btn" onclick="saveType()">저장</button>
       <button class="cancel-btn2" onclick="closeTypeModal()">취소</button>
       <button class="cancel-btn2" id="type-delete-btn" style="margin-left:auto;border-color:#c00;color:#c00;display:none;" onclick="deleteType()">삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- 횟수 추가 모달 -->
+<div class="modal-overlay" id="add-uses-modal" style="display:none;" onclick="if(event.target===this)closeAddUsesModal()">
+  <div class="modal-box" style="max-width:320px;">
+    <div class="modal-title">횟수 추가</div>
+    <div style="font-size:13px;color:rgba(0,0,0,.55);margin-bottom:16px;" id="add-uses-info"></div>
+    <div class="ed-lbl" style="margin-top:0;">추가할 횟수</div>
+    <input class="fi" id="add-uses-inp" type="number" value="1" min="1" max="999" style="width:80px;text-align:center;">
+    <div class="modal-btns">
+      <button class="save-btn" onclick="confirmAddUses()">추가</button>
+      <button class="cancel-btn2" onclick="closeAddUsesModal()">취소</button>
     </div>
   </div>
 </div>
@@ -215,12 +257,15 @@ function signIn() {
 function doSignOut() { auth.signOut(); }
 
 /* ── State ── */
-let types = [];          // [{id, name, desc}]
+let types = [];
 let curTypeId = null;
-let allTickets = [];     // current type's tickets (from onSnapshot)
-let ticketUnsub = null;  // Firestore listener unsubscribe
+let allTickets = [];
+let ticketUnsub = null;
 let editingTypeId = null;
 let searchVal = '';
+let expandedId = null;     // 사용 기록 펼쳐진 티켓 docId
+let useLogs = {};          // { [docId]: [{...}] }
+let addUsesTarget = null;  // { docId, code, totalUses, usedCount }
 
 /* ── Ticket Types ── */
 async function loadTypes() {
@@ -234,9 +279,7 @@ async function loadTypes() {
       document.getElementById('no-type-view').style.display = '';
       document.getElementById('ticket-panel').style.display = 'none';
     }
-  } catch(e) {
-    console.error(e);
-  }
+  } catch(e) { console.error(e); }
 }
 
 function renderTypeTabs() {
@@ -259,23 +302,35 @@ function renderTypeTabs() {
 
 function selectType(typeId) {
   curTypeId = typeId;
-  searchVal = '';
+  searchVal = ''; expandedId = null;
   document.getElementById('search-inp').value = '';
   document.getElementById('search-clear-btn').style.display = 'none';
   renderTypeTabs();
   document.getElementById('no-type-view').style.display = 'none';
   document.getElementById('ticket-panel').style.display = '';
   document.getElementById('ticket-list-wrap').innerHTML = '<div class="loading-msg">로딩 중…</div>';
+
+  // 사용 기준 안내 표시
+  const t = types.find(x => x.id === typeId);
+  const notice = document.getElementById('use-ctx-notice');
+  if (t?.useContext) {
+    notice.innerHTML = `<strong>사용 기준:</strong> ${t.useContext.replace(/\n/g,'<br>')}`;
+    notice.style.display = '';
+  } else {
+    notice.style.display = 'none';
+  }
+
   subscribeTickets(typeId);
 }
 
-/* ── Ticket Type Modal ── */
+/* ── Type Modal ── */
 function openTypeModal(typeId = null) {
   editingTypeId = typeId;
   const t = typeId ? types.find(x => x.id === typeId) : null;
   document.getElementById('type-modal-title').textContent = typeId ? '유형 수정' : '유형 추가';
   document.getElementById('type-name-inp').value = t?.name || '';
   document.getElementById('type-desc-inp').value = t?.desc || '';
+  document.getElementById('type-use-ctx-inp').value = t?.useContext || '';
   document.getElementById('type-delete-btn').style.display = typeId ? '' : 'none';
   document.getElementById('type-modal').style.display = '';
   setTimeout(() => document.getElementById('type-name-inp').focus(), 50);
@@ -288,18 +343,17 @@ async function saveType() {
   const name = document.getElementById('type-name-inp').value.trim();
   if (!name) { alert('유형 이름을 입력해주세요.'); return; }
   const desc = document.getElementById('type-desc-inp').value.trim();
+  const useContext = document.getElementById('type-use-ctx-inp').value.trim();
   try {
     if (editingTypeId) {
-      await db.collection('ticket_types').doc(editingTypeId).update({ name, desc });
+      await db.collection('ticket_types').doc(editingTypeId).update({ name, desc, useContext });
     } else {
-      await db.collection('ticket_types').add({ name, desc, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+      await db.collection('ticket_types').add({ name, desc, useContext, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
     }
     closeTypeModal();
     await loadTypes();
     if (!editingTypeId) selectType(types[types.length - 1].id);
-  } catch(e) {
-    alert('저장 실패: ' + e.message);
-  }
+  } catch(e) { alert('저장 실패: ' + e.message); }
 }
 async function deleteType() {
   if (!editingTypeId) return;
@@ -310,9 +364,7 @@ async function deleteType() {
     closeTypeModal();
     curTypeId = null;
     await loadTypes();
-  } catch(e) {
-    alert('삭제 실패: ' + e.message);
-  }
+  } catch(e) { alert('삭제 실패: ' + e.message); }
 }
 
 /* ── Tickets ── */
@@ -325,7 +377,6 @@ function subscribeTickets(typeId) {
         .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       renderTicketList();
     }, e => {
-      console.error(e);
       document.getElementById('ticket-list-wrap').innerHTML =
         '<div class="empty-msg">불러오기 실패: ' + e.message + '</div>';
     });
@@ -337,9 +388,10 @@ function renderTicketList() {
     : allTickets;
 
   const countEl = document.getElementById('tk-count');
-  const active = allTickets.filter(t => t.status === 'active').length;
-  const used   = allTickets.filter(t => t.status === 'used').length;
-  countEl.textContent = `전체 ${allTickets.length}건 · 활성 ${active} · 사용됨 ${used}`;
+  const active    = allTickets.filter(t => t.status === 'active').length;
+  const exhausted = allTickets.filter(t => t.status === 'exhausted').length;
+  const cancelled = allTickets.filter(t => t.status === 'cancelled').length;
+  countEl.textContent = `전체 ${allTickets.length}건 · 활성 ${active} · 소진 ${exhausted} · 취소 ${cancelled}`;
 
   if (filtered.length === 0) {
     document.getElementById('ticket-list-wrap').innerHTML =
@@ -347,59 +399,129 @@ function renderTicketList() {
     return;
   }
 
-  const rows = filtered.map(t => {
-    const statusMap = { active:'활성', used:'사용됨', cancelled:'취소됨' };
-    const cls = { active:'status-active', used:'status-used', cancelled:'status-cancelled' };
-    const createdAt = t.createdAt?.toDate ? t.createdAt.toDate().toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-';
-    const usedAt = t.usedAt?.toDate ? t.usedAt.toDate().toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
-    const cancelBtn = t.status === 'active'
-      ? `<button class="cancel-btn" onclick="cancelTicket('${t.id}','${t.code}')">취소</button>`
+  const rows = filtered.flatMap(t => {
+    const total = t.totalUses ?? 1;
+    const used  = t.usedCount ?? 0;
+    const pct   = Math.min(100, Math.round(used / total * 100));
+    const statusMap = { active:'활성', exhausted:'소진됨', cancelled:'취소됨' };
+    const cls       = { active:'status-active', exhausted:'status-exhausted', cancelled:'status-cancelled' };
+    const createdAt = t.createdAt?.toDate
+      ? t.createdAt.toDate().toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+      : '-';
+    const lastUsedAt = t.lastUsedAt?.toDate
+      ? t.lastUsedAt.toDate().toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
       : '';
-    return `<tr>
+    const isExpanded = expandedId === t.id;
+
+    const actionBtns = t.status !== 'cancelled'
+      ? `<div class="act-btns">
+          <button class="act-btn" onclick="event.stopPropagation();openAddUsesModal('${t.id}','${t.code}',${total},${used})">+ 횟수</button>
+          <button class="act-btn danger" onclick="event.stopPropagation();cancelTicket('${t.id}','${t.code}')">취소</button>
+        </div>`
+      : '';
+
+    const dataRow = `<tr class="data-row" onclick="toggleLogs('${t.id}')">
       <td class="tk-code">${fmtPhone(t.code)}</td>
       <td><span class="status-badge ${cls[t.status]||''}">${statusMap[t.status]||t.status}</span></td>
       <td style="color:rgba(0,0,0,.55);font-size:12px;">${t.memo||''}</td>
-      <td style="color:rgba(0,0,0,.4);font-size:11px;white-space:nowrap;">${usedAt||createdAt}</td>
-      <td>${cancelBtn}</td>
+      <td>
+        <div class="uses-bar-wrap">
+          <div class="uses-bar"><div class="uses-bar-fill" style="width:${pct}%"></div></div>
+          <span class="uses-text">${used}/${total}</span>
+        </div>
+      </td>
+      <td style="color:rgba(0,0,0,.4);font-size:11px;white-space:nowrap;">${lastUsedAt||createdAt}</td>
+      <td>${actionBtns}</td>
     </tr>`;
-  }).join('');
+
+    if (!isExpanded) return [dataRow];
+
+    const logs = useLogs[t.id];
+    let logContent;
+    if (!logs) {
+      logContent = '<div class="log-empty">불러오는 중…</div>';
+    } else if (logs.length === 0) {
+      logContent = '<div class="log-empty">사용 기록이 없어요.</div>';
+    } else {
+      logContent = logs.map((l, i) => {
+        const at = l.usedAt?.toDate
+          ? l.usedAt.toDate().toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+          : '-';
+        const ctx = l.context && Object.keys(l.context).length > 0
+          ? Object.entries(l.context).map(([k,v]) => `${k}: ${v}`).join(' · ')
+          : '';
+        return `<div class="log-item">
+          <span class="log-num">${i+1}</span>
+          <span class="log-at">${at}</span>
+          ${ctx ? `<span class="log-ctx">${ctx}</span>` : ''}
+          ${l.sessionId ? `<span class="log-session">session: ${l.sessionId}</span>` : ''}
+        </div>`;
+      }).join('');
+    }
+
+    const logRow = `<tr class="log-row">
+      <td colspan="6">
+        <div class="log-inner">
+          <div class="log-title">사용 기록 (${logs ? logs.length : '…'}건)</div>
+          ${logContent}
+        </div>
+      </td>
+    </tr>`;
+
+    return [dataRow, logRow];
+  });
 
   document.getElementById('ticket-list-wrap').innerHTML = `
     <table class="tk-table">
       <thead><tr>
-        <th>전화번호</th><th>상태</th><th>메모</th><th>일시</th><th></th>
+        <th>전화번호</th><th>상태</th><th>메모</th><th>사용 횟수</th><th>최근 일시</th><th></th>
       </tr></thead>
-      <tbody>${rows}</tbody>
+      <tbody>${rows.join('')}</tbody>
     </table>`;
 }
 
-function fmtPhone(s) {
-  if (!s) return s;
-  if (s.length === 11) return s.slice(0,3)+'-'+s.slice(3,7)+'-'+s.slice(7);
-  if (s.length === 10) return s.slice(0,3)+'-'+s.slice(3,6)+'-'+s.slice(6);
-  return s;
+/* ── Use Logs ── */
+async function toggleLogs(docId) {
+  if (expandedId === docId) {
+    expandedId = null;
+    renderTicketList();
+    return;
+  }
+  expandedId = docId;
+  renderTicketList(); // 먼저 로딩 중 표시
+  try {
+    const snap = await db.collection('tickets').doc(docId).collection('use_logs')
+      .orderBy('usedAt', 'desc').get();
+    useLogs[docId] = snap.docs.map(d => d.data());
+  } catch(e) {
+    useLogs[docId] = [];
+  }
+  renderTicketList();
 }
 
+/* ── Register ── */
 async function registerTicket() {
-  const code = document.getElementById('reg-code').value.trim();
-  const memo = document.getElementById('reg-memo').value.trim();
+  const code  = document.getElementById('reg-code').value.trim();
+  const memo  = document.getElementById('reg-memo').value.trim();
+  const uses  = parseInt(document.getElementById('reg-uses').value) || 1;
   const errEl = document.getElementById('reg-err');
   errEl.textContent = '';
 
   if (!curTypeId) { errEl.textContent = '유형을 먼저 선택해주세요.'; return; }
   if (!/^01[0-9]{9}$/.test(code)) { errEl.textContent = '올바른 11자리 번호를 입력해주세요.'; return; }
+  if (uses < 1) { errEl.textContent = '사용 횟수는 1 이상이어야 해요.'; return; }
 
-  // 중복 체크
   const btn = document.getElementById('reg-btn');
   btn.disabled = true;
   try {
+    // 같은 유형+번호에 이미 존재하는지 체크 (취소된 것 제외)
     const dup = await db.collection('tickets')
       .where('typeId', '==', curTypeId)
       .where('code', '==', code)
-      .where('status', '==', 'active')
       .get();
-    if (!dup.empty) {
-      errEl.textContent = '이미 활성 상태의 티켓이 존재해요.';
+    const existing = dup.docs.find(d => d.data().status !== 'cancelled');
+    if (existing) {
+      errEl.textContent = '이미 등록된 번호예요. 횟수를 추가하려면 목록에서 [+ 횟수] 버튼을 누르세요.';
       btn.disabled = false;
       return;
     }
@@ -408,12 +530,15 @@ async function registerTicket() {
       code,
       status: 'active',
       memo: memo || '',
+      totalUses: uses,
+      usedCount: 0,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      usedAt: null,
+      lastUsedAt: null,
       sessionId: null,
     });
     document.getElementById('reg-code').value = '';
     document.getElementById('reg-memo').value = '';
+    document.getElementById('reg-uses').value = '1';
     document.getElementById('reg-code').focus();
   } catch(e) {
     errEl.textContent = '등록 실패: ' + e.message;
@@ -421,13 +546,39 @@ async function registerTicket() {
   btn.disabled = false;
 }
 
+/* ── Cancel ── */
 async function cancelTicket(docId, code) {
   if (!confirm(`${fmtPhone(code)} 티켓을 취소할까요?`)) return;
   try {
     await db.collection('tickets').doc(docId).update({ status: 'cancelled' });
-  } catch(e) {
-    alert('취소 실패: ' + e.message);
-  }
+  } catch(e) { alert('취소 실패: ' + e.message); }
+}
+
+/* ── Add Uses Modal ── */
+function openAddUsesModal(docId, code, totalUses, usedCount) {
+  addUsesTarget = { docId, code, totalUses, usedCount };
+  document.getElementById('add-uses-info').textContent =
+    `${fmtPhone(code)} — 현재 ${usedCount}/${totalUses}회 사용됨`;
+  document.getElementById('add-uses-inp').value = '1';
+  document.getElementById('add-uses-modal').style.display = '';
+  setTimeout(() => document.getElementById('add-uses-inp').select(), 50);
+}
+function closeAddUsesModal() {
+  document.getElementById('add-uses-modal').style.display = 'none';
+  addUsesTarget = null;
+}
+async function confirmAddUses() {
+  if (!addUsesTarget) return;
+  const n = parseInt(document.getElementById('add-uses-inp').value) || 0;
+  if (n < 1) { alert('1 이상 입력해주세요.'); return; }
+  try {
+    const update = { totalUses: firebase.firestore.FieldValue.increment(n) };
+    // 소진 상태였으면 다시 활성화
+    const t = allTickets.find(x => x.id === addUsesTarget.docId);
+    if (t?.status === 'exhausted') update.status = 'active';
+    await db.collection('tickets').doc(addUsesTarget.docId).update(update);
+    closeAddUsesModal();
+  } catch(e) { alert('횟수 추가 실패: ' + e.message); }
 }
 
 /* ── Search ── */
@@ -443,12 +594,24 @@ function clearSearch() {
   renderTicketList();
 }
 
+/* ── Utils ── */
+function fmtPhone(s) {
+  if (!s) return s;
+  if (s.length === 11) return s.slice(0,3)+'-'+s.slice(3,7)+'-'+s.slice(7);
+  if (s.length === 10) return s.slice(0,3)+'-'+s.slice(3,6)+'-'+s.slice(6);
+  return s;
+}
+
 /* ── Keyboard ── */
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && document.activeElement?.id === 'reg-code') {
     document.getElementById('reg-memo').focus();
   } else if (e.key === 'Enter' && document.activeElement?.id === 'reg-memo') {
+    document.getElementById('reg-uses').select();
+  } else if (e.key === 'Enter' && document.activeElement?.id === 'reg-uses') {
     registerTicket();
+  } else if (e.key === 'Escape') {
+    closeTypeModal(); closeAddUsesModal();
   }
 });
 </script>
