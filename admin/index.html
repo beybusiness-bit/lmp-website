@@ -584,6 +584,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <div class="ed-lbl" style="margin-bottom:3px;">클릭 링크 URL <span style="font-weight:400;opacity:.55;">(선택)</span></div>
                 <input class="fi" id="popup-link-url" placeholder="https://..." oninput="projDirty=true">
               </div>
+              <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
+                <button id="popup-require-auth-sw" class="tgl-btn" onclick="togglePopupRequireAuth()" style="font-size:11px;padding:5px 12px;">OFF</button>
+                <span style="font-size:12px;color:rgba(0,0,0,.6);">로그인한 사용자에게만 표시</span>
+              </div>
             </div>
           </div>
         </div>
@@ -5922,6 +5926,7 @@ function dupBlk(i) {
 let _curPopupBlockType = 'text';
 let _curPopupTrigger = 'entry';
 let _popupEnabled = false;
+let _popupRequireAuth = false;
 function togglePopupEnabled(){
   _popupEnabled=!_popupEnabled;
   const sw=document.getElementById('popup-enabled-sw');
@@ -5950,6 +5955,12 @@ function setPopupBlockType(t){
   });
   projDirty=true;
 }
+function togglePopupRequireAuth(){
+  _popupRequireAuth=!_popupRequireAuth;
+  const sw=document.getElementById('popup-require-auth-sw');
+  if(sw){sw.classList.toggle('on',_popupRequireAuth);sw.textContent=_popupRequireAuth?'ON':'OFF';}
+  projDirty=true;
+}
 function getPopupConfig(){
   if(!_popupEnabled) return {enabled:false};
   const cfg={
@@ -5959,6 +5970,7 @@ function getPopupConfig(){
     padding:parseInt(document.getElementById('popup-padding')?.value)||20,
     blockType:_curPopupBlockType,
     linkUrl:document.getElementById('popup-link-url')?.value.trim()||'',
+    requireAuth:_popupRequireAuth,
   };
   if(_curPopupBlockType==='text'){
     cfg.textContent=rteGet('popup-text-content');
@@ -5977,12 +5989,15 @@ function loadPopupConfig(cfg){
   _popupEnabled=cfg.enabled||false;
   _curPopupTrigger=cfg.trigger||'entry';
   _curPopupBlockType=cfg.blockType||'text';
+  _popupRequireAuth=cfg.requireAuth||false;
   const sw=document.getElementById('popup-enabled-sw');
   const lbl=document.getElementById('popup-enabled-lbl');
   const wrap=document.getElementById('popup-settings-wrap');
   if(sw){sw.classList.toggle('on',_popupEnabled);sw.textContent=_popupEnabled?'ON':'OFF';}
   if(lbl) lbl.textContent=_popupEnabled?'팝업 활성화':'팝업 비활성화';
   if(wrap) wrap.style.display=_popupEnabled?'':'none';
+  const authSw=document.getElementById('popup-require-auth-sw');
+  if(authSw){authSw.classList.toggle('on',_popupRequireAuth);authSw.textContent=_popupRequireAuth?'ON':'OFF';}
   setPopupTrigger(_curPopupTrigger);
   setPopupBlockType(_curPopupBlockType);
   const bgEl=document.getElementById('popup-bg-color');
