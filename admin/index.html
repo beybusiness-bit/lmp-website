@@ -754,6 +754,74 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <button class="add-btn" style="flex:1;" onclick="addHomeBlockItem()">+ 블록 추가</button>
             </div>
           </div>
+          <!-- 팝업 설정 -->
+          <div class="sect-head" style="margin-top:8px;">팝업 설정</div>
+          <div class="ed-sect">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <button id="popup-enabled-sw" class="tgl-btn" onclick="togglePopupEnabled()" style="font-size:11px;padding:5px 12px;">OFF</button>
+              <span id="popup-enabled-lbl" style="font-size:12px;color:rgba(0,0,0,.5);">팝업 비활성화</span>
+            </div>
+            <div id="popup-settings-wrap" style="display:none;">
+              <div class="ed-lbl" style="margin-bottom:4px;">팝업 표시 시점</div>
+              <div class="toggle-row" style="margin-bottom:10px;">
+                <button id="popup-trigger-entry" class="tgl-btn on" onclick="setPopupTrigger('entry')" style="font-size:11px;padding:5px 0;">진입 시 (로그인 전)</button>
+                <button id="popup-trigger-home" class="tgl-btn" onclick="setPopupTrigger('home')" style="font-size:11px;padding:5px 0;">홈화면 진입 시</button>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
+                <div>
+                  <div class="ed-lbl" style="margin-bottom:3px;">팝업 배경색</div>
+                  <input type="color" id="popup-bg-color" value="#ffffff" oninput="projDirty=true" style="width:40px;height:32px;padding:2px;border:1.5px solid rgba(0,0,0,.2);cursor:pointer;border-radius:3px;">
+                </div>
+                <div style="flex:1;min-width:80px;">
+                  <div class="ed-lbl" style="margin-bottom:3px;">안쪽 여백 (px)</div>
+                  <input type="number" id="popup-padding" value="20" min="0" max="60" oninput="projDirty=true" class="fi" style="width:80px;">
+                </div>
+              </div>
+              <div class="ed-lbl" style="margin-bottom:4px;">팝업 내용 블록 타입</div>
+              <div class="toggle-row" style="margin-bottom:10px;">
+                <button id="popup-blk-text" class="tgl-btn on" onclick="setPopupBlockType('text')" style="font-size:11px;padding:5px 0;">텍스트</button>
+                <button id="popup-blk-image" class="tgl-btn" onclick="setPopupBlockType('image')" style="font-size:11px;padding:5px 0;">이미지</button>
+                <button id="popup-blk-mixed" class="tgl-btn" onclick="setPopupBlockType('mixed')" style="font-size:11px;padding:5px 0;">혼합</button>
+                <button id="popup-blk-embed" class="tgl-btn" onclick="setPopupBlockType('embed')" style="font-size:11px;padding:5px 0;">임베드</button>
+              </div>
+              <!-- 텍스트 -->
+              <div id="popup-field-text" class="popup-blk-field">
+                <div class="ed-lbl" style="margin-bottom:3px;">텍스트 내용</div>
+                <div id="popup-text-content" class="mini-rte" contenteditable="true"
+                     onmouseup="saveRange(this)" onkeyup="saveRange(this)" ontouchend="saveRange(this)"
+                     style="min-height:80px;border:1.5px solid rgba(0,0,0,.2);padding:8px;font-size:13px;line-height:1.6;"></div>
+              </div>
+              <!-- 이미지 -->
+              <div id="popup-field-image" class="popup-blk-field" style="display:none;">
+                <div class="ed-lbl" style="margin-bottom:3px;">이미지 URL</div>
+                <input class="fi" id="popup-image-url" placeholder="https://..." oninput="projDirty=true">
+                <button class="bg-up-btn" onclick="document.getElementById('popup-img-file').click()" style="margin-top:4px;">📁 업로드</button>
+                <input type="file" id="popup-img-file" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'popup-image-url','popup-block-images/',false)">
+              </div>
+              <!-- 혼합 (이미지 + 텍스트) -->
+              <div id="popup-field-mixed" class="popup-blk-field" style="display:none;">
+                <div class="ed-lbl" style="margin-bottom:3px;">이미지 URL</div>
+                <input class="fi" id="popup-mixed-image-url" placeholder="https://..." oninput="projDirty=true">
+                <button class="bg-up-btn" onclick="document.getElementById('popup-mixed-img-file').click()" style="margin-top:4px;margin-bottom:6px;">📁 업로드</button>
+                <input type="file" id="popup-mixed-img-file" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'popup-mixed-image-url','popup-block-images/',false)">
+                <div class="ed-lbl" style="margin-bottom:3px;">텍스트 내용</div>
+                <div id="popup-mixed-text" class="mini-rte" contenteditable="true"
+                     onmouseup="saveRange(this)" onkeyup="saveRange(this)" ontouchend="saveRange(this)"
+                     style="min-height:60px;border:1.5px solid rgba(0,0,0,.2);padding:8px;font-size:13px;line-height:1.6;"></div>
+              </div>
+              <!-- 임베드 -->
+              <div id="popup-field-embed" class="popup-blk-field" style="display:none;">
+                <div class="ed-lbl" style="margin-bottom:3px;">임베드 URL</div>
+                <input class="fi" id="popup-embed-url" placeholder="https://..." oninput="projDirty=true">
+                <div class="ed-lbl" style="margin-top:6px;margin-bottom:3px;">높이 (px)</div>
+                <input type="number" id="popup-embed-height" value="300" min="100" class="fi" style="width:100px;" oninput="projDirty=true">
+              </div>
+              <div style="margin-top:8px;">
+                <div class="ed-lbl" style="margin-bottom:3px;">클릭 링크 URL <span style="font-weight:400;opacity:.55;">(선택)</span></div>
+                <input class="fi" id="popup-link-url" placeholder="https://..." oninput="projDirty=true">
+              </div>
+            </div>
+          </div>
         </div>
         </div><!-- /ed-inner -->
         </div><!-- /proj-content -->
@@ -1348,7 +1416,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <span class="switch-lbl">결과 공개 <span style="font-weight:400;opacity:.55;">(제출 후 전체 응답 통계 표시)</span></span>
               </div>
               <div id="tf-chart-config-wrap" style="display:none;">
-                <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:10px;line-height:1.5;">선택형·숫자·텍스트 필드를 차트로 보여줄 수 있어요. 켜진 항목만 사용자 화면에 표시됩니다.</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+                  <span style="font-size:11px;color:rgba(0,0,0,.55);white-space:nowrap;">차트 색상:</span>
+                  <select id="tf-chart-color-scheme" style="padding:3px 8px;border:1.5px solid rgba(0,0,0,.2);font-size:11px;font-family:inherit;border-radius:0;background:#fff;">
+                    <option value="black">검정 (기본)</option>
+                    <option value="key">키컬러 (프로젝트 테마색)</option>
+                    <option value="gray">회색조</option>
+                  </select>
+                </div>
+                <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:10px;line-height:1.5;">필드별로 어떤 차트 타입으로, 어떤 기준으로 보여줄지 설정하세요. 켜진 항목만 사용자 화면에 표시됩니다.</div>
                 <div id="tf-chart-list"></div>
                 <div style="margin-top:8px;font-size:11px;color:rgba(0,0,0,.4);">💡 블록 도구에서 URL 뒤에 <code>?mode=chart</code>를 추가하면 폼 없이 결과만 표시할 수 있어요.</div>
               </div>
@@ -5246,6 +5322,7 @@ async function editProject(id) {
     curStages = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
     curHomeBlocks = d.homeBlocks || [];
     curHomeItemOrder = Array.isArray(d.homeItemOrder) && d.homeItemOrder.length ? d.homeItemOrder : curStages.map(s=>({type:'stage',id:s.id}));
+    if(curHomeItemOrder.length){const _oIds=new Set(curHomeItemOrder.filter(o=>o.type==='stage').map(o=>o.id));curStages.forEach(s=>{if(!_oIds.has(s.id))curHomeItemOrder.push({type:'stage',id:s.id});});}
     customColWidths = d.userColumnWidths || {};
     curRespColWidths = d.formRespColWidths || {};
     const _acp=d.adminColPrefs||{};
@@ -5340,7 +5417,7 @@ async function editProject(id) {
     setDday(d.ddayEnabled||false);
     setAuth(d.authEnabled||false);
     setAuthMode(d.authMode||'immediate');
-    renderKeyColorList(); renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList(); renderTextColorRows(); loadWidgetConfig(d.widget||{});
+    renderKeyColorList(); renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList(); renderTextColorRows(); loadWidgetConfig(d.widget||{}); loadPopupConfig(d.popupConfig||{});
     if (d.authEnabled) await loadUsers();
     switchInnerTab('basic'); showProjView('edit');
     setTimeout(()=>{ _projDirtyLock=false; projDirty=false; }, 300);
@@ -5426,6 +5503,7 @@ async function saveProject(deploy=true, e=null) {
     elementMargins: curElementMargins,
     elemFontSizes:  curElemFontSizes,
     widget:        getWidgetConfig(),
+    popupConfig:   getPopupConfig(),
     keyColors:    curKeyColors,
     published:    document.getElementById('published-sw')?.classList.contains('on') ?? true,
     ogTitle:      document.getElementById('p-og-title')?.value.trim()||'',
@@ -5841,12 +5919,101 @@ function dupBlk(i) {
   renderBlockList(); scheduleGuidePreviewUpdate();
   _autoSaveStage();
 }
+let _curPopupBlockType = 'text';
+let _curPopupTrigger = 'entry';
+let _popupEnabled = false;
+function togglePopupEnabled(){
+  _popupEnabled=!_popupEnabled;
+  const sw=document.getElementById('popup-enabled-sw');
+  const lbl=document.getElementById('popup-enabled-lbl');
+  const wrap=document.getElementById('popup-settings-wrap');
+  if(sw){sw.classList.toggle('on',_popupEnabled);sw.textContent=_popupEnabled?'ON':'OFF';}
+  if(lbl) lbl.textContent=_popupEnabled?'팝업 활성화':'팝업 비활성화';
+  if(wrap) wrap.style.display=_popupEnabled?'':'none';
+  projDirty=true;
+}
+function setPopupTrigger(t){
+  _curPopupTrigger=t;
+  ['entry','home'].forEach(v=>{
+    const btn=document.getElementById('popup-trigger-'+v);
+    if(btn) btn.classList.toggle('on',v===t);
+  });
+  projDirty=true;
+}
+function setPopupBlockType(t){
+  _curPopupBlockType=t;
+  ['text','image','mixed','embed'].forEach(v=>{
+    const btn=document.getElementById('popup-blk-'+v);
+    const fld=document.getElementById('popup-field-'+v);
+    if(btn) btn.classList.toggle('on',v===t);
+    if(fld) fld.style.display=v===t?'':'none';
+  });
+  projDirty=true;
+}
+function getPopupConfig(){
+  if(!_popupEnabled) return {enabled:false};
+  const cfg={
+    enabled:true,
+    trigger:_curPopupTrigger,
+    bgColor:document.getElementById('popup-bg-color')?.value||'#ffffff',
+    padding:parseInt(document.getElementById('popup-padding')?.value)||20,
+    blockType:_curPopupBlockType,
+    linkUrl:document.getElementById('popup-link-url')?.value.trim()||'',
+  };
+  if(_curPopupBlockType==='text'){
+    cfg.textContent=rteGet('popup-text-content');
+  } else if(_curPopupBlockType==='image'){
+    cfg.imageUrl=document.getElementById('popup-image-url')?.value.trim()||'';
+  } else if(_curPopupBlockType==='mixed'){
+    cfg.imageUrl=document.getElementById('popup-mixed-image-url')?.value.trim()||'';
+    cfg.textContent=rteGet('popup-mixed-text');
+  } else if(_curPopupBlockType==='embed'){
+    cfg.embedUrl=document.getElementById('popup-embed-url')?.value.trim()||'';
+    cfg.embedHeight=parseInt(document.getElementById('popup-embed-height')?.value)||300;
+  }
+  return cfg;
+}
+function loadPopupConfig(cfg){
+  _popupEnabled=cfg.enabled||false;
+  _curPopupTrigger=cfg.trigger||'entry';
+  _curPopupBlockType=cfg.blockType||'text';
+  const sw=document.getElementById('popup-enabled-sw');
+  const lbl=document.getElementById('popup-enabled-lbl');
+  const wrap=document.getElementById('popup-settings-wrap');
+  if(sw){sw.classList.toggle('on',_popupEnabled);sw.textContent=_popupEnabled?'ON':'OFF';}
+  if(lbl) lbl.textContent=_popupEnabled?'팝업 활성화':'팝업 비활성화';
+  if(wrap) wrap.style.display=_popupEnabled?'':'none';
+  setPopupTrigger(_curPopupTrigger);
+  setPopupBlockType(_curPopupBlockType);
+  const bgEl=document.getElementById('popup-bg-color');
+  if(bgEl) bgEl.value=cfg.bgColor||'#ffffff';
+  const padEl=document.getElementById('popup-padding');
+  if(padEl) padEl.value=cfg.padding||20;
+  const linkEl=document.getElementById('popup-link-url');
+  if(linkEl) linkEl.value=cfg.linkUrl||'';
+  if(cfg.blockType==='text'||!cfg.blockType){
+    rteSet('popup-text-content',cfg.textContent||'');
+  } else if(cfg.blockType==='image'){
+    const el=document.getElementById('popup-image-url');
+    if(el) el.value=cfg.imageUrl||'';
+  } else if(cfg.blockType==='mixed'){
+    const el=document.getElementById('popup-mixed-image-url');
+    if(el) el.value=cfg.imageUrl||'';
+    rteSet('popup-mixed-text',cfg.textContent||'');
+  } else if(cfg.blockType==='embed'){
+    const el=document.getElementById('popup-embed-url');
+    if(el) el.value=cfg.embedUrl||'';
+    const hEl=document.getElementById('popup-embed-height');
+    if(hEl) hEl.value=cfg.embedHeight||300;
+  }
+}
 async function dupStage(i) {
   const src = curStages[i];
   const newId = uid();
   const newStage = JSON.parse(JSON.stringify(src));
   newStage.id = newId; newStage.title = (src.title||'') + ' (복사)'; newStage.order = curStages.length;
   curStages.push(newStage);
+  curHomeItemOrder.push({type:'stage', id:newId});
   if(curProjId) {
     try {
       const doc = await db.collection('cms_projects').doc(curProjId).collection('stage_content').doc(src.id).get();
@@ -9764,6 +9931,8 @@ async function toolFormEdit(docId){
     tfChartConfigs=d.chartConfigs||[];
     document.getElementById('tf-show-results-sw').classList.toggle('on',!!d.showResults);
     document.getElementById('tf-chart-config-wrap').style.display=d.showResults?'':'none';
+    const _csEl=document.getElementById('tf-chart-color-scheme');
+    if(_csEl)_csEl.value=d.chartColorScheme||'black';
     renderTfFieldList();
     loadTfInlineResponses();
   }catch(e){alert('로드 실패: '+e.message);}
@@ -9803,18 +9972,60 @@ function toolFormOpenFieldModal(idx, insertAt){
   openFormFieldModal(idx, insertAt);
 }
 const _TF_CHART_TYPES={
-  string:[{v:'text-list',l:'응답 목록'}],
-  text:[{v:'text-list',l:'응답 목록'}],
-  textarea:[{v:'text-list',l:'응답 목록'}],
-  number:[{v:'counter',l:'통계 수치'},{v:'bar',l:'막대 그래프'}],
-  select:[{v:'bar',l:'막대 그래프'},{v:'donut',l:'도넛 차트'}],
+  string:[{v:'text-list',l:'응답 목록'},{v:'table',l:'전체 응답 표'}],
+  text:[{v:'text-list',l:'응답 목록'},{v:'table',l:'전체 응답 표'}],
+  textarea:[{v:'text-list',l:'응답 목록'},{v:'table',l:'전체 응답 표'}],
+  number:[{v:'counter',l:'통계 수치'},{v:'histogram',l:'분포 그래프'},{v:'table',l:'전체 응답 표'}],
+  select:[{v:'bar',l:'막대 그래프'},{v:'donut',l:'도넛 차트'},{v:'table',l:'전체 응답 표'}],
+  date:[{v:'timeline',l:'날짜별 추이'},{v:'table',l:'전체 응답 표'}],
+  file:[{v:'counter',l:'응답 수'},{v:'table',l:'전체 응답 표'}],
+  color:[{v:'bar',l:'색상 분포'},{v:'table',l:'전체 응답 표'}],
 };
+function _tfChartExtraHtml(chartType,cfg){
+  const se=(attr,opts,val)=>`<select data-chart-extra-${attr} style="padding:3px 6px;border:1.5px solid rgba(0,0,0,.15);font-size:11px;font-family:inherit;border-radius:0;background:#fff;">${opts.map(([v,l])=>`<option value="${v}"${val===v?' selected':''}>${l}</option>`).join('')}</select>`;
+  const lbl=t=>`<span style="font-size:10px;color:rgba(0,0,0,.45);white-space:nowrap;">${t}</span>`;
+  const row=(...items)=>`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:5px;">${items.join('')}</div>`;
+  if(chartType==='bar'||chartType==='histogram'){
+    const sortRow=chartType==='histogram'?'':row(lbl('정렬:'),se('sort',[['count-desc','많은 순'],['count-asc','적은 순'],['label-asc','이름 순']],cfg.sortBy||'count-desc'),lbl('표시:'),se('limit',[['0','전체'],['5','상위 5'],['10','상위 10']],String(cfg.limit||0)));
+    const yRow=chartType==='histogram'?'':row(lbl('Y축 값:'),se('yaxis',[['both','응답 수 + 비율(%)'],['count','응답 수만'],['percent','비율(%)만']],cfg.yAxis||'both'));
+    const binsRow=chartType==='histogram'?row(lbl('구간 수:'),se('bins',[['5','5구간'],['8','8구간'],['10','10구간'],['15','15구간']],String(cfg.bins||8))):'';
+    return yRow+sortRow+binsRow;
+  }
+  if(chartType==='donut'){
+    return row(lbl('정렬:'),se('sort',[['count-desc','많은 순'],['count-asc','적은 순'],['label-asc','이름 순']],cfg.sortBy||'count-desc'),lbl('항목 수:'),se('limit',[['0','전체'],['5','상위 5'],['8','상위 8']],String(cfg.limit||0)));
+  }
+  if(chartType==='text-list'){
+    return row(lbl('최대 개수:'),se('textlimit',[['10','최근 10개'],['20','최근 20개'],['50','최근 50개']],String(cfg.textLimit||10)));
+  }
+  if(chartType==='table'){
+    return row(lbl('행 수:'),se('textlimit',[['20','최근 20행'],['50','최근 50행'],['100','최근 100행'],['0','전체']],String(cfg.textLimit||20)));
+  }
+  if(chartType==='counter'){
+    const stats=[['count','응답 수'],['avg','평균'],['sum','합계'],['max','최대'],['min','최소']];
+    const show=cfg.showStats||['count','avg','sum','max','min'];
+    const boxes=stats.map(([v,l])=>`<label style="display:inline-flex;align-items:center;gap:3px;font-size:11px;cursor:pointer;margin-right:8px;"><input type="checkbox" value="${v}" data-chart-extra-stat${show.includes(v)?' checked':''}> ${l}</label>`).join('');
+    return `<div style="margin-top:5px;line-height:2;">${boxes}</div>`;
+  }
+  if(chartType==='timeline'){
+    return row(lbl('기준:'),se('groupby',[['day','일별'],['hour','시간대별'],['week','주별']],cfg.groupBy||'day'));
+  }
+  return '';
+}
+function _onTfChartTypeChange(sel){
+  const row=sel.closest('.chart-cfg-row');
+  if(!row) return;
+  const extraDiv=row.querySelector('[data-chart-extra]');
+  if(!extraDiv) return;
+  const newHtml=_tfChartExtraHtml(sel.value,{});
+  extraDiv.innerHTML=newHtml;
+  extraDiv.style.display=newHtml?'':'none';
+}
 function renderTfChartConfigList(existingConfigs){
   const el=document.getElementById('tf-chart-list');
   if(!el) return;
   const chartable=tfFields.filter(f=>_TF_CHART_TYPES[f.type]);
   if(!chartable.length){
-    el.innerHTML='<div style="font-size:12px;color:rgba(0,0,0,.45);padding:4px 0;">선택형·텍스트·숫자 필드를 추가하면 차트 설정이 표시돼요.</div>';
+    el.innerHTML='<div style="font-size:12px;color:rgba(0,0,0,.45);padding:4px 0;">선택형·텍스트·숫자·날짜 필드를 추가하면 차트 설정이 표시돼요.</div>';
     return;
   }
   const cfgMap={};
@@ -9823,18 +10034,20 @@ function renderTfChartConfigList(existingConfigs){
     const fkey=f.key||f.id;
     const cfg=cfgMap[fkey]||{};
     const types=_TF_CHART_TYPES[f.type]||[];
-    const sel=cfg.chartType||types[0]?.v||'bar';
+    const selType=cfg.chartType||types[0]?.v||'bar';
     const enabled=cfg.enabled!==false;
     const title=(cfg.title||'').replace(/"/g,'&quot;');
-    const opts=types.map(t=>`<option value="${t.v}"${sel===t.v?' selected':''}>${t.l}</option>`).join('');
-    return `<div class="chart-cfg-row" data-fieldkey="${fkey}" style="padding:8px 0;${i>0?'border-top:1px solid rgba(0,0,0,.08);':''}">
+    const opts=types.map(t=>`<option value="${t.v}"${selType===t.v?' selected':''}>${t.l}</option>`).join('');
+    const extraHtml=_tfChartExtraHtml(selType,cfg);
+    return `<div class="chart-cfg-row" data-fieldkey="${fkey}" style="padding:10px 0;${i>0?'border-top:1px solid rgba(0,0,0,.08);':''}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
         <div class="switch${enabled?' on':''}" style="flex-shrink:0;" onclick="this.classList.toggle('on');" data-chart-sw></div>
         <span style="font-size:12px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${f.label}">${f.label}</span>
-        <select style="padding:4px 6px;border:1.5px solid rgba(0,0,0,.2);font-size:11px;font-family:inherit;border-radius:0;background:#fff;" data-chart-type>${opts}</select>
+        <select style="padding:4px 6px;border:1.5px solid rgba(0,0,0,.2);font-size:11px;font-family:inherit;border-radius:0;background:#fff;" data-chart-type onchange="_onTfChartTypeChange(this)">${opts}</select>
       </div>
       <input placeholder="차트 제목 (빈칸이면 필드명으로 표시)" value="${title}"
-             style="width:100%;padding:5px 8px;border:1.5px solid rgba(0,0,0,.15);font-size:11px;font-family:inherit;box-sizing:border-box;" data-chart-title>
+             style="width:100%;padding:5px 8px;border:1.5px solid rgba(0,0,0,.15);font-size:11px;font-family:inherit;box-sizing:border-box;margin-bottom:2px;" data-chart-title>
+      <div data-chart-extra style="${extraHtml?'':'display:none;'}">${extraHtml}</div>
     </div>`;
   }).join('');
 }
@@ -9846,7 +10059,19 @@ function _buildTfChartConfigs(){
     const sw=row.querySelector('[data-chart-sw]');
     const typeSel=row.querySelector('[data-chart-type]');
     const titleInp=row.querySelector('[data-chart-title]');
-    result.push({id:fkey,fieldKey:fkey,chartType:typeSel?.value||'bar',title:titleInp?.value.trim()||'',order:i,enabled:sw?.classList.contains('on')||false});
+    const chartType=typeSel?.value||'bar';
+    const obj={id:fkey,fieldKey:fkey,chartType,title:titleInp?.value.trim()||'',order:i,enabled:sw?.classList.contains('on')||false};
+    const g=attr=>row.querySelector(`[data-chart-extra-${attr}]`)?.value;
+    const sortEl=g('sort'),yAxisEl=g('yaxis'),limitEl=g('limit'),textLimitEl=g('textlimit'),binsEl=g('bins'),groupByEl=g('groupby');
+    const statBoxes=row.querySelectorAll('[data-chart-extra-stat]');
+    if(sortEl!=null)obj.sortBy=sortEl;
+    if(yAxisEl!=null)obj.yAxis=yAxisEl;
+    if(limitEl!=null)obj.limit=parseInt(limitEl)||0;
+    if(textLimitEl!=null)obj.textLimit=parseInt(textLimitEl)||20;
+    if(binsEl!=null)obj.bins=parseInt(binsEl)||8;
+    if(groupByEl!=null)obj.groupBy=groupByEl;
+    if(statBoxes.length)obj.showStats=[...statBoxes].filter(b=>b.checked).map(b=>b.value);
+    result.push(obj);
   });
   return result;
 }
@@ -9863,9 +10088,10 @@ async function toolFormSave(e=null){
   try{
     const showResults=document.getElementById('tf-show-results-sw')?.classList.contains('on')||false;
     const chartConfigs=_buildTfChartConfigs();
+    const chartColorScheme=document.getElementById('tf-chart-color-scheme')?.value||'black';
     await db.collection('cms_form_configs').doc(tfCurDocId).update({
       title,desc,fields:tfFields,submitBtnText,submitMsg,noResubmit,allowEdit,
-      showResults,chartConfigs,
+      showResults,chartConfigs,chartColorScheme,
       sheetId:tfRespFormConfig.sheetId||'',
       sheetTab:tfRespFormConfig.sheetTab||'응답',
       sheetUrl:tfRespFormConfig.sheetUrl||'',

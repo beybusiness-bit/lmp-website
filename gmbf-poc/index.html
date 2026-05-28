@@ -550,6 +550,7 @@ let ELEM_MARGINS   = {};   // {edition:20, logo:20, dday:20, stats:20, widget:4}
 let ELEM_FONT_SIZES = {};  // {edition:18, dday:32, stats:21}
 let WIDGET         = {};   // widget config from cms_projects
 let SITE_CONFIG    = {};   // site-wide settings (footer, policies)
+let POPUP_CONFIG   = {};   // popup config from cms_projects
 
 /* slideshow */
 let bgImages   = [];   // [{url, holdTime, transitionTime}]
@@ -734,6 +735,12 @@ function applySettings(d){
     }));
   HOME_BLOCKS = d.homeBlocks || [];
   HOME_ITEM_ORDER = Array.isArray(d.homeItemOrder) && d.homeItemOrder.length ? d.homeItemOrder : [];
+  // 새 스테이지가 HOME_ITEM_ORDER에서 빠진 경우 마지막에 자동 추가 (안전망)
+  if(HOME_ITEM_ORDER.length){
+    const _orderedIds=new Set(HOME_ITEM_ORDER.filter(o=>o.type==='stage').map(o=>o.id));
+    STAGES.forEach(s=>{ if(!_orderedIds.has(s.id)) HOME_ITEM_ORDER.push({type:'stage',id:s.id}); });
+  }
+  POPUP_CONFIG = d.popupConfig || {};
   STATS = (d.stats||[]).filter(s=>s.enabled);
   ELEMENT_ORDER = d.elementOrder || ['edition','logo','dday','stats'];
   ELEM_MARGINS = d.elementMargins || {};
@@ -1626,6 +1633,39 @@ function _doHashNavIfPending(){
   const idx = STAGES.findIndex(s => s.id === sid);
   if(idx >= 0) setTimeout(() => goToStage(idx), 150);
 }
+function _showPopupIfNeeded(trigger){
+  if(!POPUP_CONFIG.enabled) return;
+  if((POPUP_CONFIG.trigger||'entry')!==trigger) return;
+  const key='lmp-popup-shown-'+PROJECT_ID;
+  if(sessionStorage.getItem(key)) return;
+  sessionStorage.setItem(key,'1');
+  const cfg=POPUP_CONFIG;
+  const pad=cfg.padding??20;
+  const bg=cfg.bgColor||'#fff';
+  let innerHtml='';
+  const blkType=cfg.blockType||'text';
+  if(blkType==='text'){
+    innerHtml=`<div class="block-text-content" style="font-size:15px;line-height:1.7;">${cfg.textContent||''}</div>`;
+  } else if(blkType==='image'){
+    innerHtml=`<img src="${cfg.imageUrl||''}" style="width:100%;height:auto;display:block;" onerror="this.style.display='none'">`;
+  } else if(blkType==='mixed'){
+    innerHtml=`<img src="${cfg.imageUrl||''}" style="width:100%;height:auto;display:block;margin-bottom:12px;" onerror="this.style.display='none'"><div class="block-text-content" style="font-size:15px;line-height:1.7;">${cfg.textContent||''}</div>`;
+  } else if(blkType==='embed'){
+    innerHtml=`<iframe src="${cfg.embedUrl||''}" style="width:100%;height:${cfg.embedHeight||300}px;border:none;display:block;" allow="fullscreen"></iframe>`;
+  }
+  const linkWrap=cfg.linkUrl?`<a href="${cfg.linkUrl}" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit;">`:'';
+  const linkWrapEnd=cfg.linkUrl?'</a>':'';
+  const el=document.createElement('div');
+  el.id='lmp-popup-overlay';
+  el.style.cssText='position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);padding:20px;box-sizing:border-box;';
+  el.innerHTML=`<div style="background:${bg};border-radius:12px;width:100%;max-width:390px;max-height:80svh;overflow-y:auto;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+    <button onclick="document.getElementById('lmp-popup-overlay').remove()" style="position:sticky;top:0;float:right;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:18px;line-height:1;width:32px;height:32px;border-radius:50%;cursor:pointer;margin:10px 10px 0 0;display:flex;align-items:center;justify-content:center;z-index:1;">×</button>
+    <div style="clear:both;"></div>
+    ${linkWrap}<div style="padding:${pad}px;">${innerHtml}</div>${linkWrapEnd}
+  </div>`;
+  el.addEventListener('click',function(e){ if(e.target===el) el.remove(); });
+  document.body.appendChild(el);
+}
 function openPrep(){
   prepBg=KEY_COLORS[Math.floor(Math.random()*KEY_COLORS.length)];
   sessionStorage.setItem('prepBgColor',prepBg);
@@ -1635,6 +1675,7 @@ function openPrep(){
   hideReturnBtn();
   history.replaceState(null,'','#prep');
   _doHashNavIfPending();
+  _showPopupIfNeeded('home');
 }
 function reopenPrep(){
   setCss('--prep-bg',prepBg); setCss('--fill-color',pickOther(prepBg,KEY_COLORS));
@@ -2635,6 +2676,8 @@ async function init(){
   if(loggedIn && AUTH_ENABLED && USER_DOC_ID && !IS_ADMIN_PREVIEW){
     _startSessionHeartbeat(USER_DOC_ID);
   }
+  /* entry 팝업 (진입 시) */
+  if(!IS_ADMIN_PREVIEW) _showPopupIfNeeded('entry');
   /* merged + auth: show modal immediately (skip auth in admin preview) */
   if(LAYOUT_TYPE==='merged'&&AUTH_ENABLED){
     if(IS_ADMIN_PREVIEW){
@@ -2642,6 +2685,8 @@ async function init(){
     } else if(!loggedIn) openAuthModal();
     else { applyGreeting(saved); renderMergedStages(); await restoreFromHash(saved); }
   }
+  /* merged no-auth: home 팝업 */
+  if(LAYOUT_TYPE==='merged'&&!AUTH_ENABLED&&!IS_ADMIN_PREVIEW) _showPopupIfNeeded('home');
   /* separate: restore session */
   if(LAYOUT_TYPE==='separate'){
     if(loggedIn){

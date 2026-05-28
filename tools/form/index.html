@@ -183,6 +183,7 @@ let formConfig = null;
 let ctxProjectId = '';
 let ctxUserId = '';
 let ctxUserFields = {};
+let ctxKeyColors = [];
 let ctxReceived = false;
 let editingResponseId = null;
 let _prevScreen = 'form';
@@ -205,6 +206,7 @@ window.addEventListener('message', e => {
   ctxProjectId = e.data.projectId || '';
   ctxUserId = e.data.userId || '';
   ctxUserFields = e.data.userFields || {};
+  ctxKeyColors = e.data.keyColors || [];
   if (e.data.blockBg) { document.documentElement.style.setProperty('--lmp-block-bg', e.data.blockBg); document.documentElement.style.setProperty('--lmp-input-bg', e.data.blockBg); }
   if (e.data.blockBgImage) { const _f=e.data.blockBgFit||'cover',_p=e.data.blockBgPos||'center'; document.body.style.backgroundImage=`url('${e.data.blockBgImage}')`; document.body.style.backgroundSize=_f==='natural'?'contain':_f; document.body.style.backgroundPosition=_p; document.body.style.backgroundRepeat='no-repeat'; }
   if (!ctxReceived) { ctxReceived = true; resolveCtx(); }
@@ -852,7 +854,6 @@ function cancelEdit() {
   document.getElementById('history-screen').classList.add('on');
 }
 
-const _CHART_COLORS=['#111','#444','#777','#aaa','#ccc','#e0e0e0'];
 async function _loadAllResponses(){
   try{
     const snap=await db.collection('cms_form_responses').doc(FORM_ID).collection('responses').get();
@@ -861,21 +862,49 @@ async function _loadAllResponses(){
     return docs;
   }catch(e){console.error('[loadAllResponses]',e);return [];}
 }
-function _buildBarHtml(data,total){
-  if(!data.length) return '<div style="font-size:12px;color:rgba(0,0,0,.4);padding:8px 0;">아직 응답이 없어요.</div>';
-  return data.map(d=>{
+function _chartPalette(scheme){
+  if(scheme==='key'&&ctxKeyColors&&ctxKeyColors.length){
+    const base=ctxKeyColors[0]||'#000';
+    return [base,...ctxKeyColors.slice(1),'#555','#888','#bbb'];
+  }
+  if(scheme==='gray') return['#444','#666','#888','#aaa','#ccc','#ddd'];
+  return['#111','#333','#555','#777','#999','#bbb'];
+}
+function _sortChartData(data,sortBy){
+  if(!sortBy||sortBy==='count-desc') return data.slice().sort((a,b)=>b.count-a.count);
+  if(sortBy==='count-asc') return data.slice().sort((a,b)=>a.count-b.count);
+  if(sortBy==='label-asc') return data.slice().sort((a,b)=>String(a.label).localeCompare(String(b.label),'ko'));
+  return data;
+}
+function _buildBarHtml(data,total,opts){
+  const colors=_chartPalette(opts&&opts.colorScheme);
+  const sortBy=(opts&&opts.sortBy)||'count-desc';
+  const limit=(opts&&opts.limit)||0;
+  const yAxis=(opts&&opts.yAxis)||'both';
+  let rows=_sortChartData(data,sortBy);
+  if(limit>0) rows=rows.slice(0,limit);
+  if(!rows.length) return '<div style="font-size:12px;color:rgba(0,0,0,.4);padding:8px 0;">아직 응답이 없어요.</div>';
+  const maxCount=Math.max(...rows.map(d=>d.count),1);
+  return rows.map((d,i)=>{
     const pct=total>0?Math.round(d.count/total*100):0;
+    const barW=Math.round(d.count/maxCount*100);
+    const color=colors[i%colors.length];
+    const metaRight=yAxis==='count'?`${d.count}명`:yAxis==='percent'?`${pct}%`:`${d.count}명 (${pct}%)`;
     return `<div class="lmp-bar-row">
-      <div class="lmp-bar-meta"><span>${esc(String(d.label))}</span><span>${d.count}명 (${pct}%)</span></div>
-      <div class="lmp-bar-track"><div class="lmp-bar-fill" style="width:${pct}%;"></div></div>
+      <div class="lmp-bar-meta"><span>${esc(String(d.label))}</span><span>${metaRight}</span></div>
+      <div class="lmp-bar-track"><div class="lmp-bar-fill" style="width:${barW}%;background:${color};"></div></div>
     </div>`;
   }).join('');
 }
-function _buildDonutHtml(data,total){
+function _buildDonutHtml(data,total,opts){
   if(!total) return '<div style="font-size:12px;color:rgba(0,0,0,.4);padding:8px 0;">아직 응답이 없어요.</div>';
-  const colors=_CHART_COLORS;
+  const colors=_chartPalette(opts&&opts.colorScheme);
+  const sortBy=(opts&&opts.sortBy)||'count-desc';
+  const limit=(opts&&opts.limit)||0;
+  let rows=_sortChartData(data,sortBy);
+  if(limit>0) rows=rows.slice(0,limit);
   let cum=0;const parts=[];const legend=[];
-  data.forEach((d,i)=>{
+  rows.forEach((d,i)=>{
     const pct=d.count/total*100;
     const color=colors[i%colors.length];
     parts.push(`${color} ${cum.toFixed(2)}% ${(cum+pct).toFixed(2)}%`);
@@ -893,23 +922,92 @@ function _buildDonutHtml(data,total){
     <div class="lmp-donut-legend">${legend.join('')}</div>
   </div>`;
 }
-function _buildCounterHtml(values){
+function _buildCounterHtml(values,opts){
   const nums=values.filter(v=>v!==null&&v!==''&&!isNaN(Number(v))).map(Number);
   if(!nums.length) return '<div style="font-size:12px;color:rgba(0,0,0,.4);padding:8px 0;">아직 응답이 없어요.</div>';
   const n=nums.length,tot=nums.reduce((a,b)=>a+b,0),avg=tot/n,mx=Math.max(...nums),mn=Math.min(...nums);
-  const fmt=v=>v%1===0?String(v):v.toFixed(1);
-  return `<div class="lmp-counter-val">${n}</div><div class="lmp-counter-rows"><div class="lmp-counter-item">총 응답 수</div></div>
-    <div class="lmp-counter-rows" style="margin-top:12px;">
-      <div><div style="font-size:20px;font-weight:800;">${fmt(avg)}</div><div class="lmp-counter-item">평균</div></div>
-      <div><div style="font-size:20px;font-weight:800;">${tot}</div><div class="lmp-counter-item">합계</div></div>
-      <div><div style="font-size:20px;font-weight:800;">${mx}</div><div class="lmp-counter-item">최대</div></div>
-      <div><div style="font-size:20px;font-weight:800;">${mn}</div><div class="lmp-counter-item">최소</div></div>
-    </div>`;
+  const median=[...nums].sort((a,b)=>a-b)[Math.floor(n/2)];
+  const fmt=v=>v%1===0?String(v):v.toFixed(2);
+  const show=(opts&&opts.showStats)||['count','avg','sum','max','min'];
+  const items=[
+    {k:'count',label:'응답 수',val:n},
+    {k:'avg',label:'평균',val:fmt(avg)},
+    {k:'sum',label:'합계',val:fmt(tot)},
+    {k:'max',label:'최대',val:fmt(mx)},
+    {k:'min',label:'최소',val:fmt(mn)},
+    {k:'median',label:'중앙값',val:fmt(median)},
+  ].filter(it=>show.includes(it.k));
+  const color=_chartPalette(opts&&opts.colorScheme)[0];
+  return `<div class="lmp-counter-rows" style="flex-wrap:wrap;gap:12px;">
+    ${items.map(it=>`<div style="min-width:60px;text-align:center;"><div style="font-size:22px;font-weight:800;color:${color};">${it.val}</div><div class="lmp-counter-item">${it.label}</div></div>`).join('')}
+  </div>`;
 }
-function _buildTextListHtml(texts){
-  const items=texts.filter(t=>t&&String(t).trim()).slice(0,15);
+function _buildTextListHtml(texts,opts){
+  const limit=(opts&&opts.textLimit)||20;
+  const items=texts.filter(t=>t&&String(t).trim()).slice(0,limit);
   if(!items.length) return '<div style="font-size:12px;color:rgba(0,0,0,.4);padding:8px 0;">아직 응답이 없어요.</div>';
   return items.map(t=>`<div class="lmp-txt-item">${esc(String(t))}</div>`).join('');
+}
+function _buildTableHtml(allDocs,fieldKey,fieldLabel,opts){
+  const limit=(opts&&opts.limit)||50;
+  const rows=allDocs.filter(r=>r[fieldKey]!==undefined&&r[fieldKey]!==null&&r[fieldKey]!=='').slice(0,limit);
+  if(!rows.length) return '<div style="font-size:12px;color:rgba(0,0,0,.4);padding:8px 0;">아직 응답이 없어요.</div>';
+  return `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead><tr><th style="text-align:left;padding:5px 8px;border-bottom:1px solid rgba(0,0,0,.12);color:rgba(0,0,0,.5);">번호</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid rgba(0,0,0,.12);color:rgba(0,0,0,.5);">${esc(fieldLabel)}</th><th style="text-align:left;padding:5px 8px;border-bottom:1px solid rgba(0,0,0,.12);color:rgba(0,0,0,.5);">제출 시각</th></tr></thead>
+    <tbody>${rows.map((r,i)=>{
+      const val=Array.isArray(r[fieldKey])?r[fieldKey].join(', '):String(r[fieldKey]);
+      const ts=r.submittedAt?.toDate?.();
+      const timeStr=ts?`${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')} ${String(ts.getHours()).padStart(2,'0')}:${String(ts.getMinutes()).padStart(2,'0')}`:'';
+      return `<tr style="border-bottom:1px solid rgba(0,0,0,.06);"><td style="padding:5px 8px;color:rgba(0,0,0,.4);">${i+1}</td><td style="padding:5px 8px;">${esc(val)}</td><td style="padding:5px 8px;color:rgba(0,0,0,.4);white-space:nowrap;">${timeStr}</td></tr>`;
+    }).join('')}</tbody>
+  </table>${rows.length>=limit?`<div style="font-size:11px;color:rgba(0,0,0,.35);padding:6px 8px;">최근 ${limit}개만 표시</div>`:''}</div>`;
+}
+function _buildHistogramHtml(values,opts){
+  const nums=values.filter(v=>v!==null&&v!==''&&!isNaN(Number(v))).map(Number);
+  if(!nums.length) return '<div style="font-size:12px;color:rgba(0,0,0,.4);padding:8px 0;">아직 응답이 없어요.</div>';
+  const bins=(opts&&opts.bins)||8;
+  const mn=Math.min(...nums),mx=Math.max(...nums);
+  if(mn===mx){
+    return _buildBarHtml([{label:String(mn),count:nums.length}],nums.length,opts);
+  }
+  const step=(mx-mn)/bins;
+  const buckets=Array.from({length:bins},(_,i)=>{
+    const lo=mn+i*step,hi=mn+(i+1)*step;
+    const count=nums.filter(v=>i===bins-1?(v>=lo&&v<=hi):(v>=lo&&v<hi)).length;
+    const loF=lo%1===0?lo:parseFloat(lo.toFixed(1));
+    const hiF=hi%1===0?hi:parseFloat(hi.toFixed(1));
+    return {label:`${loF}~${hiF}`,count};
+  });
+  const total=nums.length;
+  return _buildBarHtml(buckets,total,{...opts,sortBy:'label-asc'});
+}
+function _buildTimelineHtml(allDocs,fieldKey,opts){
+  const groupBy=(opts&&opts.groupBy)||'day';
+  const color=_chartPalette(opts&&opts.colorScheme)[0];
+  const groups={};
+  allDocs.forEach(r=>{
+    const ts=r.submittedAt?.toDate?.();
+    if(!ts) return;
+    let key;
+    if(groupBy==='hour') key=`${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')} ${String(ts.getHours()).padStart(2,'0')}시`;
+    else if(groupBy==='week'){
+      const d=new Date(ts);d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());
+      key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} 주`;
+    } else {
+      key=`${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')}`;
+    }
+    groups[key]=(groups[key]||0)+1;
+  });
+  const entries=Object.entries(groups).sort((a,b)=>a[0].localeCompare(b[0]));
+  if(!entries.length) return '<div style="font-size:12px;color:rgba(0,0,0,.4);padding:8px 0;">아직 응답이 없어요.</div>';
+  const maxC=Math.max(...entries.map(e=>e[1]),1);
+  return entries.map(([label,count])=>{
+    const barW=Math.round(count/maxC*100);
+    return `<div class="lmp-bar-row">
+      <div class="lmp-bar-meta"><span>${esc(label)}</span><span>${count}건</span></div>
+      <div class="lmp-bar-track"><div class="lmp-bar-fill" style="width:${barW}%;background:${color};"></div></div>
+    </div>`;
+  }).join('');
 }
 async function renderCharts(container){
   if(!formConfig) return;
@@ -920,6 +1018,7 @@ async function renderCharts(container){
   const total=allDocs.length;
   const fieldsMap={};
   (formConfig.fields||[]).forEach(f=>{fieldsMap[f.key||f.id]=f;});
+  const colorScheme=formConfig.chartColorScheme||'black';
   let html='';
   if(!total){
     html='<div style="font-size:13px;color:rgba(0,0,0,.4);text-align:center;padding:20px 0;">아직 제출된 응답이 없어요.</div>';
@@ -929,17 +1028,30 @@ async function renderCharts(container){
       if(!f) return;
       const ttl=cfg.title||f.label||cfg.fieldKey;
       const vals=allDocs.map(r=>r[cfg.fieldKey]).filter(v=>v!==undefined&&v!==null&&v!=='');
+      const opts={colorScheme,sortBy:cfg.sortBy,limit:cfg.limit,yAxis:cfg.yAxis,textLimit:cfg.textLimit,bins:cfg.bins,groupBy:cfg.groupBy,showStats:cfg.showStats};
       let chartHtml='';
-      if(cfg.chartType==='bar'||cfg.chartType==='donut'){
+      if(cfg.chartType==='bar'){
         const counts={};
         vals.forEach(v=>{const arr=Array.isArray(v)?v:[v];arr.forEach(item=>{counts[String(item)]=(counts[String(item)]||0)+1;});});
-        const data=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([label,count])=>({label,count}));
+        const data=Object.entries(counts).map(([label,count])=>({label,count}));
         const tot=data.reduce((s,d)=>s+d.count,0);
-        chartHtml=cfg.chartType==='bar'?_buildBarHtml(data,tot):_buildDonutHtml(data,tot);
+        chartHtml=_buildBarHtml(data,tot,opts);
+      } else if(cfg.chartType==='donut'){
+        const counts={};
+        vals.forEach(v=>{const arr=Array.isArray(v)?v:[v];arr.forEach(item=>{counts[String(item)]=(counts[String(item)]||0)+1;});});
+        const data=Object.entries(counts).map(([label,count])=>({label,count}));
+        const tot=data.reduce((s,d)=>s+d.count,0);
+        chartHtml=_buildDonutHtml(data,tot,opts);
       } else if(cfg.chartType==='counter'){
-        chartHtml=_buildCounterHtml(vals);
+        chartHtml=_buildCounterHtml(vals,opts);
       } else if(cfg.chartType==='text-list'){
-        chartHtml=_buildTextListHtml(vals);
+        chartHtml=_buildTextListHtml(vals,opts);
+      } else if(cfg.chartType==='table'){
+        chartHtml=_buildTableHtml(allDocs,cfg.fieldKey,f.label||cfg.fieldKey,opts);
+      } else if(cfg.chartType==='histogram'){
+        chartHtml=_buildHistogramHtml(vals,opts);
+      } else if(cfg.chartType==='timeline'){
+        chartHtml=_buildTimelineHtml(allDocs,cfg.fieldKey,opts);
       }
       html+=`<div class="lmp-chart-wrap"><div class="lmp-chart-ttl">${esc(ttl)}</div>${chartHtml}</div>`;
     });
