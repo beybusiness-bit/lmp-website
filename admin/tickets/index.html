@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>티켓 관리 — lmp</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f4f4f4;color:#000;min-height:100vh;}
+
+/* ── Login ── */
+#login-view{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.login-card{width:100%;max-width:360px;background:#fff;border:2px solid #000;padding:48px 32px 40px;}
+.login-logo{font-size:22px;font-weight:900;letter-spacing:-.5px;margin-bottom:6px;}
+.login-sub{font-size:13px;color:rgba(0,0,0,.45);margin-bottom:40px;}
+.google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px 0;background:#fff;border:2px solid #000;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s,color .15s;}
+.google-btn:hover{background:#000;color:#fff;}
+.login-err{font-size:12px;color:#c00;margin-top:12px;min-height:16px;text-align:center;}
+
+/* ── App ── */
+#app-view{display:none;min-height:100vh;flex-direction:column;}
+#app-view.on{display:flex;}
+.admin-header{background:#000;color:#fff;padding:13px 20px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.hdr-back{background:transparent;border:none;color:#fff;font-size:22px;font-weight:900;cursor:pointer;padding:0 4px 0 0;line-height:1;}
+.admin-title{font-size:16px;font-weight:900;flex:1;}
+.admin-user{font-size:11px;color:rgba(255,255,255,.55);}
+.hdr-btn{background:transparent;border:1.5px solid rgba(255,255,255,.4);color:#fff;font-size:11px;font-weight:700;padding:5px 9px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+
+/* ── Type tabs ── */
+.type-tab-bar{background:#fff;border-bottom:2px solid #000;display:flex;align-items:stretch;overflow-x:auto;flex-shrink:0;}
+.type-tab{padding:11px 16px;background:transparent;border:none;border-bottom:3px solid transparent;font-size:13px;font-weight:700;color:rgba(0,0,0,.35);cursor:pointer;font-family:inherit;white-space:nowrap;margin-bottom:-2px;}
+.type-tab.on{color:#000;border-bottom-color:#000;}
+.add-type-btn{padding:11px 14px;background:transparent;border:none;font-size:13px;font-weight:700;color:rgba(0,0,0,.5);cursor:pointer;font-family:inherit;white-space:nowrap;margin-left:auto;}
+.add-type-btn:hover{color:#000;}
+
+/* ── Body ── */
+.app-body{flex:1;overflow-y:auto;}
+.panel{max-width:640px;margin:0 auto;padding:20px 16px 100px;}
+
+/* ── Register box ── */
+.reg-box{background:#fff;border:2px solid #000;padding:16px;margin-bottom:20px;}
+.reg-box-title{font-size:12px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:12px;}
+.reg-row{display:flex;gap:8px;align-items:flex-end;}
+.fi{width:100%;background:transparent;border:none;border-bottom:2px solid #000;font-size:15px;font-weight:600;color:#000;padding:8px 0;outline:none;font-family:inherit;}
+.fi::placeholder{color:rgba(0,0,0,.28);font-weight:400;}
+.fi-sm{width:100%;background:#fff;border:1.5px solid rgba(0,0,0,.25);font-size:13px;color:#000;padding:7px 10px;outline:none;font-family:inherit;}
+.fi-sm:focus{border-color:#000;}
+.reg-btn{padding:9px 16px;background:#000;border:2px solid #000;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;}
+.reg-btn:disabled{opacity:.4;cursor:not-allowed;}
+.reg-err{font-size:12px;color:#c00;margin-top:6px;min-height:16px;}
+
+/* ── Search bar ── */
+.search-bar{display:flex;gap:8px;margin-bottom:16px;}
+.search-inp{flex:1;}
+.search-clear{padding:9px 12px;background:transparent;border:2px solid rgba(0,0,0,.3);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.5);}
+
+/* ── Ticket list ── */
+.tk-count{font-size:12px;color:rgba(0,0,0,.45);margin-bottom:10px;}
+.tk-table{width:100%;border-collapse:collapse;}
+.tk-table th{font-size:11px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.3px;text-align:left;padding:6px 8px;border-bottom:2px solid #000;white-space:nowrap;}
+.tk-table td{font-size:13px;padding:10px 8px;border-bottom:1px solid rgba(0,0,0,.1);vertical-align:middle;}
+.tk-table tr:hover td{background:rgba(0,0,0,.03);}
+.tk-code{font-weight:700;font-size:14px;letter-spacing:.5px;}
+.status-badge{display:inline-block;padding:2px 7px;font-size:11px;font-weight:700;border:1.5px solid;border-radius:2px;}
+.status-active{color:#008000;border-color:#008000;background:rgba(0,128,0,.06);}
+.status-used{color:rgba(0,0,0,.4);border-color:rgba(0,0,0,.25);background:rgba(0,0,0,.03);}
+.status-cancelled{color:#c00;border-color:#c00;background:rgba(204,0,0,.05);text-decoration:line-through;}
+.cancel-btn{padding:4px 10px;background:transparent;border:1.5px solid rgba(0,0,0,.3);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.5);}
+.cancel-btn:hover{border-color:#c00;color:#c00;}
+.empty-msg{padding:32px 0;text-align:center;color:rgba(0,0,0,.35);font-size:13px;}
+.loading-msg{padding:32px 0;text-align:center;color:rgba(0,0,0,.35);font-size:13px;}
+
+/* ── Type modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;display:flex;align-items:center;justify-content:center;padding:24px;}
+.modal-box{background:#fff;border:2px solid #000;width:100%;max-width:380px;padding:28px 24px 24px;}
+.modal-title{font-size:16px;font-weight:900;margin-bottom:20px;}
+.modal-btns{display:flex;gap:8px;margin-top:20px;}
+.save-btn{padding:10px 20px;background:#000;border:2px solid #000;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.cancel-btn2{padding:10px 16px;background:transparent;border:2px solid #000;color:#000;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.ed-lbl{font-size:11px;font-weight:800;color:rgba(0,0,0,.45);letter-spacing:.5px;margin-bottom:6px;margin-top:14px;}
+
+/* ── No type placeholder ── */
+.no-type-wrap{padding:60px 16px;text-align:center;}
+.no-type-msg{font-size:15px;font-weight:700;margin-bottom:8px;}
+.no-type-sub{font-size:13px;color:rgba(0,0,0,.45);margin-bottom:24px;}
+.no-type-btn{padding:12px 24px;background:#000;border:2px solid #000;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-view">
+  <div class="login-card">
+    <div class="login-logo">🎫 티켓 관리</div>
+    <div class="login-sub">관리자 전용 — Google 로그인 필요</div>
+    <button class="google-btn" onclick="signIn()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z"/><path fill="#34A853" d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2.04a4.8 4.8 0 0 1-7.18-2.54H1.83v2.07A8 8 0 0 0 8.98 17z"/><path fill="#FBBC05" d="M4.5 10.52a4.8 4.8 0 0 1 0-3.04V5.41H1.83a8 8 0 0 0 0 7.18l2.67-2.07z"/><path fill="#EA4335" d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 0 0 1.83 5.4L4.5 7.49a4.77 4.77 0 0 1 4.48-3.3z"/></svg>
+      Google로 로그인
+    </button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app-view">
+  <div class="admin-header">
+    <button class="hdr-back" onclick="location.href='/admin/'" title="관리자 홈">‹</button>
+    <div class="admin-title">🎫 티켓 관리</div>
+    <div class="admin-user" id="user-email"></div>
+    <button class="hdr-btn" onclick="doSignOut()">로그아웃</button>
+  </div>
+
+  <!-- Type tabs -->
+  <div class="type-tab-bar" id="type-tab-bar">
+    <button class="add-type-btn" onclick="openTypeModal()">+ 유형 추가</button>
+  </div>
+
+  <div class="app-body">
+    <!-- No types placeholder -->
+    <div id="no-type-view" class="no-type-wrap" style="display:none;">
+      <div class="no-type-msg">티켓 유형이 없어요</div>
+      <div class="no-type-sub">유형을 먼저 추가하면 티켓을 등록할 수 있어요</div>
+      <button class="no-type-btn" onclick="openTypeModal()">+ 첫 번째 유형 추가</button>
+    </div>
+
+    <!-- Ticket panel (shown when a type is selected) -->
+    <div id="ticket-panel" class="panel" style="display:none;">
+
+      <!-- Register -->
+      <div class="reg-box">
+        <div class="reg-box-title">티켓 등록</div>
+        <div class="reg-row">
+          <div style="flex:1.4;">
+            <div class="ed-lbl" style="margin-top:0;">전화번호</div>
+            <input class="fi" id="reg-code" type="tel" placeholder="01012345678" maxlength="11" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+          </div>
+          <div style="flex:1;">
+            <div class="ed-lbl" style="margin-top:0;">메모 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
+            <input class="fi" id="reg-memo" type="text" placeholder="홍길동">
+          </div>
+          <button class="reg-btn" id="reg-btn" onclick="registerTicket()">등록</button>
+        </div>
+        <div class="reg-err" id="reg-err"></div>
+      </div>
+
+      <!-- Search -->
+      <div class="search-bar">
+        <input class="fi-sm search-inp" id="search-inp" type="tel" placeholder="번호로 검색 (01012345678)" maxlength="11"
+               oninput="this.value=this.value.replace(/[^0-9]/g,'');onSearchInput()"
+               onkeydown="if(event.key==='Escape'){clearSearch();}">
+        <button class="search-clear" id="search-clear-btn" onclick="clearSearch()" style="display:none;">✕</button>
+      </div>
+
+      <!-- List -->
+      <div class="tk-count" id="tk-count"></div>
+      <div id="ticket-list-wrap">
+        <div class="loading-msg">로딩 중…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Type modal -->
+<div class="modal-overlay" id="type-modal" style="display:none;" onclick="if(event.target===this)closeTypeModal()">
+  <div class="modal-box">
+    <div class="modal-title" id="type-modal-title">유형 추가</div>
+    <div class="ed-lbl" style="margin-top:0;">유형 이름</div>
+    <input class="fi" id="type-name-inp" placeholder="예: 행사 입장권">
+    <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
+    <input class="fi-sm" id="type-desc-inp" placeholder="간단한 설명">
+    <div class="modal-btns">
+      <button class="save-btn" onclick="saveType()">저장</button>
+      <button class="cancel-btn2" onclick="closeTypeModal()">취소</button>
+      <button class="cancel-btn2" id="type-delete-btn" style="margin-left:auto;border-color:#c00;color:#c00;display:none;" onclick="deleteType()">삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
+  authDomain:"beyhome-admin.firebaseapp.com",
+  projectId:"beyhome-admin",
+  storageBucket:"beyhome-admin.firebasestorage.app",
+  messagingSenderId:"849320781553",
+  appId:"1:849320781553:web:9d844044e85995c0aa2b50"
+});
+const db   = firebase.firestore();
+const auth = firebase.auth();
+const ALLOWED = ['baekeun0@gmail.com','itsbeybusiness@gmail.com'];
+
+/* ── Auth ── */
+auth.onAuthStateChanged(user => {
+  if (user && ALLOWED.includes(user.email)) {
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('user-email').textContent = user.email;
+    document.getElementById('app-view').classList.add('on');
+    loadTypes();
+  } else {
+    if (user) auth.signOut();
+    document.getElementById('login-view').style.display = '';
+    document.getElementById('app-view').classList.remove('on');
+  }
+});
+function signIn() {
+  document.getElementById('login-err').textContent = '';
+  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => {
+    document.getElementById('login-err').textContent = '로그인 실패: ' + e.message;
+  });
+}
+function doSignOut() { auth.signOut(); }
+
+/* ── State ── */
+let types = [];          // [{id, name, desc}]
+let curTypeId = null;
+let allTickets = [];     // current type's tickets (from onSnapshot)
+let ticketUnsub = null;  // Firestore listener unsubscribe
+let editingTypeId = null;
+let searchVal = '';
+
+/* ── Ticket Types ── */
+async function loadTypes() {
+  try {
+    const snap = await db.collection('ticket_types').orderBy('createdAt','asc').get();
+    types = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderTypeTabs();
+    if (types.length > 0) {
+      selectType(types[0].id);
+    } else {
+      document.getElementById('no-type-view').style.display = '';
+      document.getElementById('ticket-panel').style.display = 'none';
+    }
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function renderTypeTabs() {
+  const bar = document.getElementById('type-tab-bar');
+  bar.innerHTML = '';
+  types.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'type-tab' + (t.id === curTypeId ? ' on' : '');
+    btn.textContent = t.name;
+    btn.onclick = () => selectType(t.id);
+    btn.ondblclick = () => openTypeModal(t.id);
+    bar.appendChild(btn);
+  });
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-type-btn';
+  addBtn.textContent = '+ 유형 추가';
+  addBtn.onclick = () => openTypeModal();
+  bar.appendChild(addBtn);
+}
+
+function selectType(typeId) {
+  curTypeId = typeId;
+  searchVal = '';
+  document.getElementById('search-inp').value = '';
+  document.getElementById('search-clear-btn').style.display = 'none';
+  renderTypeTabs();
+  document.getElementById('no-type-view').style.display = 'none';
+  document.getElementById('ticket-panel').style.display = '';
+  document.getElementById('ticket-list-wrap').innerHTML = '<div class="loading-msg">로딩 중…</div>';
+  subscribeTickets(typeId);
+}
+
+/* ── Ticket Type Modal ── */
+function openTypeModal(typeId = null) {
+  editingTypeId = typeId;
+  const t = typeId ? types.find(x => x.id === typeId) : null;
+  document.getElementById('type-modal-title').textContent = typeId ? '유형 수정' : '유형 추가';
+  document.getElementById('type-name-inp').value = t?.name || '';
+  document.getElementById('type-desc-inp').value = t?.desc || '';
+  document.getElementById('type-delete-btn').style.display = typeId ? '' : 'none';
+  document.getElementById('type-modal').style.display = '';
+  setTimeout(() => document.getElementById('type-name-inp').focus(), 50);
+}
+function closeTypeModal() {
+  document.getElementById('type-modal').style.display = 'none';
+  editingTypeId = null;
+}
+async function saveType() {
+  const name = document.getElementById('type-name-inp').value.trim();
+  if (!name) { alert('유형 이름을 입력해주세요.'); return; }
+  const desc = document.getElementById('type-desc-inp').value.trim();
+  try {
+    if (editingTypeId) {
+      await db.collection('ticket_types').doc(editingTypeId).update({ name, desc });
+    } else {
+      await db.collection('ticket_types').add({ name, desc, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    }
+    closeTypeModal();
+    await loadTypes();
+    if (!editingTypeId) selectType(types[types.length - 1].id);
+  } catch(e) {
+    alert('저장 실패: ' + e.message);
+  }
+}
+async function deleteType() {
+  if (!editingTypeId) return;
+  const t = types.find(x => x.id === editingTypeId);
+  if (!confirm(`"${t?.name}" 유형을 삭제할까요?\n이 유형의 티켓 데이터는 삭제되지 않습니다.`)) return;
+  try {
+    await db.collection('ticket_types').doc(editingTypeId).delete();
+    closeTypeModal();
+    curTypeId = null;
+    await loadTypes();
+  } catch(e) {
+    alert('삭제 실패: ' + e.message);
+  }
+}
+
+/* ── Tickets ── */
+function subscribeTickets(typeId) {
+  if (ticketUnsub) { ticketUnsub(); ticketUnsub = null; }
+  ticketUnsub = db.collection('tickets')
+    .where('typeId', '==', typeId)
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snap => {
+      allTickets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderTicketList();
+    }, e => {
+      console.error(e);
+      document.getElementById('ticket-list-wrap').innerHTML =
+        '<div class="empty-msg">불러오기 실패: ' + e.message + '</div>';
+    });
+}
+
+function renderTicketList() {
+  const filtered = searchVal
+    ? allTickets.filter(t => t.code.includes(searchVal))
+    : allTickets;
+
+  const countEl = document.getElementById('tk-count');
+  const active = allTickets.filter(t => t.status === 'active').length;
+  const used   = allTickets.filter(t => t.status === 'used').length;
+  countEl.textContent = `전체 ${allTickets.length}건 · 활성 ${active} · 사용됨 ${used}`;
+
+  if (filtered.length === 0) {
+    document.getElementById('ticket-list-wrap').innerHTML =
+      `<div class="empty-msg">${searchVal ? '검색 결과가 없어요.' : '등록된 티켓이 없어요.'}</div>`;
+    return;
+  }
+
+  const rows = filtered.map(t => {
+    const statusMap = { active:'활성', used:'사용됨', cancelled:'취소됨' };
+    const cls = { active:'status-active', used:'status-used', cancelled:'status-cancelled' };
+    const createdAt = t.createdAt?.toDate ? t.createdAt.toDate().toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '-';
+    const usedAt = t.usedAt?.toDate ? t.usedAt.toDate().toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+    const cancelBtn = t.status === 'active'
+      ? `<button class="cancel-btn" onclick="cancelTicket('${t.id}','${t.code}')">취소</button>`
+      : '';
+    return `<tr>
+      <td class="tk-code">${fmtPhone(t.code)}</td>
+      <td><span class="status-badge ${cls[t.status]||''}">${statusMap[t.status]||t.status}</span></td>
+      <td style="color:rgba(0,0,0,.55);font-size:12px;">${t.memo||''}</td>
+      <td style="color:rgba(0,0,0,.4);font-size:11px;white-space:nowrap;">${usedAt||createdAt}</td>
+      <td>${cancelBtn}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('ticket-list-wrap').innerHTML = `
+    <table class="tk-table">
+      <thead><tr>
+        <th>전화번호</th><th>상태</th><th>메모</th><th>일시</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function fmtPhone(s) {
+  if (!s) return s;
+  if (s.length === 11) return s.slice(0,3)+'-'+s.slice(3,7)+'-'+s.slice(7);
+  if (s.length === 10) return s.slice(0,3)+'-'+s.slice(3,6)+'-'+s.slice(6);
+  return s;
+}
+
+async function registerTicket() {
+  const code = document.getElementById('reg-code').value.trim();
+  const memo = document.getElementById('reg-memo').value.trim();
+  const errEl = document.getElementById('reg-err');
+  errEl.textContent = '';
+
+  if (!curTypeId) { errEl.textContent = '유형을 먼저 선택해주세요.'; return; }
+  if (!/^01[0-9]{9}$/.test(code)) { errEl.textContent = '올바른 11자리 번호를 입력해주세요.'; return; }
+
+  // 중복 체크
+  const btn = document.getElementById('reg-btn');
+  btn.disabled = true;
+  try {
+    const dup = await db.collection('tickets')
+      .where('typeId', '==', curTypeId)
+      .where('code', '==', code)
+      .where('status', '==', 'active')
+      .get();
+    if (!dup.empty) {
+      errEl.textContent = '이미 활성 상태의 티켓이 존재해요.';
+      btn.disabled = false;
+      return;
+    }
+    await db.collection('tickets').add({
+      typeId: curTypeId,
+      code,
+      status: 'active',
+      memo: memo || '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      usedAt: null,
+      sessionId: null,
+    });
+    document.getElementById('reg-code').value = '';
+    document.getElementById('reg-memo').value = '';
+    document.getElementById('reg-code').focus();
+  } catch(e) {
+    errEl.textContent = '등록 실패: ' + e.message;
+  }
+  btn.disabled = false;
+}
+
+async function cancelTicket(docId, code) {
+  if (!confirm(`${fmtPhone(code)} 티켓을 취소할까요?`)) return;
+  try {
+    await db.collection('tickets').doc(docId).update({ status: 'cancelled' });
+  } catch(e) {
+    alert('취소 실패: ' + e.message);
+  }
+}
+
+/* ── Search ── */
+function onSearchInput() {
+  searchVal = document.getElementById('search-inp').value.trim();
+  document.getElementById('search-clear-btn').style.display = searchVal ? '' : 'none';
+  renderTicketList();
+}
+function clearSearch() {
+  searchVal = '';
+  document.getElementById('search-inp').value = '';
+  document.getElementById('search-clear-btn').style.display = 'none';
+  renderTicketList();
+}
+
+/* ── Keyboard ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.activeElement?.id === 'reg-code') {
+    document.getElementById('reg-memo').focus();
+  } else if (e.key === 'Enter' && document.activeElement?.id === 'reg-memo') {
+    registerTicket();
+  }
+});
+</script>
+</body>
+</html>
