@@ -320,9 +320,9 @@ function subscribeTickets(typeId) {
   if (ticketUnsub) { ticketUnsub(); ticketUnsub = null; }
   ticketUnsub = db.collection('tickets')
     .where('typeId', '==', typeId)
-    .orderBy('createdAt', 'desc')
     .onSnapshot(snap => {
-      allTickets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      allTickets = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       renderTicketList();
     }, e => {
       console.error(e);
