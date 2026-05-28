@@ -1340,6 +1340,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <span class="switch-lbl">응답 수정 허용 <span style="font-weight:400;opacity:.55;">(제출자가 이전 내역 확인·수정 가능)</span></span>
               </div>
             </div>
+            <!-- 결과 시각화 -->
+            <div class="sect-head" style="margin-top:20px;margin-bottom:8px;">📊 결과 시각화</div>
+            <div class="ed-sect">
+              <div class="switch-row" style="margin-bottom:10px;">
+                <div class="switch" id="tf-show-results-sw" onclick="this.classList.toggle('on');document.getElementById('tf-chart-config-wrap').style.display=this.classList.contains('on')?'':'none';"></div>
+                <span class="switch-lbl">결과 공개 <span style="font-weight:400;opacity:.55;">(제출 후 전체 응답 통계 표시)</span></span>
+              </div>
+              <div id="tf-chart-config-wrap" style="display:none;">
+                <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:10px;line-height:1.5;">선택형·숫자·텍스트 필드를 차트로 보여줄 수 있어요. 켜진 항목만 사용자 화면에 표시됩니다.</div>
+                <div id="tf-chart-list"></div>
+                <div style="margin-top:8px;font-size:11px;color:rgba(0,0,0,.4);">💡 블록 도구에서 URL 뒤에 <code>?mode=chart</code>를 추가하면 폼 없이 결과만 표시할 수 있어요.</div>
+              </div>
+            </div>
             <div class="sect-head" style="margin-top:24px;margin-bottom:8px;">응답 관리</div>
             <!-- 구글 시트 연동 (인라인) -->
             <div class="ed-sect" style="margin-bottom:0;">
@@ -9748,6 +9761,9 @@ async function toolFormEdit(docId){
     document.getElementById('tf-no-resubmit-sw').classList.toggle('on',!!d.noResubmit);
     document.getElementById('tf-allow-edit-sw').classList.toggle('on',!!d.allowEdit);
     tfRespFormConfig={sheetId:d.sheetId||'',sheetTab:d.sheetTab||'응답',sheetUrl:d.sheetUrl||''};
+    tfChartConfigs=d.chartConfigs||[];
+    document.getElementById('tf-show-results-sw').classList.toggle('on',!!d.showResults);
+    document.getElementById('tf-chart-config-wrap').style.display=d.showResults?'':'none';
     renderTfFieldList();
     loadTfInlineResponses();
   }catch(e){alert('로드 실패: '+e.message);}
@@ -9757,7 +9773,7 @@ function renderTfFieldList(){
   const el=document.getElementById('tf-field-list');
   if(!el) return;
   const typeLabel={string:'짧은텍스트',textarea:'긴텍스트',number:'숫자',select:'선택',color:'색상',file:'파일'};
-  if(!tfFields.length){el.innerHTML=_tfInsertRow(0)+'<div class="empty-msg" style="padding:6px 0;">필드가 없어요.</div>';return;}
+  if(!tfFields.length){el.innerHTML=_tfInsertRow(0)+'<div class="empty-msg" style="padding:6px 0;">필드가 없어요.</div>';renderTfChartConfigList(tfChartConfigs);return;}
   const items=tfFields.map((f,i)=>{
     const tl=f.type==='select'?(f.selectMode==='buttons'?'버튼선택':'드롭다운'):(typeLabel[f.type]||f.type);
     return `<div class="field-item">
@@ -9775,6 +9791,8 @@ function renderTfFieldList(){
     </div>`;
   });
   el.innerHTML=_tfInsertRow(0)+items.map((h,i)=>h+_tfInsertRow(i+1)).join('');
+  const _savedCfg=_buildTfChartConfigs();if(_savedCfg.length)tfChartConfigs=_savedCfg;
+  renderTfChartConfigList(tfChartConfigs);
 }
 function mvTfField(i,d){const j=i+d;if(j<0||j>=tfFields.length)return;[tfFields[i],tfFields[j]]=[tfFields[j],tfFields[i]];renderTfFieldList();}
 function rmTfField(i){if(!confirm('이 필드를 삭제할까요?'))return;tfFields.splice(i,1);renderTfFieldList();}
@@ -9783,6 +9801,54 @@ function toolFormOpenFieldModal(idx, insertAt){
   formFieldCtx='tool';
   curFormFields=tfFields;
   openFormFieldModal(idx, insertAt);
+}
+const _TF_CHART_TYPES={
+  string:[{v:'text-list',l:'응답 목록'}],
+  text:[{v:'text-list',l:'응답 목록'}],
+  textarea:[{v:'text-list',l:'응답 목록'}],
+  number:[{v:'counter',l:'통계 수치'},{v:'bar',l:'막대 그래프'}],
+  select:[{v:'bar',l:'막대 그래프'},{v:'donut',l:'도넛 차트'}],
+};
+function renderTfChartConfigList(existingConfigs){
+  const el=document.getElementById('tf-chart-list');
+  if(!el) return;
+  const chartable=tfFields.filter(f=>_TF_CHART_TYPES[f.type]);
+  if(!chartable.length){
+    el.innerHTML='<div style="font-size:12px;color:rgba(0,0,0,.45);padding:4px 0;">선택형·텍스트·숫자 필드를 추가하면 차트 설정이 표시돼요.</div>';
+    return;
+  }
+  const cfgMap={};
+  (existingConfigs||[]).forEach(c=>{cfgMap[c.fieldKey]=c;});
+  el.innerHTML=chartable.map((f,i)=>{
+    const fkey=f.key||f.id;
+    const cfg=cfgMap[fkey]||{};
+    const types=_TF_CHART_TYPES[f.type]||[];
+    const sel=cfg.chartType||types[0]?.v||'bar';
+    const enabled=cfg.enabled!==false;
+    const title=(cfg.title||'').replace(/"/g,'&quot;');
+    const opts=types.map(t=>`<option value="${t.v}"${sel===t.v?' selected':''}>${t.l}</option>`).join('');
+    return `<div class="chart-cfg-row" data-fieldkey="${fkey}" style="padding:8px 0;${i>0?'border-top:1px solid rgba(0,0,0,.08);':''}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+        <div class="switch${enabled?' on':''}" style="flex-shrink:0;" onclick="this.classList.toggle('on');" data-chart-sw></div>
+        <span style="font-size:12px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${f.label}">${f.label}</span>
+        <select style="padding:4px 6px;border:1.5px solid rgba(0,0,0,.2);font-size:11px;font-family:inherit;border-radius:0;background:#fff;" data-chart-type>${opts}</select>
+      </div>
+      <input placeholder="차트 제목 (빈칸이면 필드명으로 표시)" value="${title}"
+             style="width:100%;padding:5px 8px;border:1.5px solid rgba(0,0,0,.15);font-size:11px;font-family:inherit;box-sizing:border-box;" data-chart-title>
+    </div>`;
+  }).join('');
+}
+function _buildTfChartConfigs(){
+  const rows=document.querySelectorAll('#tf-chart-list .chart-cfg-row');
+  const result=[];
+  rows.forEach((row,i)=>{
+    const fkey=row.dataset.fieldkey;
+    const sw=row.querySelector('[data-chart-sw]');
+    const typeSel=row.querySelector('[data-chart-type]');
+    const titleInp=row.querySelector('[data-chart-title]');
+    result.push({id:fkey,fieldKey:fkey,chartType:typeSel?.value||'bar',title:titleInp?.value.trim()||'',order:i,enabled:sw?.classList.contains('on')||false});
+  });
+  return result;
 }
 async function toolFormSave(e=null){
   if(!tfCurDocId) return;
@@ -9795,14 +9861,18 @@ async function toolFormSave(e=null){
   const allowEdit=document.getElementById('tf-allow-edit-sw')?.classList.contains('on')||false;
   if(!title){alert('폼 이름을 입력해주세요.');return;}
   try{
+    const showResults=document.getElementById('tf-show-results-sw')?.classList.contains('on')||false;
+    const chartConfigs=_buildTfChartConfigs();
     await db.collection('cms_form_configs').doc(tfCurDocId).update({
       title,desc,fields:tfFields,submitBtnText,submitMsg,noResubmit,allowEdit,
+      showResults,chartConfigs,
       sheetId:tfRespFormConfig.sheetId||'',
       sheetTab:tfRespFormConfig.sheetTab||'응답',
       sheetUrl:tfRespFormConfig.sheetUrl||'',
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     tfRespFields=tfFields;
+    tfChartConfigs=chartConfigs;
     _btnFlash(_btn,'저장됨 ✓');
   }catch(e){alert('저장 실패: '+e.message);}
 }
@@ -9816,6 +9886,7 @@ function toolFormEditResponses(docId){
 
 /* ── 폼 편집 화면 인라인 응답 관리 ── */
 let tfRespData=[], tfRespFormConfig={}, tfRespFields=[];
+let tfChartConfigs=[];
 
 async function loadTfInlineResponses(){
   if(!tfCurDocId) return;

@@ -94,6 +94,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .cal-day.cal-sat{color:#00c;}
 .cal-info{padding:8px 12px;font-size:12px;text-align:center;border-top:1px solid rgba(0,0,0,.08);min-height:34px;display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.55);}
 
+/* 결과 시각화 */
+#chart-screen{padding:4px 0 24px;}
+.lmp-results-hd{font-size:16px;font-weight:800;margin-bottom:6px;letter-spacing:-.3px;}
+.lmp-results-sub{font-size:12px;color:rgba(0,0,0,.45);margin-bottom:20px;}
+.lmp-chart-wrap{margin-bottom:28px;}
+.lmp-chart-ttl{font-size:13px;font-weight:800;margin-bottom:10px;letter-spacing:-.2px;}
+.lmp-bar-row{margin-bottom:7px;}
+.lmp-bar-meta{display:flex;justify-content:space-between;font-size:11px;font-weight:600;margin-bottom:3px;}
+.lmp-bar-track{height:22px;background:rgba(0,0,0,.06);overflow:hidden;}
+.lmp-bar-fill{height:100%;background:#000;transition:width .45s ease;}
+.lmp-donut-wrap{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.lmp-donut-legend{font-size:11px;line-height:1.9;flex:1;}
+.lmp-donut-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;}
+.lmp-counter-val{font-size:36px;font-weight:800;line-height:1;letter-spacing:-1px;}
+.lmp-counter-rows{display:flex;gap:20px;flex-wrap:wrap;margin-top:4px;}
+.lmp-counter-item{font-size:12px;color:rgba(0,0,0,.5);}
+.lmp-txt-item{font-size:13px;padding:9px 12px;border-left:3px solid rgba(0,0,0,.12);margin-bottom:6px;line-height:1.5;background:rgba(0,0,0,.02);}
+.lmp-inline-results{margin-top:28px;padding-top:20px;border-top:1.5px solid rgba(0,0,0,.1);text-align:left;}
+
 /* 제출 내역 / 수정 모드 */
 .edit-mode-banner{background:rgba(0,0,0,.06);border-left:3px solid #000;padding:10px 12px;font-size:12px;font-weight:700;margin-bottom:16px;line-height:1.5;}
 #history-link{text-align:center;margin-top:14px;}
@@ -130,12 +149,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     <div id="done-history-link" style="display:none;margin-top:16px;text-align:center;">
       <button onclick="showHistory()" style="background:none;border:none;font-size:13px;color:rgba(0,0,0,.5);text-decoration:underline;cursor:pointer;font-family:inherit;padding:4px 0;">제출 내역 확인</button>
     </div>
+    <div id="inline-results" class="lmp-inline-results" style="display:none;"></div>
   </div>
   <div id="history-screen">
     <button class="hist-back" onclick="backFromHistory()">← 뒤로</button>
     <div id="history-title" style="font-size:16px;font-weight:800;margin-bottom:16px;letter-spacing:-.3px;">제출 내역</div>
     <div id="history-list"></div>
   </div>
+  <div id="chart-screen" style="display:none;"></div>
 </div>
 
 <script>
@@ -157,6 +178,7 @@ const MAX_FILE_MB = 10;
 const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
 
 const FORM_ID = new URLSearchParams(location.search).get('id') || '';
+const CHART_MODE = new URLSearchParams(location.search).get('mode') === 'chart';
 let formConfig = null;
 let ctxProjectId = '';
 let ctxUserId = '';
@@ -404,6 +426,11 @@ function showDone(html, showHistLink) {
   document.getElementById('done-msg').innerHTML = applyVars(html) || '제출이 완료됐어요!';
   document.getElementById('done-screen').classList.add('on');
   if (showHistLink && formConfig?.allowEdit) document.getElementById('done-history-link').style.display = '';
+  if (formConfig?.showResults) {
+    const ir = document.getElementById('inline-results');
+    ir.style.display = '';
+    renderCharts(ir);
+  }
 }
 
 async function checkAlreadySubmitted() {
@@ -422,6 +449,22 @@ async function checkAlreadySubmitted() {
 
 async function init() {
   if (!FORM_ID) { showErr('폼 ID가 없습니다.'); return; }
+
+  if (CHART_MODE) {
+    try {
+      const snap = await db.collection('cms_form_configs').doc(FORM_ID).get();
+      if (!snap.exists) { showErr('폼을 찾을 수 없습니다.'); return; }
+      formConfig = snap.data();
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('app').style.display = '';
+      const cs = document.getElementById('chart-screen');
+      cs.style.display = '';
+      await renderCharts(cs);
+    } catch(e) {
+      showErr('불러오기 실패. 다시 시도해주세요.');
+    }
+    return;
+  }
 
   try {
     const snap = await db.collection('cms_form_configs').doc(FORM_ID).get();
@@ -809,6 +852,101 @@ function cancelEdit() {
   document.getElementById('history-screen').classList.add('on');
 }
 
+const _CHART_COLORS=['#111','#444','#777','#aaa','#ccc','#e0e0e0'];
+async function _loadAllResponses(){
+  try{
+    const snap=await db.collection('cms_form_responses').doc(FORM_ID).collection('responses').get();
+    const docs=snap.docs.map(d=>({_id:d.id,...d.data()}));
+    docs.sort((a,b)=>(b.submittedAt?.toMillis?.()??0)-(a.submittedAt?.toMillis?.()??0));
+    return docs;
+  }catch(e){console.error('[loadAllResponses]',e);return [];}
+}
+function _buildBarHtml(data,total){
+  if(!data.length) return '<div style="font-size:12px;color:rgba(0,0,0,.4);padding:8px 0;">아직 응답이 없어요.</div>';
+  return data.map(d=>{
+    const pct=total>0?Math.round(d.count/total*100):0;
+    return `<div class="lmp-bar-row">
+      <div class="lmp-bar-meta"><span>${esc(String(d.label))}</span><span>${d.count}명 (${pct}%)</span></div>
+      <div class="lmp-bar-track"><div class="lmp-bar-fill" style="width:${pct}%;"></div></div>
+    </div>`;
+  }).join('');
+}
+function _buildDonutHtml(data,total){
+  if(!total) return '<div style="font-size:12px;color:rgba(0,0,0,.4);padding:8px 0;">아직 응답이 없어요.</div>';
+  const colors=_CHART_COLORS;
+  let cum=0;const parts=[];const legend=[];
+  data.forEach((d,i)=>{
+    const pct=d.count/total*100;
+    const color=colors[i%colors.length];
+    parts.push(`${color} ${cum.toFixed(2)}% ${(cum+pct).toFixed(2)}%`);
+    legend.push(`<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;"><span class="lmp-donut-dot" style="background:${color};"></span><span>${esc(String(d.label))}<span style="color:rgba(0,0,0,.45);margin-left:4px;">(${d.count})</span></span></div>`);
+    cum+=pct;
+  });
+  return `<div class="lmp-donut-wrap">
+    <div style="position:relative;width:120px;height:120px;flex-shrink:0;">
+      <div style="width:120px;height:120px;border-radius:50%;background:conic-gradient(${parts.join(',')});"></div>
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:56px;height:56px;border-radius:50%;background:var(--lmp-block-bg,#fff);display:flex;align-items:center;justify-content:center;flex-direction:column;">
+        <span style="font-size:17px;font-weight:800;line-height:1;">${total}</span>
+        <span style="font-size:9px;color:rgba(0,0,0,.45);">응답</span>
+      </div>
+    </div>
+    <div class="lmp-donut-legend">${legend.join('')}</div>
+  </div>`;
+}
+function _buildCounterHtml(values){
+  const nums=values.filter(v=>v!==null&&v!==''&&!isNaN(Number(v))).map(Number);
+  if(!nums.length) return '<div style="font-size:12px;color:rgba(0,0,0,.4);padding:8px 0;">아직 응답이 없어요.</div>';
+  const n=nums.length,tot=nums.reduce((a,b)=>a+b,0),avg=tot/n,mx=Math.max(...nums),mn=Math.min(...nums);
+  const fmt=v=>v%1===0?String(v):v.toFixed(1);
+  return `<div class="lmp-counter-val">${n}</div><div class="lmp-counter-rows"><div class="lmp-counter-item">총 응답 수</div></div>
+    <div class="lmp-counter-rows" style="margin-top:12px;">
+      <div><div style="font-size:20px;font-weight:800;">${fmt(avg)}</div><div class="lmp-counter-item">평균</div></div>
+      <div><div style="font-size:20px;font-weight:800;">${tot}</div><div class="lmp-counter-item">합계</div></div>
+      <div><div style="font-size:20px;font-weight:800;">${mx}</div><div class="lmp-counter-item">최대</div></div>
+      <div><div style="font-size:20px;font-weight:800;">${mn}</div><div class="lmp-counter-item">최소</div></div>
+    </div>`;
+}
+function _buildTextListHtml(texts){
+  const items=texts.filter(t=>t&&String(t).trim()).slice(0,15);
+  if(!items.length) return '<div style="font-size:12px;color:rgba(0,0,0,.4);padding:8px 0;">아직 응답이 없어요.</div>';
+  return items.map(t=>`<div class="lmp-txt-item">${esc(String(t))}</div>`).join('');
+}
+async function renderCharts(container){
+  if(!formConfig) return;
+  const cfgs=(formConfig.chartConfigs||[]).filter(c=>c.enabled);
+  if(!cfgs.length){container.innerHTML='<div style="font-size:13px;color:rgba(0,0,0,.45);text-align:center;padding:20px 0;">표시할 결과가 없어요.</div>';return;}
+  container.innerHTML='<div style="font-size:13px;color:rgba(0,0,0,.4);padding:8px 0;">결과 불러오는 중…</div>';
+  const allDocs=await _loadAllResponses();
+  const total=allDocs.length;
+  const fieldsMap={};
+  (formConfig.fields||[]).forEach(f=>{fieldsMap[f.key||f.id]=f;});
+  let html='';
+  if(!total){
+    html='<div style="font-size:13px;color:rgba(0,0,0,.4);text-align:center;padding:20px 0;">아직 제출된 응답이 없어요.</div>';
+  } else {
+    cfgs.slice().sort((a,b)=>(a.order||0)-(b.order||0)).forEach(cfg=>{
+      const f=fieldsMap[cfg.fieldKey];
+      if(!f) return;
+      const ttl=cfg.title||f.label||cfg.fieldKey;
+      const vals=allDocs.map(r=>r[cfg.fieldKey]).filter(v=>v!==undefined&&v!==null&&v!=='');
+      let chartHtml='';
+      if(cfg.chartType==='bar'||cfg.chartType==='donut'){
+        const counts={};
+        vals.forEach(v=>{const arr=Array.isArray(v)?v:[v];arr.forEach(item=>{counts[String(item)]=(counts[String(item)]||0)+1;});});
+        const data=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([label,count])=>({label,count}));
+        const tot=data.reduce((s,d)=>s+d.count,0);
+        chartHtml=cfg.chartType==='bar'?_buildBarHtml(data,tot):_buildDonutHtml(data,tot);
+      } else if(cfg.chartType==='counter'){
+        chartHtml=_buildCounterHtml(vals);
+      } else if(cfg.chartType==='text-list'){
+        chartHtml=_buildTextListHtml(vals);
+      }
+      html+=`<div class="lmp-chart-wrap"><div class="lmp-chart-ttl">${esc(ttl)}</div>${chartHtml}</div>`;
+    });
+  }
+  const titleHtml=formConfig.resultsTitle?`<div class="lmp-results-hd">${esc(formConfig.resultsTitle)}</div>`:'';
+  container.innerHTML=`${titleHtml}<div class="lmp-results-sub">총 ${total}개 응답</div>${html}`;
+}
 window.parent.postMessage({ type: 'lmp-ready' }, '*');
 init();
 
