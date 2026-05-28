@@ -1636,9 +1636,19 @@ function _doHashNavIfPending(){
 function _showPopupIfNeeded(trigger){
   if(!POPUP_CONFIG.enabled) return;
   if((POPUP_CONFIG.trigger||'entry')!==trigger) return;
-  const key='lmp-popup-shown-'+PROJECT_ID;
-  if(sessionStorage.getItem(key)) return;
-  sessionStorage.setItem(key,'1');
+  // 로그인 필요 설정
+  if(POPUP_CONFIG.requireAuth){
+    const _s=JSON.parse(sessionStorage.getItem('userSession')||'{}');
+    if(_s.project!==PROJECT_ID) return;
+  }
+  // 오늘 다시 보지 않기 (localStorage)
+  const noshowKey='lmp-popup-noshow-'+PROJECT_ID;
+  const today=new Date().toISOString().slice(0,10);
+  if(localStorage.getItem(noshowKey)===today) return;
+  // 이번 세션에 이미 표시
+  const sessionKey='lmp-popup-shown-'+PROJECT_ID;
+  if(sessionStorage.getItem(sessionKey)) return;
+  sessionStorage.setItem(sessionKey,'1');
   const cfg=POPUP_CONFIG;
   const pad=cfg.padding??20;
   const bg=cfg.bgColor||'#fff';
@@ -1658,13 +1668,28 @@ function _showPopupIfNeeded(trigger){
   const el=document.createElement('div');
   el.id='lmp-popup-overlay';
   el.style.cssText='position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);padding:20px;box-sizing:border-box;';
-  el.innerHTML=`<div style="background:${bg};border-radius:12px;width:100%;max-width:390px;max-height:80svh;overflow-y:auto;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.25);">
-    <button onclick="document.getElementById('lmp-popup-overlay').remove()" style="position:sticky;top:0;float:right;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:18px;line-height:1;width:32px;height:32px;border-radius:50%;cursor:pointer;margin:10px 10px 0 0;display:flex;align-items:center;justify-content:center;z-index:1;">×</button>
-    <div style="clear:both;"></div>
-    ${linkWrap}<div style="padding:${pad}px;">${innerHtml}</div>${linkWrapEnd}
+  el.innerHTML=`<div style="background:${bg};border-radius:12px;width:100%;max-width:390px;max-height:80svh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+    <div style="display:flex;justify-content:flex-end;padding:8px 8px 0;flex-shrink:0;">
+      <button id="lmp-popup-close-btn" style="background:rgba(0,0,0,.12);border:none;color:#333;font-size:18px;line-height:1;width:30px;height:30px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+    </div>
+    <div style="overflow-y:auto;flex:1;padding:4px ${pad}px ${pad}px;">
+      ${linkWrap}${innerHtml}${linkWrapEnd}
+    </div>
+    <div style="padding:10px 16px;border-top:1px solid rgba(0,0,0,.08);flex-shrink:0;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(0,0,0,.45);cursor:pointer;">
+        <input type="checkbox" id="lmp-popup-noshow-cb" style="width:14px;height:14px;cursor:pointer;accent-color:#000;">
+        오늘 다시 보지 않기
+      </label>
+    </div>
   </div>`;
-  el.addEventListener('click',function(e){ if(e.target===el) el.remove(); });
+  const _doClose=()=>{
+    const cb=document.getElementById('lmp-popup-noshow-cb');
+    if(cb&&cb.checked) localStorage.setItem(noshowKey,today);
+    el.remove();
+  };
+  el.addEventListener('click',function(e){ if(e.target===el) _doClose(); });
   document.body.appendChild(el);
+  document.getElementById('lmp-popup-close-btn').addEventListener('click',_doClose);
 }
 function openPrep(){
   prepBg=KEY_COLORS[Math.floor(Math.random()*KEY_COLORS.length)];
