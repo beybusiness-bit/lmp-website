@@ -1687,6 +1687,7 @@ function reopenPrep(){
   document.getElementById('prep-screen').classList.add('open'); hideReturnBtn();
   history.replaceState(null,'','#prep');
   _doHashNavIfPending();
+  _showPopupIfNeeded('home');
 }
 function closePrep(){
   document.getElementById('prep-screen').classList.remove('open'); closeMenu();
