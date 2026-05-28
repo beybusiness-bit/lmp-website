@@ -754,6 +754,74 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <button class="add-btn" style="flex:1;" onclick="addHomeBlockItem()">+ 블록 추가</button>
             </div>
           </div>
+          <!-- 팝업 설정 -->
+          <div class="sect-head" style="margin-top:8px;">팝업 설정</div>
+          <div class="ed-sect">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <button id="popup-enabled-sw" class="tgl-btn" onclick="togglePopupEnabled()" style="font-size:11px;padding:5px 12px;">OFF</button>
+              <span id="popup-enabled-lbl" style="font-size:12px;color:rgba(0,0,0,.5);">팝업 비활성화</span>
+            </div>
+            <div id="popup-settings-wrap" style="display:none;">
+              <div class="ed-lbl" style="margin-bottom:4px;">팝업 표시 시점</div>
+              <div class="toggle-row" style="margin-bottom:10px;">
+                <button id="popup-trigger-entry" class="tgl-btn on" onclick="setPopupTrigger('entry')" style="font-size:11px;padding:5px 0;">진입 시 (로그인 전)</button>
+                <button id="popup-trigger-home" class="tgl-btn" onclick="setPopupTrigger('home')" style="font-size:11px;padding:5px 0;">홈화면 진입 시</button>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
+                <div>
+                  <div class="ed-lbl" style="margin-bottom:3px;">팝업 배경색</div>
+                  <input type="color" id="popup-bg-color" value="#ffffff" oninput="projDirty=true" style="width:40px;height:32px;padding:2px;border:1.5px solid rgba(0,0,0,.2);cursor:pointer;border-radius:3px;">
+                </div>
+                <div style="flex:1;min-width:80px;">
+                  <div class="ed-lbl" style="margin-bottom:3px;">안쪽 여백 (px)</div>
+                  <input type="number" id="popup-padding" value="20" min="0" max="60" oninput="projDirty=true" class="fi" style="width:80px;">
+                </div>
+              </div>
+              <div class="ed-lbl" style="margin-bottom:4px;">팝업 내용 블록 타입</div>
+              <div class="toggle-row" style="margin-bottom:10px;">
+                <button id="popup-blk-text" class="tgl-btn on" onclick="setPopupBlockType('text')" style="font-size:11px;padding:5px 0;">텍스트</button>
+                <button id="popup-blk-image" class="tgl-btn" onclick="setPopupBlockType('image')" style="font-size:11px;padding:5px 0;">이미지</button>
+                <button id="popup-blk-mixed" class="tgl-btn" onclick="setPopupBlockType('mixed')" style="font-size:11px;padding:5px 0;">혼합</button>
+                <button id="popup-blk-embed" class="tgl-btn" onclick="setPopupBlockType('embed')" style="font-size:11px;padding:5px 0;">임베드</button>
+              </div>
+              <!-- 텍스트 -->
+              <div id="popup-field-text" class="popup-blk-field">
+                <div class="ed-lbl" style="margin-bottom:3px;">텍스트 내용</div>
+                <div id="popup-text-content" class="mini-rte" contenteditable="true"
+                     onmouseup="saveRange(this)" onkeyup="saveRange(this)" ontouchend="saveRange(this)"
+                     style="min-height:80px;border:1.5px solid rgba(0,0,0,.2);padding:8px;font-size:13px;line-height:1.6;"></div>
+              </div>
+              <!-- 이미지 -->
+              <div id="popup-field-image" class="popup-blk-field" style="display:none;">
+                <div class="ed-lbl" style="margin-bottom:3px;">이미지 URL</div>
+                <input class="fi" id="popup-image-url" placeholder="https://..." oninput="projDirty=true">
+                <button class="bg-up-btn" onclick="document.getElementById('popup-img-file').click()" style="margin-top:4px;">📁 업로드</button>
+                <input type="file" id="popup-img-file" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'popup-image-url','popup-block-images/',false)">
+              </div>
+              <!-- 혼합 (이미지 + 텍스트) -->
+              <div id="popup-field-mixed" class="popup-blk-field" style="display:none;">
+                <div class="ed-lbl" style="margin-bottom:3px;">이미지 URL</div>
+                <input class="fi" id="popup-mixed-image-url" placeholder="https://..." oninput="projDirty=true">
+                <button class="bg-up-btn" onclick="document.getElementById('popup-mixed-img-file').click()" style="margin-top:4px;margin-bottom:6px;">📁 업로드</button>
+                <input type="file" id="popup-mixed-img-file" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'popup-mixed-image-url','popup-block-images/',false)">
+                <div class="ed-lbl" style="margin-bottom:3px;">텍스트 내용</div>
+                <div id="popup-mixed-text" class="mini-rte" contenteditable="true"
+                     onmouseup="saveRange(this)" onkeyup="saveRange(this)" ontouchend="saveRange(this)"
+                     style="min-height:60px;border:1.5px solid rgba(0,0,0,.2);padding:8px;font-size:13px;line-height:1.6;"></div>
+              </div>
+              <!-- 임베드 -->
+              <div id="popup-field-embed" class="popup-blk-field" style="display:none;">
+                <div class="ed-lbl" style="margin-bottom:3px;">임베드 URL</div>
+                <input class="fi" id="popup-embed-url" placeholder="https://..." oninput="projDirty=true">
+                <div class="ed-lbl" style="margin-top:6px;margin-bottom:3px;">높이 (px)</div>
+                <input type="number" id="popup-embed-height" value="300" min="100" class="fi" style="width:100px;" oninput="projDirty=true">
+              </div>
+              <div style="margin-top:8px;">
+                <div class="ed-lbl" style="margin-bottom:3px;">클릭 링크 URL <span style="font-weight:400;opacity:.55;">(선택)</span></div>
+                <input class="fi" id="popup-link-url" placeholder="https://..." oninput="projDirty=true">
+              </div>
+            </div>
+          </div>
         </div>
         </div><!-- /ed-inner -->
         </div><!-- /proj-content -->
@@ -5254,6 +5322,7 @@ async function editProject(id) {
     curStages = (d.stages||[]).slice().sort((a,b)=>(a.order||0)-(b.order||0));
     curHomeBlocks = d.homeBlocks || [];
     curHomeItemOrder = Array.isArray(d.homeItemOrder) && d.homeItemOrder.length ? d.homeItemOrder : curStages.map(s=>({type:'stage',id:s.id}));
+    if(curHomeItemOrder.length){const _oIds=new Set(curHomeItemOrder.filter(o=>o.type==='stage').map(o=>o.id));curStages.forEach(s=>{if(!_oIds.has(s.id))curHomeItemOrder.push({type:'stage',id:s.id});});}
     customColWidths = d.userColumnWidths || {};
     curRespColWidths = d.formRespColWidths || {};
     const _acp=d.adminColPrefs||{};
@@ -5348,7 +5417,7 @@ async function editProject(id) {
     setDday(d.ddayEnabled||false);
     setAuth(d.authEnabled||false);
     setAuthMode(d.authMode||'immediate');
-    renderKeyColorList(); renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList(); renderTextColorRows(); loadWidgetConfig(d.widget||{});
+    renderKeyColorList(); renderBgImages(); renderStageList(); renderAuthFields(); renderStatList(); renderElemOrderList(); renderTextColorRows(); loadWidgetConfig(d.widget||{}); loadPopupConfig(d.popupConfig||{});
     if (d.authEnabled) await loadUsers();
     switchInnerTab('basic'); showProjView('edit');
     setTimeout(()=>{ _projDirtyLock=false; projDirty=false; }, 300);
@@ -5434,6 +5503,7 @@ async function saveProject(deploy=true, e=null) {
     elementMargins: curElementMargins,
     elemFontSizes:  curElemFontSizes,
     widget:        getWidgetConfig(),
+    popupConfig:   getPopupConfig(),
     keyColors:    curKeyColors,
     published:    document.getElementById('published-sw')?.classList.contains('on') ?? true,
     ogTitle:      document.getElementById('p-og-title')?.value.trim()||'',
@@ -5849,12 +5919,101 @@ function dupBlk(i) {
   renderBlockList(); scheduleGuidePreviewUpdate();
   _autoSaveStage();
 }
+let _curPopupBlockType = 'text';
+let _curPopupTrigger = 'entry';
+let _popupEnabled = false;
+function togglePopupEnabled(){
+  _popupEnabled=!_popupEnabled;
+  const sw=document.getElementById('popup-enabled-sw');
+  const lbl=document.getElementById('popup-enabled-lbl');
+  const wrap=document.getElementById('popup-settings-wrap');
+  if(sw){sw.classList.toggle('on',_popupEnabled);sw.textContent=_popupEnabled?'ON':'OFF';}
+  if(lbl) lbl.textContent=_popupEnabled?'팝업 활성화':'팝업 비활성화';
+  if(wrap) wrap.style.display=_popupEnabled?'':'none';
+  projDirty=true;
+}
+function setPopupTrigger(t){
+  _curPopupTrigger=t;
+  ['entry','home'].forEach(v=>{
+    const btn=document.getElementById('popup-trigger-'+v);
+    if(btn) btn.classList.toggle('on',v===t);
+  });
+  projDirty=true;
+}
+function setPopupBlockType(t){
+  _curPopupBlockType=t;
+  ['text','image','mixed','embed'].forEach(v=>{
+    const btn=document.getElementById('popup-blk-'+v);
+    const fld=document.getElementById('popup-field-'+v);
+    if(btn) btn.classList.toggle('on',v===t);
+    if(fld) fld.style.display=v===t?'':'none';
+  });
+  projDirty=true;
+}
+function getPopupConfig(){
+  if(!_popupEnabled) return {enabled:false};
+  const cfg={
+    enabled:true,
+    trigger:_curPopupTrigger,
+    bgColor:document.getElementById('popup-bg-color')?.value||'#ffffff',
+    padding:parseInt(document.getElementById('popup-padding')?.value)||20,
+    blockType:_curPopupBlockType,
+    linkUrl:document.getElementById('popup-link-url')?.value.trim()||'',
+  };
+  if(_curPopupBlockType==='text'){
+    cfg.textContent=rteGet('popup-text-content');
+  } else if(_curPopupBlockType==='image'){
+    cfg.imageUrl=document.getElementById('popup-image-url')?.value.trim()||'';
+  } else if(_curPopupBlockType==='mixed'){
+    cfg.imageUrl=document.getElementById('popup-mixed-image-url')?.value.trim()||'';
+    cfg.textContent=rteGet('popup-mixed-text');
+  } else if(_curPopupBlockType==='embed'){
+    cfg.embedUrl=document.getElementById('popup-embed-url')?.value.trim()||'';
+    cfg.embedHeight=parseInt(document.getElementById('popup-embed-height')?.value)||300;
+  }
+  return cfg;
+}
+function loadPopupConfig(cfg){
+  _popupEnabled=cfg.enabled||false;
+  _curPopupTrigger=cfg.trigger||'entry';
+  _curPopupBlockType=cfg.blockType||'text';
+  const sw=document.getElementById('popup-enabled-sw');
+  const lbl=document.getElementById('popup-enabled-lbl');
+  const wrap=document.getElementById('popup-settings-wrap');
+  if(sw){sw.classList.toggle('on',_popupEnabled);sw.textContent=_popupEnabled?'ON':'OFF';}
+  if(lbl) lbl.textContent=_popupEnabled?'팝업 활성화':'팝업 비활성화';
+  if(wrap) wrap.style.display=_popupEnabled?'':'none';
+  setPopupTrigger(_curPopupTrigger);
+  setPopupBlockType(_curPopupBlockType);
+  const bgEl=document.getElementById('popup-bg-color');
+  if(bgEl) bgEl.value=cfg.bgColor||'#ffffff';
+  const padEl=document.getElementById('popup-padding');
+  if(padEl) padEl.value=cfg.padding||20;
+  const linkEl=document.getElementById('popup-link-url');
+  if(linkEl) linkEl.value=cfg.linkUrl||'';
+  if(cfg.blockType==='text'||!cfg.blockType){
+    rteSet('popup-text-content',cfg.textContent||'');
+  } else if(cfg.blockType==='image'){
+    const el=document.getElementById('popup-image-url');
+    if(el) el.value=cfg.imageUrl||'';
+  } else if(cfg.blockType==='mixed'){
+    const el=document.getElementById('popup-mixed-image-url');
+    if(el) el.value=cfg.imageUrl||'';
+    rteSet('popup-mixed-text',cfg.textContent||'');
+  } else if(cfg.blockType==='embed'){
+    const el=document.getElementById('popup-embed-url');
+    if(el) el.value=cfg.embedUrl||'';
+    const hEl=document.getElementById('popup-embed-height');
+    if(hEl) hEl.value=cfg.embedHeight||300;
+  }
+}
 async function dupStage(i) {
   const src = curStages[i];
   const newId = uid();
   const newStage = JSON.parse(JSON.stringify(src));
   newStage.id = newId; newStage.title = (src.title||'') + ' (복사)'; newStage.order = curStages.length;
   curStages.push(newStage);
+  curHomeItemOrder.push({type:'stage', id:newId});
   if(curProjId) {
     try {
       const doc = await db.collection('cms_projects').doc(curProjId).collection('stage_content').doc(src.id).get();
