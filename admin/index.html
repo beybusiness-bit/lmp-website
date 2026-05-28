@@ -1348,7 +1348,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                 <span class="switch-lbl">결과 공개 <span style="font-weight:400;opacity:.55;">(제출 후 전체 응답 통계 표시)</span></span>
               </div>
               <div id="tf-chart-config-wrap" style="display:none;">
-                <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:10px;line-height:1.5;">선택형·숫자·텍스트 필드를 차트로 보여줄 수 있어요. 켜진 항목만 사용자 화면에 표시됩니다.</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+                  <span style="font-size:11px;color:rgba(0,0,0,.55);white-space:nowrap;">차트 색상:</span>
+                  <select id="tf-chart-color-scheme" style="padding:3px 8px;border:1.5px solid rgba(0,0,0,.2);font-size:11px;font-family:inherit;border-radius:0;background:#fff;">
+                    <option value="black">검정 (기본)</option>
+                    <option value="key">키컬러 (프로젝트 테마색)</option>
+                    <option value="gray">회색조</option>
+                  </select>
+                </div>
+                <div style="font-size:11px;color:rgba(0,0,0,.5);margin-bottom:10px;line-height:1.5;">필드별로 어떤 차트 타입으로, 어떤 기준으로 보여줄지 설정하세요. 켜진 항목만 사용자 화면에 표시됩니다.</div>
                 <div id="tf-chart-list"></div>
                 <div style="margin-top:8px;font-size:11px;color:rgba(0,0,0,.4);">💡 블록 도구에서 URL 뒤에 <code>?mode=chart</code>를 추가하면 폼 없이 결과만 표시할 수 있어요.</div>
               </div>
@@ -9764,6 +9772,8 @@ async function toolFormEdit(docId){
     tfChartConfigs=d.chartConfigs||[];
     document.getElementById('tf-show-results-sw').classList.toggle('on',!!d.showResults);
     document.getElementById('tf-chart-config-wrap').style.display=d.showResults?'':'none';
+    const _csEl=document.getElementById('tf-chart-color-scheme');
+    if(_csEl)_csEl.value=d.chartColorScheme||'black';
     renderTfFieldList();
     loadTfInlineResponses();
   }catch(e){alert('로드 실패: '+e.message);}
@@ -9803,18 +9813,60 @@ function toolFormOpenFieldModal(idx, insertAt){
   openFormFieldModal(idx, insertAt);
 }
 const _TF_CHART_TYPES={
-  string:[{v:'text-list',l:'응답 목록'}],
-  text:[{v:'text-list',l:'응답 목록'}],
-  textarea:[{v:'text-list',l:'응답 목록'}],
-  number:[{v:'counter',l:'통계 수치'},{v:'bar',l:'막대 그래프'}],
-  select:[{v:'bar',l:'막대 그래프'},{v:'donut',l:'도넛 차트'}],
+  string:[{v:'text-list',l:'응답 목록'},{v:'table',l:'전체 응답 표'}],
+  text:[{v:'text-list',l:'응답 목록'},{v:'table',l:'전체 응답 표'}],
+  textarea:[{v:'text-list',l:'응답 목록'},{v:'table',l:'전체 응답 표'}],
+  number:[{v:'counter',l:'통계 수치'},{v:'histogram',l:'분포 그래프'},{v:'table',l:'전체 응답 표'}],
+  select:[{v:'bar',l:'막대 그래프'},{v:'donut',l:'도넛 차트'},{v:'table',l:'전체 응답 표'}],
+  date:[{v:'timeline',l:'날짜별 추이'},{v:'table',l:'전체 응답 표'}],
+  file:[{v:'counter',l:'응답 수'},{v:'table',l:'전체 응답 표'}],
+  color:[{v:'bar',l:'색상 분포'},{v:'table',l:'전체 응답 표'}],
 };
+function _tfChartExtraHtml(chartType,cfg){
+  const se=(attr,opts,val)=>`<select data-chart-extra-${attr} style="padding:3px 6px;border:1.5px solid rgba(0,0,0,.15);font-size:11px;font-family:inherit;border-radius:0;background:#fff;">${opts.map(([v,l])=>`<option value="${v}"${val===v?' selected':''}>${l}</option>`).join('')}</select>`;
+  const lbl=t=>`<span style="font-size:10px;color:rgba(0,0,0,.45);white-space:nowrap;">${t}</span>`;
+  const row=(...items)=>`<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:5px;">${items.join('')}</div>`;
+  if(chartType==='bar'||chartType==='histogram'){
+    const sortRow=chartType==='histogram'?'':row(lbl('정렬:'),se('sort',[['count-desc','많은 순'],['count-asc','적은 순'],['label-asc','이름 순']],cfg.sortBy||'count-desc'),lbl('표시:'),se('limit',[['0','전체'],['5','상위 5'],['10','상위 10']],String(cfg.limit||0)));
+    const yRow=chartType==='histogram'?'':row(lbl('Y축 값:'),se('yaxis',[['both','응답 수 + 비율(%)'],['count','응답 수만'],['percent','비율(%)만']],cfg.yAxis||'both'));
+    const binsRow=chartType==='histogram'?row(lbl('구간 수:'),se('bins',[['5','5구간'],['8','8구간'],['10','10구간'],['15','15구간']],String(cfg.bins||8))):'';
+    return yRow+sortRow+binsRow;
+  }
+  if(chartType==='donut'){
+    return row(lbl('정렬:'),se('sort',[['count-desc','많은 순'],['count-asc','적은 순'],['label-asc','이름 순']],cfg.sortBy||'count-desc'),lbl('항목 수:'),se('limit',[['0','전체'],['5','상위 5'],['8','상위 8']],String(cfg.limit||0)));
+  }
+  if(chartType==='text-list'){
+    return row(lbl('최대 개수:'),se('textlimit',[['10','최근 10개'],['20','최근 20개'],['50','최근 50개']],String(cfg.textLimit||10)));
+  }
+  if(chartType==='table'){
+    return row(lbl('행 수:'),se('textlimit',[['20','최근 20행'],['50','최근 50행'],['100','최근 100행'],['0','전체']],String(cfg.textLimit||20)));
+  }
+  if(chartType==='counter'){
+    const stats=[['count','응답 수'],['avg','평균'],['sum','합계'],['max','최대'],['min','최소']];
+    const show=cfg.showStats||['count','avg','sum','max','min'];
+    const boxes=stats.map(([v,l])=>`<label style="display:inline-flex;align-items:center;gap:3px;font-size:11px;cursor:pointer;margin-right:8px;"><input type="checkbox" value="${v}" data-chart-extra-stat${show.includes(v)?' checked':''}> ${l}</label>`).join('');
+    return `<div style="margin-top:5px;line-height:2;">${boxes}</div>`;
+  }
+  if(chartType==='timeline'){
+    return row(lbl('기준:'),se('groupby',[['day','일별'],['hour','시간대별'],['week','주별']],cfg.groupBy||'day'));
+  }
+  return '';
+}
+function _onTfChartTypeChange(sel){
+  const row=sel.closest('.chart-cfg-row');
+  if(!row) return;
+  const extraDiv=row.querySelector('[data-chart-extra]');
+  if(!extraDiv) return;
+  const newHtml=_tfChartExtraHtml(sel.value,{});
+  extraDiv.innerHTML=newHtml;
+  extraDiv.style.display=newHtml?'':'none';
+}
 function renderTfChartConfigList(existingConfigs){
   const el=document.getElementById('tf-chart-list');
   if(!el) return;
   const chartable=tfFields.filter(f=>_TF_CHART_TYPES[f.type]);
   if(!chartable.length){
-    el.innerHTML='<div style="font-size:12px;color:rgba(0,0,0,.45);padding:4px 0;">선택형·텍스트·숫자 필드를 추가하면 차트 설정이 표시돼요.</div>';
+    el.innerHTML='<div style="font-size:12px;color:rgba(0,0,0,.45);padding:4px 0;">선택형·텍스트·숫자·날짜 필드를 추가하면 차트 설정이 표시돼요.</div>';
     return;
   }
   const cfgMap={};
@@ -9823,18 +9875,20 @@ function renderTfChartConfigList(existingConfigs){
     const fkey=f.key||f.id;
     const cfg=cfgMap[fkey]||{};
     const types=_TF_CHART_TYPES[f.type]||[];
-    const sel=cfg.chartType||types[0]?.v||'bar';
+    const selType=cfg.chartType||types[0]?.v||'bar';
     const enabled=cfg.enabled!==false;
     const title=(cfg.title||'').replace(/"/g,'&quot;');
-    const opts=types.map(t=>`<option value="${t.v}"${sel===t.v?' selected':''}>${t.l}</option>`).join('');
-    return `<div class="chart-cfg-row" data-fieldkey="${fkey}" style="padding:8px 0;${i>0?'border-top:1px solid rgba(0,0,0,.08);':''}">
+    const opts=types.map(t=>`<option value="${t.v}"${selType===t.v?' selected':''}>${t.l}</option>`).join('');
+    const extraHtml=_tfChartExtraHtml(selType,cfg);
+    return `<div class="chart-cfg-row" data-fieldkey="${fkey}" style="padding:10px 0;${i>0?'border-top:1px solid rgba(0,0,0,.08);':''}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
         <div class="switch${enabled?' on':''}" style="flex-shrink:0;" onclick="this.classList.toggle('on');" data-chart-sw></div>
         <span style="font-size:12px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${f.label}">${f.label}</span>
-        <select style="padding:4px 6px;border:1.5px solid rgba(0,0,0,.2);font-size:11px;font-family:inherit;border-radius:0;background:#fff;" data-chart-type>${opts}</select>
+        <select style="padding:4px 6px;border:1.5px solid rgba(0,0,0,.2);font-size:11px;font-family:inherit;border-radius:0;background:#fff;" data-chart-type onchange="_onTfChartTypeChange(this)">${opts}</select>
       </div>
       <input placeholder="차트 제목 (빈칸이면 필드명으로 표시)" value="${title}"
-             style="width:100%;padding:5px 8px;border:1.5px solid rgba(0,0,0,.15);font-size:11px;font-family:inherit;box-sizing:border-box;" data-chart-title>
+             style="width:100%;padding:5px 8px;border:1.5px solid rgba(0,0,0,.15);font-size:11px;font-family:inherit;box-sizing:border-box;margin-bottom:2px;" data-chart-title>
+      <div data-chart-extra style="${extraHtml?'':'display:none;'}">${extraHtml}</div>
     </div>`;
   }).join('');
 }
@@ -9846,7 +9900,19 @@ function _buildTfChartConfigs(){
     const sw=row.querySelector('[data-chart-sw]');
     const typeSel=row.querySelector('[data-chart-type]');
     const titleInp=row.querySelector('[data-chart-title]');
-    result.push({id:fkey,fieldKey:fkey,chartType:typeSel?.value||'bar',title:titleInp?.value.trim()||'',order:i,enabled:sw?.classList.contains('on')||false});
+    const chartType=typeSel?.value||'bar';
+    const obj={id:fkey,fieldKey:fkey,chartType,title:titleInp?.value.trim()||'',order:i,enabled:sw?.classList.contains('on')||false};
+    const g=attr=>row.querySelector(`[data-chart-extra-${attr}]`)?.value;
+    const sortEl=g('sort'),yAxisEl=g('yaxis'),limitEl=g('limit'),textLimitEl=g('textlimit'),binsEl=g('bins'),groupByEl=g('groupby');
+    const statBoxes=row.querySelectorAll('[data-chart-extra-stat]');
+    if(sortEl!=null)obj.sortBy=sortEl;
+    if(yAxisEl!=null)obj.yAxis=yAxisEl;
+    if(limitEl!=null)obj.limit=parseInt(limitEl)||0;
+    if(textLimitEl!=null)obj.textLimit=parseInt(textLimitEl)||20;
+    if(binsEl!=null)obj.bins=parseInt(binsEl)||8;
+    if(groupByEl!=null)obj.groupBy=groupByEl;
+    if(statBoxes.length)obj.showStats=[...statBoxes].filter(b=>b.checked).map(b=>b.value);
+    result.push(obj);
   });
   return result;
 }
@@ -9863,9 +9929,10 @@ async function toolFormSave(e=null){
   try{
     const showResults=document.getElementById('tf-show-results-sw')?.classList.contains('on')||false;
     const chartConfigs=_buildTfChartConfigs();
+    const chartColorScheme=document.getElementById('tf-chart-color-scheme')?.value||'black';
     await db.collection('cms_form_configs').doc(tfCurDocId).update({
       title,desc,fields:tfFields,submitBtnText,submitMsg,noResubmit,allowEdit,
-      showResults,chartConfigs,
+      showResults,chartConfigs,chartColorScheme,
       sheetId:tfRespFormConfig.sheetId||'',
       sheetTab:tfRespFormConfig.sheetTab||'응답',
       sheetUrl:tfRespFormConfig.sheetUrl||'',
