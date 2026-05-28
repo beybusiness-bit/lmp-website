@@ -518,6 +518,74 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:8px;">메인 화면 상단에 표시되는 요소의 순서를 설정합니다.</div>
             <div id="elem-order-list"></div>
           </div>
+          <!-- 팝업 설정 -->
+          <div class="sect-head">팝업 설정</div>
+          <div class="ed-sect">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <button id="popup-enabled-sw" class="tgl-btn" onclick="togglePopupEnabled()" style="font-size:11px;padding:5px 12px;">OFF</button>
+              <span id="popup-enabled-lbl" style="font-size:12px;color:rgba(0,0,0,.5);">팝업 비활성화</span>
+            </div>
+            <div id="popup-settings-wrap" style="display:none;">
+              <div class="ed-lbl" style="margin-bottom:4px;">팝업 표시 시점</div>
+              <div class="toggle-row" style="margin-bottom:10px;">
+                <button id="popup-trigger-entry" class="tgl-btn on" onclick="setPopupTrigger('entry')" style="font-size:11px;padding:5px 0;">진입 시 (로그인 전)</button>
+                <button id="popup-trigger-home" class="tgl-btn" onclick="setPopupTrigger('home')" style="font-size:11px;padding:5px 0;">홈화면 진입 시</button>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
+                <div>
+                  <div class="ed-lbl" style="margin-bottom:3px;">팝업 배경색</div>
+                  <input type="color" id="popup-bg-color" value="#ffffff" oninput="projDirty=true" style="width:40px;height:32px;padding:2px;border:1.5px solid rgba(0,0,0,.2);cursor:pointer;border-radius:3px;">
+                </div>
+                <div style="flex:1;min-width:80px;">
+                  <div class="ed-lbl" style="margin-bottom:3px;">안쪽 여백 (px)</div>
+                  <input type="number" id="popup-padding" value="20" min="0" max="60" oninput="projDirty=true" class="fi" style="width:80px;">
+                </div>
+              </div>
+              <div class="ed-lbl" style="margin-bottom:4px;">팝업 내용 블록 타입</div>
+              <div class="toggle-row" style="margin-bottom:10px;">
+                <button id="popup-blk-text" class="tgl-btn on" onclick="setPopupBlockType('text')" style="font-size:11px;padding:5px 0;">텍스트</button>
+                <button id="popup-blk-image" class="tgl-btn" onclick="setPopupBlockType('image')" style="font-size:11px;padding:5px 0;">이미지</button>
+                <button id="popup-blk-mixed" class="tgl-btn" onclick="setPopupBlockType('mixed')" style="font-size:11px;padding:5px 0;">혼합</button>
+                <button id="popup-blk-embed" class="tgl-btn" onclick="setPopupBlockType('embed')" style="font-size:11px;padding:5px 0;">임베드</button>
+              </div>
+              <!-- 텍스트 -->
+              <div id="popup-field-text" class="popup-blk-field">
+                <div class="ed-lbl" style="margin-bottom:3px;">텍스트 내용</div>
+                <div id="popup-text-content" class="mini-rte" contenteditable="true"
+                     onmouseup="saveRange(this)" onkeyup="saveRange(this)" ontouchend="saveRange(this)"
+                     style="min-height:80px;border:1.5px solid rgba(0,0,0,.2);padding:8px;font-size:13px;line-height:1.6;"></div>
+              </div>
+              <!-- 이미지 -->
+              <div id="popup-field-image" class="popup-blk-field" style="display:none;">
+                <div class="ed-lbl" style="margin-bottom:3px;">이미지 URL</div>
+                <input class="fi" id="popup-image-url" placeholder="https://..." oninput="projDirty=true">
+                <button class="bg-up-btn" onclick="document.getElementById('popup-img-file').click()" style="margin-top:4px;">📁 업로드</button>
+                <input type="file" id="popup-img-file" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'popup-image-url','popup-block-images/',false)">
+              </div>
+              <!-- 혼합 (이미지 + 텍스트) -->
+              <div id="popup-field-mixed" class="popup-blk-field" style="display:none;">
+                <div class="ed-lbl" style="margin-bottom:3px;">이미지 URL</div>
+                <input class="fi" id="popup-mixed-image-url" placeholder="https://..." oninput="projDirty=true">
+                <button class="bg-up-btn" onclick="document.getElementById('popup-mixed-img-file').click()" style="margin-top:4px;margin-bottom:6px;">📁 업로드</button>
+                <input type="file" id="popup-mixed-img-file" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'popup-mixed-image-url','popup-block-images/',false)">
+                <div class="ed-lbl" style="margin-bottom:3px;">텍스트 내용</div>
+                <div id="popup-mixed-text" class="mini-rte" contenteditable="true"
+                     onmouseup="saveRange(this)" onkeyup="saveRange(this)" ontouchend="saveRange(this)"
+                     style="min-height:60px;border:1.5px solid rgba(0,0,0,.2);padding:8px;font-size:13px;line-height:1.6;"></div>
+              </div>
+              <!-- 임베드 -->
+              <div id="popup-field-embed" class="popup-blk-field" style="display:none;">
+                <div class="ed-lbl" style="margin-bottom:3px;">임베드 URL</div>
+                <input class="fi" id="popup-embed-url" placeholder="https://..." oninput="projDirty=true">
+                <div class="ed-lbl" style="margin-top:6px;margin-bottom:3px;">높이 (px)</div>
+                <input type="number" id="popup-embed-height" value="300" min="100" class="fi" style="width:100px;" oninput="projDirty=true">
+              </div>
+              <div style="margin-top:8px;">
+                <div class="ed-lbl" style="margin-bottom:3px;">클릭 링크 URL <span style="font-weight:400;opacity:.55;">(선택)</span></div>
+                <input class="fi" id="popup-link-url" placeholder="https://..." oninput="projDirty=true">
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- 디자인 -->
@@ -752,74 +820,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div style="display:flex;gap:8px;margin-top:10px;">
               <button class="add-btn" style="flex:1;" onclick="addStage()">+ 스테이지 추가</button>
               <button class="add-btn" style="flex:1;" onclick="addHomeBlockItem()">+ 블록 추가</button>
-            </div>
-          </div>
-          <!-- 팝업 설정 -->
-          <div class="sect-head" style="margin-top:8px;">팝업 설정</div>
-          <div class="ed-sect">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-              <button id="popup-enabled-sw" class="tgl-btn" onclick="togglePopupEnabled()" style="font-size:11px;padding:5px 12px;">OFF</button>
-              <span id="popup-enabled-lbl" style="font-size:12px;color:rgba(0,0,0,.5);">팝업 비활성화</span>
-            </div>
-            <div id="popup-settings-wrap" style="display:none;">
-              <div class="ed-lbl" style="margin-bottom:4px;">팝업 표시 시점</div>
-              <div class="toggle-row" style="margin-bottom:10px;">
-                <button id="popup-trigger-entry" class="tgl-btn on" onclick="setPopupTrigger('entry')" style="font-size:11px;padding:5px 0;">진입 시 (로그인 전)</button>
-                <button id="popup-trigger-home" class="tgl-btn" onclick="setPopupTrigger('home')" style="font-size:11px;padding:5px 0;">홈화면 진입 시</button>
-              </div>
-              <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
-                <div>
-                  <div class="ed-lbl" style="margin-bottom:3px;">팝업 배경색</div>
-                  <input type="color" id="popup-bg-color" value="#ffffff" oninput="projDirty=true" style="width:40px;height:32px;padding:2px;border:1.5px solid rgba(0,0,0,.2);cursor:pointer;border-radius:3px;">
-                </div>
-                <div style="flex:1;min-width:80px;">
-                  <div class="ed-lbl" style="margin-bottom:3px;">안쪽 여백 (px)</div>
-                  <input type="number" id="popup-padding" value="20" min="0" max="60" oninput="projDirty=true" class="fi" style="width:80px;">
-                </div>
-              </div>
-              <div class="ed-lbl" style="margin-bottom:4px;">팝업 내용 블록 타입</div>
-              <div class="toggle-row" style="margin-bottom:10px;">
-                <button id="popup-blk-text" class="tgl-btn on" onclick="setPopupBlockType('text')" style="font-size:11px;padding:5px 0;">텍스트</button>
-                <button id="popup-blk-image" class="tgl-btn" onclick="setPopupBlockType('image')" style="font-size:11px;padding:5px 0;">이미지</button>
-                <button id="popup-blk-mixed" class="tgl-btn" onclick="setPopupBlockType('mixed')" style="font-size:11px;padding:5px 0;">혼합</button>
-                <button id="popup-blk-embed" class="tgl-btn" onclick="setPopupBlockType('embed')" style="font-size:11px;padding:5px 0;">임베드</button>
-              </div>
-              <!-- 텍스트 -->
-              <div id="popup-field-text" class="popup-blk-field">
-                <div class="ed-lbl" style="margin-bottom:3px;">텍스트 내용</div>
-                <div id="popup-text-content" class="mini-rte" contenteditable="true"
-                     onmouseup="saveRange(this)" onkeyup="saveRange(this)" ontouchend="saveRange(this)"
-                     style="min-height:80px;border:1.5px solid rgba(0,0,0,.2);padding:8px;font-size:13px;line-height:1.6;"></div>
-              </div>
-              <!-- 이미지 -->
-              <div id="popup-field-image" class="popup-blk-field" style="display:none;">
-                <div class="ed-lbl" style="margin-bottom:3px;">이미지 URL</div>
-                <input class="fi" id="popup-image-url" placeholder="https://..." oninput="projDirty=true">
-                <button class="bg-up-btn" onclick="document.getElementById('popup-img-file').click()" style="margin-top:4px;">📁 업로드</button>
-                <input type="file" id="popup-img-file" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'popup-image-url','popup-block-images/',false)">
-              </div>
-              <!-- 혼합 (이미지 + 텍스트) -->
-              <div id="popup-field-mixed" class="popup-blk-field" style="display:none;">
-                <div class="ed-lbl" style="margin-bottom:3px;">이미지 URL</div>
-                <input class="fi" id="popup-mixed-image-url" placeholder="https://..." oninput="projDirty=true">
-                <button class="bg-up-btn" onclick="document.getElementById('popup-mixed-img-file').click()" style="margin-top:4px;margin-bottom:6px;">📁 업로드</button>
-                <input type="file" id="popup-mixed-img-file" accept="image/*" style="display:none;" onchange="uploadSingleImage(event,'popup-mixed-image-url','popup-block-images/',false)">
-                <div class="ed-lbl" style="margin-bottom:3px;">텍스트 내용</div>
-                <div id="popup-mixed-text" class="mini-rte" contenteditable="true"
-                     onmouseup="saveRange(this)" onkeyup="saveRange(this)" ontouchend="saveRange(this)"
-                     style="min-height:60px;border:1.5px solid rgba(0,0,0,.2);padding:8px;font-size:13px;line-height:1.6;"></div>
-              </div>
-              <!-- 임베드 -->
-              <div id="popup-field-embed" class="popup-blk-field" style="display:none;">
-                <div class="ed-lbl" style="margin-bottom:3px;">임베드 URL</div>
-                <input class="fi" id="popup-embed-url" placeholder="https://..." oninput="projDirty=true">
-                <div class="ed-lbl" style="margin-top:6px;margin-bottom:3px;">높이 (px)</div>
-                <input type="number" id="popup-embed-height" value="300" min="100" class="fi" style="width:100px;" oninput="projDirty=true">
-              </div>
-              <div style="margin-top:8px;">
-                <div class="ed-lbl" style="margin-bottom:3px;">클릭 링크 URL <span style="font-weight:400;opacity:.55;">(선택)</span></div>
-                <input class="fi" id="popup-link-url" placeholder="https://..." oninput="projDirty=true">
-              </div>
             </div>
           </div>
         </div>
