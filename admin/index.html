@@ -4057,6 +4057,9 @@ function renderCheckerRoles(){
                oninput="curCheckerRoles[${i}].name=this.value;">
         <button onclick="removeCheckerRole(${i})" style="padding:4px 8px;background:transparent;border:1.5px solid rgba(0,0,0,.3);font-size:11px;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.5);flex-shrink:0;">삭제</button>
       </div>
+      <div style="font-size:10px;color:rgba(0,0,0,.4);margin-bottom:4px;">인증 코드 (사용자가 입력해서 자가 확인 — 비워두면 코드 입력 미지원)</div>
+      <input class="fi-sm" value="${(r.verificationCode||'').replace(/"/g,'&quot;')}" placeholder="예: MISSION-A, 1234" style="margin-bottom:8px;"
+             oninput="curCheckerRoles[${i}].verificationCode=this.value.trim();">
       <div style="font-size:10px;color:rgba(0,0,0,.4);margin-bottom:6px;">확인 배지 문구 (사용자 화면 표시 — 여러 개 추가 시 스캔 때 선택)</div>
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;min-height:20px;" id="cl-tags-${i}">${tagsHtml||'<span style="font-size:11px;color:rgba(0,0,0,.3);">없음 — 역할 이름이 표시됩니다</span>'}</div>
       <div style="display:flex;gap:6px;">
