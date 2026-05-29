@@ -11,7 +11,9 @@ export default async function handler(req, res) {
   const decoded = url; // Vercel req.query already URL-decoded once
 
   // Firebase Storage URL만 허용 (오픈 프록시 방지)
-  if (!decoded.startsWith('https://firebasestorage.googleapis.com/')) {
+  const isAllowed = decoded.startsWith('https://firebasestorage.googleapis.com/')
+    || decoded.startsWith('https://storage.googleapis.com/');
+  if (!isAllowed) {
     return res.status(403).json({ error: 'Only Firebase Storage URLs allowed' });
   }
 

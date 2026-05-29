@@ -304,8 +304,14 @@ async function downloadFile(btn, url, filename) {
     a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   } else {
-    // 최종 폴백: 새 탭
+    console.error('[studio] download failed, url:', url);
     window.open(url, '_blank');
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '⚠️ 저장 실패 — 길게 눌러 저장';
+      setTimeout(() => { if (origHTML) btn.innerHTML = origHTML; }, 5000);
+    }
+    return;
   }
 
   if (btn && origHTML) { btn.disabled = false; btn.innerHTML = origHTML; }

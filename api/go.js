@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   if (SYSTEM_PAGES[prefix]) {
     const base = `https://${req.headers.host || 'lazymaxpotential.kr'}`;
     try {
-      const r = await fetch(base + SYSTEM_PAGES[prefix], { signal: AbortSignal.timeout(4000) });
+      const r = await fetch(base + SYSTEM_PAGES[prefix], { signal: AbortSignal.timeout(4000), headers: { 'Cache-Control': 'no-cache' } });
       if (r.ok) {
         const html = await r.text();
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
