@@ -66,6 +66,10 @@
       "destination": "/studio/index.html"
     },
     {
+      "source": "/booth/:sessionId",
+      "destination": "/studio/index.html"
+    },
+    {
       "source": "/check/:projectId",
       "destination": "/check/index.html"
     },

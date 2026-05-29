@@ -179,8 +179,11 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
-// URL에서 sessionId 추출: /studio/{sessionId}
-const SESSION_ID = window.location.pathname.replace(/\/$/, '').split('/').pop();
+// URL에서 sessionId 추출: /studio/{sessionId} 또는 ?id={sessionId} 또는 ?session={sessionId}
+const _params = new URLSearchParams(location.search);
+const _pathId = window.location.pathname.replace(/\/$/, '').split('/').pop();
+const SESSION_ID = (_pathId && _pathId !== 'studio') ? _pathId
+  : (_params.get('id') || _params.get('session') || '');
 
 let sessionData = null;
 
