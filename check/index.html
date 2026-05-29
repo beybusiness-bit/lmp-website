@@ -227,14 +227,17 @@ function buildLoginForm() {
   const sub = document.getElementById('login-sub');
   sub.textContent = (projectData?.authTitle || '로그인') + ' — 체커 권한이 있는 계정으로 로그인하세요.';
 
+  // authKeyField 하나만 입력받음
+  const keyName = projectData?.authKeyField || authFields[0]?.key;
+  const f = authFields.find(a => a.key === keyName) || authFields[0];
   const container = document.getElementById('login-fields');
-  container.innerHTML = authFields.map(f => `
+  container.innerHTML = f ? `
     <div class="fi-lbl">${f.label || f.key}</div>
     <input class="fi" id="lf-${f.key}" type="${f.type === 'tel' ? 'tel' : 'text'}"
       placeholder="${f.placeholder || ''}"
       ${f.type === 'tel' ? 'maxlength="11" oninput="this.value=this.value.replace(/[^0-9]/,\'\')"' : ''}
       onkeydown="if(event.key===\'Enter\')doLogin()">
-  `).join('');
+  ` : '';
 }
 
 /* ── 로그인 처리 ── */
@@ -244,10 +247,11 @@ async function doLogin() {
   err.textContent = '';
   btn.disabled = true; btn.textContent = '확인 중…';
 
-  const query = authFields.reduce((q, f) => {
-    const val = document.getElementById('lf-' + f.key)?.value.trim() || '';
-    return q.where(f.key, '==', val);
-  }, db.collection(AUTH_COLLECTION));
+  // authKeyField 하나로만 조회
+  const keyName = projectData?.authKeyField || authFields[0]?.key;
+  const keyField = authFields.find(a => a.key === keyName) || authFields[0];
+  const val = document.getElementById('lf-' + keyField?.key)?.value.trim() || '';
+  const query = db.collection(AUTH_COLLECTION).where(keyField.key, '==', val);
 
   try {
     const snap = await query.limit(1).get();
