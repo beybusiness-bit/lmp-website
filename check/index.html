@@ -63,6 +63,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .result-wrap{display:none;margin-top:16px;padding:16px;border-radius:4px;text-align:center;}
 .result-wrap.ok{background:rgba(0,180,80,.1);border:1.5px solid rgba(0,180,80,.3);}
 .result-wrap.err{background:rgba(204,0,0,.08);border:1.5px solid rgba(204,0,0,.25);}
+.result-wrap.warn{background:rgba(220,130,0,.1);border:1.5px solid rgba(220,130,0,.35);}
 .result-icon{font-size:32px;margin-bottom:6px;}
 .result-title{font-size:16px;font-weight:800;margin-bottom:4px;}
 .result-sub{font-size:12px;color:rgba(0,0,0,.5);line-height:1.5;}
@@ -389,6 +390,12 @@ async function processCode(raw) {
   hideResult();
   document.getElementById('pw-err').textContent = '';
 
+  // RAFFLE QR format: RAFFLE:{raffleId}:{projectId}:{userId}
+  if ((raw || '').startsWith('RAFFLE:')) {
+    await processRaffleCode(raw);
+    return;
+  }
+
   const parts = (raw || '').split(':');
   if (parts.length !== 3) {
     showResult('err', '❌', '인식 실패', '올바른 미션 QR이 아닙니다.');
@@ -473,6 +480,37 @@ async function _writeExternalCheck(userRef, blockId, userData, confirmLabel, dis
   } catch(e) {
     showResult('err', '❌', '오류 발생', e.message);
   }
+}
+
+/* ── 뽑기 티켓 체크 ── */
+async function processRaffleCode(raw) {
+  // Format: RAFFLE:{raffleId}:{projectId}:{userId}
+  const segs = raw.split(':');
+  if (segs.length < 4) { showResult('err', '❌', '인식 실패', '올바른 뽑기 QR이 아닙니다.'); return; }
+  const [, raffleId, qrProjectId, userId] = segs;
+  const userRef = db.collection('cms_users_' + qrProjectId).doc(userId);
+  const entryRef = db.collection('cms_raffle_records').doc(raffleId).collection('entries').doc(userId);
+  try {
+    const [userDoc, entryDoc] = await Promise.all([userRef.get(), entryRef.get()]);
+    if (!entryDoc.exists) { showResult('err', '❌', '당첨 기록 없음', '이 사용자의 뽑기 당첨 기록이 없어요.'); return; }
+    const entry = entryDoc.data();
+    const userData = userDoc.exists ? userDoc.data() : {};
+    const nameField = authFields && authFields[0];
+    const displayName = nameField ? (userData[nameField.key] || userId) : userId;
+    const itemName = entry.itemName || '?';
+    const isUsed = !!entry.used;
+    if (isUsed) {
+      showResult('warn', '⚠️', '이미 사용됨', `${displayName} 님의 「${itemName}」 티켓은 이미 사용됐어요.`);
+      return;
+    }
+    if (confirm(`${displayName} 님의 「${itemName}」 티켓을 사용 처리하시겠어요?`)) {
+      await entryRef.update({ used: true, usedAt: firebase.firestore.FieldValue.serverTimestamp(), usedByRole: checkerSession.roleName || '' });
+      await userRef.update({ [`raffleResults.${raffleId}.used`]: true });
+      showResult('ok', '✅', '티켓 사용 완료!', `${displayName} 님의 「${itemName}」 티켓을 사용 처리했어요.`);
+    } else {
+      showResult('ok', '🎟️', '미사용 티켓', `${displayName} 님은 「${itemName}」에 당첨됐고 아직 사용하지 않았어요.`);
+    }
+  } catch(e) { showResult('err', '❌', '오류 발생', e.message); }
 }
 
 /* ── 결과 표시 ── */

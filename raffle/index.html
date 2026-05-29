@@ -19,8 +19,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;back
 .method-btn{padding:7px 16px;border:1.5px solid rgba(255,255,255,.25);background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:700;border-radius:20px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .2s;-webkit-tap-highlight-color:transparent;}
 .method-btn.on{background:#fff;color:#000;border-color:#fff;}
 
-/* Animation area */
-#anim-area{flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;min-height:0;}
+/* Animation area — tappable */
+#anim-area{flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;min-height:0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 
 /* Slot */
 .slot-machine{display:flex;gap:10px;padding:24px 20px;background:rgba(255,255,255,.04);border-radius:20px;border:2px solid rgba(255,255,255,.1);}
@@ -45,18 +45,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;back
 #tombola-result{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;text-align:center;padding:8px;color:#fff;opacity:0;transition:opacity .6s,transform .6s;transform:scale(.6);box-shadow:0 0 30px rgba(255,255,255,.3);}
 #tombola-result.show{opacity:1;transform:scale(1);}
 
-/* Card pick */
-#card-wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:320px;padding:8px;}
-.pick-card{width:78px;height:108px;cursor:pointer;-webkit-tap-highlight-color:transparent;perspective:600px;transition:transform .1s;}
-.pick-card:active{transform:scale(.96);}
-.pick-card-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.4,0,.2,1);}
-.pick-card.flipped .pick-card-inner{transform:rotateY(180deg);}
-.pick-card-front,.pick-card-back{position:absolute;inset:0;border-radius:10px;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.15);}
-.pick-card-front{background:linear-gradient(135deg,#1a1a3e,#0d0d2b);font-size:26px;}
-.pick-card-back{transform:rotateY(180deg);font-size:10px;font-weight:800;padding:8px;text-align:center;}
-.pick-card-back.win{background:linear-gradient(135deg,#f6c90e,#f79e02);color:#000;}
-.pick-card-back.lose{background:linear-gradient(135deg,#2c2c2c,#1a1a1a);color:rgba(255,255,255,.5);}
-.pick-card.winner .pick-card-front{border-color:gold;box-shadow:0 0 18px rgba(255,215,0,.6);}
+/* Done screen */
+#done-screen{flex:1;display:flex;align-items:center;justify-content:center;}
+.done-msg{text-align:center;color:rgba(255,255,255,.45);font-size:15px;font-weight:700;letter-spacing:.3px;}
 
 /* Action */
 #action-area{padding:14px 20px 28px;flex-shrink:0;text-align:center;}
@@ -66,7 +57,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;back
 #stock-info{margin-top:10px;font-size:11px;color:rgba(255,255,255,.35);line-height:1.8;}
 
 /* Result overlay */
-#result-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:100;padding:28px;}
+#result-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:100;padding:28px;}
 #result-overlay.show{display:flex;animation:fadeIn .3s;}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 #result-box{background:#fff;color:#000;border-radius:22px;padding:36px 28px 28px;text-align:center;width:100%;max-width:320px;animation:popIn .35s cubic-bezier(.2,.8,.4,1.2) both;}
@@ -75,7 +66,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;back
 #result-sub{font-size:11px;font-weight:800;letter-spacing:1.5px;color:rgba(0,0,0,.35);margin-bottom:8px;}
 #result-name{font-size:28px;font-weight:900;margin-bottom:8px;line-height:1.2;}
 #result-remain{font-size:12px;color:rgba(0,0,0,.4);margin-bottom:24px;min-height:18px;}
-#result-again{width:100%;padding:15px;background:#000;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;}
+#result-confirm-btn{width:100%;padding:15px;background:#000;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;}
+#result-confirm-btn:active{opacity:.8;}
 
 /* Loading/error */
 #loading-view,#error-view{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:rgba(255,255,255,.55);}
@@ -93,7 +85,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;back
       <div id="raffle-desc"></div>
     </div>
     <div id="method-tabs"></div>
-    <div id="anim-area"></div>
+    <div id="anim-area" onclick="onAnimAreaClick()"></div>
     <div id="action-area">
       <button id="draw-btn" onclick="doDraw()">🎲&nbsp; 뽑기!</button>
       <div id="stock-info"></div>
@@ -107,7 +99,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;back
     <div id="result-sub">당 첨 !</div>
     <div id="result-name">-</div>
     <div id="result-remain"></div>
-    <button id="result-again" onclick="resetDraw()">↩ 다시 뽑기</button>
+    <button id="result-confirm-btn" onclick="confirmResult()">확인</button>
   </div>
 </div>
 
@@ -128,13 +120,18 @@ const CONFIG_ID = new URLSearchParams(location.search).get('id') || '';
 let cfg = null;
 let curMethod = '';
 let isDrawing = false;
-let rouletteAngle = -Math.PI/2;
+let hasDrawn = false;  // 1 draw per page load — never resets
+
+/* Idle animation handles */
+let rouletteAngle = -Math.PI / 2;
+let rouletteIdleAnim = null;
+let rouletteSpinAnim = null;
+let slotIdleAnim = null;
+let slotIdleOffset = 0;
 let tombolaAnim = null;
 let tombolaBalls = [];
-let cardWinnerIdx = -1;
-let cardResultItem = null;
 
-const METHOD_LABELS = {slot:'슬롯머신', roulette:'룰렛', tombola:'뽑기통', card:'카드뽑기'};
+const METHOD_LABELS = {slot:'슬롯머신', roulette:'룰렛', tombola:'뽑기통'};
 const BALL_COLORS = ['#e74c3c','#3498db','#2ecc71','#e67e22','#9b59b6','#1abc9c','#f39c12','#e91e63','#00bcd4','#8bc34a'];
 
 /* ─── Init ─── */
@@ -143,92 +140,141 @@ async function init(){
   try{
     const doc = await db.collection('cms_raffle_configs').doc(CONFIG_ID).get();
     if(!doc.exists){ showErr('뽑기를 찾을 수 없어요.'); return; }
-    cfg = {id:doc.id,...doc.data()};
+    cfg = {id:doc.id, ...doc.data()};
+    // Filter out invalid methods (card removed)
+    if(cfg.methods) cfg.methods = cfg.methods.filter(m=>['slot','roulette','tombola'].includes(m));
+    if(!cfg.methods || cfg.methods.length === 0) cfg.methods = ['slot'];
     renderUI();
   }catch(e){ showErr('불러오기 실패: '+e.message); }
 }
+
 function showErr(msg){
   document.getElementById('loading-view').style.display='none';
   document.getElementById('error-view').style.display='flex';
   document.getElementById('err-msg').textContent=msg;
 }
+
 function renderUI(){
   document.getElementById('loading-view').style.display='none';
-  const ui=document.getElementById('main-ui');
+  const ui = document.getElementById('main-ui');
   ui.style.display='flex';
-  document.getElementById('raffle-name').textContent=cfg.name||'뽑기';
-  const d=cfg.description||'';
-  const del=document.getElementById('raffle-desc');
+  document.getElementById('raffle-name').textContent = cfg.name||'뽑기';
+  const d = cfg.description||'';
+  const del = document.getElementById('raffle-desc');
   del.textContent=d; del.style.display=d?'':'none';
-  const methods=cfg.methods||['slot'];
-  const tabsEl=document.getElementById('method-tabs');
+  const methods = cfg.methods||['slot'];
+  const tabsEl = document.getElementById('method-tabs');
   if(methods.length<=1){ tabsEl.style.display='none'; }
   else{
-    tabsEl.innerHTML=methods.map(m=>`<button class="method-btn" data-m="${m}" onclick="selectMethod('${m}')">${METHOD_LABELS[m]||m}</button>`).join('');
+    tabsEl.innerHTML = methods.map(m=>`<button class="method-btn" data-m="${m}" onclick="selectMethod('${m}')">${METHOD_LABELS[m]||m}</button>`).join('');
   }
   selectMethod(methods[0]);
 }
+
 function selectMethod(m){
-  curMethod=m;
+  stopAllIdle();
+  curMethod = m;
   document.querySelectorAll('.method-btn').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
   renderAnim();
 }
-function getAvail(){ return (cfg.items||[]).filter(it=>!cfg.deductOnDraw||(it.remainingCount??it.totalCount)>0); }
+
+function getAvail(){
+  return (cfg.items||[]).filter(it=>!cfg.deductOnDraw||(it.remainingCount??it.totalCount)>0);
+}
+
 function weightedPick(items){
-  const w=items.map(it=>cfg.deductOnDraw?(it.remainingCount??it.totalCount):it.totalCount);
-  const total=w.reduce((a,b)=>a+b,0);
+  const w = items.map(it=>cfg.deductOnDraw?(it.remainingCount??it.totalCount):it.totalCount);
+  const total = w.reduce((a,b)=>a+b,0);
   if(total<=0) return null;
-  let r=Math.random()*total;
+  let r = Math.random()*total;
   for(let i=0;i<items.length;i++){ r-=w[i]; if(r<=0) return items[i]; }
   return items[items.length-1];
 }
+
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+/* ─── Stop all idle animations ─── */
+function stopAllIdle(){
+  if(rouletteIdleAnim){ cancelAnimationFrame(rouletteIdleAnim); rouletteIdleAnim=null; }
+  if(rouletteSpinAnim){ cancelAnimationFrame(rouletteSpinAnim); rouletteSpinAnim=null; }
+  if(slotIdleAnim){ cancelAnimationFrame(slotIdleAnim); slotIdleAnim=null; }
+  if(tombolaAnim){ cancelAnimationFrame(tombolaAnim); tombolaAnim=null; }
+  tombolaBalls=[];
+}
 
 /* ─── SLOT ─── */
 function buildSlot(){
   return `<div class="slot-machine">${[0,1,2].map(i=>`<div class="slot-reel" id="sr${i}"><div class="slot-strip" id="ss${i}"></div><div class="slot-highlight"></div></div>`).join('')}</div>`;
 }
-function fillSlotStrips(items){
+
+function fillSlotStrips(items, offsetY){
+  const H = 40;
   [0,1,2].forEach(i=>{
-    const strip=document.getElementById('ss'+i); if(!strip) return;
-    const pool=[...items,...items,...items,...items,...items,...items];
-    strip.innerHTML=pool.map(it=>`<div class="slot-cell">${esc(it.name)}</div>`).join('');
-    strip.style.transition='none'; strip.style.transform='translateY(0px)';
+    const strip = document.getElementById('ss'+i); if(!strip) return;
+    const pool = [...items,...items,...items,...items,...items,...items,...items,...items];
+    if(!strip.children.length){
+      strip.innerHTML = pool.map(it=>`<div class="slot-cell">${esc(it.name)}</div>`).join('');
+    }
+    strip.style.transition='none';
+    strip.style.transform=`translateY(${-(offsetY||0)}px)`;
   });
 }
-function spinSlot(result,items){
-  fillSlotStrips(items);
+
+function startSlotIdle(items){
+  slotIdleOffset = 0;
+  const H = 40, totalH = H * items.length * 8;
+  fillSlotStrips(items, 0);
+  function tick(){
+    slotIdleOffset = (slotIdleOffset + 0.4) % totalH;
+    [0,1,2].forEach(i=>{
+      const strip = document.getElementById('ss'+i); if(!strip) return;
+      strip.style.transition='none';
+      strip.style.transform=`translateY(${-slotIdleOffset}px)`;
+    });
+    slotIdleAnim = requestAnimationFrame(tick);
+  }
+  slotIdleAnim = requestAnimationFrame(tick);
+}
+
+function spinSlot(result, items){
+  if(slotIdleAnim){ cancelAnimationFrame(slotIdleAnim); slotIdleAnim=null; }
+  // Rebuild strips fresh for spin
   const H=40, viewH=120, center=Math.floor(viewH/H/2);
-  const ri=items.findIndex(it=>it.id===result.id);
+  const ri = items.findIndex(it=>it.id===result.id);
   [0,1,2].forEach((col,idx)=>{
-    const strip=document.getElementById('ss'+col); if(!strip) return;
-    const loops=4+idx;
-    const targetCell=loops*items.length+ri;
-    const targetY=-(targetCell-center)*H;
+    const strip = document.getElementById('ss'+col); if(!strip) return;
+    const pool = [...items,...items,...items,...items,...items,...items,...items,...items,...items,...items];
+    strip.innerHTML = pool.map(it=>`<div class="slot-cell">${esc(it.name)}</div>`).join('');
+    strip.style.transition='none';
+    strip.style.transform='translateY(0px)';
+    const loops = 5+idx;
+    const targetCell = loops*items.length+ri;
+    const targetY = -(targetCell-center)*H;
     setTimeout(()=>{
-      strip.style.transition=`transform ${1.8+idx*0.35}s cubic-bezier(0.2,0.8,0.3,1)`;
+      strip.style.transition=`transform ${1.8+idx*0.4}s cubic-bezier(0.15,0.85,0.3,1)`;
       strip.style.transform=`translateY(${targetY}px)`;
-    },100+idx*300);
+    }, 60+idx*280);
   });
 }
 
 /* ─── ROULETTE ─── */
 function buildRoulette(){
-  const sz=Math.min(window.innerWidth-48,280);
+  const sz = Math.min(window.innerWidth-48, 280);
   return `<div id="roulette-outer"><canvas id="rc" width="${sz}" height="${sz}"></canvas><div id="roulette-needle"></div><div id="roulette-center"></div></div>`;
 }
+
 function drawWheel(angle){
-  const canvas=document.getElementById('rc'); if(!canvas) return;
+  const canvas = document.getElementById('rc'); if(!canvas) return;
   const sz=canvas.width, cx=sz/2, cy=sz/2, r=sz/2-4;
-  const ctx=canvas.getContext('2d');
-  const items=cfg.items||[];
-  const total=items.reduce((s,it)=>s+(cfg.deductOnDraw?(it.remainingCount??it.totalCount):it.totalCount),0);
+  const ctx = canvas.getContext('2d');
+  const items = cfg.items||[];
+  const total = items.reduce((s,it)=>s+(cfg.deductOnDraw?(it.remainingCount??it.totalCount):it.totalCount),0);
   ctx.clearRect(0,0,sz,sz);
   if(total<=0) return;
-  let a=angle;
+  let a = angle;
   items.forEach((it,i)=>{
-    const cnt=cfg.deductOnDraw?(it.remainingCount??it.totalCount):it.totalCount;
-    const sweep=(cnt/total)*Math.PI*2;
+    const cnt = cfg.deductOnDraw?(it.remainingCount??it.totalCount):it.totalCount;
+    const sweep = (cnt/total)*Math.PI*2;
     ctx.beginPath(); ctx.moveTo(cx,cy);
     ctx.arc(cx,cy,r,a,a+sweep); ctx.closePath();
     ctx.fillStyle=BALL_COLORS[i%BALL_COLORS.length]; ctx.fill();
@@ -237,157 +283,195 @@ function drawWheel(angle){
       ctx.save(); ctx.translate(cx,cy); ctx.rotate(a+sweep/2);
       ctx.textAlign='right'; ctx.fillStyle='#fff';
       ctx.font=`bold ${Math.min(12,Math.max(9,sz/28))}px -apple-system,sans-serif`;
-      const lbl=it.name.length>9?it.name.slice(0,9)+'…':it.name;
+      const lbl = it.name.length>9?it.name.slice(0,9)+'…':it.name;
       ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=3;
       ctx.fillText(lbl,r-10,4); ctx.restore();
     }
     a+=sweep;
   });
 }
-function spinRoulette(result,items){
-  const total=items.reduce((s,it)=>s+(cfg.deductOnDraw?(it.remainingCount??it.totalCount):it.totalCount),0);
-  let start=0;
-  const ri=items.findIndex(it=>it.id===result.id);
-  for(let i=0;i<ri;i++) start+=((cfg.deductOnDraw?(items[i].remainingCount??items[i].totalCount):items[i].totalCount)/total)*Math.PI*2;
-  const cnt=cfg.deductOnDraw?(result.remainingCount??result.totalCount):result.totalCount;
-  const slice=(cnt/total)*Math.PI*2;
-  const mid=start+slice/2;
-  // target: wheel rotated so mid lands at needle (top = -π/2)
-  const spins=5+Math.random()*2;
-  const target=rouletteAngle+(Math.PI*2*spins)+((-Math.PI/2)-mid-rouletteAngle%(Math.PI*2));
-  const dur=3600, t0=performance.now(), a0=rouletteAngle;
-  function tick(now){
-    const t=Math.min((now-t0)/dur,1), e=1-Math.pow(1-t,4);
-    rouletteAngle=a0+(target-a0)*e;
+
+function startRouletteIdle(){
+  function tick(){
+    rouletteAngle += 0.004; // ~0.23°/frame at 60fps
     drawWheel(rouletteAngle);
-    if(t<1) requestAnimationFrame(tick);
+    rouletteIdleAnim = requestAnimationFrame(tick);
   }
-  requestAnimationFrame(tick);
+  rouletteIdleAnim = requestAnimationFrame(tick);
+}
+
+function spinRoulette(result, items){
+  if(rouletteIdleAnim){ cancelAnimationFrame(rouletteIdleAnim); rouletteIdleAnim=null; }
+  if(rouletteSpinAnim){ cancelAnimationFrame(rouletteSpinAnim); rouletteSpinAnim=null; }
+  const total = items.reduce((s,it)=>s+(cfg.deductOnDraw?(it.remainingCount??it.totalCount):it.totalCount),0);
+  let segStart = 0;
+  const ri = items.findIndex(it=>it.id===result.id);
+  for(let i=0;i<ri;i++) segStart += ((cfg.deductOnDraw?(items[i].remainingCount??items[i].totalCount):items[i].totalCount)/total)*Math.PI*2;
+  const cnt = cfg.deductOnDraw?(result.remainingCount??result.totalCount):result.totalCount;
+  const slice = (cnt/total)*Math.PI*2;
+  const mid = segStart+slice/2;
+  // needle at top = -π/2 in world coords. We want mid segment at needle.
+  const currentNorm = rouletteAngle % (Math.PI*2);
+  const spins = 6+Math.random()*2;
+  // targetAngle such that (targetAngle + mid) = -π/2 + n*2π
+  const desired = -Math.PI/2 - mid;
+  const diff = ((desired - currentNorm) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
+  const target = rouletteAngle + diff + Math.PI*2*spins;
+  const dur = 4000, t0 = performance.now(), a0 = rouletteAngle;
+  function tick(now){
+    const t = Math.min((now-t0)/dur, 1);
+    const e = 1-Math.pow(1-t,4); // ease-out-quart
+    rouletteAngle = a0+(target-a0)*e;
+    drawWheel(rouletteAngle);
+    if(t<1){ rouletteSpinAnim=requestAnimationFrame(tick); }
+    else { rouletteSpinAnim=null; }
+  }
+  rouletteSpinAnim = requestAnimationFrame(tick);
 }
 
 /* ─── TOMBOLA ─── */
 function buildTombola(){
   return `<div id="tombola-wrap"><div id="tombola-box"></div><div id="tombola-result"></div></div>`;
 }
-function initTombola(items){
+
+function initTombola(items, speed){
   if(tombolaAnim){cancelAnimationFrame(tombolaAnim);tombolaAnim=null;}
   tombolaBalls=[];
-  const box=document.getElementById('tombola-box'); if(!box) return;
+  const box = document.getElementById('tombola-box'); if(!box) return;
   box.innerHTML='';
-  const count=Math.min(items.length,10);
-  const bw=54,bh=54;
-  const BW=box.offsetWidth||280, BH=box.offsetHeight||190;
+  const count = Math.min(items.length,12);
+  const bw=54, bh=54;
+  const BW=box.offsetWidth||300, BH=box.offsetHeight||190;
   for(let i=0;i<count;i++){
-    const it=items[i];
-    const el=document.createElement('div'); el.className='t-ball';
+    const it = items[i];
+    const el = document.createElement('div'); el.className='t-ball';
     el.style.background=BALL_COLORS[i%BALL_COLORS.length];
     el.textContent=it.name.length>7?it.name.slice(0,7)+'…':it.name;
     const x=Math.random()*(BW-bw), y=Math.random()*(BH-bh);
     el.style.left=x+'px'; el.style.top=y+'px';
     box.appendChild(el);
-    tombolaBalls.push({el,x,y,vx:(Math.random()-0.5)*3.5,vy:(Math.random()-0.5)*3.5,id:it.id});
+    const spd = speed||2.2;
+    tombolaBalls.push({el,x,y,vx:(Math.random()-.5)*spd*2,vy:(Math.random()-.5)*spd*2,id:it.id});
   }
-  const resBall=document.getElementById('tombola-result');
+  const resBall = document.getElementById('tombola-result');
   if(resBall){ resBall.className=''; resBall.style.cssText='width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;text-align:center;padding:8px;color:#fff;opacity:0;transition:opacity .6s,transform .6s;transform:scale(.6);box-shadow:0 0 30px rgba(255,255,255,.3);'; }
-  animTombola(box,bw,bh);
+  animTombola(box,bw,bh,speed||2.2);
 }
-function animTombola(box,bw,bh){
-  const BW=box.offsetWidth||280, BH=box.offsetHeight||190;
+
+function animTombola(box,bw,bh,speed){
+  const BW=box.offsetWidth||300, BH=box.offsetHeight||190;
+  const spd=speed||2.2;
   tombolaBalls.forEach(b=>{
     b.x+=b.vx; b.y+=b.vy;
-    if(b.x<0){b.x=0;b.vx=Math.abs(b.vx)+(Math.random()-.5)*.5;}
-    if(b.x>BW-bw){b.x=BW-bw;b.vx=-Math.abs(b.vx)-(Math.random()-.5)*.5;}
-    if(b.y<0){b.y=0;b.vy=Math.abs(b.vy)+(Math.random()-.5)*.5;}
-    if(b.y>BH-bh){b.y=BH-bh;b.vy=-Math.abs(b.vy)-(Math.random()-.5)*.5;}
-    b.vx*=0.998; b.vy*=0.998;
-    // Random nudge to keep lively
-    if(Math.random()<0.01){b.vx+=(Math.random()-.5)*2;b.vy+=(Math.random()-.5)*2;}
+    if(b.x<0){b.x=0;b.vx=Math.abs(b.vx)+(Math.random()-.5)*.3;}
+    if(b.x>BW-bw){b.x=BW-bw;b.vx=-Math.abs(b.vx)-(Math.random()-.5)*.3;}
+    if(b.y<0){b.y=0;b.vy=Math.abs(b.vy)+(Math.random()-.5)*.3;}
+    if(b.y>BH-bh){b.y=BH-bh;b.vy=-Math.abs(b.vy)-(Math.random()-.5)*.3;}
+    // Keep speed in check
+    const maxV=spd*1.8;
+    b.vx=Math.max(-maxV,Math.min(maxV,b.vx));
+    b.vy=Math.max(-maxV,Math.min(maxV,b.vy));
+    if(Math.random()<0.015){b.vx+=(Math.random()-.5)*spd*.5;b.vy+=(Math.random()-.5)*spd*.5;}
     b.el.style.left=b.x+'px'; b.el.style.top=b.y+'px';
   });
-  tombolaAnim=requestAnimationFrame(()=>animTombola(box,bw,bh));
+  tombolaAnim=requestAnimationFrame(()=>animTombola(box,bw,bh,spd));
 }
-function stopTombola(result,items){
+
+function revealTombolaWinner(result, items){
   if(tombolaAnim){cancelAnimationFrame(tombolaAnim);tombolaAnim=null;}
-  const ri=items.findIndex(it=>it.id===result.id);
-  const resBall=document.getElementById('tombola-result');
+  const ri = items.findIndex(it=>it.id===result.id);
+  const box = document.getElementById('tombola-box');
+  // Hide non-winner balls
+  if(box){
+    const bw=54,bh=54;
+    const BW=box.offsetWidth||300, BH=box.offsetHeight||190;
+    tombolaBalls.forEach((b,i)=>{
+      if(b.id!==result.id){
+        b.el.style.transition='all 0.4s ease';
+        b.el.style.opacity='0.1';
+        b.el.style.transform='scale(0.7)';
+      } else {
+        // Winner ball flies to center
+        b.el.style.transition='all 0.6s cubic-bezier(.2,.8,.3,1.2)';
+        b.el.style.left=(BW/2-bw/2)+'px';
+        b.el.style.top=(BH/2-bh/2)+'px';
+        b.el.style.transform='scale(1.4)';
+        b.el.style.boxShadow='0 0 30px rgba(255,255,255,.6),inset -4px -4px 8px rgba(0,0,0,.3)';
+      }
+    });
+  }
+  // Show result ball below
+  const resBall = document.getElementById('tombola-result');
   if(resBall){
     resBall.style.background=BALL_COLORS[ri%BALL_COLORS.length];
     resBall.textContent=result.name.length>10?result.name.slice(0,10)+'…':result.name;
-    requestAnimationFrame(()=>{ resBall.style.opacity='1'; resBall.style.transform='scale(1)'; });
-  }
-}
-
-/* ─── CARD ─── */
-function buildCard(items){
-  const count=Math.min(Math.max(items.length,2),8);
-  return `<div id="card-wrap">${Array.from({length:count},(_,i)=>`<div class="pick-card" id="pc${i}" onclick="flipCard(${i})"><div class="pick-card-inner"><div class="pick-card-front">🎴</div><div class="pick-card-back" id="pcb${i}">?</div></div></div>`).join('')}</div>`;
-}
-function setupCards(result,items){
-  cardResultItem=result;
-  const cards=document.querySelectorAll('.pick-card');
-  cardWinnerIdx=Math.floor(Math.random()*cards.length);
-  cards.forEach((c,i)=>{
-    c.classList.remove('winner','flipped');
-    const back=document.getElementById('pcb'+i); if(!back) return;
-    if(i===cardWinnerIdx){ back.className='pick-card-back win'; back.textContent=result.name; }
-    else{ back.className='pick-card-back lose'; back.textContent='꽝'; }
-  });
-}
-function flipCard(i){
-  if(isDrawing) return;
-  const card=document.getElementById('pc'+i); if(!card||card.classList.contains('flipped')) return;
-  card.classList.add('flipped');
-  if(i===cardWinnerIdx){
-    card.classList.add('winner');
-    setTimeout(()=>resolveResult(cardResultItem),700);
+    setTimeout(()=>{ resBall.style.opacity='1'; resBall.style.transform='scale(1)'; },300);
   }
 }
 
 /* ─── Render animation area ─── */
 function renderAnim(){
-  if(tombolaAnim){cancelAnimationFrame(tombolaAnim);tombolaAnim=null;tombolaBalls=[];}
-  const el=document.getElementById('anim-area');
-  const items=cfg.items||[];
-  if(curMethod==='slot'){ el.innerHTML=buildSlot(); fillSlotStrips(getAvail().length>0?getAvail():items); }
-  else if(curMethod==='roulette'){ el.innerHTML=buildRoulette(); setTimeout(()=>drawWheel(rouletteAngle),30); }
-  else if(curMethod==='tombola'){ el.innerHTML=buildTombola(); setTimeout(()=>initTombola(getAvail().length>0?getAvail():items),30); }
-  else if(curMethod==='card'){ const av=getAvail(); el.innerHTML=buildCard(av.length>0?av:items); }
+  stopAllIdle();
+  const el = document.getElementById('anim-area');
+  const items = cfg.items||[];
+  const avail = getAvail().length>0?getAvail():items;
+  if(curMethod==='slot'){
+    el.innerHTML=buildSlot();
+    setTimeout(()=>startSlotIdle(avail),30);
+  } else if(curMethod==='roulette'){
+    el.innerHTML=buildRoulette();
+    setTimeout(()=>{ drawWheel(rouletteAngle); startRouletteIdle(); },30);
+  } else if(curMethod==='tombola'){
+    el.innerHTML=buildTombola();
+    setTimeout(()=>initTombola(avail, 2.2),30);
+  }
+}
+
+/* ─── Tap area click (also triggers draw) ─── */
+function onAnimAreaClick(){
+  if(!hasDrawn && !isDrawing) doDraw();
 }
 
 /* ─── Draw action ─── */
 async function doDraw(){
-  if(isDrawing) return;
-  const avail=getAvailableForDraw();
+  if(isDrawing || hasDrawn) return;
+  const avail = getAvail();
   if(avail.length===0){ showEmptyMsg(); return; }
   isDrawing=true;
   const btn=document.getElementById('draw-btn');
   btn.disabled=true;
 
-  // Pre-determine result — cosmetic only, animation follows
-  const result=weightedPick(avail);
+  // Pre-determine result BEFORE animation starts
+  const result = weightedPick(avail);
+  if(!result){ isDrawing=false; btn.disabled=false; return; }
 
   if(curMethod==='slot'){
     btn.textContent='🎰 돌아가는 중…';
-    spinSlot(result,avail);
+    spinSlot(result, avail);
     await sleep(2900);
-    resolveResult(result);
   } else if(curMethod==='roulette'){
     btn.textContent='🎡 돌아가는 중…';
-    spinRoulette(result,avail);
-    await sleep(4000);
-    resolveResult(result);
+    spinRoulette(result, avail);
+    await sleep(4200);
   } else if(curMethod==='tombola'){
     btn.textContent='🎱 섞는 중…';
-    await sleep(1200);
-    stopTombola(result,avail);
-    await sleep(900);
-    resolveResult(result);
-  } else if(curMethod==='card'){
-    setupCards(result,avail);
-    btn.textContent='🃏 카드를 눌러 뽑으세요';
-    isDrawing=false; // Card is interactive
-    return;
+    // Speed up idle
+    if(tombolaAnim){cancelAnimationFrame(tombolaAnim);tombolaAnim=null;}
+    const box=document.getElementById('tombola-box');
+    if(box){
+      const bw=54,bh=54;
+      // Increase ball speeds
+      tombolaBalls.forEach(b=>{
+        b.vx*=2.5+(Math.random()*.5); b.vy*=2.5+(Math.random()*.5);
+      });
+      animTombola(box,bw,bh,5);
+    }
+    await sleep(1500);
+    revealTombolaWinner(result, avail);
+    await sleep(800);
   }
+
+  await resolveResult(result);
 }
 
 function getAvailableForDraw(){
@@ -395,11 +479,9 @@ function getAvailableForDraw(){
 }
 
 async function resolveResult(item){
-  // Write to Firestore (deduct + record)
   if(cfg.deductOnDraw){
     await deductItem(item);
-    // Update local state
-    const local=cfg.items.find(it=>it.id===item.id);
+    const local = cfg.items.find(it=>it.id===item.id);
     if(local){ local.remainingCount=Math.max(0,(local.remainingCount??local.totalCount)-1); }
   } else {
     await recordDraw(item);
@@ -408,25 +490,30 @@ async function resolveResult(item){
 }
 
 function showResultOverlay(item){
-  const remain=cfg.deductOnDraw?(item.remainingCount??item.totalCount)-1:null;
+  const remain = cfg.deductOnDraw?Math.max(0,(item.remainingCount??item.totalCount)-1):null;
   document.getElementById('result-name').textContent=item.name;
   document.getElementById('result-remain').textContent=
-    cfg.deductOnDraw?`남은 수량: ${Math.max(0,remain)}개`:'';
+    cfg.deductOnDraw?`남은 수량: ${remain}개`:'';
   document.getElementById('result-overlay').classList.add('show');
   updateStockInfo();
 }
 
-function resetDraw(){
+function confirmResult(){
+  // Close overlay and permanently lock
   document.getElementById('result-overlay').classList.remove('show');
-  isDrawing=false;
+  hasDrawn = true;
+  isDrawing = false;
+  // Stop all animations
+  stopAllIdle();
+  // Show done screen
+  const animArea = document.getElementById('anim-area');
+  animArea.innerHTML=`<div class="done-msg">뽑기를 완료했어요 ✓</div>`;
+  animArea.style.cursor='default';
   const btn=document.getElementById('draw-btn');
-  const avail=getAvailableForDraw();
-  if(cfg.deductOnDraw&&avail.length===0){
-    btn.disabled=true; btn.textContent='모두 소진되었어요';
-  } else {
-    btn.disabled=false; btn.textContent='🎲  뽑기!';
-  }
-  renderAnim();
+  btn.disabled=true;
+  btn.style.opacity='.25';
+  btn.style.cursor='not-allowed';
+  btn.textContent='뽑기 완료';
   updateStockInfo();
 }
 
@@ -460,10 +547,12 @@ async function deductItem(item){
     await recordDraw(item);
   }catch(e){ console.error('deduct',e); }
 }
+
 async function recordDraw(item){
   try{
     await db.collection('cms_raffle_records').doc(CONFIG_ID).collection('draws').add({
-      itemId:item.id,itemName:item.name,
+      itemId:item.id,
+      itemName:item.name,
       method:curMethod,
       drawnAt:firebase.firestore.FieldValue.serverTimestamp()
     });

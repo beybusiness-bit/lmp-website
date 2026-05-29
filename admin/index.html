@@ -2221,11 +2221,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" class="raffle-method-cb" value="slot"> 슬롯머신</label>
             <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" class="raffle-method-cb" value="roulette"> 룰렛</label>
             <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" class="raffle-method-cb" value="tombola"> 뽑기통</label>
-            <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" class="raffle-method-cb" value="card"> 카드뽑기</label>
           </div>
-          <div class="switch-row" style="margin-bottom:16px;">
+          <div class="switch-row" style="margin-bottom:8px;">
             <div class="switch" id="raffle-deduct-sw" onclick="toggleRaffleDeduct()"></div>
             <span class="switch-lbl">뽑히면 수량 차감</span>
+          </div>
+          <div class="switch-row" style="margin-bottom:16px;">
+            <div class="switch" id="raffle-checker-sw" onclick="toggleRaffleCheckerApproval()"></div>
+            <span class="switch-lbl">체커 승인 필요 <span style="font-weight:400;color:rgba(0,0,0,.45);">(프로젝트 연동 시 — 체커가 체크해줘야 뽑기 시작 가능)</span></span>
           </div>
           <div class="ed-lbl">뽑기 항목</div>
           <div style="font-size:11px;color:rgba(0,0,0,.4);margin-bottom:8px;">이름과 총 수량을 입력하세요. 수량은 당첨 확률에 비례합니다.</div>
@@ -2235,7 +2238,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <div id="raffle-stats-wrap" style="display:none;">
             <div class="ed-lbl" style="margin-top:8px;">뽑기 통계</div>
             <div id="raffle-stats-chart" style="margin-bottom:16px;"></div>
-            <div class="ed-lbl">최근 뽑기 기록</div>
+            <div class="ed-lbl">당첨 결과 (프로젝트 연동)</div>
+            <div id="raffle-entries-list" style="margin-bottom:16px;font-size:13px;"></div>
+            <div class="ed-lbl">단독 뽑기 기록</div>
             <div id="raffle-history-list"></div>
           </div>
         </div>
@@ -2527,6 +2532,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="blk-tab"    id="ttab-copy-gen"          onclick="switchToolType('copy-gen')"          style="font-size:12px;padding:6px 12px;">문구 생성기</button>
         <button class="blk-tab"    id="ttab-payment"           onclick="switchToolType('payment')"           style="font-size:12px;padding:6px 12px;">결제</button>
         <button class="blk-tab"    id="ttab-guestbook"         onclick="switchToolType('guestbook')"         style="font-size:12px;padding:6px 12px;">방명록</button>
+        <button class="blk-tab"    id="ttab-raffle"            onclick="switchToolType('raffle')"            style="font-size:12px;padding:6px 12px;">뽑기</button>
       </div>
       <div id="tool-inst-section">
         <div class="ed-lbl" style="margin-bottom:6px;">인스턴스 선택</div>
@@ -3398,6 +3404,10 @@ async function raffleShowEdit(id){
   raffleDeduct=!!d.deductOnDraw;
   const sw=document.getElementById('raffle-deduct-sw');
   if(sw) sw.className='switch'+(raffleDeduct?' on':'');
+  // checker approval
+  raffleCheckerApproval=!!d.requireCheckerApproval;
+  const sw2=document.getElementById('raffle-checker-sw');
+  if(sw2) sw2.className='switch'+(raffleCheckerApproval?' on':'');
   // items
   curRaffleItems=(d.items||[]).map(it=>({...it}));
   renderRaffleItems();
@@ -3418,6 +3428,12 @@ function toggleRaffleDeduct(){
   raffleDeduct=!raffleDeduct;
   const sw=document.getElementById('raffle-deduct-sw');
   if(sw) sw.className='switch'+(raffleDeduct?' on':'');
+}
+let raffleCheckerApproval = false;
+function toggleRaffleCheckerApproval(){
+  raffleCheckerApproval=!raffleCheckerApproval;
+  const sw=document.getElementById('raffle-checker-sw');
+  if(sw) sw.className='switch'+(raffleCheckerApproval?' on':'');
 }
 
 function raffleAddItem(){
@@ -3459,6 +3475,7 @@ async function raffleSave(event){
       methods,
       items:curRaffleItems.map(it=>({id:it.id,name:it.name.trim()||'항목',totalCount:it.totalCount||1,remainingCount:it.remainingCount??it.totalCount??1})),
       deductOnDraw:raffleDeduct,
+      requireCheckerApproval:raffleCheckerApproval,
       updatedAt:firebase.firestore.FieldValue.serverTimestamp()
     });
     if(btn){ btn.disabled=false; btn.textContent='저장됨 ✓'; setTimeout(()=>{ btn.textContent='저장'; },1500); }
@@ -3541,6 +3558,36 @@ async function loadRaffleStats(configId){
       hist.innerHTML='<div style="font-size:12px;color:rgba(0,0,0,.4);">기록 목록을 표시하려면 Firestore 인덱스가 필요합니다.</div>';
     }catch(_){}
   }
+  // Load project-integrated entries
+  loadRaffleEntries(configId);
+}
+async function loadRaffleEntries(configId){
+  const el=document.getElementById('raffle-entries-list'); if(!el) return;
+  try{
+    const snap=await db.collection('cms_raffle_records').doc(configId).collection('entries').get();
+    if(snap.empty){ el.innerHTML='<div style="color:rgba(0,0,0,.35);font-size:12px;">프로젝트 연동 당첨 기록 없음</div>'; return; }
+    const rows=snap.docs.map(d=>{ const r=d.data(); const dt=r.drawnAt?.toDate?r.drawnAt.toDate():new Date(); return {userId:d.id,...r,_dt:dt}; });
+    rows.sort((a,b)=>b._dt-a._dt);
+    el.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead><tr style="border-bottom:2px solid #000;">
+        <th style="text-align:left;padding:4px 6px;">사용자</th>
+        <th style="text-align:left;padding:4px 6px;">당첨 항목</th>
+        <th style="text-align:center;padding:4px 6px;color:rgba(0,0,0,.4);">사용</th>
+        <th style="text-align:right;padding:4px 6px;color:rgba(0,0,0,.4);">일시</th>
+      </tr></thead>
+      <tbody>${rows.map(r=>{
+        const uf=r.userFields||{};
+        const userLabel=Object.values(uf)[0]||r.userId;
+        const usedBadge=r.used?'<span style="background:#000;color:#fff;font-size:10px;padding:2px 6px;border-radius:3px;">사용됨</span>':'<span style="color:rgba(0,0,0,.35);font-size:11px;">미사용</span>';
+        return `<tr style="border-bottom:1px solid rgba(0,0,0,.06);">
+          <td style="padding:5px 6px;">${escHtml(String(userLabel))}</td>
+          <td style="padding:5px 6px;font-weight:700;">${escHtml(r.itemName||'?')}</td>
+          <td style="padding:5px 6px;text-align:center;">${usedBadge}</td>
+          <td style="padding:5px 6px;color:rgba(0,0,0,.4);text-align:right;">${r._dt.toLocaleString('ko')}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }catch(e){ el.innerHTML='<div style="color:#c00;font-size:12px;">불러오기 실패</div>'; }
 }
 
 /* ── Tabs ── */
@@ -6514,7 +6561,7 @@ function renderBlockList() {
   if(!curBlocks.length){el.innerHTML=_blkInsertRow(0)+'<div class="empty-msg" style="padding:10px 0;">블록이 없어요.</div>';return;}
   const items=curBlocks.map((b,i)=>{
     const tl=b.type==='text'?'텍스트':b.type==='image'?'이미지':b.type==='mixed'?'혼합':b.type==='embed'?'임베드':b.type==='tool'?'도구':b.type==='spacer'?'스페이서':b.type==='divider'?'구분선':b.type==='mission'?'미션':'폼(구)';
-    const _ttMap={'form':'폼','booth':'꾸미기','guide':'계산기','youtube-playlist':'유튜브 뮤직','schedule':'일정잡기','copy-gen':'문구 생성기','payment':'결제','guestbook':'방명록'};
+    const _ttMap={'form':'폼','booth':'꾸미기','guide':'계산기','youtube-playlist':'유튜브 뮤직','schedule':'일정잡기','copy-gen':'문구 생성기','payment':'결제','guestbook':'방명록','raffle':'뽑기'};
     const _ttLabel=_ttMap[b.toolType]||b.toolType||'?';
     const _tcId=b.toolConfig?.formId||b.toolConfig?.boothId||b.toolConfig?.guideId||b.toolConfig?.copyGenId||b.toolConfig?.scheduleId||b.toolConfig?.youtubePlaylistId||b.toolConfig?.paymentId||b.toolConfig?.guestbookId||'';
     const toolSubLbl=b.type==='tool'?(_ttLabel+(_tcId?' · '+_tcId:'')):'';
@@ -7721,6 +7768,7 @@ function saveBlock(){
     else if(curBlkToolType==='youtube-playlist') tc.youtubePlaylistId=selV;
     else if(curBlkToolType==='payment') tc.paymentId=selV;
     else if(curBlkToolType==='guestbook') tc.guestbookId=selV;
+    else if(curBlkToolType==='raffle') tc.raffleId=selV;
     b.toolType=curBlkToolType;
     b.toolConfig=tc;
     b.height=curToolHeightMode==='full'?'full':(curToolHeightMode==='px'?parseInt(document.getElementById('tool-height')?.value)||0:0);
@@ -7864,7 +7912,7 @@ function switchBlkTab(t){
 const SINGLE_TOOL_TYPES = []; // 모든 도구 인스턴스 선택형
 function switchToolType(tt){
   curBlkToolType=tt;
-  ['form','booth','guide','youtube-playlist','schedule','copy-gen','payment','guestbook'].forEach(k=>{
+  ['form','booth','guide','youtube-playlist','schedule','copy-gen','payment','guestbook','raffle'].forEach(k=>{
     const el=document.getElementById('ttab-'+k);
     if(el) el.classList.toggle('on',k===tt);
   });
@@ -7906,9 +7954,12 @@ async function loadToolInstList(tt){
     } else if(tt==='guestbook'){
       const snap=await db.collection('cms_guestbook_configs').orderBy('createdAt','desc').get();
       toolInstList=snap.docs.map(d=>({id:d.id,...d.data()}));
+    } else if(tt==='raffle'){
+      const snap=await db.collection('cms_raffle_configs').get();
+      toolInstList=snap.docs.map(d=>({id:d.id,...d.data()}));
     }
   }catch(e){ console.error('[loadToolInstList]',e); }
-  const cur=tt==='form'?curBlkToolConfig?.formId:tt==='booth'?curBlkToolConfig?.boothId:tt==='guide'?curBlkToolConfig?.guideId:tt==='schedule'?curBlkToolConfig?.scheduleId:tt==='copy-gen'?curBlkToolConfig?.copyGenId:tt==='youtube-playlist'?curBlkToolConfig?.youtubePlaylistId:tt==='payment'?curBlkToolConfig?.paymentId:tt==='guestbook'?curBlkToolConfig?.guestbookId:'';
+  const cur=tt==='form'?curBlkToolConfig?.formId:tt==='booth'?curBlkToolConfig?.boothId:tt==='guide'?curBlkToolConfig?.guideId:tt==='schedule'?curBlkToolConfig?.scheduleId:tt==='copy-gen'?curBlkToolConfig?.copyGenId:tt==='youtube-playlist'?curBlkToolConfig?.youtubePlaylistId:tt==='payment'?curBlkToolConfig?.paymentId:tt==='guestbook'?curBlkToolConfig?.guestbookId:tt==='raffle'?curBlkToolConfig?.raffleId:'';
   sel.innerHTML='<option value="">— 선택하세요 —</option>'+toolInstList.map(x=>`<option value="${x.id}"${x.id===cur?' selected':''}>${x.name||x.title||x.id}</option>`).join('');
 }
 function openToolManageLink(e){
@@ -7923,6 +7974,7 @@ function openToolManageLink(e){
     'youtube-playlist':  'youtube-playlist',
     'payment':           'payment',
     'guestbook':         'guestbook',
+    'raffle':            'raffle',
   };
   const toolId = toolIdMap[tt] || 'form-mgr';
   const instId = tt==='form'?curBlkToolConfig?.formId
@@ -7932,7 +7984,8 @@ function openToolManageLink(e){
     :tt==='copy-gen'?curBlkToolConfig?.copyGenId
     :tt==='youtube-playlist'?curBlkToolConfig?.youtubePlaylistId
     :tt==='payment'?curBlkToolConfig?.paymentId
-    :tt==='guestbook'?curBlkToolConfig?.guestbookId:'';
+    :tt==='guestbook'?curBlkToolConfig?.guestbookId
+    :tt==='raffle'?curBlkToolConfig?.raffleId:'';
   /* 블록 모달 + 스테이지 오버레이(z-index:200) 닫기 — 오버레이가 열린 채로 switchTab 하면 도구 패널이 가려짐 */
   document.getElementById('block-modal').classList.remove('on');
   const sco = document.getElementById('stage-content-overlay');
