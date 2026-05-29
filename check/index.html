@@ -313,8 +313,8 @@ async function toggleScan() {
     });
     const video = document.getElementById('scan-video');
     video.srcObject = scanStream;
-    videoWrap.style.display = '';
-    stopBtn.style.display = '';
+    videoWrap.style.display = 'block';
+    stopBtn.style.display = 'block';
     btn.innerHTML = '⏹&nbsp; 스캔 중…';
     btn.classList.add('scanning');
     scanActive = true;

@@ -267,10 +267,24 @@ function downloadPhoto(btn) {
 async function downloadFile(btn, url, filename) {
   const origHTML = btn?.innerHTML ?? null;
   if (btn) { btn.disabled = true; btn.innerHTML = '⏳&nbsp; 저장 중…'; }
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   try {
-    const resp = await fetch(url);
+    // Firebase Storage URL은 서버 프록시 경유 (브라우저 CORS 우회)
+    const fetchUrl = url.includes('firebasestorage.googleapis.com')
+      ? '/api/proxy-image?url=' + encodeURIComponent(url)
+      : url;
+    const resp = await fetch(fetchUrl);
     if (!resp.ok) throw new Error('fetch failed');
     const blob = await resp.blob();
+    // iOS: Web Share API → 카메라 롤에 바로 저장
+    if (isMobile && navigator.share && navigator.canShare) {
+      const file = new File([blob], filename, { type: blob.type || 'image/jpeg' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file] });
+        return;
+      }
+    }
+    // 데스크탑 / 기타: anchor 다운로드
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename;
@@ -278,7 +292,6 @@ async function downloadFile(btn, url, filename) {
     a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   } catch(e) {
-    // fallback: 새 탭으로 열기 (브라우저 네이티브 저장)
     window.open(url, '_blank');
   } finally {
     if (btn && origHTML) { btn.disabled = false; btn.innerHTML = origHTML; }
