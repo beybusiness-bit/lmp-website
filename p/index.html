@@ -149,6 +149,13 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .g-mission-qr-canvas canvas{display:block!important;}.g-mission-qr-canvas img{display:none!important;}
 .g-mission-qr-hint{font-size:11px;font-weight:700;color:rgba(0,0,0,.4);letter-spacing:.3px;text-align:center;}
 .g-mission-qr-locked{font-size:13px;color:rgba(0,0,0,.35);text-align:center;padding:20px 0;background:rgba(0,0,0,.04);border-radius:4px;}
+.g-mission-code-toggle{background:transparent;border:none;font-size:11px;color:rgba(0,0,0,.35);cursor:pointer;font-family:inherit;text-decoration:underline;padding:2px 0;}
+.g-mission-code-inp-wrap{display:flex;gap:6px;margin-top:4px;}
+.g-mission-code-inp{flex:1;border:1.5px solid rgba(0,0,0,.18);border-radius:4px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;}
+.g-mission-code-inp:focus{border-color:#000;}
+.g-mission-code-submit{padding:8px 14px;border:none;background:#000;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:4px;white-space:nowrap;}
+.g-mission-code-submit:disabled{opacity:.4;cursor:not-allowed;}
+.g-mission-code-err{font-size:11px;color:#c00;text-align:center;margin-top:4px;}
 .g-ext-checks{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0 4px;}
 .g-ext-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(0,180,80,.1);border:1.5px solid rgba(0,180,80,.35);border-radius:20px;font-size:12px;font-weight:700;color:#007a38;}
 .g-block-image img{width:100%;display:block;}
@@ -562,6 +569,7 @@ let ELEM_MARGINS   = {};   // {edition:20, logo:20, dday:20, stats:20, widget:4}
 let ELEM_FONT_SIZES = {};  // {edition:18, dday:32, stats:21}
 let WIDGET         = {};   // widget config from cms_projects
 let SITE_CONFIG    = {};   // site-wide settings (footer, policies)
+let CHECKER_ROLES   = [];   // [{id, name, verificationCode, confirmLabels}]
 let POPUP_CONFIG   = {};   // popup config from cms_projects
 
 /* slideshow */
@@ -758,6 +766,7 @@ function applySettings(d){
   ELEM_MARGINS = d.elementMargins || {};
   ELEM_FONT_SIZES = d.elemFontSizes || {};
   WIDGET = d.widget || {};
+  CHECKER_ROLES = d.checkerRoles || [];
   if(d.keyColors && d.keyColors.length>=2){
     KEY_COLORS_DATA = d.keyColors.map(k=>typeof k==='string'?{color:k,holdTime:8,transitionTime:2}:k);
     KEY_COLORS.length=0; KEY_COLORS_DATA.forEach(k=>KEY_COLORS.push(k.color));
@@ -2306,8 +2315,12 @@ function blockHtml(b){
   if(b.type==='mission'){
     const html=applyVars(b.textContent||'');
     const loggedIn=!!(USER_DOC_ID);
+    const hasVerifCodes=CHECKER_ROLES.some(r=>r.verificationCode);
+    const codeSec=loggedIn&&hasVerifCodes
+      ?`<button class="g-mission-code-toggle" onclick="toggleMissionCodeInput('mcodeWrap-${b.id}')">코드로 확인하기</button><div id="mcodeWrap-${b.id}" style="display:none;width:100%;"><div class="g-mission-code-inp-wrap"><input class="g-mission-code-inp" id="mcode-inp-${b.id}" placeholder="체커에게 받은 코드 입력" onkeydown="if(event.key==='Enter')submitMissionCode('${b.id}')"><button class="g-mission-code-submit" id="mcode-btn-${b.id}" onclick="submitMissionCode('${b.id}')">확인</button></div><div class="g-mission-code-err" id="mcode-err-${b.id}"></div></div>`
+      :'';
     const qrSec=loggedIn
-      ?`<div class="g-mission-qr-wrap"><div class="g-mission-qr-canvas" id="mqr-${b.id}"></div><div class="g-mission-qr-hint">체커에게 보여주세요</div></div>`
+      ?`<div class="g-mission-qr-wrap"><div class="g-mission-qr-canvas" id="mqr-${b.id}"></div><div class="g-mission-qr-hint">체커에게 보여주세요</div>${codeSec}</div>`
       :`<div class="g-mission-qr-wrap"><div class="g-mission-qr-locked">🔒 로그인 후 QR이 표시됩니다</div></div>`;
     const badgesHtml=_extCheckBadgesInnerHtml(b.id);
     const badgesEl=badgesHtml?`<div class="g-ext-checks" id="ext-checks-${b.id}">${badgesHtml}</div>`:`<div class="g-ext-checks" id="ext-checks-${b.id}"></div>`;
@@ -2556,6 +2569,53 @@ function initMissionQRs(){
       });
     }catch(e){}
   });
+}
+function toggleMissionCodeInput(wrapperId){
+  const el=document.getElementById(wrapperId);
+  if(!el) return;
+  el.style.display=el.style.display==='none'?'block':'none';
+  if(el.style.display==='block'){
+    const inp=el.querySelector('input');
+    if(inp) setTimeout(()=>inp.focus(),50);
+  }
+}
+async function submitMissionCode(blockId){
+  const inp=document.getElementById('mcode-inp-'+blockId);
+  const btn=document.getElementById('mcode-btn-'+blockId);
+  const err=document.getElementById('mcode-err-'+blockId);
+  if(!inp||!btn||!err) return;
+  const code=inp.value.trim();
+  if(!code){ err.textContent='코드를 입력해주세요.'; return; }
+  const role=CHECKER_ROLES.find(r=>r.verificationCode && r.verificationCode.trim()===code);
+  if(!role){ err.textContent='코드가 맞지 않아요. 다시 확인해주세요.'; return; }
+  err.textContent='';
+  btn.disabled=true; btn.textContent='처리 중…';
+  try{
+    const confirmLabel=(role.confirmLabels&&role.confirmLabels[0])||role.confirmLabel||role.name||'확인';
+    const userRef=db.collection('cms_users_'+PROJECT_ID).doc(USER_DOC_ID);
+    const snap=await userRef.get();
+    const existing=(snap.data()?.externalChecks||{})[blockId]||[];
+    if(existing.some(c=>c.roleId===role.id)){
+      err.textContent='이미 이 역할로 확인된 미션이에요.';
+      btn.disabled=false; btn.textContent='확인';
+      return;
+    }
+    await userRef.update({
+      [`externalChecks.${blockId}`]: firebase.firestore.FieldValue.arrayUnion({
+        roleId: role.id,
+        roleName: role.name||'',
+        confirmLabel,
+        checkedAt: new Date(),
+        byCode: true
+      })
+    });
+    btn.textContent='완료 ✓';
+    inp.value='';
+    setTimeout(()=>{ btn.disabled=false; btn.textContent='확인'; },2000);
+  }catch(e){
+    err.textContent='오류가 발생했어요. 다시 시도해주세요.';
+    btn.disabled=false; btn.textContent='확인';
+  }
 }
 function _extCheckBadgesInnerHtml(blockId){
   const checks=userExternalChecks[blockId]||[];
