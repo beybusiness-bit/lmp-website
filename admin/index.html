@@ -7314,7 +7314,7 @@ function openBlockModal(idx,insertAt){
     curBlkToolType=b.toolType||'form';
     curBlkToolConfig={...b.toolConfig||{}};
     curBlkCompleteTrigger=b.completeTrigger||'tool-signal';
-    ['form','booth','guide','youtube-playlist','schedule','copy-gen','payment','guestbook'].forEach(k=>{
+    ['form','booth','guide','youtube-playlist','schedule','copy-gen','payment','guestbook','raffle'].forEach(k=>{
       const el=document.getElementById('ttab-'+k);
       if(el) el.classList.toggle('on',k===curBlkToolType);
     });
