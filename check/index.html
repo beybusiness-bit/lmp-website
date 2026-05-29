@@ -398,7 +398,7 @@ async function processCode(raw) {
       roleId: checkerSession.roleId,
       roleName: checkerSession.roleName,
       checkerUserId: checkerSession.userId,
-      checkedAt: firebase.firestore.FieldValue.serverTimestamp()
+      checkedAt: new Date()
     };
     await userRef.update({
       [`externalChecks.${blockId}`]: firebase.firestore.FieldValue.arrayUnion(newCheck)
