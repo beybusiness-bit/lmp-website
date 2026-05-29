@@ -26,6 +26,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .admin-body{flex:1;overflow-y:auto;}
 .panel{display:none;max-width:640px;margin:0 auto;padding:20px 16px 100px;}
 .panel.on{display:block;}
+#panel-raffle.on{display:flex;padding:0;height:calc(100vh - 46px);}
 /* inner tabs */
 .inner-tab-nav{display:flex;border-bottom:1.5px solid rgba(0,0,0,.12);margin-bottom:22px;position:sticky;top:0;background:#f4f4f4;z-index:5;padding-top:2px;}
 .inner-tab{flex:1;padding:9px 4px;background:transparent;border:none;border-bottom:2.5px solid transparent;font-size:12px;font-weight:800;color:rgba(0,0,0,.35);cursor:pointer;font-family:inherit;margin-bottom:-1.5px;letter-spacing:-.3px;}
@@ -320,6 +321,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   <div class="tab-nav">
     <button class="tab-btn on" onclick="switchTab('proj')" id="tabbtn-proj">프로젝트</button>
     <button class="tab-btn" onclick="switchTab('tools')" id="tabbtn-tools">도구</button>
+    <button class="tab-btn" onclick="switchTab('raffle')" id="tabbtn-raffle">뽑기</button>
     <button class="tab-btn" onclick="switchTab('site')" id="tabbtn-site">사이트 설정</button>
   </div>
   <div class="admin-body">
@@ -2192,6 +2194,54 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
     </div>
 
+    <!-- Raffle panel -->
+    <div class="panel" id="panel-raffle" style="padding:0;display:none;flex-direction:column;overflow:hidden;">
+      <!-- List screen -->
+      <div id="raffle-list-screen" style="padding:16px;overflow-y:auto;flex:1;">
+        <div class="sect-head ip-first-sect">뽑기</div>
+        <button class="save-btn" onclick="raffleCreate()" style="width:100%;margin-bottom:16px;">+ 새 뽑기 만들기</button>
+        <div id="raffle-config-list"><div class="empty-msg">불러오는 중…</div></div>
+      </div>
+      <!-- Edit screen -->
+      <div id="raffle-edit-screen" style="display:none;flex-direction:column;overflow:hidden;flex:1;">
+        <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;gap:8px;align-items:center;">
+          <button class="mbtn-cancel" onclick="raffleShowList()">← 목록</button>
+          <button class="save-btn" style="flex:1;" onclick="raffleSave(event)">저장</button>
+          <button class="prev-btn" id="raffle-launch-btn" onclick="raffleLaunch()">▶ 뽑기 화면 열기</button>
+          <button class="prev-btn" onclick="raffleDelete()" style="color:#c00;border-color:#c00;">삭제</button>
+        </div>
+        <div style="padding:16px;overflow-y:auto;flex:1;">
+          <input type="hidden" id="raffle-edit-id">
+          <div class="ed-lbl">뽑기 이름</div>
+          <input class="fi" id="raffle-name-inp" placeholder="예: 경품 뽑기">
+          <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.5;">(선택)</span></div>
+          <input class="fi" id="raffle-desc-inp" placeholder="뽑기에 대한 짧은 설명">
+          <div class="ed-lbl" style="margin-top:16px;">뽑기 방식 <span style="font-weight:400;opacity:.5;">(복수 선택 가능)</span></div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+            <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" class="raffle-method-cb" value="slot"> 슬롯머신</label>
+            <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" class="raffle-method-cb" value="roulette"> 룰렛</label>
+            <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" class="raffle-method-cb" value="tombola"> 뽑기통</label>
+            <label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer;"><input type="checkbox" class="raffle-method-cb" value="card"> 카드뽑기</label>
+          </div>
+          <div class="switch-row" style="margin-bottom:16px;">
+            <div class="switch" id="raffle-deduct-sw" onclick="toggleRaffleDeduct()"></div>
+            <span class="switch-lbl">뽑히면 수량 차감</span>
+          </div>
+          <div class="ed-lbl">뽑기 항목</div>
+          <div style="font-size:11px;color:rgba(0,0,0,.4);margin-bottom:8px;">이름과 총 수량을 입력하세요. 수량은 당첨 확률에 비례합니다.</div>
+          <div id="raffle-items-list" style="margin-bottom:8px;"></div>
+          <button class="prev-btn" onclick="raffleAddItem()" style="width:100%;margin-bottom:24px;">+ 항목 추가</button>
+          <!-- Stats -->
+          <div id="raffle-stats-wrap" style="display:none;">
+            <div class="ed-lbl" style="margin-top:8px;">뽑기 통계</div>
+            <div id="raffle-stats-chart" style="margin-bottom:16px;"></div>
+            <div class="ed-lbl">최근 뽑기 기록</div>
+            <div id="raffle-history-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Site settings panel -->
     <div class="panel" id="panel-site">
       <div class="sect-head ip-first-sect">사이트 설정</div>
@@ -3308,6 +3358,191 @@ function signIn() {
 }
 function doSignOut() { auth.signOut(); }
 
+/* ── Raffle ── */
+let curRaffleId = '';
+let curRaffleItems = []; // [{id,name,totalCount,remainingCount}]
+let raffleDeduct = false;
+
+function loadRaffleList(){
+  const el=document.getElementById('raffle-config-list'); if(!el) return;
+  el.innerHTML='<div class="empty-msg">불러오는 중…</div>';
+  db.collection('cms_raffle_configs').get().then(snap=>{
+    if(snap.empty){ el.innerHTML='<div class="empty-msg">뽑기가 없어요.</div>'; return; }
+    el.innerHTML=snap.docs.map(d=>{
+      const data=d.data();
+      return `<div class="proj-item" onclick="raffleShowEdit('${d.id}')" style="cursor:pointer;">
+        <div style="font-size:14px;font-weight:700;">${escHtml(data.name||'이름 없음')}</div>
+        <div style="font-size:11px;color:rgba(0,0,0,.4);margin-top:2px;">${(data.items||[]).map(it=>escHtml(it.name)).join(', ')}</div>
+      </div>`;
+    }).join('');
+  }).catch(e=>{ el.innerHTML='<div class="empty-msg">불러오기 실패: '+escHtml(e.message)+'</div>'; });
+}
+
+async function raffleCreate(){
+  const ref=db.collection('cms_raffle_configs').doc();
+  await ref.set({name:'새 뽑기',description:'',methods:['slot'],items:[],deductOnDraw:false,createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+  raffleShowEdit(ref.id);
+}
+
+async function raffleShowEdit(id){
+  curRaffleId=id;
+  const snap=await db.collection('cms_raffle_configs').doc(id).get();
+  if(!snap.exists) return;
+  const d=snap.data();
+  document.getElementById('raffle-edit-id').value=id;
+  document.getElementById('raffle-name-inp').value=d.name||'';
+  document.getElementById('raffle-desc-inp').value=d.description||'';
+  // methods
+  document.querySelectorAll('.raffle-method-cb').forEach(cb=>{ cb.checked=(d.methods||['slot']).includes(cb.value); });
+  // deduct
+  raffleDeduct=!!d.deductOnDraw;
+  const sw=document.getElementById('raffle-deduct-sw');
+  if(sw) sw.className='switch'+(raffleDeduct?' on':'');
+  // items
+  curRaffleItems=(d.items||[]).map(it=>({...it}));
+  renderRaffleItems();
+  document.getElementById('raffle-list-screen').style.display='none';
+  document.getElementById('raffle-edit-screen').style.display='flex';
+  // stats + history
+  loadRaffleStats(id);
+}
+
+function raffleShowList(){
+  document.getElementById('raffle-list-screen').style.display='';
+  document.getElementById('raffle-edit-screen').style.display='none';
+  curRaffleId=''; curRaffleItems=[]; raffleDeduct=false;
+  loadRaffleList();
+}
+
+function toggleRaffleDeduct(){
+  raffleDeduct=!raffleDeduct;
+  const sw=document.getElementById('raffle-deduct-sw');
+  if(sw) sw.className='switch'+(raffleDeduct?' on':'');
+}
+
+function raffleAddItem(){
+  const id='ri_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+  curRaffleItems.push({id,name:'',totalCount:1,remainingCount:1});
+  renderRaffleItems();
+  // focus new item name
+  setTimeout(()=>{ const inps=document.querySelectorAll('.ri-name-inp'); if(inps.length) inps[inps.length-1].focus(); },50);
+}
+
+function raffleRemoveItem(i){
+  curRaffleItems.splice(i,1);
+  renderRaffleItems();
+}
+
+function renderRaffleItems(){
+  const el=document.getElementById('raffle-items-list'); if(!el) return;
+  if(!curRaffleItems.length){ el.innerHTML='<div style="font-size:12px;color:rgba(0,0,0,.35);margin-bottom:8px;">항목 없음</div>'; return; }
+  el.innerHTML=curRaffleItems.map((it,i)=>`
+    <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;">
+      <input class="fi-sm ri-name-inp" placeholder="항목 이름" value="${escHtml(it.name||'')}" style="flex:1;margin-bottom:0;"
+             oninput="curRaffleItems[${i}].name=this.value;">
+      <input class="fi-sm" type="number" min="0" value="${it.totalCount||1}" style="width:60px;margin-bottom:0;text-align:center;"
+             oninput="curRaffleItems[${i}].totalCount=parseInt(this.value)||1;curRaffleItems[${i}].remainingCount=parseInt(this.value)||1;">
+      <button onclick="raffleRemoveItem(${i})" style="padding:6px 10px;background:transparent;border:1.5px solid rgba(0,0,0,.2);font-size:12px;cursor:pointer;border-radius:4px;font-family:inherit;flex-shrink:0;">✕</button>
+    </div>`).join('');
+}
+
+async function raffleSave(event){
+  const btn=event?.target;
+  const methods=[...document.querySelectorAll('.raffle-method-cb:checked')].map(cb=>cb.value);
+  if(!methods.length){ alert('뽑기 방식을 하나 이상 선택해주세요.'); return; }
+  if(!curRaffleItems.length){ alert('항목을 하나 이상 추가해주세요.'); return; }
+  if(btn){ btn.disabled=true; btn.textContent='저장 중…'; }
+  try{
+    await db.collection('cms_raffle_configs').doc(curRaffleId).update({
+      name:document.getElementById('raffle-name-inp').value.trim()||'새 뽑기',
+      description:document.getElementById('raffle-desc-inp').value.trim(),
+      methods,
+      items:curRaffleItems.map(it=>({id:it.id,name:it.name.trim()||'항목',totalCount:it.totalCount||1,remainingCount:it.remainingCount??it.totalCount??1})),
+      deductOnDraw:raffleDeduct,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    if(btn){ btn.disabled=false; btn.textContent='저장됨 ✓'; setTimeout(()=>{ btn.textContent='저장'; },1500); }
+  }catch(e){
+    alert('저장 실패: '+e.message);
+    if(btn){ btn.disabled=false; btn.textContent='저장'; }
+  }
+}
+
+async function raffleDelete(){
+  if(!confirm('이 뽑기를 삭제하시겠어요?')) return;
+  await db.collection('cms_raffle_configs').doc(curRaffleId).delete().catch(()=>{});
+  raffleShowList();
+}
+
+function raffleLaunch(){
+  if(!curRaffleId){ alert('먼저 저장해주세요.'); return; }
+  window.open('/raffle/?id='+curRaffleId,'_blank','noopener');
+}
+
+async function loadRaffleStats(configId){
+  const wrap=document.getElementById('raffle-stats-wrap');
+  const chart=document.getElementById('raffle-stats-chart');
+  const hist=document.getElementById('raffle-history-list');
+  if(!wrap||!chart||!hist) return;
+  wrap.style.display='none';
+  try{
+    const snap=await db.collection('cms_raffle_records').doc(configId).collection('draws')
+      .orderBy('drawnAt','desc').limit(100).get();
+    if(snap.empty){ wrap.style.display='none'; return; }
+    wrap.style.display='block';
+    // Count per item
+    const counts={};
+    snap.docs.forEach(d=>{ const n=d.data().itemName||'?'; counts[n]=(counts[n]||0)+1; });
+    const maxC=Math.max(...Object.values(counts));
+    chart.innerHTML=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([name,cnt])=>`
+      <div style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+          <span style="font-weight:700;">${escHtml(name)}</span><span style="color:rgba(0,0,0,.45);">${cnt}회</span>
+        </div>
+        <div style="height:10px;background:#f0f0f0;border-radius:4px;overflow:hidden;">
+          <div style="height:100%;background:#000;border-radius:4px;width:${Math.round(cnt/maxC*100)}%;transition:width .4s;"></div>
+        </div>
+      </div>`).join('');
+    // History table
+    hist.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead><tr style="border-bottom:2px solid #000;">
+        <th style="text-align:left;padding:4px 6px;">항목</th>
+        <th style="text-align:left;padding:4px 6px;color:rgba(0,0,0,.4);">방식</th>
+        <th style="text-align:right;padding:4px 6px;color:rgba(0,0,0,.4);">시각</th>
+      </tr></thead>
+      <tbody>${snap.docs.map(d=>{
+        const r=d.data();
+        const dt=r.drawnAt?.toDate?r.drawnAt.toDate():new Date();
+        return `<tr style="border-bottom:1px solid rgba(0,0,0,.06);">
+          <td style="padding:5px 6px;font-weight:700;">${escHtml(r.itemName||'?')}</td>
+          <td style="padding:5px 6px;color:rgba(0,0,0,.4);">${escHtml(r.method||'')}</td>
+          <td style="padding:5px 6px;color:rgba(0,0,0,.4);text-align:right;">${dt.toLocaleString('ko')}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }catch(e){
+    // history orderBy may need index - fallback without orderBy
+    try{
+      const snap2=await db.collection('cms_raffle_records').doc(configId).collection('draws').limit(100).get();
+      if(snap2.empty) return;
+      wrap.style.display='block';
+      const counts={};
+      snap2.docs.forEach(d=>{ const n=d.data().itemName||'?'; counts[n]=(counts[n]||0)+1; });
+      const maxC=Math.max(...Object.values(counts),1);
+      chart.innerHTML=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([name,cnt])=>`
+        <div style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+            <span style="font-weight:700;">${escHtml(name)}</span><span style="color:rgba(0,0,0,.45);">${cnt}회</span>
+          </div>
+          <div style="height:10px;background:#f0f0f0;border-radius:4px;overflow:hidden;">
+            <div style="height:100%;background:#000;border-radius:4px;width:${Math.round(cnt/maxC*100)}%;"></div>
+          </div>
+        </div>`).join('');
+      hist.innerHTML='<div style="font-size:12px;color:rgba(0,0,0,.4);">기록 목록을 표시하려면 Firestore 인덱스가 필요합니다.</div>';
+    }catch(_){}
+  }
+}
+
 /* ── Tabs ── */
 let _currentTab = 'proj';
 function switchTab(t) {
@@ -3322,6 +3557,7 @@ function switchTab(t) {
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === 'panel-'+t));
   if (t === 'tools') closeTool();
   if (t === 'site') { showProjView('list'); loadSiteSettings(); }
+  if (t === 'raffle') loadRaffleList();
 }
 function switchInnerTab(t) {
   document.querySelectorAll('.inner-tab').forEach((el,i) => {
