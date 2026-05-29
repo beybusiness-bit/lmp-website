@@ -26,13 +26,13 @@
       ]
     },
     {
-      "source": "/(admin|p|gmbf-poc|block-test-demo|gmbf-03|gmbf)/(.*)",
+      "source": "/(admin|p|gmbf-poc|block-test-demo|gmbf-03|gmbf|studio|check)/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, must-revalidate" }
       ]
     },
     {
-      "source": "/(admin|p|gmbf-poc|block-test-demo|gmbf-03|gmbf)",
+      "source": "/(admin|p|gmbf-poc|block-test-demo|gmbf-03|gmbf|studio|check)",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, must-revalidate" }
       ]
@@ -61,6 +61,14 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/studio/:sessionId",
+      "destination": "/studio/index.html"
+    },
+    {
+      "source": "/check/:projectId",
+      "destination": "/check/index.html"
+    },
     {
       "source": "/:prefix([a-z][a-z0-9-]*)/:slug([^/]+)",
       "destination": "/api/go?prefix=:prefix&slug=:slug"

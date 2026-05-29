@@ -142,6 +142,16 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .guide-dot.on{background:var(--guide-pager,#000);}
 .g-block-text{}
 .g-block-text-inner{font-size:15px;line-height:1.7;color:#000;white-space:pre-wrap;word-break:break-word;}
+/* ── 미션 블록 ── */
+.g-mission-block{padding:0;}
+.g-mission-text{font-size:15px;line-height:1.7;color:#000;white-space:pre-wrap;word-break:break-word;}
+.g-mission-qr-wrap{display:flex;flex-direction:column;align-items:center;padding:16px 0 8px;gap:8px;}
+.g-mission-qr-canvas{width:160px;height:160px;}
+.g-mission-qr-canvas canvas,.g-mission-qr-canvas img{display:block!important;}
+.g-mission-qr-hint{font-size:11px;font-weight:700;color:rgba(0,0,0,.4);letter-spacing:.3px;text-align:center;}
+.g-mission-qr-locked{font-size:13px;color:rgba(0,0,0,.35);text-align:center;padding:20px 0;background:rgba(0,0,0,.04);border-radius:4px;}
+.g-ext-checks{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0 4px;}
+.g-ext-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(0,180,80,.1);border:1.5px solid rgba(0,180,80,.35);border-radius:20px;font-size:12px;font-weight:700;color:#007a38;}
 .g-block-image img{width:100%;display:block;}
 .g-block-mixed-overlay{position:relative;}
 .g-block-mixed-overlay img{width:100%;display:block;}
@@ -498,6 +508,7 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
 firebase.initializeApp({
   apiKey:"AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
@@ -518,6 +529,8 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 const formBlockData = {};
 let USER_DOC_ID = '';
 let userProgress = {}; // {stageId: Set<blockId>}
+let userExternalChecks = {}; // {blockId: [{roleId, roleName, checkedAt, checkerUserId}]}
+let _extChecksUnsub = null;
 let curStageIdx = -1;
 let curStageId = '';
 const KEY_COLORS = ['#00CE6B','#FFF100','#F95548','#0BC6FF'];
@@ -1505,6 +1518,7 @@ async function submitRegistration(){
     sessionStorage.setItem('userSession',JSON.stringify({...data,project:PROJECT_ID,_docId:USER_DOC_ID,_sessionId:sessionId}));
     _startSessionHeartbeat(USER_DOC_ID);
     loadUserProgress(data);
+    _watchExternalChecks();
     applyGreeting(data);
     _refreshRegCta();
     const _regMsg=(SELF_REG_SUCCESS_MSG||'등록 완료!').replace(/\{\{(\w+)\}\}/g,(_,k)=>data[k]??`{{${k}}}`);
@@ -1611,6 +1625,7 @@ async function confirmAuth(){
     }).catch(()=>{});
     _startSessionHeartbeat(USER_DOC_ID);
     loadUserProgress(u);
+    _watchExternalChecks();
     applyGreeting(u);
     closeModal('auth-modal');
     _sendContextToEmbeds();
@@ -2279,6 +2294,16 @@ function blockHtml(b){
     const divMargin=b.dividerFullWidth?`margin:${b.marginV||0}px 0;`:`${mS}`;
     return `<div style="${divMargin}${bgS}"><hr style="border:none;border-top:${thickness}px ${style} ${color};margin:0;"></div>`;
   }
+  if(b.type==='mission'){
+    const html=applyVars(b.textContent||'');
+    const loggedIn=!!(USER_DOC_ID);
+    const qrSec=loggedIn
+      ?`<div class="g-mission-qr-wrap"><div class="g-mission-qr-canvas" id="mqr-${b.id}"></div><div class="g-mission-qr-hint">체커에게 보여주세요</div></div>`
+      :`<div class="g-mission-qr-wrap"><div class="g-mission-qr-locked">🔒 로그인 후 QR이 표시됩니다</div></div>`;
+    const badgesHtml=_extCheckBadgesInnerHtml(b.id);
+    const badgesEl=badgesHtml?`<div class="g-ext-checks" id="ext-checks-${b.id}">${badgesHtml}</div>`:`<div class="g-ext-checks" id="ext-checks-${b.id}"></div>`;
+    return `<div class="g-mission-block" style="${mS}${bgS}${bgImgS}${pS}"><div class="g-mission-text g-block-text-inner" style="${txS}${txpS}">${html}</div>${qrSec}${badgesEl}</div>`;
+  }
   if(b.type==='form' && b.formId){
     formBlockData[b.formId]={formFields:b.formFields||[],formConfig:b.formConfig||{},blockId:b.id};
     const config=b.formConfig||{};
@@ -2430,6 +2455,7 @@ function renderGuideScroll(blocks){
   }).join('');
   document.getElementById('guide-scroll-body').style.display='block';
   _sendContextToEmbeds();
+  initMissionQRs();
 }
 function renderGuideSlide(blocks){
   const visible=blocks.filter(b=>_isBlockVisible(b));
@@ -2453,6 +2479,7 @@ function renderGuideSlide(blocks){
   track.style.transform='translateX(0)';
   updateDots(); document.getElementById('guide-slide-body').style.display='flex';
   _sendContextToEmbeds();
+  initMissionQRs();
   const sb=document.getElementById('guide-slide-body');
   sb.ontouchstart=e=>{ gTouchX=e.touches[0].clientX; gTouchY=e.touches[0].clientY; };
   sb.ontouchend  =e=>{ const dx=e.changedTouches[0].clientX-gTouchX; const dy=e.changedTouches[0].clientY-gTouchY; if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>50) goSlide(gSlideIdx+(dx<0?1:-1)); };
@@ -2502,6 +2529,48 @@ function updateCheckEl(id,checked){
   const useBox=!before&&!after;
   if(useBox){el.classList.toggle('on',checked);el.textContent=checked?'✓':'';}
   else{el.classList.toggle('on',checked);el.textContent=checked?(after||'✓ 확인 완료'):(before||'확인하기');}
+}
+
+/* ── 미션 블록 QR 초기화 ── */
+function initMissionQRs(){
+  if(!USER_DOC_ID||typeof QRCode==='undefined') return;
+  document.querySelectorAll('[id^="mqr-"]').forEach(el=>{
+    if(el.dataset.qrDone) return;
+    el.dataset.qrDone='1';
+    const blockId=el.id.replace('mqr-','');
+    try{
+      new QRCode(el,{
+        text:`${PROJECT_ID}:${USER_DOC_ID}:${blockId}`,
+        width:160,height:160,
+        colorDark:'#000000',colorLight:'#ffffff',
+        correctLevel:QRCode.CorrectLevel.M
+      });
+    }catch(e){}
+  });
+}
+function _extCheckBadgesInnerHtml(blockId){
+  const checks=userExternalChecks[blockId]||[];
+  return checks.map(c=>`<span class="g-ext-badge">✅ ${c.roleName||'확인'}</span>`).join('');
+}
+function _refreshExtCheckBadges(){
+  document.querySelectorAll('[id^="ext-checks-"]').forEach(el=>{
+    const blockId=el.id.replace('ext-checks-','');
+    el.innerHTML=_extCheckBadgesInnerHtml(blockId);
+  });
+}
+function _watchExternalChecks(){
+  if(!USER_DOC_ID||!PROJECT_ID) return;
+  if(_extChecksUnsub){_extChecksUnsub();_extChecksUnsub=null;}
+  _extChecksUnsub=db.collection('cms_users_'+PROJECT_ID).doc(USER_DOC_ID)
+    .onSnapshot(snap=>{
+      if(!snap.exists) return;
+      const newChecks=snap.data().externalChecks||{};
+      if(JSON.stringify(newChecks)!==JSON.stringify(userExternalChecks)){
+        userExternalChecks=newChecks;
+        _refreshExtCheckBadges();
+        initMissionQRs();
+      }
+    },()=>{});
 }
 
 /* ── Block check & progress ── */
@@ -2702,6 +2771,7 @@ async function init(){
   /* 페이지 새로고침/재진입 시 하트비트 재개 (USER_DOC_ID는 loadUserProgress에서 복원됨) */
   if(loggedIn && AUTH_ENABLED && USER_DOC_ID && !IS_ADMIN_PREVIEW){
     _startSessionHeartbeat(USER_DOC_ID);
+    _watchExternalChecks();
   }
   /* entry 팝업 (진입 시) */
   if(!IS_ADMIN_PREVIEW) _showPopupIfNeeded('entry');

@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>뽑기</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+:root{--key:#000;--key2:#fff;--accent:#e8c100;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;}
+html,body{width:100%;height:100%;overflow:hidden;background:#111;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;}
+
+/* ── Screens ── */
+.screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;}
+.screen.on{display:flex;}
+
+/* ── Loading ── */
+#scr-loading{background:#111;color:rgba(255,255,255,.5);font-size:15px;font-weight:600;}
+
+/* ── Error ── */
+#scr-error{background:#111;color:#e55;font-size:14px;font-weight:700;padding:32px;text-align:center;}
+
+/* ── Standby ── */
+#scr-standby{background:#111;color:#fff;padding:24px;overflow-y:auto;align-items:stretch;}
+.sb-header{display:flex;align-items:center;gap:10px;margin-bottom:24px;padding:0 4px;}
+.sb-title{font-size:20px;font-weight:900;color:#fff;flex:1;}
+.sb-stats-btn{background:transparent;border:1.5px solid rgba(255,255,255,.3);color:rgba(255,255,255,.7);font-size:12px;font-weight:700;padding:7px 14px;font-family:inherit;cursor:pointer;}
+.prize-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:28px;}
+.prize-card{background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);padding:16px 12px;text-align:center;}
+.prize-card.empty{opacity:.3;}
+.prize-card-name{font-size:14px;font-weight:800;color:#fff;margin-bottom:6px;line-height:1.3;}
+.prize-card-qty{font-size:22px;font-weight:900;color:var(--accent);}
+.prize-card-unit{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px;}
+.sb-start-btn{width:100%;padding:20px;background:var(--accent);border:none;font-size:20px;font-weight:900;font-family:inherit;cursor:pointer;color:#111;letter-spacing:.5px;flex-shrink:0;}
+.sb-start-btn:disabled{opacity:.3;cursor:default;}
+.sb-empty-msg{text-align:center;color:rgba(255,255,255,.4);font-size:14px;font-weight:600;padding:20px 0 28px;}
+
+/* ── Stats ── */
+#scr-stats{background:#111;color:#fff;padding:0;overflow:hidden;align-items:stretch;}
+.stats-header{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.12);flex-shrink:0;}
+.stats-back{background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;padding:2px 8px 2px 0;}
+.stats-title{font-size:16px;font-weight:800;flex:1;}
+.stats-body{flex:1;overflow-y:auto;padding:16px;}
+.stats-sect{margin-bottom:24px;}
+.stats-sect-ttl{font-size:11px;font-weight:800;letter-spacing:.5px;color:rgba(255,255,255,.4);margin-bottom:12px;}
+.stats-prize-row{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08);}
+.stats-prize-name{flex:1;font-size:14px;font-weight:700;}
+.stats-prize-bar-wrap{width:100px;height:6px;background:rgba(255,255,255,.1);margin-right:10px;overflow:hidden;}
+.stats-prize-bar{height:100%;background:var(--accent);transition:width .4s;}
+.stats-prize-count{font-size:14px;font-weight:800;color:var(--accent);min-width:32px;text-align:right;}
+.stats-draw-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;}
+.stats-draw-prize{font-weight:700;color:#fff;}
+.stats-draw-time{color:rgba(255,255,255,.4);font-size:11px;}
+.stats-empty{color:rgba(255,255,255,.3);font-size:13px;padding:20px 0;text-align:center;}
+
+/* ── Touch draw ── */
+#scr-touch{background:#0a0a0a;overflow:hidden;cursor:pointer;}
+#touch-canvas{position:absolute;inset:0;width:100%;height:100%;}
+.touch-hint{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.5);font-size:15px;font-weight:700;text-align:center;pointer-events:none;white-space:nowrap;}
+.touch-tap-ring{position:absolute;border:3px solid rgba(255,255,255,.6);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%) scale(0);animation:none;}
+@keyframes tapRing{0%{transform:translate(-50%,-50%) scale(0);opacity:1;}100%{transform:translate(-50%,-50%) scale(3);opacity:0;}}
+
+/* ── Slot draw ── */
+#scr-slot{background:#0a0a0a;overflow:hidden;}
+.slot-wrapper{width:100%;max-width:340px;padding:0 24px;}
+.slot-title{text-align:center;color:rgba(255,255,255,.5);font-size:13px;font-weight:700;margin-bottom:32px;letter-spacing:.5px;}
+.slot-machine{position:relative;border:3px solid var(--accent);overflow:hidden;height:80px;background:#111;}
+.slot-mask-top{position:absolute;top:0;left:0;right:0;height:24px;background:linear-gradient(to bottom,rgba(10,10,10,1),transparent);z-index:2;pointer-events:none;}
+.slot-mask-bot{position:absolute;bottom:0;left:0;right:0;height:24px;background:linear-gradient(to top,rgba(10,10,10,1),transparent);z-index:2;pointer-events:none;}
+.slot-line{position:absolute;top:50%;left:0;right:0;height:2px;background:var(--accent);opacity:.6;transform:translateY(-50%);z-index:3;pointer-events:none;}
+.slot-reel{position:absolute;left:0;right:0;top:0;will-change:transform;}
+.slot-item{height:80px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;padding:0 16px;text-align:center;line-height:1.2;}
+.slot-start-btn{width:100%;margin-top:28px;padding:18px;background:var(--accent);border:none;font-size:18px;font-weight:900;font-family:inherit;cursor:pointer;color:#111;}
+.slot-start-btn:disabled{opacity:.3;cursor:default;}
+
+/* ── Shake draw ── */
+#scr-shake{background:radial-gradient(circle at 50% 45%,#1a1a1a 0%,#080808 100%);overflow:hidden;}
+.shake-wrapper{width:100%;max-width:320px;text-align:center;}
+.shake-hint{color:rgba(255,255,255,.6);font-size:14px;font-weight:700;margin-bottom:40px;line-height:1.6;}
+.shake-box-wrap{position:relative;width:160px;height:160px;margin:0 auto 40px;}
+.shake-box{width:160px;height:160px;position:relative;transition:transform .08s ease;will-change:transform;}
+.shake-box svg{width:100%;height:100%;}
+.shake-btn{width:100%;padding:18px;background:var(--accent);border:none;font-size:17px;font-weight:900;font-family:inherit;cursor:pointer;color:#111;}
+.shake-perm-btn{width:100%;margin-top:10px;padding:13px;background:transparent;border:2px solid rgba(255,255,255,.3);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;color:rgba(255,255,255,.7);}
+
+/* ── Card draw ── */
+#scr-card{background:radial-gradient(circle at 50% 40%,#1c1a12 0%,#080808 100%);overflow:hidden;}
+.card-hint{color:rgba(255,255,255,.6);font-size:14px;font-weight:700;text-align:center;margin-bottom:32px;}
+.cards-area{position:relative;width:100%;max-width:360px;height:240px;}
+.lottery-card{position:absolute;width:90px;height:140px;cursor:pointer;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.25,.8,.25,1);}
+.lottery-card .card-face,.lottery-card .card-back{position:absolute;inset:0;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;border:2.5px solid rgba(255,255,255,.2);}
+.lottery-card .card-back{background:linear-gradient(135deg,#1a1744 0%,#0d0d2b 50%,#1a1744 100%);transform:rotateY(0deg);}
+.lottery-card .card-face{background:linear-gradient(135deg,#2a2000 0%,#1a1300 100%);transform:rotateY(180deg);flex-direction:column;gap:6px;padding:10px;}
+.card-back-pattern{opacity:.15;font-size:28px;}
+.card-face-star{font-size:24px;}
+.card-face-text{font-size:11px;font-weight:900;color:var(--accent);text-align:center;line-height:1.3;word-break:keep-all;}
+.lottery-card.picked{animation:cardPick .3s ease forwards;}
+.lottery-card.fly-away{animation:cardFly .5s ease forwards;}
+@keyframes cardPick{0%{transform:translateY(0) rotateY(0deg);}50%{transform:translateY(-20px) rotateY(0deg);}100%{transform:translateY(-10px) rotateY(180deg);}
+}
+@keyframes cardFly{0%{opacity:1;}100%{opacity:0;transform:translateY(80px) scale(.5) rotateZ(var(--fly-r,15deg));}}
+
+/* ── Result ── */
+#scr-result{background:radial-gradient(circle at 50% 40%,#1e1800 0%,#0a0800 100%);overflow:hidden;}
+.result-shine{position:absolute;top:0;left:50%;width:300px;height:300px;transform:translate(-50%,-60%);background:radial-gradient(circle,rgba(232,193,0,.3) 0%,transparent 70%);pointer-events:none;animation:shinePulse 2s ease-in-out infinite;}
+@keyframes shinePulse{0%,100%{opacity:.6;transform:translate(-50%,-60%) scale(1);}50%{opacity:1;transform:translate(-50%,-60%) scale(1.15);}}
+.result-emoji{font-size:56px;margin-bottom:12px;animation:resultPop .5s cubic-bezier(.34,1.56,.64,1) both;}
+@keyframes resultPop{from{transform:scale(0);}to{transform:scale(1);}}
+.result-label{font-size:13px;font-weight:800;letter-spacing:.5px;color:rgba(255,255,255,.4);margin-bottom:8px;}
+.result-prize{font-size:28px;font-weight:900;color:var(--accent);text-align:center;padding:0 24px;line-height:1.25;animation:resultSlideUp .5s .15s cubic-bezier(.34,1.56,.64,1) both;}
+@keyframes resultSlideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.result-again-btn{margin-top:40px;width:80%;max-width:280px;padding:18px;background:var(--accent);border:none;font-size:18px;font-weight:900;font-family:inherit;cursor:pointer;color:#111;animation:resultSlideUp .5s .35s both;}
+.result-stats-link{margin-top:12px;background:transparent;border:1.5px solid rgba(255,255,255,.25);color:rgba(255,255,255,.7);font-size:13px;font-weight:700;padding:11px 20px;font-family:inherit;cursor:pointer;animation:resultSlideUp .5s .45s both;}
+
+/* confetti */
+.confetti-piece{position:fixed;width:8px;height:8px;pointer-events:none;animation:confettiFall linear forwards;}
+@keyframes confettiFall{0%{opacity:1;transform:translateY(-20px) rotateZ(0deg);}100%{opacity:0;transform:translateY(100vh) rotateZ(var(--rz,360deg));}}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="screen on" id="scr-loading">불러오는 중…</div>
+
+<!-- Error -->
+<div class="screen" id="scr-error"><div id="err-msg">오류가 발생했습니다.</div></div>
+
+<!-- Standby (operator view) -->
+<div class="screen" id="scr-standby">
+  <div class="sb-header">
+    <div class="sb-title" id="sb-title">뽑기</div>
+    <button class="sb-stats-btn" onclick="showStats()">통계 보기</button>
+  </div>
+  <div class="prize-grid" id="prize-grid"></div>
+  <div class="sb-empty-msg" id="sb-empty-msg" style="display:none;">모든 경품이 소진되었습니다 🎉</div>
+  <button class="sb-start-btn" id="sb-start-btn" onclick="startDraw()">뽑기 시작하기 ▶</button>
+</div>
+
+<!-- Stats -->
+<div class="screen" id="scr-stats">
+  <div class="stats-header">
+    <button class="stats-back" onclick="showStandby()">←</button>
+    <div class="stats-title">통계</div>
+    <button class="stats-back" onclick="loadStats()" style="font-size:13px;padding:2px 4px;">↺</button>
+  </div>
+  <div class="stats-body">
+    <div class="stats-sect">
+      <div class="stats-sect-ttl">경품 잔여 현황</div>
+      <div id="stats-inventory"></div>
+    </div>
+    <div class="stats-sect">
+      <div class="stats-sect-ttl">당첨 내역</div>
+      <div id="stats-draws"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Draw: Touch -->
+<div class="screen" id="scr-touch" onclick="onTouchDraw(event)">
+  <canvas id="touch-canvas"></canvas>
+  <div class="touch-hint" id="touch-hint">화면 어디든 터치해서 뽑기!</div>
+</div>
+
+<!-- Draw: Slot -->
+<div class="screen" id="scr-slot">
+  <div class="slot-wrapper">
+    <div class="slot-title">슬롯을 돌려서 뽑기!</div>
+    <div class="slot-machine" id="slot-machine">
+      <div class="slot-mask-top"></div>
+      <div class="slot-mask-bot"></div>
+      <div class="slot-line"></div>
+      <div class="slot-reel" id="slot-reel"></div>
+    </div>
+    <button class="slot-start-btn" id="slot-start-btn" onclick="spinSlot()">▶ 돌리기!</button>
+  </div>
+</div>
+
+<!-- Draw: Shake -->
+<div class="screen" id="scr-shake">
+  <div class="shake-wrapper">
+    <div class="shake-hint" id="shake-hint">폰을 흔들어서 뽑아보세요!<br><span style="font-size:12px;opacity:.6;">(흔들기가 안 되면 아래 버튼을 눌러요)</span></div>
+    <div class="shake-box-wrap">
+      <div class="shake-box" id="shake-box">
+        <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Box body -->
+          <rect x="20" y="70" width="120" height="80" rx="4" fill="#c9a227" stroke="#8a6d00" stroke-width="2"/>
+          <!-- Box front -->
+          <rect x="20" y="70" width="120" height="80" rx="4" fill="url(#boxGrad)"/>
+          <!-- Ribbon vertical -->
+          <rect x="70" y="70" width="20" height="80" fill="rgba(180,30,30,.8)"/>
+          <!-- Lid -->
+          <rect x="10" y="52" width="140" height="26" rx="4" fill="#e8c100" stroke="#a88a00" stroke-width="2"/>
+          <!-- Ribbon horizontal on lid -->
+          <rect x="10" y="62" width="140" height="6" fill="rgba(180,30,30,.8)"/>
+          <!-- Star on lid -->
+          <text x="80" y="72" text-anchor="middle" fill="rgba(255,255,255,.8)" font-size="16">⭐</text>
+          <defs>
+            <linearGradient id="boxGrad" x1="20" y1="70" x2="140" y2="150" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#f0c030" stop-opacity=".3"/>
+              <stop offset="100%" stop-color="#000" stop-opacity=".3"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    </div>
+    <button class="shake-btn" id="shake-btn" onclick="triggerShakeDraw()">🎁 탭해서 뽑기</button>
+    <button class="shake-perm-btn" id="shake-perm-btn" onclick="requestMotionPermission()" style="display:none;">📱 흔들기 허용하기 (iOS)</button>
+  </div>
+</div>
+
+<!-- Draw: Card -->
+<div class="screen" id="scr-card">
+  <div class="card-hint">카드를 한 장 골라보세요!</div>
+  <div class="cards-area" id="cards-area"></div>
+</div>
+
+<!-- Result -->
+<div class="screen" id="scr-result">
+  <div class="result-shine"></div>
+  <div class="result-emoji" id="result-emoji">🎉</div>
+  <div class="result-label">당첨!</div>
+  <div class="result-prize" id="result-prize">경품명</div>
+  <button class="result-again-btn" onclick="showStandby()">다시 뽑기</button>
+  <button class="result-stats-link" onclick="showStats()">통계 보기</button>
+</div>
+
+<script>
+/* ── Firebase ── */
+const FB_CFG={apiKey:"AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",authDomain:"beyhome-admin.firebaseapp.com",projectId:"beyhome-admin",storageBucket:"beyhome-admin.firebasestorage.app",messagingSenderId:"849320781553",appId:"1:849320781553:web:9d844044e85995c0aa2b50"};
+firebase.initializeApp(FB_CFG);
+const db=firebase.firestore();
+
+/* ── State ── */
+let CONFIG_ID='';
+let _config=null;         // lottery config doc
+let _prizes=[];           // [{id,name,qty,originalQty}] live updated
+let _predetermined=null;  // {id,name} — result decided before animation
+let _drawMethod='touch';
+
+/* ── Init ── */
+const params=new URLSearchParams(location.search);
+CONFIG_ID=params.get('id')||'';
+if(!CONFIG_ID){showErr('URL에 ?id= 파라미터가 없습니다.');} else{loadConfig();}
+
+function loadConfig(){
+  db.collection('cms_lottery_configs').doc(CONFIG_ID).onSnapshot(snap=>{
+    if(!snap.exists){showErr('뽑기 설정을 찾을 수 없습니다.');return;}
+    _config=snap.data();
+    _prizes=(_config.prizes||[]).map(p=>({...p}));
+    _drawMethod=_config.drawMethod||'touch';
+    document.getElementById('sb-title').textContent=_config.name||'뽑기';
+    document.title=(_config.name||'뽑기')+' — 뽑기';
+    renderStandby();
+    showScreen('scr-standby');
+  },err=>{showErr('로드 오류: '+err.message);});
+}
+
+/* ── Screens ── */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+function showStandby(){
+  cancelAllDrawAnimations();
+  showScreen('scr-standby');
+  renderStandby();
+}
+function showStats(){showScreen('scr-stats');loadStats();}
+function showErr(msg){document.getElementById('err-msg').textContent=msg;showScreen('scr-error');}
+
+/* ── Standby ── */
+function renderStandby(){
+  const grid=document.getElementById('prize-grid');
+  const startBtn=document.getElementById('sb-start-btn');
+  const emptyMsg=document.getElementById('sb-empty-msg');
+  if(!_prizes.length){grid.innerHTML='';emptyMsg.style.display='block';startBtn.disabled=true;return;}
+  emptyMsg.style.display='none';
+  const hasAny=_prizes.some(p=>!_config.deductOnDraw||(p.qty>0));
+  startBtn.disabled=!hasAny;
+  grid.innerHTML=_prizes.map(p=>{
+    const qty=_config.deductOnDraw?p.qty:p.originalQty;
+    const remaining=_config.deductOnDraw?p.qty:p.qty;
+    const isEmpty=_config.deductOnDraw&&p.qty<=0;
+    return `<div class="prize-card${isEmpty?' empty':''}">
+      <div class="prize-card-name">${esc(p.name)}</div>
+      <div class="prize-card-qty">${remaining}</div>
+      <div class="prize-card-unit">남은 수량</div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Pre-determined random pick ── */
+function pickRandomPrize(){
+  // Build weighted pool from prizes with remaining qty > 0
+  const pool=[];
+  _prizes.forEach(p=>{
+    const qty=_config.deductOnDraw?p.qty:p.originalQty||p.qty;
+    if(qty>0) for(let i=0;i<qty;i++) pool.push({id:p.id,name:p.name});
+  });
+  if(!pool.length) return null;
+  // crypto.getRandomValues for secure randomness
+  const arr=new Uint32Array(1);
+  crypto.getRandomValues(arr);
+  const idx=arr[0]%pool.length;
+  return pool[idx];
+}
+
+/* ── Start draw ── */
+function startDraw(){
+  _predetermined=pickRandomPrize();
+  if(!_predetermined){showErr('경품이 없습니다.');return;}
+  if(_drawMethod==='touch') startTouchDraw();
+  else if(_drawMethod==='slot') startSlotDraw();
+  else if(_drawMethod==='shake') startShakeDraw();
+  else if(_drawMethod==='card') startCardDraw();
+  else startTouchDraw();
+}
+
+/* ── Record draw ── */
+async function recordDraw(prize){
+  if(!prize) return;
+  try{
+    const batch=db.batch();
+    const drawRef=db.collection('cms_lottery_configs').doc(CONFIG_ID).collection('draws').doc();
+    batch.set(drawRef,{prizeId:prize.id,prizeName:prize.name,drawnAt:firebase.firestore.FieldValue.serverTimestamp()});
+    if(_config.deductOnDraw){
+      const cfgRef=db.collection('cms_lottery_configs').doc(CONFIG_ID);
+      // Update prize qty in prizes array — load fresh, decrement, save
+      const snap=await cfgRef.get();
+      const prizes=(snap.data().prizes||[]).map(p=>p.id===prize.id?{...p,qty:Math.max(0,p.qty-1)}:p);
+      batch.update(cfgRef,{prizes});
+      // Update local state too
+      const lp=_prizes.find(p=>p.id===prize.id);
+      if(lp) lp.qty=Math.max(0,lp.qty-1);
+    }
+    await batch.commit();
+  }catch(e){console.warn('draw record failed',e);}
+}
+
+/* ════════════════════════════════════
+   DRAW METHOD 1: TOUCH ANYWHERE
+════════════════════════════════════ */
+let _touchCanvas=null,_touchCtx=null,_touchParticles=[],_touchRaf=null,_touchDone=false;
+
+function startTouchDraw(){
+  _touchDone=false;
+  showScreen('scr-touch');
+  document.getElementById('touch-hint').style.opacity='1';
+  const canvas=document.getElementById('touch-canvas');
+  _touchCanvas=canvas;
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+  _touchCtx=canvas.getContext('2d');
+  _touchParticles=[];
+  // Floating ambient particles
+  for(let i=0;i<30;i++) _touchParticles.push(mkAmbient(canvas.width,canvas.height));
+  _touchRaf=requestAnimationFrame(touchLoop);
+}
+
+function mkAmbient(w,h){
+  return{x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.4,vy:-(Math.random()*.5+.2),
+    r:Math.random()*3+1,a:Math.random()*.4+.1,type:'ambient',
+    color:`hsl(${Math.random()*40+30},80%,60%)`};
+}
+
+function touchLoop(){
+  if(!_touchCtx) return;
+  const c=_touchCtx,w=_touchCanvas.width,h=_touchCanvas.height;
+  c.clearRect(0,0,w,h);
+  c.fillStyle='rgba(10,10,10,.25)';
+  c.fillRect(0,0,w,h);
+  _touchParticles=_touchParticles.filter(p=>{
+    p.x+=p.vx; p.y+=p.vy;
+    p.a-=p.type==='burst'?.012:.002;
+    if(p.type==='ambient'){
+      if(p.y<-10) return false;
+      if(p.x<-10||p.x>w+10){p.vx=-p.vx;}
+    } else {
+      if(p.a<=0) return false;
+      p.vy+=.05;
+    }
+    c.globalAlpha=Math.max(0,p.a);
+    c.beginPath();
+    c.arc(p.x,p.y,p.r,0,Math.PI*2);
+    c.fillStyle=p.color;
+    c.fill();
+    return true;
+  });
+  // Refill ambient
+  while(_touchParticles.filter(p=>p.type==='ambient').length<20)
+    _touchParticles.push(mkAmbient(w,h));
+  c.globalAlpha=1;
+  _touchRaf=requestAnimationFrame(touchLoop);
+}
+
+function onTouchDraw(e){
+  if(_touchDone) return;
+  _touchDone=true;
+  document.getElementById('touch-hint').style.opacity='0';
+  const x=e.touches?e.touches[0].clientX:e.clientX;
+  const y=e.touches?e.touches[0].clientY:e.clientY;
+  // Burst at tap position
+  for(let i=0;i<80;i++){
+    const angle=Math.random()*Math.PI*2;
+    const speed=Math.random()*8+2;
+    _touchParticles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-3,
+      r:Math.random()*5+2,a:1,type:'burst',
+      color:`hsl(${Math.random()*40+30},90%,65%)`});
+  }
+  // Large glow ring animation via canvas overlay
+  setTimeout(()=>{finishDraw();},1800);
+}
+
+/* ════════════════════════════════════
+   DRAW METHOD 2: SLOT MACHINE
+════════════════════════════════════ */
+let _slotSpinning=false;
+
+function startSlotDraw(){
+  _slotSpinning=false;
+  showScreen('scr-slot');
+  buildSlotReel();
+  const btn=document.getElementById('slot-start-btn');
+  btn.disabled=false;
+  btn.textContent='▶ 돌리기!';
+}
+
+function buildSlotReel(){
+  const reel=document.getElementById('slot-reel');
+  // Build a long list: repeat prize names many times for spin illusion
+  const names=_prizes.map(p=>p.name);
+  if(!names.length) names.push('?');
+  const items=[];
+  // 40 items total for scroll room
+  for(let i=0;i<40;i++) items.push(names[i%names.length]);
+  reel.innerHTML=items.map(n=>`<div class="slot-item">${esc(n)}</div>`).join('');
+  reel.style.transform='translateY(0px)';
+  reel.style.transition='none';
+}
+
+function spinSlot(){
+  if(_slotSpinning) return;
+  _slotSpinning=true;
+  const btn=document.getElementById('slot-start-btn');
+  btn.disabled=true;
+  btn.textContent='돌리는 중…';
+
+  const reel=document.getElementById('slot-reel');
+  const itemH=80; // height of each slot item
+  const targetName=_predetermined.name;
+
+  // Find all item indices matching target name
+  const items=reel.querySelectorAll('.slot-item');
+  const names=[...items].map(el=>el.textContent);
+  // Pick a target index in the latter portion of the reel
+  let targetIdx=-1;
+  for(let i=names.length-1;i>=20;i--){
+    if(names[i]===targetName){targetIdx=i;break;}
+  }
+  if(targetIdx<0){
+    // fallback: just use first match from index 20
+    targetIdx=25;
+    items[targetIdx].textContent=targetName;
+  }
+
+  // Translate so targetIdx item is centered (reel top + itemH*idx = mid - itemH/2)
+  const machineH=80;
+  const finalY=-(targetIdx*itemH - (machineH/2 - itemH/2));
+
+  // Phase 1: fast spin down -1800px with ease-in
+  reel.style.transition='transform 0.8s cubic-bezier(.55,.0,1,.0)';
+  reel.style.transform=`translateY(-1200px)`;
+
+  // Phase 2: continue to final with ease-out deceleration
+  setTimeout(()=>{
+    reel.style.transition=`transform 1.4s cubic-bezier(0.0,0.0,0.2,1.0)`;
+    reel.style.transform=`translateY(${finalY}px)`;
+  },800);
+
+  // Phase 3: result
+  setTimeout(()=>{
+    finishDraw();
+  },2400);
+}
+
+/* ════════════════════════════════════
+   DRAW METHOD 3: SHAKE
+════════════════════════════════════ */
+let _shakeMotionEnabled=false,_shakeLastAcc=0,_shakeDone=false,_shakeRaf=null;
+
+function startShakeDraw(){
+  _shakeDone=false;
+  showScreen('scr-shake');
+  document.getElementById('shake-btn').disabled=false;
+  // Check if iOS needs permission
+  if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){
+    document.getElementById('shake-perm-btn').style.display='block';
+  } else if(typeof DeviceMotionEvent!=='undefined'){
+    // non-iOS, listen directly
+    window.addEventListener('devicemotion',onDeviceMotion,{passive:true});
+    _shakeMotionEnabled=true;
+  }
+  startShakeIdle();
+}
+
+function requestMotionPermission(){
+  DeviceMotionEvent.requestPermission().then(r=>{
+    if(r==='granted'){
+      window.addEventListener('devicemotion',onDeviceMotion,{passive:true});
+      _shakeMotionEnabled=true;
+      document.getElementById('shake-perm-btn').style.display='none';
+      document.getElementById('shake-hint').innerHTML='폰을 흔들어서 뽑아보세요!';
+    }
+  }).catch(()=>{});
+}
+
+function onDeviceMotion(e){
+  if(_shakeDone) return;
+  const acc=e.accelerationIncludingGravity;
+  if(!acc) return;
+  const mag=Math.sqrt(acc.x**2+acc.y**2+acc.z**2);
+  const delta=Math.abs(mag-_shakeLastAcc);
+  _shakeLastAcc=mag;
+  if(delta>25) triggerShakeDraw();
+}
+
+function triggerShakeDraw(){
+  if(_shakeDone) return;
+  _shakeDone=true;
+  document.getElementById('shake-btn').disabled=true;
+  // Shake animation: rapid wiggle
+  const box=document.getElementById('shake-box');
+  let t=0;
+  const wiggle=setInterval(()=>{
+    t++;
+    const ang=(Math.random()-.5)*30*(1-t/15);
+    const tx=(Math.random()-.5)*20*(1-t/15);
+    box.style.transform=`rotate(${ang}deg) translateX(${tx}px)`;
+    if(t>=15){clearInterval(wiggle);box.style.transform='scale(0)';
+    setTimeout(()=>{finishDraw();},300);}
+  },60);
+}
+
+let _shakeIdleT=0;
+function startShakeIdle(){
+  const box=document.getElementById('shake-box');
+  function idleAnim(){
+    if(_shakeDone) return;
+    _shakeIdleT++;
+    const bob=Math.sin(_shakeIdleT/20)*4;
+    const tilt=Math.sin(_shakeIdleT/35)*3;
+    box.style.transform=`translateY(${bob}px) rotate(${tilt}deg)`;
+    _shakeRaf=requestAnimationFrame(idleAnim);
+  }
+  _shakeRaf=requestAnimationFrame(idleAnim);
+}
+
+/* ════════════════════════════════════
+   DRAW METHOD 4: CARD PICK
+════════════════════════════════════ */
+function startCardDraw(){
+  showScreen('scr-card');
+  buildCards();
+}
+
+function buildCards(){
+  const area=document.getElementById('cards-area');
+  const NUM=6;
+  // Layout: 3 columns x 2 rows
+  area.innerHTML='';
+  const positions=[
+    {x:0,y:0},{x:110,y:0},{x:220,y:0},
+    {x:0,y:100},{x:110,y:100},{x:220,y:100}
+  ];
+  // Center the grid
+  const gridW=90+220,gridH=140+100;
+  const offsetX=(area.clientWidth-gridW)/2||20;
+  const offsetY=(area.clientHeight-gridH)/2||0;
+
+  for(let i=0;i<NUM;i++){
+    const pos=positions[i]||{x:i*100,y:0};
+    const card=document.createElement('div');
+    card.className='lottery-card';
+    card.id=`lcard-${i}`;
+    card.style.left=(offsetX+pos.x)+'px';
+    card.style.top=(offsetY+pos.y)+'px';
+    const flyR=(Math.random()*60-30);
+    card.style.setProperty('--fly-r',flyR+'deg');
+    card.innerHTML=`
+      <div class="card-back"><span class="card-back-pattern">✦</span></div>
+      <div class="card-face">
+        <span class="card-face-star">⭐</span>
+        <span class="card-face-text">${esc(_predetermined.name)}</span>
+      </div>`;
+    card.onclick=()=>pickCard(i);
+    area.appendChild(card);
+  }
+}
+
+function pickCard(idx){
+  for(let i=0;i<6;i++) document.getElementById(`lcard-${i}`).onclick=null;
+  const picked=document.getElementById(`lcard-${idx}`);
+  picked.classList.add('picked');
+  setTimeout(()=>{
+    for(let i=0;i<6;i++){
+      if(i!==idx){
+        const c=document.getElementById(`lcard-${i}`);
+        if(c) c.classList.add('fly-away');
+      }
+    }
+  },400);
+  setTimeout(()=>{finishDraw();},1400);
+}
+
+/* ════════════════════════════════════
+   FINISH DRAW → RESULT
+════════════════════════════════════ */
+function finishDraw(){
+  cancelAllDrawAnimations();
+  const prize=_predetermined;
+  if(!prize) return;
+  recordDraw(prize);
+  document.getElementById('result-prize').textContent=prize.name;
+  showScreen('scr-result');
+  spawnConfetti();
+}
+
+function cancelAllDrawAnimations(){
+  if(_touchRaf){cancelAnimationFrame(_touchRaf);_touchRaf=null;}
+  if(_touchCtx){_touchCtx.clearRect(0,0,_touchCanvas.width,_touchCanvas.height);}
+  if(_shakeRaf){cancelAnimationFrame(_shakeRaf);_shakeRaf=null;}
+  window.removeEventListener('devicemotion',onDeviceMotion);
+}
+
+function spawnConfetti(){
+  const colors=['#e8c100','#ff6b6b','#4ecdc4','#fff','#ff9f43','#a29bfe'];
+  for(let i=0;i<60;i++){
+    const el=document.createElement('div');
+    el.className='confetti-piece';
+    el.style.cssText=`left:${Math.random()*100}vw;top:-10px;background:${colors[i%colors.length]};
+      width:${Math.random()*8+4}px;height:${Math.random()*8+4}px;
+      animation-duration:${Math.random()*2+1.5}s;animation-delay:${Math.random()*.5}s;
+      --rz:${Math.random()*720-360}deg;border-radius:${Math.random()>.5?'50%':'2px'};`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),3000);
+  }
+}
+
+/* ── Stats ── */
+async function loadStats(){
+  document.getElementById('stats-inventory').innerHTML='<div class="stats-empty">로드 중…</div>';
+  document.getElementById('stats-draws').innerHTML='<div class="stats-empty">로드 중…</div>';
+  try{
+    // Prize inventory
+    const snap=await db.collection('cms_lottery_configs').doc(CONFIG_ID).get();
+    const prizes=(snap.data()||{}).prizes||[];
+    const maxQty=Math.max(...prizes.map(p=>p.originalQty||p.qty||1),1);
+    document.getElementById('stats-inventory').innerHTML=prizes.length
+      ?prizes.map(p=>{
+          const orig=p.originalQty||p.qty||0;
+          const rem=p.qty||0;
+          const pct=orig>0?Math.round(rem/orig*100):0;
+          return `<div class="stats-prize-row">
+            <div class="stats-prize-name">${esc(p.name)}</div>
+            <div class="stats-prize-bar-wrap"><div class="stats-prize-bar" style="width:${pct}%"></div></div>
+            <div class="stats-prize-count">${rem}<span style="color:rgba(255,255,255,.3);font-size:11px;">/${orig}</span></div>
+          </div>`;
+        }).join('')
+      :'<div class="stats-empty">경품 없음</div>';
+
+    // Draw history (last 30)
+    const draws=await db.collection('cms_lottery_configs').doc(CONFIG_ID).collection('draws')
+      .orderBy('drawnAt','desc').limit(30).get();
+    document.getElementById('stats-draws').innerHTML=draws.empty
+      ?'<div class="stats-empty">뽑기 기록 없음</div>'
+      :draws.docs.map(d=>{
+          const data=d.data();
+          const ts=data.drawnAt?.toDate();
+          const timeStr=ts?ts.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}):'';
+          return `<div class="stats-draw-row"><span class="stats-draw-prize">${esc(data.prizeName||'?')}</span><span class="stats-draw-time">${timeStr}</span></div>`;
+        }).join('');
+  }catch(e){
+    document.getElementById('stats-inventory').innerHTML='<div class="stats-empty">로드 실패</div>';
+    document.getElementById('stats-draws').innerHTML='';
+  }
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
+</body>
+</html>

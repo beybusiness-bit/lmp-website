@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>사진 다운로드</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+  background:#f0f0f0;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+}
+#app{
+  width:100%;
+  max-width:430px;
+  min-height:100vh;
+  background:#fff;
+  display:flex;
+  flex-direction:column;
+}
+@media(max-width:430px){body{background:#fff;}}
+
+/* Header */
+.page-header{padding:28px 20px 0;text-align:center;}
+.page-logo{font-size:12px;font-weight:800;letter-spacing:3px;color:rgba(0,0,0,.3);text-transform:uppercase;}
+
+/* State views */
+.state-view{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;}
+.state-icon{font-size:52px;margin-bottom:20px;}
+.state-title{font-size:20px;font-weight:800;line-height:1.4;margin-bottom:10px;}
+.state-sub{font-size:14px;color:rgba(0,0,0,.45);line-height:1.7;}
+
+/* Spinner */
+.spinner{width:32px;height:32px;border:3px solid rgba(0,0,0,.1);border-top-color:#000;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:16px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Content */
+.content-wrap{flex:1;padding:20px 20px 48px;}
+.welcome-msg{font-size:14px;color:rgba(0,0,0,.5);line-height:1.7;text-align:center;margin-bottom:24px;}
+
+/* Photo preview */
+.photo-preview{
+  width:100%;
+  border-radius:6px;
+  overflow:hidden;
+  background:#f4f4f4;
+  margin-bottom:24px;
+  position:relative;
+}
+.photo-preview img{width:100%;display:block;}
+.photo-placeholder{
+  width:100%;
+  aspect-ratio:3/4;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+  color:rgba(0,0,0,.3);
+  flex-direction:column;
+  gap:8px;
+}
+.photo-placeholder .ph-spinner{
+  width:24px;height:24px;
+  border:2.5px solid rgba(0,0,0,.1);
+  border-top-color:rgba(0,0,0,.35);
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+
+/* Download sections */
+.dl-section{margin-bottom:16px;}
+.dl-label{font-size:11px;font-weight:800;color:rgba(0,0,0,.3);letter-spacing:.8px;margin-bottom:8px;}
+
+.dl-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;
+  padding:15px 20px;
+  border:none;
+  font-size:15px;font-weight:700;
+  cursor:pointer;font-family:inherit;
+  border-radius:4px;
+  margin-bottom:8px;
+  transition:opacity .15s;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.dl-btn:active{opacity:.7;}
+.dl-btn:disabled{opacity:.35;cursor:not-allowed;}
+.dl-btn.primary{background:#000;color:#fff;}
+.dl-btn.secondary{background:#fff;color:#000;border:2px solid #000;}
+
+.video-pending{
+  background:#fafafa;
+  border:1.5px dashed rgba(0,0,0,.18);
+  border-radius:4px;
+  padding:16px;
+  text-align:center;
+  font-size:13px;
+  color:rgba(0,0,0,.4);
+  line-height:1.6;
+}
+
+/* Expiry notice */
+.expiry-notice{
+  margin-top:20px;
+  background:#f9f9f9;
+  border-radius:4px;
+  padding:14px 16px;
+  font-size:12px;
+  color:rgba(0,0,0,.45);
+  line-height:1.7;
+  text-align:center;
+}
+.expiry-remaining{font-weight:700;color:#000;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="page-header">
+    <div class="page-logo" id="page-logo">STUDIO</div>
+  </div>
+
+  <!-- 로딩 -->
+  <div class="state-view" id="loading-view">
+    <div class="spinner"></div>
+    <div style="font-size:14px;color:rgba(0,0,0,.4);">불러오는 중…</div>
+  </div>
+
+  <!-- 잘못된 링크 -->
+  <div class="state-view" id="not-found-view" style="display:none;">
+    <div class="state-icon">🔍</div>
+    <div class="state-title">잘못된 링크입니다</div>
+    <div class="state-sub">QR코드를 다시 스캔해 주세요.</div>
+  </div>
+
+  <!-- 만료 -->
+  <div class="state-view" id="expired-view" style="display:none;">
+    <div class="state-icon">⏰</div>
+    <div class="state-title">다운로드 기간이<br>만료되었습니다</div>
+    <div class="state-sub" style="margin-top:4px;">촬영날로부터 72시간 동안만<br>다운받을 수 있습니다.</div>
+  </div>
+
+  <!-- 정상 콘텐츠 -->
+  <div class="content-wrap" id="content-view" style="display:none;">
+    <div class="welcome-msg">QR코드를 통해 방문해주셨습니다.<br>아래에서 사진과 영상을 저장하세요.</div>
+
+    <!-- 합성 사진 미리보기 -->
+    <div class="photo-preview" id="photo-preview-wrap"></div>
+
+    <!-- 사진 다운로드 -->
+    <div class="dl-section">
+      <div class="dl-label">사진</div>
+      <button class="dl-btn primary" id="photo-dl-btn" onclick="downloadPhoto(this)">
+        📷&nbsp; 사진 저장
+      </button>
+    </div>
+
+    <!-- 영상 다운로드 -->
+    <div class="dl-section" id="video-section"></div>
+
+    <!-- 만료 안내 -->
+    <div class="expiry-notice" id="expiry-notice"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
+  authDomain:"beyhome-admin.firebaseapp.com",
+  projectId:"beyhome-admin",
+  storageBucket:"beyhome-admin.firebasestorage.app",
+  messagingSenderId:"849320781553",
+  appId:"1:849320781553:web:9d844044e85995c0aa2b50"
+});
+const db = firebase.firestore();
+
+// URL에서 sessionId 추출: /studio/{sessionId}
+const SESSION_ID = window.location.pathname.replace(/\/$/, '').split('/').pop();
+
+let sessionData = null;
+
+/* ── 진입 ── */
+async function init() {
+  if (!SESSION_ID || SESSION_ID === 'studio') {
+    showView('not-found');
+    return;
+  }
+  try {
+    const doc = await db.collection('sessions').doc(SESSION_ID).get();
+    if (!doc.exists) { showView('not-found'); return; }
+
+    sessionData = { id: doc.id, ...doc.data() };
+
+    // 만료 체크
+    const expiresAt = sessionData.expiresAt?.toDate
+      ? sessionData.expiresAt.toDate()
+      : new Date((sessionData.expiresAt?.seconds || 0) * 1000);
+
+    if (sessionData.status === 'expired' || new Date() > expiresAt) {
+      showView('expired');
+      return;
+    }
+
+    renderContent(sessionData, expiresAt);
+    showView('content');
+  } catch(e) {
+    console.error(e);
+    showView('not-found');
+  }
+}
+
+/* ── 콘텐츠 렌더 ── */
+function renderContent(data, expiresAt) {
+  // 부스 이름
+  if (data.studioName) {
+    document.getElementById('page-logo').textContent = data.studioName;
+  }
+
+  // 합성 사진 미리보기
+  const wrap = document.getElementById('photo-preview-wrap');
+  if (data.compositeURL) {
+    const img = document.createElement('img');
+    img.src = data.compositeURL;
+    img.alt = '합성 사진';
+    wrap.appendChild(img);
+  } else {
+    wrap.innerHTML = '<div class="photo-placeholder"><div class="ph-spinner"></div>사진을 불러오는 중…</div>';
+    document.getElementById('photo-dl-btn').disabled = true;
+  }
+
+  // 영상 섹션
+  const videoSec = document.getElementById('video-section');
+  const videos = data.framedVideoURLs || [];
+  videoSec.innerHTML = '<div class="dl-label">영상</div>';
+  if (videos.length === 0) {
+    videoSec.innerHTML += '<div class="video-pending">⏳ 영상이 아직 준비 중이에요.<br>잠시 후 다시 확인해 주세요.</div>';
+  } else {
+    videos.forEach((url, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'dl-btn secondary';
+      btn.innerHTML = `🎞&nbsp; 영상 저장${videos.length > 1 ? ` (${i + 1})` : ''}`;
+      btn.onclick = () => downloadFile(btn, url, `video_${i + 1}.mp4`);
+      videoSec.appendChild(btn);
+    });
+  }
+
+  // 남은 시간 안내
+  const remaining = getRemainingTime(expiresAt);
+  document.getElementById('expiry-notice').innerHTML =
+    `<span class="expiry-remaining">⏱ ${remaining} 후 만료</span><br>촬영날로부터 72시간 동안만 다운받을 수 있습니다.`;
+}
+
+/* ── 다운로드 ── */
+function downloadPhoto(btn) {
+  if (!sessionData?.compositeURL) return;
+  downloadFile(btn, sessionData.compositeURL, 'photo.jpg');
+}
+
+async function downloadFile(btn, url, filename) {
+  const origHTML = btn?.innerHTML ?? null;
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳&nbsp; 저장 중…'; }
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('fetch failed');
+    const blob = await resp.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  } catch(e) {
+    // fallback: 새 탭으로 열기 (브라우저 네이티브 저장)
+    window.open(url, '_blank');
+  } finally {
+    if (btn && origHTML) { btn.disabled = false; btn.innerHTML = origHTML; }
+  }
+}
+
+/* ── 유틸 ── */
+function showView(name) {
+  const map = { loading:'loading-view', 'not-found':'not-found-view', expired:'expired-view', content:'content-view' };
+  Object.entries(map).forEach(([k, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = k === name ? '' : 'none';
+  });
+}
+
+function getRemainingTime(expiresAt) {
+  const diff = expiresAt - new Date();
+  if (diff <= 0) return '0분';
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  if (h > 0) return `${h}시간 ${m}분`;
+  return `${m}분`;
+}
+
+init();
+</script>
+</body>
+</html>
