@@ -4047,23 +4047,46 @@ function renderCheckerRoles(){
   const el=document.getElementById('checker-roles-list');
   if(!el) return;
   if(!curCheckerRoles.length){el.innerHTML='<div style="font-size:12px;color:rgba(0,0,0,.35);margin-bottom:4px;">역할 없음</div>';return;}
-  el.innerHTML=curCheckerRoles.map((r,i)=>`
+  el.innerHTML=curCheckerRoles.map((r,i)=>{
+    const labels=r.confirmLabels||[];
+    const tagsHtml=labels.map((l,j)=>`<span style="display:inline-flex;align-items:center;gap:3px;background:#f0f0f0;border-radius:3px;padding:3px 8px;font-size:11px;font-weight:600;">${(l||'').replace(/</g,'&lt;')}<button onclick="removeConfirmLabel(${i},${j})" style="background:transparent;border:none;cursor:pointer;font-size:12px;color:rgba(0,0,0,.4);padding:0;line-height:1;margin-left:2px;">✕</button></span>`).join('');
+    return `
     <div style="margin-bottom:8px;background:#fafafa;border:1px solid rgba(0,0,0,.08);border-radius:4px;padding:8px;">
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-        <input class="fi-sm" value="${(r.name||'').replace(/"/g,'&quot;')}" placeholder="역할 이름 (내부용, 예: 스탬프 담당)" style="flex:1;margin-bottom:0;"
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+        <input class="fi-sm" value="${(r.name||'').replace(/"/g,'&quot;')}" placeholder="역할 이름 (내부용)" style="flex:1;margin-bottom:0;"
                oninput="curCheckerRoles[${i}].name=this.value;">
         <button onclick="removeCheckerRole(${i})" style="padding:4px 8px;background:transparent;border:1.5px solid rgba(0,0,0,.3);font-size:11px;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.5);flex-shrink:0;">삭제</button>
       </div>
-      <div style="font-size:10px;color:rgba(0,0,0,.4);margin-bottom:4px;">사용자 확인 배지 표시 문구 (비워두면 역할 이름 사용)</div>
-      <input class="fi-sm" value="${(r.confirmLabel||'').replace(/"/g,'&quot;')}" placeholder="예: 스탬프 완료 ✓" style="margin-bottom:0;"
-             oninput="curCheckerRoles[${i}].confirmLabel=this.value;">
-    </div>`).join('');
+      <div style="font-size:10px;color:rgba(0,0,0,.4);margin-bottom:6px;">확인 배지 문구 (사용자 화면 표시 — 여러 개 추가 시 스캔 때 선택)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;min-height:20px;" id="cl-tags-${i}">${tagsHtml||'<span style="font-size:11px;color:rgba(0,0,0,.3);">없음 — 역할 이름이 표시됩니다</span>'}</div>
+      <div style="display:flex;gap:6px;">
+        <input class="fi-sm" id="cl-inp-${i}" placeholder="문구 입력 후 추가" style="flex:1;margin-bottom:0;" onkeydown="if(event.key==='Enter'){event.preventDefault();addConfirmLabel(${i});}">
+        <button onclick="addConfirmLabel(${i})" style="padding:5px 10px;background:#000;border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">추가</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 function addCheckerRole(){
-  curCheckerRoles.push({id:uid(),name:''});
+  curCheckerRoles.push({id:uid(),name:'',confirmLabels:[]});
   renderCheckerRoles();
 }
 function removeCheckerRole(i){curCheckerRoles.splice(i,1);renderCheckerRoles();}
+function addConfirmLabel(i){
+  const inp=document.getElementById('cl-inp-'+i);
+  if(!inp) return;
+  const v=inp.value.trim();
+  if(!v) return;
+  if(!curCheckerRoles[i].confirmLabels) curCheckerRoles[i].confirmLabels=[];
+  curCheckerRoles[i].confirmLabels.push(v);
+  inp.value='';
+  renderCheckerRoles();
+  setTimeout(()=>{const el=document.getElementById('cl-inp-'+i);if(el)el.focus();},50);
+}
+function removeConfirmLabel(i,j){
+  if(!curCheckerRoles[i]?.confirmLabels) return;
+  curCheckerRoles[i].confirmLabels.splice(j,1);
+  renderCheckerRoles();
+}
 
 /* ── Widget config ── */
 function onWidgetEnabledChange(enabled) {
@@ -5497,7 +5520,10 @@ async function editProject(id) {
     curAuthFields = d.authFields && d.authFields.length ? d.authFields : [{key:'name',label:'이름',type:'string',required:true}];
     curAuthKeyField = d.authKeyField || curAuthFields[0]?.key || 'name';
     curStats = d.stats || [];
-    curCheckerRoles = d.checkerRoles || [];
+    curCheckerRoles = (d.checkerRoles || []).map(r => ({
+      ...r,
+      confirmLabels: r.confirmLabels || (r.confirmLabel ? [r.confirmLabel] : [])
+    }));
     renderCheckerRoles();
     curElementOrder = d.elementOrder || ['edition','logo','dday','stats'];
     curElementMargins = d.elementMargins || {};

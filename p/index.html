@@ -149,6 +149,8 @@ body{background:var(--body-bg,var(--c));transition:background-color 1s ease;disp
 .g-mission-qr-canvas canvas{display:block!important;}.g-mission-qr-canvas img{display:none!important;}
 .g-mission-qr-hint{font-size:11px;font-weight:700;color:rgba(0,0,0,.4);letter-spacing:.3px;text-align:center;}
 .g-mission-qr-locked{font-size:13px;color:rgba(0,0,0,.35);text-align:center;padding:20px 0;background:rgba(0,0,0,.04);border-radius:4px;}
+.g-mission-code-btn{background:transparent;border:none;font-size:11px;color:rgba(0,0,0,.35);cursor:pointer;font-family:inherit;text-decoration:underline;padding:2px 0;}
+.g-mission-code{font-size:13px;font-weight:700;color:#000;background:#f4f4f4;border-radius:4px;padding:8px 12px;letter-spacing:.5px;word-break:break-all;text-align:center;}
 .g-ext-checks{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0 4px;}
 .g-ext-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(0,180,80,.1);border:1.5px solid rgba(0,180,80,.35);border-radius:20px;font-size:12px;font-weight:700;color:#007a38;}
 .g-block-image img{width:100%;display:block;}
@@ -2306,8 +2308,9 @@ function blockHtml(b){
   if(b.type==='mission'){
     const html=applyVars(b.textContent||'');
     const loggedIn=!!(USER_DOC_ID);
+    const qrCode=`${PROJECT_ID}:${USER_DOC_ID}:${b.id}`;
     const qrSec=loggedIn
-      ?`<div class="g-mission-qr-wrap"><div class="g-mission-qr-canvas" id="mqr-${b.id}"></div><div class="g-mission-qr-hint">체커에게 보여주세요</div></div>`
+      ?`<div class="g-mission-qr-wrap"><div class="g-mission-qr-canvas" id="mqr-${b.id}"></div><div class="g-mission-qr-hint">체커에게 보여주세요</div><button class="g-mission-code-btn" onclick="toggleMissionCode('mcode-${b.id}')">QR 안 되면 코드 보기</button><div class="g-mission-code" id="mcode-${b.id}" style="display:none;">${qrCode}</div></div>`
       :`<div class="g-mission-qr-wrap"><div class="g-mission-qr-locked">🔒 로그인 후 QR이 표시됩니다</div></div>`;
     const badgesHtml=_extCheckBadgesInnerHtml(b.id);
     const badgesEl=badgesHtml?`<div class="g-ext-checks" id="ext-checks-${b.id}">${badgesHtml}</div>`:`<div class="g-ext-checks" id="ext-checks-${b.id}"></div>`;
@@ -2556,6 +2559,11 @@ function initMissionQRs(){
       });
     }catch(e){}
   });
+}
+function toggleMissionCode(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.style.display=el.style.display==='none'?'block':'none';
 }
 function _extCheckBadgesInnerHtml(blockId){
   const checks=userExternalChecks[blockId]||[];

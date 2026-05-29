@@ -77,6 +77,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .hi-name{font-weight:700;margin-bottom:2px;}
 .hi-block{color:rgba(0,0,0,.5);}
 .hi-time{font-size:11px;color:rgba(0,0,0,.3);margin-left:auto;white-space:nowrap;}
+
+/* Label picker */
+.lp-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
+.lp-sheet{width:100%;max-width:430px;background:#fff;border-radius:14px 14px 0 0;padding:20px 20px 44px;}
+.lp-title{font-size:14px;font-weight:800;text-align:center;margin-bottom:16px;}
+.lp-btn{display:block;width:100%;padding:14px;border:none;background:#000;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:4px;margin-bottom:8px;}
+.lp-btn.sec{background:#fff;color:#000;border:2px solid #000;}
+.lp-cancel{display:block;width:100%;padding:12px;background:transparent;border:none;color:rgba(0,0,0,.45);font-size:13px;cursor:pointer;font-family:inherit;margin-top:4px;}
+.lp-divider{font-size:11px;color:rgba(0,0,0,.3);text-align:center;margin:10px 0;}
+.lp-custom-row{display:flex;gap:8px;align-items:center;}
+.lp-custom-inp{flex:1;background:transparent;border:none;border-bottom:1.5px solid rgba(0,0,0,.3);font-size:15px;color:#000;padding:8px 0;outline:none;font-family:inherit;}
+.lp-custom-ok{padding:9px 14px;background:#000;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 </style>
 </head>
 <body>
@@ -162,6 +174,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     </div>
   </div>
 
+</div>
+
+<!-- 문구 선택 모달 (복수 confirmLabels) -->
+<div class="lp-backdrop" id="lp-backdrop" style="display:none;">
+  <div class="lp-sheet">
+    <div class="lp-title">확인 배지 문구 선택</div>
+    <div id="lp-list"></div>
+    <div class="lp-divider">— 또는 직접 입력 —</div>
+    <div class="lp-custom-row">
+      <input class="lp-custom-inp" id="lp-custom-inp" placeholder="문구 직접 입력"
+        onkeydown="if(event.key==='Enter')_confirmLabelPickerCustom()">
+      <button class="lp-custom-ok" onclick="_confirmLabelPickerCustom()">확인</button>
+    </div>
+    <button class="lp-cancel" onclick="_cancelLabelPicker()">취소</button>
+  </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -276,7 +303,8 @@ async function doLogin() {
     const nameField = authFields.find(f => f.key !== 'phone' && f.key !== 'tel') || authFields[0];
     const userName = userData[nameField?.key] || userDoc.id;
 
-    checkerSession = { userId: userDoc.id, userName, roleId: checkerRoleId, roleName, confirmLabel: role?.confirmLabel || '' };
+    const confirmLabels = role?.confirmLabels || (role?.confirmLabel ? [role.confirmLabel] : []);
+    checkerSession = { userId: userDoc.id, userName, roleId: checkerRoleId, roleName, confirmLabels };
     _saveSession(checkerSession);
     showCheckerView();
   } catch(e) {
@@ -373,7 +401,6 @@ async function processCode(raw) {
     return;
   }
 
-  // 사용자 문서 읽기
   const userRef = db.collection(AUTH_COLLECTION).doc(userId);
   try {
     const userDoc = await userRef.get();
@@ -382,32 +409,66 @@ async function processCode(raw) {
       return;
     }
     const userData = userDoc.data();
+    const nameField = authFields.find(f => f.key !== 'phone') || authFields[0];
+    const displayName = userData[nameField?.key] || userId;
 
-    // 이미 체크한 경우 확인
+    // 이미 체크한 경우
     const existing = (userData.externalChecks?.[blockId] || []);
     const alreadyByMe = existing.some(c => c.roleId === checkerSession.roleId);
     if (alreadyByMe) {
-      const nameField = authFields.find(f => f.key !== 'phone') || authFields[0];
-      const displayName = userData[nameField?.key] || userId;
       showResult('ok', '✅', '이미 확인됨', `${displayName} 님은 이미 "${checkerSession.roleName}" 확인이 완료됐어요.`);
       return;
     }
 
-    // 체크 추가
-    const newCheck = {
-      roleId: checkerSession.roleId,
-      roleName: checkerSession.roleName,
-      confirmLabel: checkerSession.confirmLabel || checkerSession.roleName,
-      checkerUserId: checkerSession.userId,
-      checkedAt: new Date()
-    };
-    await userRef.update({
-      [`externalChecks.${blockId}`]: firebase.firestore.FieldValue.arrayUnion(newCheck)
-    });
+    // 문구 결정 — 복수면 선택 모달
+    const labels = checkerSession.confirmLabels || [];
+    if (labels.length > 1) {
+      _showLabelPicker(labels, { userRef, blockId, userData, displayName });
+    } else {
+      await _writeExternalCheck(userRef, blockId, userData, labels[0] || checkerSession.roleName, displayName);
+    }
+  } catch(e) {
+    showResult('err', '❌', '오류 발생', e.message);
+  }
+}
 
-    const nameField = authFields.find(f => f.key !== 'phone') || authFields[0];
-    const displayName = userData[nameField?.key] || userId;
-    showResult('ok', '✅', '확인 완료!', `${displayName} 님의 미션에 "${checkerSession.roleName}" 배지가 추가됐어요.`);
+let _pendingCheck = null;
+function _showLabelPicker(labels, pending) {
+  _pendingCheck = pending;
+  document.getElementById('lp-list').innerHTML = labels.map((l, i) =>
+    `<button class="lp-btn" onclick="_confirmLabelPicker(${i})">${l.replace(/</g,'&lt;')}</button>`
+  ).join('');
+  document.getElementById('lp-custom-inp').value = '';
+  document.getElementById('lp-backdrop').style.display = 'flex';
+}
+function _cancelLabelPicker() {
+  document.getElementById('lp-backdrop').style.display = 'none';
+  _pendingCheck = null;
+}
+async function _confirmLabelPicker(i) {
+  const label = (checkerSession.confirmLabels || [])[i] || checkerSession.roleName;
+  document.getElementById('lp-backdrop').style.display = 'none';
+  if (_pendingCheck) await _writeExternalCheck(_pendingCheck.userRef, _pendingCheck.blockId, _pendingCheck.userData, label, _pendingCheck.displayName);
+  _pendingCheck = null;
+}
+async function _confirmLabelPickerCustom() {
+  const label = document.getElementById('lp-custom-inp').value.trim() || checkerSession.roleName;
+  document.getElementById('lp-backdrop').style.display = 'none';
+  if (_pendingCheck) await _writeExternalCheck(_pendingCheck.userRef, _pendingCheck.blockId, _pendingCheck.userData, label, _pendingCheck.displayName);
+  _pendingCheck = null;
+}
+async function _writeExternalCheck(userRef, blockId, userData, confirmLabel, displayName) {
+  try {
+    await userRef.update({
+      [`externalChecks.${blockId}`]: firebase.firestore.FieldValue.arrayUnion({
+        roleId: checkerSession.roleId,
+        roleName: checkerSession.roleName,
+        confirmLabel,
+        checkerUserId: checkerSession.userId,
+        checkedAt: new Date()
+      })
+    });
+    showResult('ok', '✅', '확인 완료!', `${displayName} 님의 미션에 "${confirmLabel}" 배지가 추가됐어요.`);
     addHistory(displayName, blockId);
   } catch(e) {
     showResult('err', '❌', '오류 발생', e.message);
@@ -451,7 +512,7 @@ function addHistory(userName, blockId) {
 /* ── 비밀번호 폼 토글 ── */
 function togglePwForm() {
   const f = document.getElementById('pw-form');
-  f.style.display = f.style.display === 'none' ? '' : 'none';
+  f.style.display = f.style.display === 'block' ? 'none' : 'block';
 }
 
 /* ── 유틸 ── */
