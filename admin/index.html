@@ -4048,10 +4048,15 @@ function renderCheckerRoles(){
   if(!el) return;
   if(!curCheckerRoles.length){el.innerHTML='<div style="font-size:12px;color:rgba(0,0,0,.35);margin-bottom:4px;">역할 없음</div>';return;}
   el.innerHTML=curCheckerRoles.map((r,i)=>`
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-      <input class="fi-sm" value="${(r.name||'').replace(/"/g,'&quot;')}" placeholder="역할 이름 (예: 스탬프 담당)" style="flex:1;margin-bottom:0;"
-             oninput="curCheckerRoles[${i}].name=this.value;">
-      <button onclick="removeCheckerRole(${i})" style="padding:4px 8px;background:transparent;border:1.5px solid rgba(0,0,0,.3);font-size:11px;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.5);flex-shrink:0;">삭제</button>
+    <div style="margin-bottom:8px;background:#fafafa;border:1px solid rgba(0,0,0,.08);border-radius:4px;padding:8px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <input class="fi-sm" value="${(r.name||'').replace(/"/g,'&quot;')}" placeholder="역할 이름 (내부용, 예: 스탬프 담당)" style="flex:1;margin-bottom:0;"
+               oninput="curCheckerRoles[${i}].name=this.value;">
+        <button onclick="removeCheckerRole(${i})" style="padding:4px 8px;background:transparent;border:1.5px solid rgba(0,0,0,.3);font-size:11px;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.5);flex-shrink:0;">삭제</button>
+      </div>
+      <div style="font-size:10px;color:rgba(0,0,0,.4);margin-bottom:4px;">사용자 확인 배지 표시 문구 (비워두면 역할 이름 사용)</div>
+      <input class="fi-sm" value="${(r.confirmLabel||'').replace(/"/g,'&quot;')}" placeholder="예: 스탬프 완료 ✓" style="margin-bottom:0;"
+             oninput="curCheckerRoles[${i}].confirmLabel=this.value;">
     </div>`).join('');
 }
 function addCheckerRole(){

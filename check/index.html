@@ -276,7 +276,7 @@ async function doLogin() {
     const nameField = authFields.find(f => f.key !== 'phone' && f.key !== 'tel') || authFields[0];
     const userName = userData[nameField?.key] || userDoc.id;
 
-    checkerSession = { userId: userDoc.id, userName, roleId: checkerRoleId, roleName };
+    checkerSession = { userId: userDoc.id, userName, roleId: checkerRoleId, roleName, confirmLabel: role?.confirmLabel || '' };
     _saveSession(checkerSession);
     showCheckerView();
   } catch(e) {
@@ -397,6 +397,7 @@ async function processCode(raw) {
     const newCheck = {
       roleId: checkerSession.roleId,
       roleName: checkerSession.roleName,
+      confirmLabel: checkerSession.confirmLabel || checkerSession.roleName,
       checkerUserId: checkerSession.userId,
       checkedAt: new Date()
     };

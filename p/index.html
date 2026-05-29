@@ -2559,7 +2559,7 @@ function initMissionQRs(){
 }
 function _extCheckBadgesInnerHtml(blockId){
   const checks=userExternalChecks[blockId]||[];
-  return checks.map(c=>`<span class="g-ext-badge">✅ ${c.roleName||'확인'}</span>`).join('');
+  return checks.map(c=>`<span class="g-ext-badge">✅ ${c.confirmLabel||c.roleName||'확인'}</span>`).join('');
 }
 function _refreshExtCheckBadges(){
   document.querySelectorAll('[id^="ext-checks-"]').forEach(el=>{
