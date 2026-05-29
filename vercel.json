@@ -74,7 +74,7 @@
       "destination": "/check/index.html"
     },
     {
-      "source": "/:prefix([a-z][a-z0-9-]*)/:slug([^/]+)",
+      "source": "/:prefix((?!studio|booth|check)[a-z][a-z0-9-]*)/:slug([^/]+)",
       "destination": "/api/go?prefix=:prefix&slug=:slug"
     }
   ]
