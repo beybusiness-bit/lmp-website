@@ -420,7 +420,8 @@ function showResult(type, icon, title, sub) {
   document.getElementById('result-icon').textContent = icon;
   document.getElementById('result-title').textContent = title;
   document.getElementById('result-sub').textContent = sub;
-  wrap.style.display = '';
+  wrap.style.display = 'block';
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 function hideResult() {
   document.getElementById('result-wrap').style.display = 'none';

@@ -268,19 +268,31 @@ async function downloadFile(btn, url, filename) {
   const origHTML = btn?.innerHTML ?? null;
   if (btn) { btn.disabled = true; btn.innerHTML = '⏳&nbsp; 저장 중…'; }
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  let blob = null;
+
+  // 1차 시도: 서버 프록시 경유 (CORS 우회)
   try {
-    // Firebase Storage URL은 서버 프록시 경유 (브라우저 CORS 우회)
-    const fetchUrl = url.includes('firebasestorage.googleapis.com')
-      ? '/api/proxy-image?url=' + encodeURIComponent(url)
-      : url;
-    const resp = await fetch(fetchUrl);
-    if (!resp.ok) throw new Error('fetch failed');
-    const blob = await resp.blob();
-    // iOS: Web Share API → 카메라 롤에 바로 저장
+    const proxyUrl = '/api/proxy-image?url=' + encodeURIComponent(url);
+    const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+    if (r.ok) blob = await r.blob();
+  } catch(_) {}
+
+  // 2차 시도: 직접 fetch (CORS 설정된 경우)
+  if (!blob) {
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (r.ok) blob = await r.blob();
+    } catch(_) {}
+  }
+
+  if (blob) {
+    // iOS: Web Share API → 카메라 롤 저장
     if (isMobile && navigator.share && navigator.canShare) {
       const file = new File([blob], filename, { type: blob.type || 'image/jpeg' });
       if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file] });
+        try { await navigator.share({ files: [file] }); } catch(_) {}
+        if (btn && origHTML) { btn.disabled = false; btn.innerHTML = origHTML; }
         return;
       }
     }
@@ -291,11 +303,12 @@ async function downloadFile(btn, url, filename) {
     document.body.appendChild(a);
     a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-  } catch(e) {
+  } else {
+    // 최종 폴백: 새 탭
     window.open(url, '_blank');
-  } finally {
-    if (btn && origHTML) { btn.disabled = false; btn.innerHTML = origHTML; }
   }
+
+  if (btn && origHTML) { btn.disabled = false; btn.innerHTML = origHTML; }
 }
 
 /* ── 유틸 ── */
