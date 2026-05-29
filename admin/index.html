@@ -798,6 +798,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div id="p-greeting-vars" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;"></div>
               <div style="font-size:11px;color:rgba(0,0,0,.38);margin-top:5px;">버튼 클릭 시 커서 위치에 변수 삽입</div>
             </div>
+            <div class="sect-head">체커 역할 <span style="font-size:11px;font-weight:400;opacity:.5;">미션 QR 스캔 권한</span></div>
+            <div class="ed-sect">
+              <div style="font-size:11px;color:rgba(0,0,0,.45);line-height:1.6;margin-bottom:10px;">체커 역할을 가진 사용자는 <code>/check/{프로젝트ID}</code> 페이지에 로그인해 미션 QR을 스캔할 수 있습니다. 사용자 편집 모달에서 역할을 지정하세요.</div>
+              <div id="checker-roles-list"></div>
+              <button style="padding:4px 10px;background:transparent;border:1.5px solid #000;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:6px;" onclick="addCheckerRole()">+ 역할 추가</button>
+            </div>
             <div class="sect-head">사용자 목록</div>
             <div class="ed-sect">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
@@ -2289,6 +2295,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <button class="blk-tab"    id="btab-tool"    onclick="switchBlkTab('tool')">도구</button>
       <button class="blk-tab"    id="btab-spacer"  onclick="switchBlkTab('spacer')">스페이서</button>
       <button class="blk-tab"    id="btab-divider" onclick="switchBlkTab('divider')">구분선</button>
+      <button class="blk-tab"    id="btab-mission" onclick="switchBlkTab('mission')">미션</button>
       <button class="blk-tab"    id="btab-form"    onclick="switchBlkTab('form')" style="display:none;">폼(구)</button>
     </div>
     <div id="bpanel-text">
@@ -2591,6 +2598,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <div style="display:flex;align-items:center;gap:10px;">
         <div class="switch" id="blk-div-fullwidth-sw" onclick="this.classList.toggle('on');scheduleBmPreview();"></div>
         <span class="switch-lbl">가로 100% 확장 <span style="font-weight:400;opacity:.6;">(블록 마진 무시 · 전체 너비)</span></span>
+      </div>
+    </div>
+    <!-- 미션 패널 -->
+    <div id="bpanel-mission" style="display:none;">
+      <div style="font-size:11px;color:rgba(0,0,0,.45);line-height:1.6;padding:8px 10px;background:rgba(0,0,0,.03);border-radius:6px;margin-bottom:12px;">
+        로그인한 사용자에게 해당 미션의 QR이 자동으로 표시됩니다.<br>체커가 QR을 스캔하면 해당 사용자·미션에 확인 배지가 추가됩니다.
+      </div>
+      <div class="fmt-bar">
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bold-mission" onpointerdown="epd(event)" onclick="fmtCmd('mission','bold')"><b>B</b></button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-mission" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','mission')">Aa</button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-al-mission" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','mission')">≡</button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-mission" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','mission')" style="padding:5px 7px;"><span id="fmt-clr-dot-mission" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bg-mission" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','mission')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-mission" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+        <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-img-mission" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','mission')" title="이미지 삽입" style="font-size:13px;padding:4px 7px;">🖼</button>
+      </div>
+      <div class="ced-wrap">
+        <div class="ced" id="ced-mission" contenteditable="true" data-ph="미션 설명을 입력하세요…" onkeyup="saveRange(this);syncFmtBar('mission')" onmouseup="saveRange(this);syncFmtBar('mission')"></div>
+        <div class="ced-resize-handle" onpointerdown="cedResizeStart(event,'ced-mission')" title="드래그하여 편집기 높이 조절"></div>
       </div>
     </div>
     <!-- 공통: 체크 기능 -->
@@ -3554,6 +3579,7 @@ let _hbMode = false;
 let _hbEditId = null;
 let curKeyColors = [{color:'#00CE6B',holdTime:8,transitionTime:2},{color:'#FFF100',holdTime:8,transitionTime:2},{color:'#F95548',holdTime:8,transitionTime:2},{color:'#0BC6FF',holdTime:8,transitionTime:2}];
 let curStats = [];             // [{id, label, collection, countType, unit, enabled, extProjectId, extMetric, extStageId, extBlockId}]
+let curCheckerRoles = [];      // [{id, name}]
 let _statProjCache = undefined; // undefined=미로드, null=로딩중, [{id,name}]=완료
 let _statStageCache = {};       // {pid: undefined|null|[{id,title}]}
 let _statBlockCache = {};       // {'pid__sid': undefined|null|[{id,label}]}
@@ -3932,6 +3958,24 @@ function addStat() {
   renderStatList();
 }
 function removeStat(i) { curStats.splice(i,1); renderStatList(); schedulePreviewUpdate(); }
+
+/* ── Checker roles ── */
+function renderCheckerRoles(){
+  const el=document.getElementById('checker-roles-list');
+  if(!el) return;
+  if(!curCheckerRoles.length){el.innerHTML='<div style="font-size:12px;color:rgba(0,0,0,.35);margin-bottom:4px;">역할 없음</div>';return;}
+  el.innerHTML=curCheckerRoles.map((r,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+      <input class="fi-sm" value="${(r.name||'').replace(/"/g,'&quot;')}" placeholder="역할 이름 (예: 스탬프 담당)" style="flex:1;margin-bottom:0;"
+             oninput="curCheckerRoles[${i}].name=this.value;">
+      <button onclick="removeCheckerRole(${i})" style="padding:4px 8px;background:transparent;border:1.5px solid rgba(0,0,0,.3);font-size:11px;cursor:pointer;font-family:inherit;color:rgba(0,0,0,.5);flex-shrink:0;">삭제</button>
+    </div>`).join('');
+}
+function addCheckerRole(){
+  curCheckerRoles.push({id:uid(),name:''});
+  renderCheckerRoles();
+}
+function removeCheckerRole(i){curCheckerRoles.splice(i,1);renderCheckerRoles();}
 
 /* ── Widget config ── */
 function onWidgetEnabledChange(enabled) {
@@ -4934,7 +4978,8 @@ function renderUserTable() {
       ${progCells}
       ${showLastLogin?`<td style="font-size:11px;color:rgba(0,0,0,.6);${_userColStyle('_lastLogin','white-space:nowrap;')}">${lastLogin}</td>`:''}
       ${showLoginCount?`<td style="font-size:12px;font-weight:700;text-align:center;${_userColStyle('_loginCount','')}">${loginCnt}</td>`:''}
-      <td><div style="display:flex;gap:4px;">
+      <td><div style="display:flex;gap:4px;align-items:center;">
+        ${u.checkerRoleId?`<span style="font-size:10px;font-weight:700;color:#007a38;background:rgba(0,180,80,.12);border:1px solid rgba(0,180,80,.3);border-radius:10px;padding:2px 6px;white-space:nowrap;">${(curCheckerRoles.find(r=>r.id===u.checkerRoleId)?.name||'체커').replace(/</g,'&lt;')}</span>`:''}
         <button class="u-btn" onclick="openUserModal('${u._id}')">편집</button>
         <button class="u-btn" onclick="deleteUser('${u._id}')">삭제</button>
       </div></td>
@@ -4999,12 +5044,19 @@ function openUserModal(userId) {
   curEditingUserId = userId;
   const user = userId ? curUsers.find(u=>u._id===userId)||{} : {};
   document.getElementById('user-modal-ttl').textContent = userId ? '사용자 편집' : '사용자 추가';
+  const checkerRoleOpts = curCheckerRoles.length
+    ? `<option value="">— 없음 —</option>`+curCheckerRoles.map(r=>`<option value="${r.id}"${r.id===(user.checkerRoleId||'')?'selected':''}>${(r.name||r.id).replace(/</g,'&lt;')}</option>`).join('')
+    : `<option value="">— 역할 없음 (체커 역할 섹션에서 먼저 추가) —</option>`;
   document.getElementById('user-modal-fields').innerHTML = curAuthFields.map(f=>`
     <div style="margin-bottom:12px;">
       <div class="ed-lbl">${f.label}${f.required?' *':''}</div>
       <input class="fi-sm" id="um-${f.key}" value="${(user[f.key]||'').toString().replace(/"/g,'&quot;')}"
              type="text" ${f.type==='number'?'inputmode="numeric"':''} placeholder="${f.label}" style="margin-bottom:0;">
-    </div>`).join('');
+    </div>`).join('')+`
+  <div style="margin-bottom:12px;padding-top:12px;border-top:1px solid rgba(0,0,0,.1);">
+    <div class="ed-lbl">체커 역할 <span style="font-weight:400;opacity:.55;">(미션 QR 스캔 권한)</span></div>
+    <select class="fi-sm" id="um-checker-role" style="margin-bottom:0;">${checkerRoleOpts}</select>
+  </div>`;
   const _um=document.getElementById('user-modal'); document.body.appendChild(_um); _um.classList.add('on');
 }
 async function saveUser() {
@@ -5015,10 +5067,15 @@ async function saveUser() {
     if (f.required && !val) { alert(f.label+'을(를) 입력해주세요.'); return; }
     data[f.key] = val;
   }
+  const checkerRoleVal = document.getElementById('um-checker-role')?.value||'';
+  if(checkerRoleVal) data.checkerRoleId=checkerRoleVal;
+  else data.checkerRoleId=firebase.firestore.FieldValue.delete();
   try {
     if (curEditingUserId) {
       await db.collection(col).doc(curEditingUserId).set(data, {merge:true});
     } else {
+      delete data.checkerRoleId; // can't use FieldValue.delete() on add
+      if(checkerRoleVal) data.checkerRoleId=checkerRoleVal;
       await db.collection(col).add(data);
     }
     closeModal('user-modal');
@@ -5298,7 +5355,7 @@ function startNewProject() {
   curAuthKeyField='name'; curUsers=[]; curAuthCollection=''; curLogoTextSize='24'; curLogoTextAlign='center'; curLogoImgW=76;
   setSelfReg(false); document.getElementById('p-self-reg-modal-title').value=''; document.getElementById('p-self-reg-modal-desc').value=''; document.getElementById('p-self-reg-cta').value='등록하기'; document.getElementById('p-self-reg-success').value='';
   setSelfRegCtaSep(false); document.getElementById('p-self-reg-cta-icon-url').value=''; document.getElementById('p-self-reg-cta-sep-text').value='등록하기';
-  curStats=[]; curElementOrder=['edition','logo','dday','stats'];
+  curStats=[]; curCheckerRoles=[]; renderCheckerRoles(); curElementOrder=['edition','logo','dday','stats'];
   curKeyColors=[];
   ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-title','p-auth-desc']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
@@ -5352,6 +5409,8 @@ async function editProject(id) {
     curAuthFields = d.authFields && d.authFields.length ? d.authFields : [{key:'name',label:'이름',type:'string',required:true}];
     curAuthKeyField = d.authKeyField || curAuthFields[0]?.key || 'name';
     curStats = d.stats || [];
+    curCheckerRoles = d.checkerRoles || [];
+    renderCheckerRoles();
     curElementOrder = d.elementOrder || ['edition','logo','dday','stats'];
     curElementMargins = d.elementMargins || {};
     curElemFontSizes = d.elemFontSizes || {};
@@ -5508,6 +5567,7 @@ async function saveProject(deploy=true, e=null) {
     homeBlocks:   curHomeBlocks,
     homeItemOrder: curHomeItemOrder,
     stats:         curStats,
+    checkerRoles:  curCheckerRoles,
     elementOrder:  curElementOrder,
     elementMargins: curElementMargins,
     elemFontSizes:  curElemFontSizes,
@@ -6100,7 +6160,7 @@ function renderBlockList() {
   const el=document.getElementById('block-list');
   if(!curBlocks.length){el.innerHTML=_blkInsertRow(0)+'<div class="empty-msg" style="padding:10px 0;">블록이 없어요.</div>';return;}
   const items=curBlocks.map((b,i)=>{
-    const tl=b.type==='text'?'텍스트':b.type==='image'?'이미지':b.type==='mixed'?'혼합':b.type==='embed'?'임베드':b.type==='tool'?'도구':b.type==='spacer'?'스페이서':b.type==='divider'?'구분선':'폼(구)';
+    const tl=b.type==='text'?'텍스트':b.type==='image'?'이미지':b.type==='mixed'?'혼합':b.type==='embed'?'임베드':b.type==='tool'?'도구':b.type==='spacer'?'스페이서':b.type==='divider'?'구분선':b.type==='mission'?'미션':'폼(구)';
     const _ttMap={'form':'폼','booth':'꾸미기','guide':'계산기','youtube-playlist':'유튜브 뮤직','schedule':'일정잡기','copy-gen':'문구 생성기','payment':'결제','guestbook':'방명록'};
     const _ttLabel=_ttMap[b.toolType]||b.toolType||'?';
     const _tcId=b.toolConfig?.formId||b.toolConfig?.boothId||b.toolConfig?.guideId||b.toolConfig?.copyGenId||b.toolConfig?.scheduleId||b.toolConfig?.youtubePlaylistId||b.toolConfig?.paymentId||b.toolConfig?.guestbookId||'';
@@ -6113,6 +6173,7 @@ function renderBlockList() {
              b.type==='tool'?toolSubLbl:
              b.type==='spacer'?`높이 ${b.spacerHeight||40}px`:
              b.type==='divider'?`${{'solid':'실선','dashed':'파선','dotted':'점선','double':'이중선'}[b.dividerStyle||'solid']} · ${b.dividerThickness||1}px${b.dividerFullWidth?' · 100%':''}`:
+             b.type==='mission'?(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,30)||'(내용 없음)':
              b.type==='form'?(b.formFields?.length?`필드 ${b.formFields.length}개`:'(필드 없음)'):'';
     return `<div class="blk-item">
       <div class="blk-badge">${tl}</div>
@@ -6834,6 +6895,8 @@ function openBlockModal(idx,insertAt){
   const _cedT=document.getElementById('ced-text');
   _cedT.innerHTML=b.type==='text'?(b.textContent||''):''; _cedT.style.height='';
   document.getElementById('text-link-url').value=b.type==='text'?(b.linkUrl||''):'';
+  const _cedMs=document.getElementById('ced-mission');
+  if(_cedMs){_cedMs.innerHTML=b.type==='mission'?(b.textContent||''):'';_cedMs.style.height='';}
   document.getElementById('img-url').value=b.type==='image'?(b.imageUrl||''):'';
   document.getElementById('img-link-url').value=b.type==='image'?(b.linkUrl||''):'';
   document.getElementById('mixed-img-url').value=b.type==='mixed'?(b.imageUrl||''):'';
@@ -7318,6 +7381,8 @@ function saveBlock(){
     b.formId     = (curBlkIdx!==null && curBlocks[curBlkIdx]?.formId) || uid();
     b.formFields = JSON.parse(JSON.stringify(curFormFields));
     b.formConfig = {...curFormConfig};
+  } else if(curBlkType==='mission'){
+    b.textContent=document.getElementById('ced-mission')?.innerHTML||'';
   } else if(curBlkType==='spacer'){
     b.spacerHeight=parseInt(document.getElementById('blk-spacer-height')?.value)||40;
   } else if(curBlkType==='divider'){
@@ -7411,14 +7476,14 @@ function saveBlock(){
 }
 function switchBlkTab(t){
   curBlkType=t;
-  ['text','image','mixed','embed','tool','spacer','divider','form'].forEach(k=>{
+  ['text','image','mixed','embed','tool','spacer','divider','mission','form'].forEach(k=>{
     const btn=document.getElementById('btab-'+k);
     if(btn) btn.classList.toggle('on',k===t);
     const panel=document.getElementById('bpanel-'+k);
     if(panel) panel.style.display=k===t?'block':'none';
   });
   const chkSection=document.getElementById('blk-check-section');
-  if(chkSection) chkSection.style.display=(t==='form'||t==='tool'||t==='spacer'||t==='divider')?'none':'';
+  if(chkSection) chkSection.style.display=(t==='form'||t==='tool'||t==='spacer'||t==='divider'||t==='mission')?'none':'';
   const txSec2=document.getElementById('blk-txtpadding-section');
   if(txSec2){
     if(t==='text'){
@@ -7610,6 +7675,7 @@ function getEd(ctx){
   if(ctx==='arep-mixed-txt') return document.getElementById('ced-arep-mixed-txt');
   if(ctx==='text') return document.getElementById('ced-text');
   if(ctx==='mixed') return document.getElementById('ced-mixed');
+  if(ctx==='mission') return document.getElementById('ced-mission');
   // 도구 설명 필드: ed-{ctx} 우선, rte-{ctx} 폴백
   return document.getElementById('ed-'+ctx)||document.getElementById('rte-'+ctx)||null;
 }
