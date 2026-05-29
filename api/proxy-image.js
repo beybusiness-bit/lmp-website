@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     }
 
     const contentType = upstream.headers.get('content-type') || 'image/png';
-    if (!contentType.startsWith('image/')) {
+    if (!contentType.startsWith('image/') && !contentType.startsWith('video/')) {
       return res.status(502).json({ error: `unexpected content-type: ${contentType}` });
     }
 
