@@ -5,6 +5,24 @@ export default async function handler(req, res) {
   const slug   = (req.query.slug   || '').trim();
   if (!prefix || !slug) return res.redirect(302, '/');
 
+  // 시스템 경로 — catch-all이 가로챈 경우 올바른 페이지 HTML을 직접 서빙
+  // (Vercel이 rewrite 순서를 보장하지 않아 catch-all이 먼저 매칭될 수 있음)
+  const SYSTEM_PAGES = { studio: '/studio', booth: '/studio', check: '/check' };
+  if (SYSTEM_PAGES[prefix]) {
+    const base = `https://${req.headers.host || 'lazymaxpotential.kr'}`;
+    try {
+      const r = await fetch(base + SYSTEM_PAGES[prefix], { signal: AbortSignal.timeout(4000) });
+      if (r.ok) {
+        const html = await r.text();
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-store');
+        return res.status(200).send(html);
+      }
+    } catch(e) { /* fallthrough */ }
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.status(200).send('<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>오류</title></head><body style="font-family:sans-serif;text-align:center;padding:60px 20px"><p>페이지를 불러올 수 없습니다.<br>잠시 후 다시 시도해주세요.</p></body></html>');
+  }
+
   const shortPath = '/' + prefix + '/' + slug;
 
   const fbProject = 'beyhome-admin';
