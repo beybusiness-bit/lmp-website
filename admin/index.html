@@ -262,6 +262,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .chk-pos-btn.on{background:#000;color:#fff;border-color:#000;}
 /* ── Tools tab ── */
 #panel-tools .proj-item { cursor: pointer; }
+/* Lottery method selector */
+.lt-method-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;border:2px solid rgba(0,0,0,.18);background:transparent;cursor:pointer;transition:background .15s,border-color .15s;}
+.lt-method-btn.on{background:#000;border-color:#000;}
+.lt-method-btn.on .lt-m-name,.lt-method-btn.on .lt-m-desc{color:#fff;}
+.lt-m-ico{font-size:22px;}
+.lt-m-name{font-size:13px;font-weight:800;color:#000;}
+.lt-m-desc{font-size:11px;font-weight:600;color:rgba(0,0,0,.5);text-align:center;}
+/* Lottery prize row */
+.lt-prize-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:10px;background:#f8f8f8;border:1.5px solid rgba(0,0,0,.1);}
+.lt-prize-name-inp{flex:2;border:1.5px solid rgba(0,0,0,.2);padding:7px 10px;font-size:13px;font-family:inherit;outline:none;background:#fff;}
+.lt-prize-qty-inp{width:70px;flex-shrink:0;border:1.5px solid rgba(0,0,0,.2);padding:7px 8px;font-size:13px;font-family:inherit;outline:none;background:#fff;text-align:center;}
+.lt-prize-del{flex-shrink:0;background:transparent;border:none;color:#c00;font-size:18px;cursor:pointer;padding:4px;line-height:1;}
 .proj-item{padding:14px 0;border-bottom:1.5px solid #000;}
 .pi-name{font-size:15px;font-weight:700;margin-bottom:2px;}
 .pi-meta{font-size:11px;color:rgba(0,0,0,.45);}
@@ -901,6 +913,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
           <div class="proj-item" onclick="openTool('utm')" style="cursor:pointer;">
             <div class="pi-name">UTM 빌더 &amp; 숏링크</div>
             <div class="pi-meta">채널별 UTM URL 생성 · 대량 생성 · /go/닉네임 숏링크 · vercel.json 내보내기</div>
+          </div>
+          <div class="proj-item" onclick="openTool('lottery')" style="cursor:pointer;">
+            <div class="pi-name">뽑기</div>
+            <div class="pi-meta">경품 설정 · 뽑기 방식 선택 · 운영자 페이지 공유 · 당첨 내역 조회</div>
           </div>
         </div>
       </div>
@@ -2103,6 +2119,73 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               </div>
             </div>
             <div id="utm-saved-list"><div class="empty-msg">저장된 링크가 없어요</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 뽑기 관리 화면 -->
+      <div id="tool-lottery-view" style="display:none;flex-direction:column;overflow:hidden;">
+        <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
+          <span class="back-btn" onclick="lotteryBack()">←</span>
+          <span style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">뽑기</span>
+        </div>
+        <!-- 목록 -->
+        <div id="lottery-list-screen" style="padding:16px;overflow-y:auto;flex:1;">
+          <div class="ed-lbl" style="color:rgba(0,0,0,.5);margin-bottom:12px;">뽑기 인스턴스를 만들어 경품을 설정하고 운영자 페이지 URL을 공유하세요.</div>
+          <button class="save-btn" onclick="lotteryCreate()" style="width:100%;margin-bottom:16px;">+ 새 뽑기 만들기</button>
+          <div id="lottery-config-list"><div class="empty-msg">불러오는 중…</div></div>
+        </div>
+        <!-- 편집 -->
+        <div id="lottery-edit-screen" style="display:none;flex-direction:column;overflow:hidden;">
+          <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button class="mbtn-cancel" style="flex:0 0 auto;" onclick="lotteryShowList()">← 목록</button>
+            <button class="save-btn" style="flex:1;" onclick="lotterySaveConfig()">저장</button>
+            <button class="prev-btn" onclick="openToolPreview('/tools/lottery/?id='+lotteryState.curId)" style="font-size:11px;padding:6px 10px;">운영자 페이지</button>
+            <button class="prev-btn" onclick="copyToolUrl('/tools/lottery/?id='+lotteryState.curId)" style="font-size:11px;padding:6px 10px;">🔗 URL 복사</button>
+            <button class="prev-btn" onclick="lotteryDeleteConfig()" style="font-size:11px;padding:6px 10px;color:#c00;border-color:#c00;">삭제</button>
+          </div>
+          <div style="padding:16px;overflow-y:auto;flex:1;">
+            <div class="ed-sect">
+              <div class="ed-lbl">뽑기 이름 <span style="font-weight:400;opacity:.55;">(관리용)</span></div>
+              <input class="fi" id="lt-name" placeholder="예: 여름 페스티벌 뽑기" style="margin-bottom:0;">
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">뽑기 방식</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <label id="lt-m-touch" class="lt-method-btn on" onclick="setLotteryMethod('touch')">
+                  <span class="lt-m-ico">👆</span>
+                  <span class="lt-m-name">터치</span>
+                  <span class="lt-m-desc">화면 어디든 터치</span>
+                </label>
+                <label id="lt-m-slot" class="lt-method-btn" onclick="setLotteryMethod('slot')">
+                  <span class="lt-m-ico">🎰</span>
+                  <span class="lt-m-name">슬롯머신</span>
+                  <span class="lt-m-desc">슬롯 돌리기</span>
+                </label>
+                <label id="lt-m-shake" class="lt-method-btn" onclick="setLotteryMethod('shake')">
+                  <span class="lt-m-ico">📳</span>
+                  <span class="lt-m-name">흔들기</span>
+                  <span class="lt-m-desc">폰을 흔들어서</span>
+                </label>
+                <label id="lt-m-card" class="lt-method-btn" onclick="setLotteryMethod('card')">
+                  <span class="lt-m-ico">🃏</span>
+                  <span class="lt-m-name">카드 뽑기</span>
+                  <span class="lt-m-desc">카드 한 장 선택</span>
+                </label>
+              </div>
+            </div>
+            <div class="ed-sect">
+              <div class="switch-row">
+                <div class="switch" id="lt-deduct-sw" onclick="toggleLtDeduct()"></div>
+                <span class="switch-lbl">뽑힌 경품 수량 차감</span>
+              </div>
+              <div style="font-size:11px;color:rgba(0,0,0,.45);margin-top:4px;padding-left:44px;">끄면 수량이 무한히 뽑히고 통계만 기록됩니다</div>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl" style="margin-bottom:12px;">경품 목록</div>
+              <div id="lt-prizes-list" style="margin-bottom:10px;"></div>
+              <button onclick="lotteryAddPrize()" style="width:100%;padding:10px;background:transparent;border:2px dashed rgba(0,0,0,.2);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;color:rgba(0,0,0,.5);">+ 경품 추가</button>
+            </div>
           </div>
         </div>
       </div>
@@ -9047,6 +9130,7 @@ function openTool(toolId) {
   if(toolId === 'payment') { pyInit(); }
   if(toolId === 'guestbook') { gbkShowList(); }
   if(toolId === 'utm') { utmInit(); }
+  if(toolId === 'lottery') { lotteryInit(); }
 }
 
 function closeTool() {
@@ -9091,6 +9175,146 @@ const UTM_PRESETS=[
   {label:'오프라인 QR',    fields:{source:'offline',    medium:'qr',              content:'',               term:''}},
 ];
 function utmBack(){closeTool();}
+
+/* ════════════════════════════════════════════
+   뽑기 (Lottery) 관리
+════════════════════════════════════════════ */
+const lotteryState={curId:null,drawMethod:'touch',deductOnDraw:false,prizes:[]};
+
+function lotteryBack(){closeTool();}
+
+async function lotteryInit(){
+  lotteryState.curId=null;
+  document.getElementById('lottery-list-screen').style.display='';
+  document.getElementById('lottery-edit-screen').style.display='none';
+  const listEl=document.getElementById('lottery-config-list');
+  listEl.innerHTML='<div class="empty-msg">불러오는 중…</div>';
+  try{
+    const snap=await db.collection('cms_lottery_configs').orderBy('createdAt','desc').get();
+    if(snap.empty){listEl.innerHTML='<div class="empty-msg">뽑기 인스턴스가 없습니다</div>';return;}
+    listEl.innerHTML=snap.docs.map(d=>{
+      const data=d.data();
+      const total=(data.prizes||[]).reduce((s,p)=>s+p.qty,0);
+      const methodLabel={touch:'터치',slot:'슬롯머신',shake:'흔들기',card:'카드뽑기'}[data.drawMethod]||data.drawMethod;
+      return `<div class="proj-item" onclick="lotteryEdit('${d.id}')" style="cursor:pointer;">
+        <div class="pi-name">${escHtml(data.name||'(이름 없음)')}</div>
+        <div class="pi-meta">${methodLabel} · 경품 ${(data.prizes||[]).length}종 · 총 수량 ${total}</div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    // index not yet built - fallback without orderBy
+    try{
+      const snap=await db.collection('cms_lottery_configs').get();
+      const docs=snap.docs.sort((a,b)=>(b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0));
+      listEl.innerHTML=docs.length?docs.map(d=>{
+        const data=d.data();
+        const total=(data.prizes||[]).reduce((s,p)=>s+p.qty,0);
+        const methodLabel={touch:'터치',slot:'슬롯머신',shake:'흔들기',card:'카드뽑기'}[data.drawMethod]||data.drawMethod;
+        return `<div class="proj-item" onclick="lotteryEdit('${d.id}')" style="cursor:pointer;">
+          <div class="pi-name">${escHtml(data.name||'(이름 없음)')}</div>
+          <div class="pi-meta">${methodLabel} · 경품 ${(data.prizes||[]).length}종 · 총 수량 ${total}</div>
+        </div>`;
+      }).join(''):'<div class="empty-msg">뽑기 인스턴스가 없습니다</div>';
+    }catch(e2){listEl.innerHTML='<div class="empty-msg">로드 실패</div>';}
+  }
+}
+
+async function lotteryCreate(){
+  const ref=db.collection('cms_lottery_configs').doc();
+  await ref.set({name:'새 뽑기',prizes:[],drawMethod:'touch',deductOnDraw:false,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+  lotteryEdit(ref.id);
+}
+
+function lotteryShowList(){
+  document.getElementById('lottery-list-screen').style.display='';
+  document.getElementById('lottery-edit-screen').style.display='none';
+  lotteryInit();
+}
+
+async function lotteryEdit(id){
+  lotteryState.curId=id;
+  document.getElementById('lottery-list-screen').style.display='none';
+  document.getElementById('lottery-edit-screen').style.display='flex';
+  const snap=await db.collection('cms_lottery_configs').doc(id).get();
+  const d=snap.data()||{};
+  document.getElementById('lt-name').value=d.name||'';
+  lotteryState.drawMethod=d.drawMethod||'touch';
+  lotteryState.deductOnDraw=!!d.deductOnDraw;
+  lotteryState.prizes=(d.prizes||[]).map(p=>({...p}));
+  setLotteryMethod(lotteryState.drawMethod,true);
+  const sw=document.getElementById('lt-deduct-sw');
+  sw.classList.toggle('on',lotteryState.deductOnDraw);
+  renderLotteryPrizes();
+}
+
+function setLotteryMethod(m, skipSave){
+  lotteryState.drawMethod=m;
+  ['touch','slot','shake','card'].forEach(k=>{
+    document.getElementById('lt-m-'+k).classList.toggle('on',k===m);
+  });
+}
+
+function toggleLtDeduct(){
+  lotteryState.deductOnDraw=!lotteryState.deductOnDraw;
+  document.getElementById('lt-deduct-sw').classList.toggle('on',lotteryState.deductOnDraw);
+}
+
+function renderLotteryPrizes(){
+  const list=document.getElementById('lt-prizes-list');
+  if(!lotteryState.prizes.length){list.innerHTML='';return;}
+  list.innerHTML=lotteryState.prizes.map((p,i)=>`
+    <div class="lt-prize-row">
+      <input class="lt-prize-name-inp" placeholder="경품 이름" value="${escHtml(p.name||'')}" oninput="lotteryState.prizes[${i}].name=this.value">
+      <input class="lt-prize-qty-inp" type="number" min="1" placeholder="개수" value="${p.qty||1}" oninput="lotteryState.prizes[${i}].qty=parseInt(this.value)||1">
+      <button class="lt-prize-del" onclick="lotteryRemovePrize(${i})">×</button>
+    </div>`).join('');
+}
+
+function lotteryAddPrize(){
+  const id='p'+Date.now();
+  lotteryState.prizes.push({id,name:'',qty:1,originalQty:1});
+  renderLotteryPrizes();
+  const inputs=document.querySelectorAll('.lt-prize-name-inp');
+  if(inputs.length) inputs[inputs.length-1].focus();
+}
+
+function lotteryRemovePrize(i){
+  lotteryState.prizes.splice(i,1);
+  renderLotteryPrizes();
+}
+
+async function lotterySaveConfig(){
+  if(!lotteryState.curId) return;
+  const name=document.getElementById('lt-name').value.trim();
+  if(!name){alert('뽑기 이름을 입력하세요.');return;}
+  const prizes=lotteryState.prizes.map(p=>({
+    id:p.id||('p'+Date.now()+Math.random()),
+    name:p.name||'(이름 없음)',
+    qty:Math.max(1,parseInt(p.qty)||1),
+    originalQty:p.originalQty||Math.max(1,parseInt(p.qty)||1)
+  }));
+  const saveBtn=document.querySelector('#lottery-edit-screen .save-btn');
+  try{
+    await db.collection('cms_lottery_configs').doc(lotteryState.curId).update({
+      name,prizes,drawMethod:lotteryState.drawMethod,deductOnDraw:lotteryState.deductOnDraw,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    lotteryState.prizes=prizes;
+    if(saveBtn) _btnFlash(saveBtn,'저장됨 ✓');
+  }catch(e){alert('저장 실패: '+e.message);}
+}
+
+async function lotteryDeleteConfig(){
+  if(!lotteryState.curId) return;
+  if(!confirm('이 뽑기 인스턴스를 삭제할까요? 당첨 내역도 함께 삭제됩니다.')) return;
+  // Delete sub-collection draws first (batch up to 500)
+  const draws=await db.collection('cms_lottery_configs').doc(lotteryState.curId).collection('draws').limit(500).get();
+  const batch=db.batch();
+  draws.forEach(d=>batch.delete(d.ref));
+  batch.delete(db.collection('cms_lottery_configs').doc(lotteryState.curId));
+  await batch.commit();
+  lotteryShowList();
+}
 async function utmInit(){
   utmCurId=null;
   document.getElementById('utm-list-screen').style.display='';

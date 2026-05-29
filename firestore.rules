@@ -115,6 +115,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // 뽑기
+    match /cms_lottery_configs/{document=**} {
+      allow read, write: if true;
+    }
+
     // 포토부스 스튜디오 세션 (QR 다운로드)
     match /sessions/{document=**} {
       allow read, write: if true;
