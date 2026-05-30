@@ -436,15 +436,12 @@ let _cpDisplayName = null;
 let _cpBlockId = null;
 let _cpSelectedLabel = null;
 
-function _openCpPanel(userRef, userData, displayName, blockId) {
+async function _openCpPanel(userRef, userData, displayName, blockId) {
   _cpUserRef = userRef; _cpUserData = userData;
   _cpDisplayName = displayName; _cpBlockId = blockId;
 
   document.getElementById('cp-user').textContent = displayName;
-
-  // 블록 이름 표시
-  const blockLabel = _findBlockLabel(blockId);
-  document.getElementById('cp-block').textContent = '미션: ' + blockLabel;
+  document.getElementById('cp-block').textContent = '미션 정보 불러오는 중…';
 
   // 이미 확인됐는지
   const extChecks = userData.externalChecks?.[blockId] || [];
@@ -472,9 +469,16 @@ function _openCpPanel(userRef, userData, displayName, blockId) {
 
   const confirmBtn = document.getElementById('cp-confirm-btn');
   confirmBtn.disabled = false;
-  confirmBtn.textContent = '이 미션 확인 완료';
+  confirmBtn.textContent = '확인 완료';
 
   document.getElementById('cp-backdrop').style.display = 'flex';
+
+  // 블록 이름 비동기 검색
+  const info = await _fetchBlockInfo(blockId);
+  document.getElementById('cp-block').textContent = info.stageName
+    ? `📍 ${info.stageName}  ›  ${info.blockName}`
+    : `📍 ${info.blockName}`;
+  confirmBtn.textContent = `"${info.blockName}" 확인 완료`;
 }
 
 function _cpPickLabel(idx) {
@@ -754,13 +758,36 @@ async function _bulkCheck() {
   }
 }
 
-/* 블록 레이블 찾기 */
-function _findBlockLabel(blockId) {
-  for (const [, blocks] of Object.entries(_lstStageBlocksCache)) {
-    const b = blocks.find(b => b.id === blockId);
-    if (b) return (b.textContent ? b.textContent.replace(/<[^>]*>/g,'').trim().slice(0,30) : null) || blockId;
+/* 블록 레이블 + 스테이지 이름 비동기 검색 */
+async function _fetchBlockInfo(blockId) {
+  const _label = b => (b.textContent ? b.textContent.replace(/<[^>]*>/g,'').trim() : '').slice(0,40) || '(미션)';
+
+  // 캐시 먼저 확인
+  for (const [stageId, blocks] of Object.entries(_lstStageBlocksCache)) {
+    const b = blocks.find(bl => bl.id === blockId);
+    if (b) {
+      const stage = (projectData.stages || []).find(s => s.id === stageId);
+      return { stageName: stage?.title || '', blockName: _label(b) };
+    }
   }
-  return blockId.slice(0, 12) + '…';
+
+  // 캐시 없으면 전체 스테이지 검색
+  const stages = (projectData.stages || []).filter(s => s.publishStatus !== 'hidden');
+  for (const stage of stages) {
+    if (!_lstStageBlocksCache[stage.id]) {
+      try {
+        const snap = await db.collection('cms_projects').doc(PROJECT_ID)
+          .collection('stage_content').doc(stage.id).get();
+        _lstStageBlocksCache[stage.id] = snap.exists
+          ? (snap.data().blocks || []).filter(bl => bl.checkable)
+          : [];
+      } catch(_) { _lstStageBlocksCache[stage.id] = []; }
+    }
+    const b = (_lstStageBlocksCache[stage.id] || []).find(bl => bl.id === blockId);
+    if (b) return { stageName: stage.title || '', blockName: _label(b) };
+  }
+
+  return { stageName: '', blockName: blockId.slice(0, 16) + '…' };
 }
 
 /* ── 뽑기 티켓 처리 ── */
