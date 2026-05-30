@@ -293,7 +293,7 @@ async function init() {
     if (!doc.exists) { showView('no-project'); return; }
     projectData = doc.data();
     authFields = projectData.authFields || [{ key: 'phone', label: '전화번호', type: 'tel' }];
-    AUTH_COLLECTION = 'cms_users_' + PROJECT_ID;
+    AUTH_COLLECTION = projectData.authCollection || ('cms_users_' + PROJECT_ID);
     if (checkerSession) { showCheckerView(); }
     else { buildLoginForm(); showView('login'); }
   } catch(e) { showView('no-project'); }
@@ -558,10 +558,7 @@ async function _onLstStageChange() {
       _lstStageBlocksCache[stageId] = blocks;
     }
     blockEl.innerHTML = '<option value="">블록 선택…</option>' +
-      blocks.map(b => {
-        const lbl = (b.textContent ? b.textContent.replace(/<[^>]*>/g,'').trim() : '').slice(0,30) || b.id;
-        return `<option value="${b.id}">${lbl.replace(/</g,'&lt;')}</option>`;
-      }).join('');
+      blocks.map(b => `<option value="${b.id}">${_blockDisplayLabel(b).replace(/</g,'&lt;')}</option>`).join('');
     blockEl.disabled = false;
   } catch(e) {
     blockEl.innerHTML = '<option value="">오류 발생</option>';
@@ -583,9 +580,14 @@ async function _loadLstUsers() {
   try {
     const snap = await db.collection(AUTH_COLLECTION).get();
     _lstAllUsers = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+    if (_lstAllUsers.length === 0) {
+      listEl.innerHTML = `<div class="lst-empty">사용자 없음<br><span style="font-size:10px;opacity:.5;">컬렉션: ${AUTH_COLLECTION}</span></div>`;
+      document.getElementById('lst-count').textContent = '';
+      return;
+    }
     _filterLst();
   } catch(e) {
-    listEl.innerHTML = `<div class="lst-empty" style="color:#c00;">${e.message}</div>`;
+    listEl.innerHTML = `<div class="lst-empty" style="color:#c00;">${e.message}<br><span style="font-size:10px;opacity:.7;">컬렉션: ${AUTH_COLLECTION}</span></div>`;
   }
 }
 
@@ -758,36 +760,36 @@ async function _bulkCheck() {
   }
 }
 
-/* 블록 레이블 + 스테이지 이름 비동기 검색 */
-async function _fetchBlockInfo(blockId) {
-  const _label = b => (b.textContent ? b.textContent.replace(/<[^>]*>/g,'').trim() : '').slice(0,40) || '(미션)';
-
-  // 캐시 먼저 확인
-  for (const [stageId, blocks] of Object.entries(_lstStageBlocksCache)) {
-    const b = blocks.find(bl => bl.id === blockId);
-    if (b) {
-      const stage = (projectData.stages || []).find(s => s.id === stageId);
-      return { stageName: stage?.title || '', blockName: _label(b) };
-    }
+/* 블록 표시 이름 */
+function _blockDisplayLabel(b) {
+  if (b.textContent) {
+    const t = b.textContent.replace(/<[^>]*>/g,'').trim();
+    if (t) return t.slice(0, 40);
   }
+  const typeMap = { text:'텍스트', image:'이미지', mixed:'혼합', embed:'임베드', form:'폼', tool:'도구' };
+  return typeMap[b.type] || '미션';
+}
 
-  // 캐시 없으면 전체 스테이지 검색
-  const stages = (projectData.stages || []).filter(s => s.publishStatus !== 'hidden');
+/* 블록 레이블 + 스테이지 이름 비동기 검색 (전체 블록 대상) */
+let _allBlocksCache = {}; // stageId → all blocks (checkable 필터 없음)
+
+async function _fetchBlockInfo(blockId) {
+  const stages = (projectData.stages || []).sort((a,b) => (a.order||0)-(b.order||0));
   for (const stage of stages) {
-    if (!_lstStageBlocksCache[stage.id]) {
+    if (!_allBlocksCache[stage.id]) {
       try {
         const snap = await db.collection('cms_projects').doc(PROJECT_ID)
           .collection('stage_content').doc(stage.id).get();
-        _lstStageBlocksCache[stage.id] = snap.exists
-          ? (snap.data().blocks || []).filter(bl => bl.checkable)
-          : [];
-      } catch(_) { _lstStageBlocksCache[stage.id] = []; }
+        const all = snap.exists ? (snap.data().blocks || []) : [];
+        _allBlocksCache[stage.id] = all;
+        // checkable 캐시도 함께 갱신 (목록 모드용)
+        _lstStageBlocksCache[stage.id] = all.filter(bl => bl.checkable);
+      } catch(_) { _allBlocksCache[stage.id] = []; }
     }
-    const b = (_lstStageBlocksCache[stage.id] || []).find(bl => bl.id === blockId);
-    if (b) return { stageName: stage.title || '', blockName: _label(b) };
+    const b = _allBlocksCache[stage.id].find(bl => bl.id === blockId);
+    if (b) return { stageName: stage.title || '', blockName: _blockDisplayLabel(b) };
   }
-
-  return { stageName: '', blockName: blockId.slice(0, 16) + '…' };
+  return { stageName: '', blockName: '(미션)' };
 }
 
 /* ── 뽑기 티켓 처리 ── */
