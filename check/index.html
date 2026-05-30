@@ -16,6 +16,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .chk-role-badge{font-size:11px;font-weight:700;background:rgba(255,255,255,.15);padding:3px 8px;border-radius:10px;white-space:nowrap;}
 .chk-logout{background:transparent;border:1.5px solid rgba(255,255,255,.4);color:#fff;font-size:11px;font-weight:700;padding:4px 9px;cursor:pointer;font-family:inherit;}
 
+/* Mode tabs */
+.chk-tabs{display:flex;border-bottom:1.5px solid rgba(0,0,0,.1);flex-shrink:0;}
+.chk-tab{flex:1;padding:11px 0;background:transparent;border:none;font-size:13px;font-weight:700;color:rgba(0,0,0,.35);cursor:pointer;font-family:inherit;border-bottom:2.5px solid transparent;margin-bottom:-1.5px;transition:.15s;}
+.chk-tab.active{color:#000;border-bottom-color:#000;}
+
 /* State views */
 .state-view{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;}
 .spinner{width:28px;height:28px;border:3px solid rgba(0,0,0,.1);border-top-color:#000;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px;}
@@ -33,11 +38,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .login-btn:disabled{opacity:.4;cursor:not-allowed;}
 .login-err{font-size:12px;color:#c00;margin-top:10px;min-height:16px;text-align:center;}
 
-/* Scanner */
-.scanner-wrap{flex:1;display:flex;flex-direction:column;padding:20px 20px 40px;}
+/* ── 스캔 모드 ── */
+.scan-mode-wrap{flex:1;display:flex;flex-direction:column;padding:20px 20px 40px;}
 .scan-hint{font-size:13px;color:rgba(0,0,0,.5);text-align:center;margin-bottom:20px;line-height:1.6;}
 .scan-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;background:#000;border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:2px;}
-.scan-btn:disabled{opacity:.4;cursor:not-allowed;}
 .scan-btn.scanning{background:#c00;}
 #video-wrap{display:none;margin-top:16px;position:relative;border-radius:4px;overflow:hidden;background:#000;}
 #video-wrap video{width:100%;display:block;}
@@ -49,8 +53,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .scan-corner.bl{bottom:-2px;left:-2px;border-width:0 0 3px 3px;}
 .scan-corner.br{bottom:-2px;right:-2px;border-width:0 3px 3px 0;}
 .scan-stop-btn{margin-top:10px;width:100%;padding:12px;background:transparent;border:2px solid rgba(0,0,0,.3);color:rgba(0,0,0,.6);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:2px;}
-
-/* Password fallback */
 .pw-section{margin-top:24px;border-top:1px solid rgba(0,0,0,.1);padding-top:20px;}
 .pw-toggle{font-size:12px;color:rgba(0,0,0,.45);text-align:center;cursor:pointer;text-decoration:underline;padding:4px 0;}
 .pw-form{display:none;margin-top:16px;}
@@ -58,8 +60,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .pw-inp{flex:1;background:transparent;border:none;border-bottom:1.5px solid rgba(0,0,0,.3);font-size:15px;color:#000;padding:8px 0;outline:none;font-family:inherit;}
 .pw-btn{padding:9px 14px;background:#000;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 .pw-err{font-size:11px;color:#c00;margin-top:6px;}
-
-/* Result feedback */
 .result-wrap{display:none;margin-top:16px;padding:16px;border-radius:4px;text-align:center;}
 .result-wrap.ok{background:rgba(0,180,80,.1);border:1.5px solid rgba(0,180,80,.3);}
 .result-wrap.err{background:rgba(204,0,0,.08);border:1.5px solid rgba(204,0,0,.25);}
@@ -67,8 +67,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .result-icon{font-size:32px;margin-bottom:6px;}
 .result-title{font-size:16px;font-weight:800;margin-bottom:4px;}
 .result-sub{font-size:12px;color:rgba(0,0,0,.5);line-height:1.5;}
-
-/* History */
 .history-wrap{margin-top:24px;}
 .history-title{font-size:11px;font-weight:800;color:rgba(0,0,0,.35);letter-spacing:.5px;margin-bottom:10px;}
 .history-list{display:flex;flex-direction:column;gap:8px;}
@@ -79,57 +77,73 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .hi-block{color:rgba(0,0,0,.5);}
 .hi-time{font-size:11px;color:rgba(0,0,0,.3);margin-left:auto;white-space:nowrap;}
 
-/* ── 사용자 패널 (확인 + 일괄 체크) ── */
-.up-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:flex-end;justify-content:center;}
-.up-sheet{width:100%;max-width:430px;background:#fff;border-radius:14px 14px 0 0;padding:20px 20px 0;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;}
-.up-drag-bar{width:36px;height:4px;background:rgba(0,0,0,.15);border-radius:2px;margin:0 auto 16px;}
-.up-user-hd{font-size:18px;font-weight:800;margin-bottom:2px;}
-.up-user-sub{font-size:12px;color:rgba(0,0,0,.4);margin-bottom:14px;}
-.up-label-section{padding:12px 14px;background:#f5f5f5;border-radius:8px;margin-bottom:14px;flex-shrink:0;}
-.up-label-title{font-size:10px;font-weight:800;color:rgba(0,0,0,.4);letter-spacing:.6px;margin-bottom:8px;}
-.up-label-btns{display:flex;gap:6px;flex-wrap:wrap;}
-.up-label-btn{padding:7px 14px;border:2px solid #ddd;background:#fff;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;}
-.up-label-btn.sel{border-color:#000;background:#000;color:#fff;}
-.up-missions-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-shrink:0;}
-.up-missions-title{font-size:11px;font-weight:800;color:rgba(0,0,0,.4);letter-spacing:.5px;}
-.up-select-all{font-size:11px;color:rgba(0,0,0,.5);cursor:pointer;text-decoration:underline;padding:2px 0;}
-.up-missions-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-bottom:8px;}
-.up-mission-item{display:flex;align-items:flex-start;gap:10px;padding:12px;border:2px solid #eee;border-radius:8px;cursor:pointer;transition:all .15s;user-select:none;}
-.up-mission-item.sel{border-color:#000;background:#f8f8f8;}
-.up-mission-item.already-done{opacity:.5;cursor:default;}
-.up-mi-check{width:20px;height:20px;border:2px solid #ccc;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-top:1px;transition:all .15s;}
-.up-mi-check.checked{background:#000;border-color:#000;color:#fff;}
-.up-mi-info{flex:1;min-width:0;}
-.up-mi-stage{font-size:10px;color:rgba(0,0,0,.4);margin-bottom:2px;}
-.up-mi-name{font-size:13px;font-weight:700;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.up-mi-badges{display:flex;gap:4px;flex-wrap:wrap;}
-.up-mi-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#eee;color:rgba(0,0,0,.55);}
-.up-mi-badge.mine{background:#000;color:#fff;}
-.up-actions{flex-shrink:0;padding:12px 0 32px;}
-.up-confirm-btn{width:100%;padding:15px;background:#000;border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:4px;transition:opacity .15s;}
-.up-confirm-btn:disabled{opacity:.3;cursor:not-allowed;}
-.up-cancel-btn{display:block;width:100%;padding:11px;background:transparent;border:none;color:rgba(0,0,0,.4);font-size:13px;cursor:pointer;font-family:inherit;margin-top:6px;}
-.up-loading{padding:30px;text-align:center;color:rgba(0,0,0,.4);font-size:13px;}
-.up-spinner{width:22px;height:22px;border:2.5px solid rgba(0,0,0,.1);border-top-color:#000;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px;}
+/* ── 목록 모드 ── */
+.lst-mode-wrap{flex:1;display:flex;flex-direction:column;padding:16px 16px 120px;overflow-y:auto;}
+.lst-selects{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+.lst-sel{width:100%;padding:10px 12px;border:1.5px solid rgba(0,0,0,.2);border-radius:6px;font-size:14px;font-weight:600;font-family:inherit;background:#fff;color:#000;appearance:none;}
+.lst-sel:disabled{opacity:.4;}
+.lst-search-row{display:flex;gap:8px;margin-bottom:6px;}
+.lst-search{flex:1;padding:10px 12px;border:1.5px solid rgba(0,0,0,.2);border-radius:6px;font-size:14px;font-family:inherit;background:#fff;outline:none;}
+.lst-search:focus{border-color:#000;}
+.lst-load-btn{padding:10px 16px;background:#000;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:6px;white-space:nowrap;}
+.lst-count{font-size:11px;color:rgba(0,0,0,.35);margin-bottom:10px;}
+.lst-sel-all{font-size:11px;color:rgba(0,0,0,.5);cursor:pointer;text-decoration:underline;float:right;}
+.lst-list{display:flex;flex-direction:column;gap:6px;}
+.lst-item{display:flex;align-items:flex-start;gap:10px;padding:11px 12px;border:2px solid #eee;border-radius:8px;cursor:pointer;transition:all .12s;user-select:none;-webkit-user-select:none;}
+.lst-item.sel{border-color:#000;background:#fafafa;}
+.lst-item.ext-done{opacity:.5;cursor:default;}
+.lst-chk{width:20px;height:20px;border:2px solid #ccc;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-top:2px;}
+.lst-chk.checked{background:#000;border-color:#000;color:#fff;}
+.lst-info{flex:1;min-width:0;}
+.lst-name-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.lst-name{font-size:14px;font-weight:700;}
+.lst-phone{font-size:12px;color:rgba(0,0,0,.4);}
+.lst-status-row{display:flex;gap:4px;flex-wrap:wrap;align-items:center;}
+.lst-user-done{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.lst-user-done.yes{background:rgba(0,180,80,.12);color:rgb(0,120,50);}
+.lst-user-done.no{background:#f0f0f0;color:rgba(0,0,0,.4);}
+.lst-ext-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#eee;color:rgba(0,0,0,.55);}
+.lst-ext-badge.mine{background:#000;color:#fff;}
+.lst-empty{padding:30px;text-align:center;color:rgba(0,0,0,.35);font-size:13px;}
+
+/* 목록 모드 액션 바 (하단 고정) */
+.lst-action-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#fff;border-top:1.5px solid rgba(0,0,0,.1);padding:12px 16px 32px;z-index:50;box-shadow:0 -4px 20px rgba(0,0,0,.08);}
+.lst-action-label-title{font-size:10px;font-weight:800;color:rgba(0,0,0,.4);letter-spacing:.6px;margin-bottom:7px;}
+.lst-action-label-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.lst-action-label-btn{padding:6px 14px;border:2px solid #ddd;background:#fff;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;}
+.lst-action-label-btn.sel{border-color:#000;background:#000;color:#fff;}
+.lst-action-confirm-btn{width:100%;padding:14px;background:#000;border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:4px;}
+.lst-action-confirm-btn:disabled{opacity:.3;cursor:not-allowed;}
+
+/* ── QR 확인 패널 (단순 확인용) ── */
+.cp-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:flex-end;justify-content:center;}
+.cp-sheet{width:100%;max-width:430px;background:#fff;border-radius:14px 14px 0 0;padding:20px 20px 44px;}
+.cp-drag{width:36px;height:4px;background:rgba(0,0,0,.15);border-radius:2px;margin:0 auto 18px;}
+.cp-user{font-size:20px;font-weight:800;margin-bottom:4px;}
+.cp-block{font-size:13px;color:rgba(0,0,0,.45);margin-bottom:16px;line-height:1.5;}
+.cp-already{font-size:13px;color:#c70;background:rgba(200,120,0,.08);border:1.5px solid rgba(200,120,0,.25);padding:10px 12px;border-radius:6px;margin-bottom:14px;line-height:1.5;}
+.cp-label-title{font-size:10px;font-weight:800;color:rgba(0,0,0,.4);letter-spacing:.6px;margin-bottom:8px;}
+.cp-label-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;}
+.cp-label-btn{padding:8px 16px;border:2px solid #ddd;background:#fff;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+.cp-label-btn.sel{border-color:#000;background:#000;color:#fff;}
+.cp-confirm{width:100%;padding:15px;background:#000;border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:4px;margin-bottom:8px;}
+.cp-cancel{display:block;width:100%;padding:11px;background:transparent;border:none;color:rgba(0,0,0,.4);font-size:13px;cursor:pointer;font-family:inherit;}
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- 로딩 -->
   <div class="state-view" id="loading-view">
     <div class="spinner"></div>
     <div style="font-size:13px;color:rgba(0,0,0,.4);">불러오는 중…</div>
   </div>
 
-  <!-- 프로젝트 없음 -->
   <div class="state-view" id="no-project-view" style="display:none;">
     <div style="font-size:40px;margin-bottom:16px;">🔍</div>
     <div style="font-size:16px;font-weight:800;margin-bottom:8px;">프로젝트를 찾을 수 없어요</div>
     <div style="font-size:13px;color:rgba(0,0,0,.45);">URL을 확인해주세요.</div>
   </div>
 
-  <!-- 로그인 -->
   <div id="login-view" style="display:none;">
     <div class="login-wrap">
       <div class="login-logo">🔍 체커 로그인</div>
@@ -140,7 +154,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     </div>
   </div>
 
-  <!-- 헤더 + 스캐너 (로그인 후) -->
   <div id="checker-view" style="display:none;flex:1;flex-direction:column;">
     <div class="chk-header">
       <div class="chk-title">🔍 미션 확인</div>
@@ -148,13 +161,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       <button class="chk-logout" onclick="doLogout()">로그아웃</button>
     </div>
 
-    <div class="scanner-wrap">
-      <div class="scan-hint">사용자의 미션 QR을 스캔하면<br>미션 목록을 확인하고 일괄 처리할 수 있어요.</div>
+    <div class="chk-tabs">
+      <button class="chk-tab active" id="tab-scan" onclick="setCheckerTab('scan')">📷 QR 스캔</button>
+      <button class="chk-tab" id="tab-list" onclick="setCheckerTab('list')">📋 목록 조회</button>
+    </div>
 
-      <button class="scan-btn" id="scan-btn" onclick="toggleScan()">
-        📷&nbsp; QR 스캔 시작
-      </button>
-
+    <!-- QR 스캔 모드 -->
+    <div id="mode-scan" class="scan-mode-wrap">
+      <div class="scan-hint">사용자의 미션 QR을 스캔하면<br>확인 패널이 열립니다.</div>
+      <button class="scan-btn" id="scan-btn" onclick="toggleScan()">📷&nbsp; QR 스캔 시작</button>
       <div id="video-wrap">
         <video id="scan-video" autoplay playsinline muted></video>
         <div class="scan-overlay">
@@ -167,63 +182,76 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       </div>
       <button class="scan-stop-btn" id="scan-stop-btn" onclick="stopScan()" style="display:none;">■ 스캔 중단</button>
 
-      <!-- 코드 직접 입력 -->
       <div class="pw-section">
         <div class="pw-toggle" onclick="togglePwForm()">QR 스캔 대신 코드 직접 입력</div>
         <div class="pw-form" id="pw-form">
           <div style="font-size:11px;color:rgba(0,0,0,.45);margin-bottom:10px;">사용자의 미션 QR에 담긴 코드를 직접 입력하세요.</div>
           <div class="pw-row">
             <input class="pw-inp" id="pw-code-inp" placeholder="projectId:userId:blockId"
-              onkeydown="if(event.key==='Enter')processCode(document.getElementById('pw-code-inp').value)">
+              onkeydown="if(event.key==='Enter')processCode(this.value)">
             <button class="pw-btn" onclick="processCode(document.getElementById('pw-code-inp').value)">확인</button>
           </div>
           <div class="pw-err" id="pw-err"></div>
         </div>
       </div>
 
-      <!-- 결과 피드백 -->
       <div class="result-wrap" id="result-wrap">
         <div class="result-icon" id="result-icon"></div>
         <div class="result-title" id="result-title"></div>
         <div class="result-sub" id="result-sub"></div>
       </div>
 
-      <!-- 최근 확인 이력 -->
       <div class="history-wrap" id="history-wrap" style="display:none;">
         <div class="history-title">이번 세션 확인 이력</div>
         <div class="history-list" id="history-list"></div>
+      </div>
+    </div>
+
+    <!-- 목록 조회 모드 -->
+    <div id="mode-list" class="lst-mode-wrap" style="display:none;">
+      <div class="lst-selects">
+        <select class="lst-sel" id="lst-stage-sel" onchange="_onLstStageChange()">
+          <option value="">스테이지 선택…</option>
+        </select>
+        <select class="lst-sel" id="lst-block-sel" disabled onchange="_onLstBlockChange()">
+          <option value="">블록 선택…</option>
+        </select>
+      </div>
+      <div class="lst-search-row">
+        <input class="lst-search" id="lst-search" placeholder="전화번호 뒷 4자리 검색" oninput="_filterLst()">
+        <button class="lst-load-btn" onclick="_reloadLst()">새로고침</button>
+      </div>
+      <div id="lst-count" class="lst-count"></div>
+      <div id="lst-list" class="lst-list">
+        <div class="lst-empty">스테이지와 블록을 선택하면<br>목록이 표시됩니다.</div>
       </div>
     </div>
   </div>
 
 </div>
 
-<!-- 사용자 패널 (확인 확인 + 라벨 선택 + 일괄 체크) -->
-<div class="up-backdrop" id="up-backdrop" style="display:none;" onclick="_upBackdropClick(event)">
-  <div class="up-sheet" id="up-sheet">
-    <div class="up-drag-bar"></div>
-    <div class="up-user-hd" id="up-user-hd"></div>
-    <div class="up-user-sub" id="up-user-sub"></div>
+<!-- 목록 모드 액션 바 -->
+<div class="lst-action-bar" id="lst-action-bar" style="display:none;">
+  <div id="lst-action-label-wrap" style="display:none;">
+    <div class="lst-action-label-title">확인 배지 문구</div>
+    <div class="lst-action-label-btns" id="lst-action-label-btns"></div>
+  </div>
+  <button class="lst-action-confirm-btn" id="lst-action-confirm-btn" onclick="_bulkCheck()">확인 처리</button>
+</div>
 
-    <!-- 배지 문구 선택 (복수 레이블 있을 때만) -->
-    <div class="up-label-section" id="up-label-section" style="display:none;">
-      <div class="up-label-title">확인 배지 문구 선택</div>
-      <div class="up-label-btns" id="up-label-btns"></div>
+<!-- QR 확인 패널 -->
+<div class="cp-backdrop" id="cp-backdrop" style="display:none;" onclick="_cpBackdropClick(event)">
+  <div class="cp-sheet">
+    <div class="cp-drag"></div>
+    <div class="cp-user" id="cp-user"></div>
+    <div class="cp-block" id="cp-block"></div>
+    <div class="cp-already" id="cp-already" style="display:none;"></div>
+    <div id="cp-label-wrap" style="display:none;">
+      <div class="cp-label-title">확인 배지 문구</div>
+      <div class="cp-label-btns" id="cp-label-btns"></div>
     </div>
-
-    <!-- 미션 목록 -->
-    <div class="up-missions-hd">
-      <div class="up-missions-title">미션 목록</div>
-      <span class="up-select-all" id="up-select-all-btn" onclick="_upSelectAllPending()">미완료 전체 선택</span>
-    </div>
-    <div class="up-missions-list" id="up-missions-list">
-      <div class="up-loading"><div class="up-spinner"></div>미션 목록 불러오는 중…</div>
-    </div>
-
-    <div class="up-actions">
-      <button class="up-confirm-btn" id="up-confirm-btn" onclick="_confirmUserPanel()" disabled>미션을 선택하세요</button>
-      <button class="up-cancel-btn" onclick="_closeUserPanel()">취소</button>
-    </div>
+    <button class="cp-confirm" id="cp-confirm-btn" onclick="_cpConfirm()">이 미션 확인 완료</button>
+    <button class="cp-cancel" onclick="_cpClose()">취소</button>
   </div>
 </div>
 
@@ -241,7 +269,6 @@ firebase.initializeApp({
 });
 const db = firebase.firestore();
 
-/* ── URL에서 projectId 추출 ── */
 const _path = window.location.pathname.replace(/\/$/, '').split('/');
 const PROJECT_ID = _path[_path.length - 1] !== 'check'
   ? _path[_path.length - 1]
@@ -250,7 +277,7 @@ const PROJECT_ID = _path[_path.length - 1] !== 'check'
 let projectData = null;
 let authFields = [];
 let AUTH_COLLECTION = '';
-let checkerSession = null; // { userId, userName, roleId, roleName, confirmLabels }
+let checkerSession = null;
 let scanActive = false;
 let scanStream = null;
 let scanRaf = null;
@@ -259,128 +286,99 @@ const checkHistory = [];
 /* ── Init ── */
 async function init() {
   if (!PROJECT_ID) { showView('no-project'); return; }
-
   const saved = _getSavedSession();
   if (saved) checkerSession = saved;
-
   try {
     const doc = await db.collection('cms_projects').doc(PROJECT_ID).get();
     if (!doc.exists) { showView('no-project'); return; }
     projectData = doc.data();
     authFields = projectData.authFields || [{ key: 'phone', label: '전화번호', type: 'tel' }];
     AUTH_COLLECTION = 'cms_users_' + PROJECT_ID;
-
-    if (checkerSession) {
-      showCheckerView();
-    } else {
-      buildLoginForm();
-      showView('login');
-    }
-  } catch(e) {
-    showView('no-project');
-  }
+    if (checkerSession) { showCheckerView(); }
+    else { buildLoginForm(); showView('login'); }
+  } catch(e) { showView('no-project'); }
 }
 
-/* ── 로그인 폼 구성 ── */
 function buildLoginForm() {
-  const sub = document.getElementById('login-sub');
-  sub.textContent = (projectData?.authTitle || '로그인') + ' — 체커 권한이 있는 계정으로 로그인하세요.';
-
+  document.getElementById('login-sub').textContent =
+    (projectData?.authTitle || '로그인') + ' — 체커 권한이 있는 계정으로 로그인하세요.';
   const keyName = projectData?.authKeyField || authFields[0]?.key;
   const f = authFields.find(a => a.key === keyName) || authFields[0];
-  const container = document.getElementById('login-fields');
-  container.innerHTML = f ? `
+  document.getElementById('login-fields').innerHTML = f ? `
     <div class="fi-lbl">${f.label || f.key}</div>
     <input class="fi" id="lf-${f.key}" type="${f.type === 'tel' ? 'tel' : 'text'}"
       placeholder="${f.placeholder || ''}"
       ${f.type === 'tel' ? 'maxlength="11" oninput="this.value=this.value.replace(/[^0-9]/,\'\')"' : ''}
-      onkeydown="if(event.key===\'Enter\')doLogin()">
-  ` : '';
+      onkeydown="if(event.key===\'Enter\')doLogin()">` : '';
 }
 
-/* ── 로그인 처리 ── */
 async function doLogin() {
   const btn = document.getElementById('login-btn');
   const err = document.getElementById('login-err');
   err.textContent = '';
   btn.disabled = true; btn.textContent = '확인 중…';
-
   const keyName = projectData?.authKeyField || authFields[0]?.key;
   const keyField = authFields.find(a => a.key === keyName) || authFields[0];
   const val = document.getElementById('lf-' + keyField?.key)?.value.trim() || '';
-  const query = db.collection(AUTH_COLLECTION).where(keyField.key, '==', val);
-
   try {
-    const snap = await query.limit(1).get();
-    if (snap.empty) {
-      err.textContent = '일치하는 계정을 찾을 수 없어요.';
-      btn.disabled = false; btn.textContent = '로그인';
-      return;
-    }
+    const snap = await db.collection(AUTH_COLLECTION).where(keyField.key, '==', val).limit(1).get();
+    if (snap.empty) { err.textContent = '일치하는 계정을 찾을 수 없어요.'; btn.disabled = false; btn.textContent = '로그인'; return; }
     const userDoc = snap.docs[0];
     const userData = userDoc.data();
     const checkerRoleId = userData.checkerRoleId;
-    if (!checkerRoleId) {
-      err.textContent = '체커 권한이 없는 계정이에요.';
-      btn.disabled = false; btn.textContent = '로그인';
-      return;
-    }
-    const roles = projectData.checkerRoles || [];
-    const role = roles.find(r => r.id === checkerRoleId);
+    if (!checkerRoleId) { err.textContent = '체커 권한이 없는 계정이에요.'; btn.disabled = false; btn.textContent = '로그인'; return; }
+    const role = (projectData.checkerRoles || []).find(r => r.id === checkerRoleId);
     const roleName = role?.name || checkerRoleId;
-
     const nameField = authFields.find(f => f.key !== 'phone' && f.key !== 'tel') || authFields[0];
     const userName = userData[nameField?.key] || userDoc.id;
-
     const confirmLabels = role?.confirmLabels || (role?.confirmLabel ? [role.confirmLabel] : []);
     checkerSession = { userId: userDoc.id, userName, roleId: checkerRoleId, roleName, confirmLabels };
     _saveSession(checkerSession);
     showCheckerView();
-  } catch(e) {
-    err.textContent = '오류: ' + e.message;
-    btn.disabled = false; btn.textContent = '로그인';
-  }
+  } catch(e) { err.textContent = '오류: ' + e.message; btn.disabled = false; btn.textContent = '로그인'; }
 }
 
-/* ── 체커 화면 ── */
 function showCheckerView() {
   document.getElementById('role-badge').textContent = checkerSession.roleName;
   showView('checker');
+  _initListMode();
 }
 
 function doLogout() {
-  checkerSession = null;
-  _clearSession();
-  stopScan();
-  _cachedMissionBlocks = null;
-  buildLoginForm();
-  showView('login');
+  checkerSession = null; _clearSession(); stopScan();
+  _lstAllUsers = null; _lstStageId = null; _lstBlockId = null; _lstSelectedUsers = new Set();
+  document.getElementById('lst-action-bar').style.display = 'none';
+  buildLoginForm(); showView('login');
+}
+
+function setCheckerTab(tab) {
+  document.getElementById('mode-scan').style.display = tab === 'scan' ? 'flex' : 'none';
+  document.getElementById('mode-list').style.display = tab === 'list' ? 'flex' : 'none';
+  document.getElementById('tab-scan').classList.toggle('active', tab === 'scan');
+  document.getElementById('tab-list').classList.toggle('active', tab === 'list');
+  if (tab === 'scan') {
+    document.getElementById('lst-action-bar').style.display = 'none';
+  } else {
+    _updateLstActionBar();
+  }
 }
 
 /* ── QR 스캔 ── */
 async function toggleScan() {
   if (scanActive) { stopScan(); return; }
-
-  const videoWrap = document.getElementById('video-wrap');
-  const btn = document.getElementById('scan-btn');
-  const stopBtn = document.getElementById('scan-stop-btn');
-
   try {
     scanStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 640 } }
     });
     const video = document.getElementById('scan-video');
     video.srcObject = scanStream;
-    videoWrap.style.display = 'block';
-    stopBtn.style.display = 'block';
-    btn.innerHTML = '⏹&nbsp; 스캔 중…';
-    btn.classList.add('scanning');
-    scanActive = true;
-    hideResult();
+    document.getElementById('video-wrap').style.display = 'block';
+    document.getElementById('scan-stop-btn').style.display = 'block';
+    const btn = document.getElementById('scan-btn');
+    btn.innerHTML = '⏹&nbsp; 스캔 중…'; btn.classList.add('scanning');
+    scanActive = true; hideResult();
     requestAnimationFrame(scanFrame);
-  } catch(e) {
-    showResult('err', '❌', '카메라 접근 실패', '브라우저 설정에서 카메라 권한을 허용해주세요.');
-  }
+  } catch(e) { showResult('err', '❌', '카메라 접근 실패', '브라우저 설정에서 카메라 권한을 허용해주세요.'); }
 }
 
 function stopScan() {
@@ -390,8 +388,7 @@ function stopScan() {
   document.getElementById('video-wrap').style.display = 'none';
   document.getElementById('scan-stop-btn').style.display = 'none';
   const btn = document.getElementById('scan-btn');
-  btn.innerHTML = '📷&nbsp; QR 스캔 시작';
-  btn.classList.remove('scanning');
+  btn.innerHTML = '📷&nbsp; QR 스캔 시작'; btn.classList.remove('scanning');
 }
 
 function scanFrame() {
@@ -399,16 +396,12 @@ function scanFrame() {
   const video = document.getElementById('scan-video');
   const canvas = document.getElementById('scan-canvas');
   if (video.readyState === video.HAVE_ENOUGH_DATA) {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
-    if (code?.data) {
-      processCode(code.data);
-      return;
-    }
+    if (code?.data) { processCode(code.data); return; }
   }
   scanRaf = requestAnimationFrame(scanFrame);
 }
@@ -419,250 +412,354 @@ async function processCode(raw) {
   hideResult();
   document.getElementById('pw-err').textContent = '';
 
-  // 뽑기 티켓 QR
-  if ((raw || '').startsWith('RAFFLE:')) {
-    await processRaffleCode(raw);
-    return;
-  }
+  if ((raw || '').startsWith('RAFFLE:')) { await processRaffleCode(raw); return; }
 
   const parts = (raw || '').split(':');
-  if (parts.length !== 3) {
-    showResult('err', '❌', '인식 실패', '올바른 미션 QR이 아닙니다.');
-    return;
-  }
+  if (parts.length !== 3) { showResult('err', '❌', '인식 실패', '올바른 미션 QR이 아닙니다.'); return; }
   const [qrProjectId, userId, blockId] = parts;
+  if (qrProjectId !== PROJECT_ID) { showResult('err', '❌', '프로젝트 불일치', '다른 프로젝트의 QR입니다.'); return; }
 
-  if (qrProjectId !== PROJECT_ID) {
-    showResult('err', '❌', '프로젝트 불일치', '다른 프로젝트의 QR입니다.');
-    return;
-  }
-
-  const userRef = db.collection(AUTH_COLLECTION).doc(userId);
   try {
-    const userDoc = await userRef.get();
-    if (!userDoc.exists) {
-      showResult('err', '❌', '사용자 없음', '존재하지 않는 사용자입니다.');
-      return;
-    }
+    const userDoc = await db.collection(AUTH_COLLECTION).doc(userId).get();
+    if (!userDoc.exists) { showResult('err', '❌', '사용자 없음', '존재하지 않는 사용자입니다.'); return; }
     const userData = userDoc.data();
     const nameField = authFields.find(f => f.key !== 'phone') || authFields[0];
     const displayName = userData[nameField?.key] || userId;
-
-    // 사용자 패널 열기 (확인 + 일괄 체크)
-    await _openUserPanel(userId, userRef, userData, displayName, blockId);
-  } catch(e) {
-    showResult('err', '❌', '오류 발생', e.message);
-  }
+    _openCpPanel(userDoc.ref, userData, displayName, blockId);
+  } catch(e) { showResult('err', '❌', '오류 발생', e.message); }
 }
 
-/* ── 사용자 패널 ── */
-let _upUserId = null;
-let _upUserRef = null;
-let _upUserData = null;
-let _upDisplayName = null;
-let _upSelectedBlocks = new Set();
-let _upSelectedLabel = null;
-let _cachedMissionBlocks = null; // [{stageId, stageTitle, stageOrder, blocks:[...]}]
+/* ── QR 확인 패널 ── */
+let _cpUserRef = null;
+let _cpUserData = null;
+let _cpDisplayName = null;
+let _cpBlockId = null;
+let _cpSelectedLabel = null;
 
-async function _openUserPanel(userId, userRef, userData, displayName, preSelectedBlockId) {
-  _upUserId = userId;
-  _upUserRef = userRef;
-  _upUserData = userData;
-  _upDisplayName = displayName;
-  _upSelectedBlocks = new Set();
+function _openCpPanel(userRef, userData, displayName, blockId) {
+  _cpUserRef = userRef; _cpUserData = userData;
+  _cpDisplayName = displayName; _cpBlockId = blockId;
 
-  // 사용자 정보
-  document.getElementById('up-user-hd').textContent = displayName;
-  document.getElementById('up-user-sub').textContent = '확인할 미션을 선택하고 아래 버튼을 누르세요.';
+  document.getElementById('cp-user').textContent = displayName;
 
-  // 패널 열기 + 로딩 상태
-  document.getElementById('up-missions-list').innerHTML =
-    '<div class="up-loading"><div class="up-spinner"></div>미션 목록 불러오는 중…</div>';
-  document.getElementById('up-backdrop').style.display = 'flex';
-  _updateConfirmBtn();
+  // 블록 이름 표시
+  const blockLabel = _findBlockLabel(blockId);
+  document.getElementById('cp-block').textContent = '미션: ' + blockLabel;
 
-  // 배지 문구 선택 (복수 레이블)
-  const labels = checkerSession.confirmLabels || [];
-  _upSelectedLabel = labels[0] || checkerSession.roleName;
-  if (labels.length >= 2) {
-    const btnsEl = document.getElementById('up-label-btns');
-    btnsEl.innerHTML = labels.map((l, i) =>
-      `<button class="up-label-btn${i===0?' sel':''}" onclick="_upPickLabel(${i})">${l.replace(/</g,'&lt;')}</button>`
-    ).join('');
-    document.getElementById('up-label-section').style.display = '';
+  // 이미 확인됐는지
+  const extChecks = userData.externalChecks?.[blockId] || [];
+  const alreadyByMe = extChecks.some(c => c.roleId === checkerSession.roleId);
+  const alreadyEl = document.getElementById('cp-already');
+  if (alreadyByMe) {
+    alreadyEl.style.display = '';
+    alreadyEl.textContent = '⚠️ 이미 "' + checkerSession.roleName + '" 확인이 완료된 사용자입니다.';
   } else {
-    document.getElementById('up-label-section').style.display = 'none';
+    alreadyEl.style.display = 'none';
   }
 
-  // 미션 블록 로드
-  const stages = await _loadAllMissionBlocks();
-
-  // 스캔/입력한 blockId 미리 선택 (이미 내 역할로 체크 안 된 경우)
-  if (preSelectedBlockId) {
-    const alreadyByMe = ((userData.externalChecks?.[preSelectedBlockId]) || [])
-      .some(c => c.roleId === checkerSession.roleId);
-    if (!alreadyByMe) _upSelectedBlocks.add(preSelectedBlockId);
-  }
-
-  _renderMissionList(stages, userData);
-}
-
-function _upPickLabel(idx) {
+  // 라벨 선택
   const labels = checkerSession.confirmLabels || [];
-  _upSelectedLabel = labels[idx] || checkerSession.roleName;
-  document.querySelectorAll('.up-label-btn').forEach((b, j) => {
-    b.classList.toggle('sel', j === idx);
-  });
+  _cpSelectedLabel = labels[0] || checkerSession.roleName;
+  const labelWrap = document.getElementById('cp-label-wrap');
+  if (labels.length >= 2) {
+    document.getElementById('cp-label-btns').innerHTML = labels.map((l, i) =>
+      `<button class="cp-label-btn${i===0?' sel':''}" onclick="_cpPickLabel(${i})">${l.replace(/</g,'&lt;')}</button>`
+    ).join('');
+    labelWrap.style.display = '';
+  } else {
+    labelWrap.style.display = 'none';
+  }
+
+  const confirmBtn = document.getElementById('cp-confirm-btn');
+  confirmBtn.disabled = false;
+  confirmBtn.textContent = '이 미션 확인 완료';
+
+  document.getElementById('cp-backdrop').style.display = 'flex';
 }
 
-async function _loadAllMissionBlocks() {
-  if (_cachedMissionBlocks) return _cachedMissionBlocks;
+function _cpPickLabel(idx) {
+  const labels = checkerSession.confirmLabels || [];
+  _cpSelectedLabel = labels[idx] || checkerSession.roleName;
+  document.querySelectorAll('.cp-label-btn').forEach((b, j) => b.classList.toggle('sel', j === idx));
+}
 
+async function _cpConfirm() {
+  const btn = document.getElementById('cp-confirm-btn');
+  btn.disabled = true; btn.textContent = '처리 중…';
+  const label = _cpSelectedLabel || checkerSession.roleName;
+  try {
+    await _cpUserRef.update({
+      [`externalChecks.${_cpBlockId}`]: firebase.firestore.FieldValue.arrayUnion({
+        roleId: checkerSession.roleId,
+        roleName: checkerSession.roleName,
+        confirmLabel: label,
+        checkerUserId: checkerSession.userId,
+        checkedAt: new Date()
+      })
+    });
+    _cpClose();
+    showResult('ok', '✅', '확인 완료!', `${_cpDisplayName} 님의 미션에 "${label}" 배지가 추가됐어요.`);
+    addHistory(_cpDisplayName, _cpBlockId);
+    // 목록 모드 캐시 무효화 (같은 블록이면)
+    if (_lstBlockId === _cpBlockId) _lstAllUsers = null;
+  } catch(e) { showResult('err', '❌', '오류 발생', e.message); btn.disabled = false; btn.textContent = '이 미션 확인 완료'; }
+}
+
+function _cpClose() {
+  document.getElementById('cp-backdrop').style.display = 'none';
+  _cpUserRef = null; _cpUserData = null; _cpDisplayName = null; _cpBlockId = null;
+}
+
+function _cpBackdropClick(e) {
+  if (e.target === document.getElementById('cp-backdrop')) _cpClose();
+}
+
+/* ── 목록 조회 모드 ── */
+let _lstStageId = null;
+let _lstBlockId = null;
+let _lstAllUsers = null;
+let _lstFilteredUsers = [];
+let _lstSelectedUsers = new Set();
+let _lstSelectedLabel = null;
+let _lstStageBlocksCache = {};
+
+function _initListMode() {
   const stages = (projectData.stages || [])
     .filter(s => s.publishStatus !== 'hidden')
     .sort((a, b) => (a.order || 0) - (b.order || 0));
+  const stageEl = document.getElementById('lst-stage-sel');
+  stageEl.innerHTML = '<option value="">스테이지 선택…</option>' +
+    stages.map(s => `<option value="${s.id}">${(s.title||s.id).replace(/</g,'&lt;')}</option>`).join('');
+}
 
-  const results = await Promise.all(stages.map(async stage => {
-    try {
+async function _onLstStageChange() {
+  const stageId = document.getElementById('lst-stage-sel').value;
+  _lstStageId = stageId; _lstBlockId = null;
+  _lstAllUsers = null; _lstSelectedUsers = new Set();
+  _updateLstActionBar();
+  document.getElementById('lst-list').innerHTML = '<div class="lst-empty">블록을 선택하면 목록이 표시됩니다.</div>';
+  document.getElementById('lst-count').textContent = '';
+
+  const blockEl = document.getElementById('lst-block-sel');
+  if (!stageId) { blockEl.innerHTML = '<option value="">블록 선택…</option>'; blockEl.disabled = true; return; }
+
+  blockEl.innerHTML = '<option value="">불러오는 중…</option>'; blockEl.disabled = true;
+  try {
+    let blocks = _lstStageBlocksCache[stageId];
+    if (!blocks) {
       const snap = await db.collection('cms_projects').doc(PROJECT_ID)
-        .collection('stage_content').doc(stage.id).get();
-      if (!snap.exists) return null;
-      const blocks = (snap.data().blocks || []).filter(b => b.checkable);
-      if (!blocks.length) return null;
-      return { stageId: stage.id, stageTitle: stage.title || '스테이지', stageOrder: stage.order || 0, blocks };
-    } catch(_) { return null; }
-  }));
-
-  _cachedMissionBlocks = results.filter(Boolean).sort((a, b) => a.stageOrder - b.stageOrder);
-  return _cachedMissionBlocks;
-}
-
-function _blockLabel(block) {
-  if (block.textContent) {
-    const stripped = block.textContent.replace(/<[^>]*>/g, '').trim();
-    if (stripped) return stripped.slice(0, 40);
+        .collection('stage_content').doc(stageId).get();
+      blocks = snap.exists ? (snap.data().blocks || []).filter(b => b.checkable) : [];
+      _lstStageBlocksCache[stageId] = blocks;
+    }
+    blockEl.innerHTML = '<option value="">블록 선택…</option>' +
+      blocks.map(b => {
+        const lbl = (b.textContent ? b.textContent.replace(/<[^>]*>/g,'').trim() : '').slice(0,30) || b.id;
+        return `<option value="${b.id}">${lbl.replace(/</g,'&lt;')}</option>`;
+      }).join('');
+    blockEl.disabled = false;
+  } catch(e) {
+    blockEl.innerHTML = '<option value="">오류 발생</option>';
   }
-  const map = { text:'텍스트 블록', image:'이미지 블록', mixed:'혼합 블록', embed:'임베드', form:'폼', tool:'도구' };
-  return map[block.type] || '미션 블록';
 }
 
-function _renderMissionList(stagesWithBlocks, userData) {
-  const listEl = document.getElementById('up-missions-list');
-  if (!stagesWithBlocks.length) {
-    listEl.innerHTML = '<div style="padding:24px;text-align:center;color:rgba(0,0,0,.4);font-size:13px;">체크 가능한 미션이 없어요.</div>';
-    _updateConfirmBtn();
+async function _onLstBlockChange() {
+  _lstBlockId = document.getElementById('lst-block-sel').value;
+  _lstAllUsers = null; _lstSelectedUsers = new Set();
+  _updateLstActionBar();
+  if (!_lstBlockId) { document.getElementById('lst-list').innerHTML = '<div class="lst-empty">블록을 선택하면 목록이 표시됩니다.</div>'; document.getElementById('lst-count').textContent = ''; return; }
+  await _loadLstUsers();
+}
+
+async function _loadLstUsers() {
+  const listEl = document.getElementById('lst-list');
+  listEl.innerHTML = '<div class="lst-empty"><div style="width:24px;height:24px;border:2.5px solid rgba(0,0,0,.1);border-top-color:#000;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px;"></div>불러오는 중…</div>';
+  document.getElementById('lst-count').textContent = '';
+  try {
+    const snap = await db.collection(AUTH_COLLECTION).get();
+    _lstAllUsers = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+    _filterLst();
+  } catch(e) {
+    listEl.innerHTML = `<div class="lst-empty" style="color:#c00;">${e.message}</div>`;
+  }
+}
+
+async function _reloadLst() {
+  if (!_lstBlockId) return;
+  _lstAllUsers = null; _lstSelectedUsers = new Set();
+  _updateLstActionBar();
+  await _loadLstUsers();
+}
+
+function _filterLst() {
+  if (!_lstAllUsers) return;
+  const q = document.getElementById('lst-search').value.trim();
+  const phoneKey = (authFields.find(f => f.type === 'tel') || authFields.find(f => f.key === 'phone'))?.key || 'phone';
+  let users = _lstAllUsers;
+  if (q) {
+    users = users.filter(u => {
+      const phone = String(u[phoneKey] || '');
+      return phone.slice(-4) === q || phone.includes(q);
+    });
+  }
+  _lstFilteredUsers = users;
+  _renderLstUsers(users);
+}
+
+function _renderLstUsers(users) {
+  const listEl = document.getElementById('lst-list');
+  const countEl = document.getElementById('lst-count');
+  const stageId = _lstStageId;
+  const blockId = _lstBlockId;
+
+  if (!users.length) {
+    listEl.innerHTML = '<div class="lst-empty">검색 결과가 없어요.</div>';
+    countEl.textContent = '';
+    _updateLstActionBar();
     return;
   }
 
+  const phoneKey = (authFields.find(f => f.type === 'tel') || authFields.find(f => f.key === 'phone'))?.key || 'phone';
+  const nameKey = authFields.find(f => f.type !== 'tel' && f.key !== 'phone')?.key;
+
+  // 정렬: 사용자 완료 → 미완료
+  const sorted = [...users].sort((a, b) => {
+    const ac = (a.stageProgress?.[stageId] || []).includes(blockId);
+    const bc = (b.stageProgress?.[stageId] || []).includes(blockId);
+    return (ac === bc) ? 0 : ac ? -1 : 1;
+  });
+
+  const doneCount = sorted.filter(u => (u.stageProgress?.[stageId] || []).includes(blockId)).length;
+  countEl.textContent = `전체 ${users.length}명 · 사용자 완료 ${doneCount}명`;
+
   let html = '';
-  for (const stage of stagesWithBlocks) {
-    for (const block of stage.blocks) {
-      const checks = userData.externalChecks?.[block.id] || [];
-      const alreadyByMe = checks.some(c => c.roleId === checkerSession.roleId);
-      const isSelected = _upSelectedBlocks.has(block.id);
+  for (const u of sorted) {
+    const phone = String(u[phoneKey] || '');
+    const phoneMasked = phone.length >= 4 ? phone.slice(0, -4).replace(/./g, '*') + phone.slice(-4) : phone;
+    const name = (nameKey ? u[nameKey] : null) || u._id;
+    const userDone = (u.stageProgress?.[stageId] || []).includes(blockId);
+    const extChecks = u.externalChecks?.[blockId] || [];
+    const extByMe = extChecks.some(c => c.roleId === checkerSession.roleId);
+    const isSelected = _lstSelectedUsers.has(u._id);
 
-      const badgesHtml = checks.map(c => {
-        const isMe = c.roleId === checkerSession.roleId;
-        return `<span class="up-mi-badge${isMe?' mine':''}">${(c.confirmLabel||c.roleName).replace(/</g,'&lt;')}</span>`;
-      }).join('');
+    const extBadges = extChecks.map(c =>
+      `<span class="lst-ext-badge${c.roleId===checkerSession.roleId?' mine':''}">${(c.confirmLabel||c.roleName).replace(/</g,'&lt;')}</span>`
+    ).join('');
 
-      html += `
-        <div class="up-mission-item${isSelected?' sel':''}${alreadyByMe?' already-done':''}"
-             data-block="${block.id}" onclick="_upToggleBlock('${block.id}',${alreadyByMe})">
-          <div class="up-mi-check${isSelected?' checked':''}" id="up-chk-${block.id}">${isSelected?'✓':''}</div>
-          <div class="up-mi-info">
-            <div class="up-mi-stage">${stage.stageTitle.replace(/</g,'&lt;')}</div>
-            <div class="up-mi-name">${_blockLabel(block).replace(/</g,'&lt;')}</div>
-            ${badgesHtml ? `<div class="up-mi-badges">${badgesHtml}</div>` : ''}
-            ${alreadyByMe ? '<div style="font-size:10px;color:rgba(0,0,0,.3);margin-top:3px;">이미 확인됨</div>' : ''}
+    html += `
+      <div class="lst-item${isSelected?' sel':''}${extByMe?' ext-done':''}"
+           data-uid="${u._id}" onclick="_lstToggle('${u._id}',${extByMe})">
+        <div class="lst-chk${isSelected?' checked':''}" id="lstchk-${u._id}">${isSelected?'✓':''}</div>
+        <div class="lst-info">
+          <div class="lst-name-row">
+            <span class="lst-name">${String(name).replace(/</g,'&lt;')}</span>
+            <span class="lst-phone">${phoneMasked}</span>
           </div>
-        </div>`;
-    }
+          <div class="lst-status-row">
+            <span class="lst-user-done ${userDone?'yes':'no'}">${userDone?'✓ 사용자 완료':'✗ 미완료'}</span>
+            ${extBadges}
+          </div>
+        </div>
+      </div>`;
   }
   listEl.innerHTML = html;
-  _updateConfirmBtn();
+  _updateLstActionBar();
 }
 
-function _upToggleBlock(blockId, alreadyDone) {
-  if (alreadyDone) return;
-  if (_upSelectedBlocks.has(blockId)) {
-    _upSelectedBlocks.delete(blockId);
+function _lstToggle(userId, alreadyByMe) {
+  if (alreadyByMe) return;
+  if (_lstSelectedUsers.has(userId)) _lstSelectedUsers.delete(userId);
+  else _lstSelectedUsers.add(userId);
+  const item = document.querySelector(`.lst-item[data-uid="${userId}"]`);
+  const chk = document.getElementById('lstchk-' + userId);
+  const sel = _lstSelectedUsers.has(userId);
+  if (item) item.classList.toggle('sel', sel);
+  if (chk) { chk.classList.toggle('checked', sel); chk.textContent = sel ? '✓' : ''; }
+  _updateLstActionBar();
+}
+
+function _lstSelectAllPending() {
+  if (!_lstFilteredUsers.length) return;
+  const stageId = _lstStageId; const blockId = _lstBlockId;
+  for (const u of _lstFilteredUsers) {
+    const extByMe = (u.externalChecks?.[blockId] || []).some(c => c.roleId === checkerSession.roleId);
+    if (!extByMe) _lstSelectedUsers.add(u._id);
+  }
+  _filterLst();
+}
+
+function _updateLstActionBar() {
+  const bar = document.getElementById('lst-action-bar');
+  if (document.getElementById('mode-list').style.display === 'none') { bar.style.display = 'none'; return; }
+  const n = _lstSelectedUsers.size;
+  bar.style.display = n > 0 ? '' : 'none';
+  if (n === 0) return;
+
+  const labels = checkerSession.confirmLabels || [];
+  if (!_lstSelectedLabel) _lstSelectedLabel = labels[0] || checkerSession.roleName;
+
+  const labelWrap = document.getElementById('lst-action-label-wrap');
+  if (labels.length >= 2) {
+    document.getElementById('lst-action-label-btns').innerHTML = labels.map((l, i) => {
+      const isSel = _lstSelectedLabel === l;
+      return `<button class="lst-action-label-btn${isSel?' sel':''}" onclick="_lstPickLabel(${i})">${l.replace(/</g,'&lt;')}</button>`;
+    }).join('');
+    labelWrap.style.display = '';
   } else {
-    _upSelectedBlocks.add(blockId);
+    labelWrap.style.display = 'none';
   }
-  const item = document.querySelector(`.up-mission-item[data-block="${blockId}"]`);
-  const chk = document.getElementById('up-chk-' + blockId);
-  if (item) item.classList.toggle('sel', _upSelectedBlocks.has(blockId));
-  if (chk) {
-    chk.classList.toggle('checked', _upSelectedBlocks.has(blockId));
-    chk.textContent = _upSelectedBlocks.has(blockId) ? '✓' : '';
-  }
-  _updateConfirmBtn();
+
+  const btn = document.getElementById('lst-action-confirm-btn');
+  btn.textContent = `${n}명 외부 확인 처리`;
+  btn.disabled = false;
 }
 
-function _upSelectAllPending() {
-  if (!_cachedMissionBlocks) return;
-  const userData = _upUserData || {};
-  for (const stage of _cachedMissionBlocks) {
-    for (const block of stage.blocks) {
-      const alreadyByMe = (userData.externalChecks?.[block.id] || [])
-        .some(c => c.roleId === checkerSession.roleId);
-      if (!alreadyByMe) _upSelectedBlocks.add(block.id);
-    }
-  }
-  _renderMissionList(_cachedMissionBlocks, userData);
+function _lstPickLabel(idx) {
+  const labels = checkerSession.confirmLabels || [];
+  _lstSelectedLabel = labels[idx] || checkerSession.roleName;
+  document.querySelectorAll('.lst-action-label-btn').forEach((b, j) => b.classList.toggle('sel', j === idx));
 }
 
-function _updateConfirmBtn() {
-  const btn = document.getElementById('up-confirm-btn');
-  const n = _upSelectedBlocks.size;
-  btn.textContent = n > 0 ? `${n}개 미션 확인 완료` : '미션을 선택하세요';
-  btn.disabled = n === 0;
-}
-
-async function _confirmUserPanel() {
-  if (!_upSelectedBlocks.size) return;
-  const btn = document.getElementById('up-confirm-btn');
-  btn.disabled = true;
-  btn.textContent = '처리 중…';
-
-  const label = _upSelectedLabel || checkerSession.roleName;
-  const updates = {};
-  for (const blockId of _upSelectedBlocks) {
-    updates[`externalChecks.${blockId}`] = firebase.firestore.FieldValue.arrayUnion({
-      roleId: checkerSession.roleId,
-      roleName: checkerSession.roleName,
-      confirmLabel: label,
-      checkerUserId: checkerSession.userId,
-      checkedAt: new Date()
-    });
-  }
+async function _bulkCheck() {
+  const n = _lstSelectedUsers.size;
+  if (!n) return;
+  const label = _lstSelectedLabel || checkerSession.roleName;
+  const btn = document.getElementById('lst-action-confirm-btn');
+  btn.disabled = true; btn.textContent = '처리 중…';
 
   try {
-    await _upUserRef.update(updates);
-    const count = _upSelectedBlocks.size;
-    const checked = [..._upSelectedBlocks];
-    _closeUserPanel();
-    showResult('ok', '✅', `${count}개 미션 확인 완료!`,
-      `${_upDisplayName || '사용자'} 님의 미션에 "${label}" 배지가 추가됐어요.`);
-    checked.forEach(bid => addHistory(_upDisplayName || '', bid));
+    const batch = db.batch();
+    for (const userId of _lstSelectedUsers) {
+      const ref = db.collection(AUTH_COLLECTION).doc(userId);
+      batch.update(ref, {
+        [`externalChecks.${_lstBlockId}`]: firebase.firestore.FieldValue.arrayUnion({
+          roleId: checkerSession.roleId,
+          roleName: checkerSession.roleName,
+          confirmLabel: label,
+          checkerUserId: checkerSession.userId,
+          checkedAt: new Date()
+        })
+      });
+    }
+    await batch.commit();
+    _lstAllUsers = null; _lstSelectedUsers = new Set();
+    _updateLstActionBar();
+    await _loadLstUsers();
+    showResult('ok', '✅', `${n}명 확인 완료!`, `"${label}" 배지가 추가됐어요.`);
+    document.getElementById('result-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } catch(e) {
-    _closeUserPanel();
-    showResult('err', '❌', '오류 발생', e.message);
+    btn.disabled = false; _updateLstActionBar();
+    alert('오류: ' + e.message);
   }
 }
 
-function _closeUserPanel() {
-  document.getElementById('up-backdrop').style.display = 'none';
-  _upUserId = null;
-  _upUserRef = null;
-  _upUserData = null;
-  _upDisplayName = null;
-  _upSelectedBlocks = new Set();
-}
-
-function _upBackdropClick(e) {
-  if (e.target === document.getElementById('up-backdrop')) _closeUserPanel();
+/* 블록 레이블 찾기 */
+function _findBlockLabel(blockId) {
+  for (const [, blocks] of Object.entries(_lstStageBlocksCache)) {
+    const b = blocks.find(b => b.id === blockId);
+    if (b) return (b.textContent ? b.textContent.replace(/<[^>]*>/g,'').trim().slice(0,30) : null) || blockId;
+  }
+  return blockId.slice(0, 12) + '…';
 }
 
 /* ── 뽑기 티켓 처리 ── */
@@ -677,11 +774,10 @@ async function processRaffleCode(raw) {
     if (!entryDoc.exists) { showResult('err', '❌', '당첨 기록 없음', '이 사용자의 뽑기 당첨 기록이 없어요.'); return; }
     const entry = entryDoc.data();
     const userData = userDoc.exists ? userDoc.data() : {};
-    const nameField = authFields && authFields[0];
-    const displayName = nameField ? (userData[nameField.key] || userId) : userId;
+    const nf = authFields && authFields[0];
+    const displayName = nf ? (userData[nf.key] || userId) : userId;
     const itemName = entry.itemName || '?';
-    const isUsed = !!entry.used;
-    if (isUsed) {
+    if (entry.used) {
       showResult('warn', '⚠️', '이미 사용됨', `${displayName} 님의 「${itemName}」 티켓은 이미 사용됐어요.`);
       return;
     }
@@ -695,8 +791,10 @@ async function processRaffleCode(raw) {
   } catch(e) { showResult('err', '❌', '오류 발생', e.message); }
 }
 
-/* ── 결과 표시 ── */
+/* ── 유틸 ── */
 function showResult(type, icon, title, sub) {
+  // 스캔 탭이 아니면 스캔 탭으로 전환해서 결과 표시
+  if (document.getElementById('mode-scan').style.display === 'none') setCheckerTab('scan');
   const wrap = document.getElementById('result-wrap');
   wrap.className = 'result-wrap ' + type;
   document.getElementById('result-icon').textContent = icon;
@@ -705,11 +803,8 @@ function showResult(type, icon, title, sub) {
   wrap.style.display = 'block';
   wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
-function hideResult() {
-  document.getElementById('result-wrap').style.display = 'none';
-}
+function hideResult() { document.getElementById('result-wrap').style.display = 'none'; }
 
-/* ── 이력 ── */
 function addHistory(userName, blockId) {
   const now = new Date();
   const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
@@ -720,29 +815,22 @@ function addHistory(userName, blockId) {
   list.innerHTML = checkHistory.slice(0, 10).map(h => `
     <div class="history-item">
       <div class="hi-icon">✅</div>
-      <div class="hi-info">
-        <div class="hi-name">${h.userName}</div>
-        <div class="hi-block">블록: ${h.blockId.slice(0,8)}…</div>
-      </div>
+      <div class="hi-info"><div class="hi-name">${h.userName}</div><div class="hi-block">블록: ${h.blockId.slice(0,8)}…</div></div>
       <div class="hi-time">${h.timeStr}</div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-/* ── 코드 입력 토글 ── */
 function togglePwForm() {
   const f = document.getElementById('pw-form');
   f.style.display = f.style.display === 'block' ? 'none' : 'block';
 }
 
-/* ── 유틸 ── */
 function showView(name) {
-  const map = { loading: 'loading-view', 'no-project': 'no-project-view', login: 'login-view', checker: 'checker-view' };
+  const map = { loading:'loading-view', 'no-project':'no-project-view', login:'login-view', checker:'checker-view' };
   Object.entries(map).forEach(([k, id]) => {
     const el = document.getElementById(id);
     if (!el) return;
-    if (k === 'checker') el.style.display = k === name ? 'flex' : 'none';
-    else el.style.display = k === name ? '' : 'none';
+    el.style.display = k === name ? (k === 'checker' ? 'flex' : '') : 'none';
   });
 }
 function _sessionKey() { return 'lmp-checker-' + PROJECT_ID; }
