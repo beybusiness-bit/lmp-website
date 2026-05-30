@@ -2289,6 +2289,7 @@ function blockHtml(b){
       'copy-gen':`/tools/copy-gen/?id=${b.toolConfig?.copyGenId||''}`,
       payment:`/tools/payment/?id=${b.toolConfig?.paymentId||''}`,
       guestbook:`/tools/guestbook/?id=${b.toolConfig?.guestbookId||''}`,
+      raffle:`/tools/raffle/?id=${b.toolConfig?.raffleId||''}`,
     };
     const src=toolUrls[b.toolType]||'';
     const h=b.height;
@@ -2378,7 +2379,8 @@ function _lmpContext(iframeEl){
     blockBgImage: bbi,
     blockBgFit: bbf,
     blockBgPos: bbp,
-    stageDisplayType: (typeof curStageId!=='undefined'&&curStageId&&typeof STAGES!=='undefined') ? (STAGES.find(s=>s.id===curStageId)?.displayType||'scroll') : 'scroll'
+    stageDisplayType: (typeof curStageId!=='undefined'&&curStageId&&typeof STAGES!=='undefined') ? (STAGES.find(s=>s.id===curStageId)?.displayType||'scroll') : 'scroll',
+    blockId: iframeEl ? (iframeEl.getAttribute('data-tool-block')||'') : ''
   };
 }
 function _sendContextToEmbeds(){

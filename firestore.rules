@@ -119,6 +119,15 @@ service cloud.firestore {
     match /cms_lottery_configs/{document=**} {
       allow read, write: if true;
     }
+    match /cms_raffle_configs/{document=**} {
+      allow read, write: if true;
+    }
+    match /cms_raffle_records/{document=**} {
+      allow read, write: if true;
+    }
+    match /cms_raffle_results/{document=**} {
+      allow read, write: if true;
+    }
 
     // 포토부스 스튜디오 세션 (QR 다운로드)
     match /sessions/{document=**} {

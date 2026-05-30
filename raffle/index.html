@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>뽑기</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;background:#0d0d0d;min-height:100vh;color:#fff;overflow:hidden;}
+#app{width:100%;height:100vh;display:flex;flex-direction:column;}
+
+/* Header */
+#raffle-header{padding:20px 20px 10px;text-align:center;flex-shrink:0;}
+#raffle-name{font-size:20px;font-weight:900;letter-spacing:.5px;}
+#raffle-desc{font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;line-height:1.5;}
+
+/* Method tabs */
+#method-tabs{display:flex;gap:6px;padding:0 16px 12px;flex-shrink:0;justify-content:center;flex-wrap:wrap;}
+.method-btn{padding:7px 16px;border:1.5px solid rgba(255,255,255,.25);background:transparent;color:rgba(255,255,255,.55);font-size:12px;font-weight:700;border-radius:20px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .2s;-webkit-tap-highlight-color:transparent;}
+.method-btn.on{background:#fff;color:#000;border-color:#fff;}
+
+/* Animation area — tappable */
+#anim-area{flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;min-height:0;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+
+/* Slot */
+.slot-machine{display:flex;gap:10px;padding:24px 20px;background:rgba(255,255,255,.04);border-radius:20px;border:2px solid rgba(255,255,255,.1);}
+.slot-reel{width:88px;height:120px;overflow:hidden;border-radius:10px;background:#000;border:2px solid rgba(255,255,255,.15);position:relative;}
+.slot-reel::before,.slot-reel::after{content:'';position:absolute;left:0;right:0;height:36px;z-index:2;pointer-events:none;}
+.slot-reel::before{top:0;background:linear-gradient(to bottom,rgba(0,0,0,.95),transparent);}
+.slot-reel::after{bottom:0;background:linear-gradient(to top,rgba(0,0,0,.95),transparent);}
+.slot-highlight{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);height:40px;border-top:2px solid rgba(255,215,0,.9);border-bottom:2px solid rgba(255,215,0,.9);pointer-events:none;z-index:3;background:rgba(255,215,0,.06);}
+.slot-strip{display:flex;flex-direction:column;}
+.slot-cell{width:88px;height:40px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;text-align:center;padding:4px;color:#fff;line-height:1.3;}
+
+/* Roulette */
+#roulette-outer{position:relative;display:inline-block;}
+#roulette-canvas{display:block;border-radius:50%;box-shadow:0 0 40px rgba(0,0,0,.6);}
+#roulette-needle{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:30px solid #fff;filter:drop-shadow(0 2px 6px rgba(0,0,0,.7));z-index:5;}
+#roulette-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:26px;height:26px;background:#fff;border-radius:50%;border:3px solid #333;z-index:4;}
+
+/* Tombola */
+#tombola-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;max-width:340px;}
+#tombola-box{width:100%;height:190px;border:2.5px solid rgba(255,255,255,.2);border-radius:20px;background:rgba(255,255,255,.04);overflow:hidden;position:relative;}
+.t-ball{position:absolute;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;text-align:center;padding:5px;color:#fff;line-height:1.2;box-shadow:inset -4px -4px 8px rgba(0,0,0,.3),inset 2px 2px 4px rgba(255,255,255,.2);}
+#tombola-result{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;text-align:center;padding:8px;color:#fff;opacity:0;transition:opacity .6s,transform .6s;transform:scale(.6);box-shadow:0 0 30px rgba(255,255,255,.3);}
+#tombola-result.show{opacity:1;transform:scale(1);}
+
+/* Done screen */
+#done-screen{flex:1;display:flex;align-items:center;justify-content:center;}
+.done-msg{text-align:center;color:rgba(255,255,255,.45);font-size:15px;font-weight:700;letter-spacing:.3px;}
+
+/* Action */
+#action-area{padding:14px 20px 28px;flex-shrink:0;text-align:center;}
+#draw-btn{width:100%;max-width:340px;padding:18px;background:#fff;color:#000;border:none;border-radius:14px;font-size:22px;font-weight:900;cursor:pointer;font-family:inherit;letter-spacing:2px;-webkit-tap-highlight-color:transparent;transition:transform .1s,opacity .15s;}
+#draw-btn:active{transform:scale(.97);}
+#draw-btn:disabled{opacity:.35;cursor:not-allowed;}
+#stock-info{margin-top:10px;font-size:11px;color:rgba(255,255,255,.35);line-height:1.8;}
+
+/* Result overlay */
+#result-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:100;padding:28px;}
+#result-overlay.show{display:flex;animation:fadeIn .3s;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+#result-box{background:#fff;color:#000;border-radius:22px;padding:36px 28px 28px;text-align:center;width:100%;max-width:320px;animation:popIn .35s cubic-bezier(.2,.8,.4,1.2) both;}
+@keyframes popIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+#result-emoji{font-size:56px;margin-bottom:14px;}
+#result-sub{font-size:11px;font-weight:800;letter-spacing:1.5px;color:rgba(0,0,0,.35);margin-bottom:8px;}
+#result-name{font-size:28px;font-weight:900;margin-bottom:8px;line-height:1.2;}
+#result-remain{font-size:12px;color:rgba(0,0,0,.4);margin-bottom:24px;min-height:18px;}
+#result-confirm-btn{width:100%;padding:15px;background:#000;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;}
+#result-confirm-btn:active{opacity:.8;}
+
+/* Loading/error */
+#loading-view,#error-view{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:rgba(255,255,255,.55);}
+.spinner{width:30px;height:30px;border:3px solid rgba(255,255,255,.15);border-top-color:rgba(255,255,255,.7);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="loading-view"><div class="spinner"></div><div>불러오는 중…</div></div>
+  <div id="error-view" style="display:none;"><div style="font-size:40px">⚠️</div><div id="err-msg"></div></div>
+  <div id="main-ui" style="display:none;flex-direction:column;height:100vh;">
+    <div id="raffle-header">
+      <div id="raffle-name"></div>
+      <div id="raffle-desc"></div>
+    </div>
+    <div id="method-tabs"></div>
+    <div id="anim-area" onclick="onAnimAreaClick()"></div>
+    <div id="action-area">
+      <button id="draw-btn" onclick="doDraw()">🎲&nbsp; 뽑기!</button>
+      <div id="stock-info"></div>
+    </div>
+  </div>
+</div>
+
+<div id="result-overlay">
+  <div id="result-box">
+    <div id="result-emoji">🎉</div>
+    <div id="result-sub">당 첨 !</div>
+    <div id="result-name">-</div>
+    <div id="result-remain"></div>
+    <button id="result-confirm-btn" onclick="confirmResult()">확인</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
+  authDomain:"beyhome-admin.firebaseapp.com",
+  projectId:"beyhome-admin",
+  storageBucket:"beyhome-admin.firebasestorage.app",
+  messagingSenderId:"849320781553",
+  appId:"1:849320781553:web:9d844044e85995c0aa2b50"
+});
+const db = firebase.firestore();
+
+const CONFIG_ID = new URLSearchParams(location.search).get('id') || '';
+let cfg = null;
+let curMethod = '';
+let isDrawing = false;
+let hasDrawn = false;  // 1 draw per page load — never resets
+
+/* Idle animation handles */
+let rouletteAngle = -Math.PI / 2;
+let rouletteIdleAnim = null;
+let rouletteSpinAnim = null;
+let slotIdleAnim = null;
+let slotIdleOffset = 0;
+let tombolaAnim = null;
+let tombolaBalls = [];
+
+const METHOD_LABELS = {slot:'슬롯머신', roulette:'룰렛', tombola:'뽑기통'};
+const BALL_COLORS = ['#e74c3c','#3498db','#2ecc71','#e67e22','#9b59b6','#1abc9c','#f39c12','#e91e63','#00bcd4','#8bc34a'];
+
+/* ─── Init ─── */
+async function init(){
+  if(!CONFIG_ID){ showErr('뽑기 ID가 없어요.'); return; }
+  try{
+    const doc = await db.collection('cms_raffle_configs').doc(CONFIG_ID).get();
+    if(!doc.exists){ showErr('뽑기를 찾을 수 없어요.'); return; }
+    cfg = {id:doc.id, ...doc.data()};
+    // Filter out invalid methods (card removed)
+    if(cfg.methods) cfg.methods = cfg.methods.filter(m=>['slot','roulette','tombola'].includes(m));
+    if(!cfg.methods || cfg.methods.length === 0) cfg.methods = ['slot'];
+    renderUI();
+  }catch(e){ showErr('불러오기 실패: '+e.message); }
+}
+
+function showErr(msg){
+  document.getElementById('loading-view').style.display='none';
+  document.getElementById('error-view').style.display='flex';
+  document.getElementById('err-msg').textContent=msg;
+}
+
+function renderUI(){
+  document.getElementById('loading-view').style.display='none';
+  const ui = document.getElementById('main-ui');
+  ui.style.display='flex';
+  document.getElementById('raffle-name').textContent = cfg.name||'뽑기';
+  const d = cfg.description||'';
+  const del = document.getElementById('raffle-desc');
+  del.textContent=d; del.style.display=d?'':'none';
+  const methods = cfg.methods||['slot'];
+  const tabsEl = document.getElementById('method-tabs');
+  if(methods.length<=1){ tabsEl.style.display='none'; }
+  else{
+    tabsEl.innerHTML = methods.map(m=>`<button class="method-btn" data-m="${m}" onclick="selectMethod('${m}')">${METHOD_LABELS[m]||m}</button>`).join('');
+  }
+  selectMethod(methods[0]);
+}
+
+function selectMethod(m){
+  stopAllIdle();
+  curMethod = m;
+  document.querySelectorAll('.method-btn').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
+  renderAnim();
+}
+
+function getAvail(){
+  return (cfg.items||[]).filter(it=>!cfg.deductOnDraw||(it.remainingCount??it.totalCount)>0);
+}
+
+function weightedPick(items){
+  const w = items.map(it=>cfg.deductOnDraw?(it.remainingCount??it.totalCount):it.totalCount);
+  const total = w.reduce((a,b)=>a+b,0);
+  if(total<=0) return null;
+  let r = Math.random()*total;
+  for(let i=0;i<items.length;i++){ r-=w[i]; if(r<=0) return items[i]; }
+  return items[items.length-1];
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+/* ─── Stop all idle animations ─── */
+function stopAllIdle(){
+  if(rouletteIdleAnim){ cancelAnimationFrame(rouletteIdleAnim); rouletteIdleAnim=null; }
+  if(rouletteSpinAnim){ cancelAnimationFrame(rouletteSpinAnim); rouletteSpinAnim=null; }
+  if(slotIdleAnim){ cancelAnimationFrame(slotIdleAnim); slotIdleAnim=null; }
+  if(tombolaAnim){ cancelAnimationFrame(tombolaAnim); tombolaAnim=null; }
+  tombolaBalls=[];
+}
+
+/* ─── SLOT ─── */
+function buildSlot(){
+  return `<div class="slot-machine">${[0,1,2].map(i=>`<div class="slot-reel" id="sr${i}"><div class="slot-strip" id="ss${i}"></div><div class="slot-highlight"></div></div>`).join('')}</div>`;
+}
+
+function fillSlotStrips(items, offsetY){
+  const H = 40;
+  [0,1,2].forEach(i=>{
+    const strip = document.getElementById('ss'+i); if(!strip) return;
+    const pool = [...items,...items,...items,...items,...items,...items,...items,...items];
+    if(!strip.children.length){
+      strip.innerHTML = pool.map(it=>`<div class="slot-cell">${esc(it.name)}</div>`).join('');
+    }
+    strip.style.transition='none';
+    strip.style.transform=`translateY(${-(offsetY||0)}px)`;
+  });
+}
+
+function startSlotIdle(items){
+  slotIdleOffset = 0;
+  const H = 40, totalH = H * items.length * 8;
+  fillSlotStrips(items, 0);
+  function tick(){
+    slotIdleOffset = (slotIdleOffset + 0.4) % totalH;
+    [0,1,2].forEach(i=>{
+      const strip = document.getElementById('ss'+i); if(!strip) return;
+      strip.style.transition='none';
+      strip.style.transform=`translateY(${-slotIdleOffset}px)`;
+    });
+    slotIdleAnim = requestAnimationFrame(tick);
+  }
+  slotIdleAnim = requestAnimationFrame(tick);
+}
+
+function spinSlot(result, items){
+  if(slotIdleAnim){ cancelAnimationFrame(slotIdleAnim); slotIdleAnim=null; }
+  // Rebuild strips fresh for spin
+  const H=40, viewH=120, center=Math.floor(viewH/H/2);
+  const ri = items.findIndex(it=>it.id===result.id);
+  [0,1,2].forEach((col,idx)=>{
+    const strip = document.getElementById('ss'+col); if(!strip) return;
+    const pool = [...items,...items,...items,...items,...items,...items,...items,...items,...items,...items];
+    strip.innerHTML = pool.map(it=>`<div class="slot-cell">${esc(it.name)}</div>`).join('');
+    strip.style.transition='none';
+    strip.style.transform='translateY(0px)';
+    const loops = 5+idx;
+    const targetCell = loops*items.length+ri;
+    const targetY = -(targetCell-center)*H;
+    setTimeout(()=>{
+      strip.style.transition=`transform ${1.8+idx*0.4}s cubic-bezier(0.15,0.85,0.3,1)`;
+      strip.style.transform=`translateY(${targetY}px)`;
+    }, 60+idx*280);
+  });
+}
+
+/* ─── ROULETTE ─── */
+function buildRoulette(){
+  const sz = Math.min(window.innerWidth-48, 280);
+  return `<div id="roulette-outer"><canvas id="rc" width="${sz}" height="${sz}"></canvas><div id="roulette-needle"></div><div id="roulette-center"></div></div>`;
+}
+
+function drawWheel(angle){
+  const canvas = document.getElementById('rc'); if(!canvas) return;
+  const sz=canvas.width, cx=sz/2, cy=sz/2, r=sz/2-4;
+  const ctx = canvas.getContext('2d');
+  const items = cfg.items||[];
+  const total = items.reduce((s,it)=>s+(cfg.deductOnDraw?(it.remainingCount??it.totalCount):it.totalCount),0);
+  ctx.clearRect(0,0,sz,sz);
+  if(total<=0) return;
+  let a = angle;
+  items.forEach((it,i)=>{
+    const cnt = cfg.deductOnDraw?(it.remainingCount??it.totalCount):it.totalCount;
+    const sweep = (cnt/total)*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,a,a+sweep); ctx.closePath();
+    ctx.fillStyle=BALL_COLORS[i%BALL_COLORS.length]; ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.25)'; ctx.lineWidth=1.5; ctx.stroke();
+    if(sweep>0.18){
+      ctx.save(); ctx.translate(cx,cy); ctx.rotate(a+sweep/2);
+      ctx.textAlign='right'; ctx.fillStyle='#fff';
+      ctx.font=`bold ${Math.min(12,Math.max(9,sz/28))}px -apple-system,sans-serif`;
+      const lbl = it.name.length>9?it.name.slice(0,9)+'…':it.name;
+      ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=3;
+      ctx.fillText(lbl,r-10,4); ctx.restore();
+    }
+    a+=sweep;
+  });
+}
+
+function startRouletteIdle(){
+  function tick(){
+    rouletteAngle += 0.004; // ~0.23°/frame at 60fps
+    drawWheel(rouletteAngle);
+    rouletteIdleAnim = requestAnimationFrame(tick);
+  }
+  rouletteIdleAnim = requestAnimationFrame(tick);
+}
+
+function spinRoulette(result, items){
+  if(rouletteIdleAnim){ cancelAnimationFrame(rouletteIdleAnim); rouletteIdleAnim=null; }
+  if(rouletteSpinAnim){ cancelAnimationFrame(rouletteSpinAnim); rouletteSpinAnim=null; }
+  const total = items.reduce((s,it)=>s+(cfg.deductOnDraw?(it.remainingCount??it.totalCount):it.totalCount),0);
+  let segStart = 0;
+  const ri = items.findIndex(it=>it.id===result.id);
+  for(let i=0;i<ri;i++) segStart += ((cfg.deductOnDraw?(items[i].remainingCount??items[i].totalCount):items[i].totalCount)/total)*Math.PI*2;
+  const cnt = cfg.deductOnDraw?(result.remainingCount??result.totalCount):result.totalCount;
+  const slice = (cnt/total)*Math.PI*2;
+  const mid = segStart+slice/2;
+  // needle at top = -π/2 in world coords. We want mid segment at needle.
+  const currentNorm = rouletteAngle % (Math.PI*2);
+  const spins = 6+Math.random()*2;
+  // targetAngle such that (targetAngle + mid) = -π/2 + n*2π
+  const desired = -Math.PI/2 - mid;
+  const diff = ((desired - currentNorm) % (Math.PI*2) + Math.PI*2) % (Math.PI*2);
+  const target = rouletteAngle + diff + Math.PI*2*spins;
+  const dur = 4000, t0 = performance.now(), a0 = rouletteAngle;
+  function tick(now){
+    const t = Math.min((now-t0)/dur, 1);
+    const e = 1-Math.pow(1-t,4); // ease-out-quart
+    rouletteAngle = a0+(target-a0)*e;
+    drawWheel(rouletteAngle);
+    if(t<1){ rouletteSpinAnim=requestAnimationFrame(tick); }
+    else { rouletteSpinAnim=null; }
+  }
+  rouletteSpinAnim = requestAnimationFrame(tick);
+}
+
+/* ─── TOMBOLA ─── */
+function buildTombola(){
+  return `<div id="tombola-wrap"><div id="tombola-box"></div><div id="tombola-result"></div></div>`;
+}
+
+function initTombola(items, speed){
+  if(tombolaAnim){cancelAnimationFrame(tombolaAnim);tombolaAnim=null;}
+  tombolaBalls=[];
+  const box = document.getElementById('tombola-box'); if(!box) return;
+  box.innerHTML='';
+  const count = Math.min(items.length,12);
+  const bw=54, bh=54;
+  const BW=box.offsetWidth||300, BH=box.offsetHeight||190;
+  for(let i=0;i<count;i++){
+    const it = items[i];
+    const el = document.createElement('div'); el.className='t-ball';
+    el.style.background=BALL_COLORS[i%BALL_COLORS.length];
+    el.textContent=it.name.length>7?it.name.slice(0,7)+'…':it.name;
+    const x=Math.random()*(BW-bw), y=Math.random()*(BH-bh);
+    el.style.left=x+'px'; el.style.top=y+'px';
+    box.appendChild(el);
+    const spd = speed||2.2;
+    tombolaBalls.push({el,x,y,vx:(Math.random()-.5)*spd*2,vy:(Math.random()-.5)*spd*2,id:it.id});
+  }
+  const resBall = document.getElementById('tombola-result');
+  if(resBall){ resBall.className=''; resBall.style.cssText='width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;text-align:center;padding:8px;color:#fff;opacity:0;transition:opacity .6s,transform .6s;transform:scale(.6);box-shadow:0 0 30px rgba(255,255,255,.3);'; }
+  animTombola(box,bw,bh,speed||2.2);
+}
+
+function animTombola(box,bw,bh,speed){
+  const BW=box.offsetWidth||300, BH=box.offsetHeight||190;
+  const spd=speed||2.2;
+  tombolaBalls.forEach(b=>{
+    b.x+=b.vx; b.y+=b.vy;
+    if(b.x<0){b.x=0;b.vx=Math.abs(b.vx)+(Math.random()-.5)*.3;}
+    if(b.x>BW-bw){b.x=BW-bw;b.vx=-Math.abs(b.vx)-(Math.random()-.5)*.3;}
+    if(b.y<0){b.y=0;b.vy=Math.abs(b.vy)+(Math.random()-.5)*.3;}
+    if(b.y>BH-bh){b.y=BH-bh;b.vy=-Math.abs(b.vy)-(Math.random()-.5)*.3;}
+    // Keep speed in check
+    const maxV=spd*1.8;
+    b.vx=Math.max(-maxV,Math.min(maxV,b.vx));
+    b.vy=Math.max(-maxV,Math.min(maxV,b.vy));
+    if(Math.random()<0.015){b.vx+=(Math.random()-.5)*spd*.5;b.vy+=(Math.random()-.5)*spd*.5;}
+    b.el.style.left=b.x+'px'; b.el.style.top=b.y+'px';
+  });
+  tombolaAnim=requestAnimationFrame(()=>animTombola(box,bw,bh,spd));
+}
+
+function revealTombolaWinner(result, items){
+  if(tombolaAnim){cancelAnimationFrame(tombolaAnim);tombolaAnim=null;}
+  const ri = items.findIndex(it=>it.id===result.id);
+  const box = document.getElementById('tombola-box');
+  // Hide non-winner balls
+  if(box){
+    const bw=54,bh=54;
+    const BW=box.offsetWidth||300, BH=box.offsetHeight||190;
+    tombolaBalls.forEach((b,i)=>{
+      if(b.id!==result.id){
+        b.el.style.transition='all 0.4s ease';
+        b.el.style.opacity='0.1';
+        b.el.style.transform='scale(0.7)';
+      } else {
+        // Winner ball flies to center
+        b.el.style.transition='all 0.6s cubic-bezier(.2,.8,.3,1.2)';
+        b.el.style.left=(BW/2-bw/2)+'px';
+        b.el.style.top=(BH/2-bh/2)+'px';
+        b.el.style.transform='scale(1.4)';
+        b.el.style.boxShadow='0 0 30px rgba(255,255,255,.6),inset -4px -4px 8px rgba(0,0,0,.3)';
+      }
+    });
+  }
+  // Show result ball below
+  const resBall = document.getElementById('tombola-result');
+  if(resBall){
+    resBall.style.background=BALL_COLORS[ri%BALL_COLORS.length];
+    resBall.textContent=result.name.length>10?result.name.slice(0,10)+'…':result.name;
+    setTimeout(()=>{ resBall.style.opacity='1'; resBall.style.transform='scale(1)'; },300);
+  }
+}
+
+/* ─── Render animation area ─── */
+function renderAnim(){
+  stopAllIdle();
+  const el = document.getElementById('anim-area');
+  const items = cfg.items||[];
+  const avail = getAvail().length>0?getAvail():items;
+  if(curMethod==='slot'){
+    el.innerHTML=buildSlot();
+    setTimeout(()=>startSlotIdle(avail),30);
+  } else if(curMethod==='roulette'){
+    el.innerHTML=buildRoulette();
+    setTimeout(()=>{ drawWheel(rouletteAngle); startRouletteIdle(); },30);
+  } else if(curMethod==='tombola'){
+    el.innerHTML=buildTombola();
+    setTimeout(()=>initTombola(avail, 2.2),30);
+  }
+}
+
+/* ─── Tap area click (also triggers draw) ─── */
+function onAnimAreaClick(){
+  if(!hasDrawn && !isDrawing) doDraw();
+}
+
+/* ─── Draw action ─── */
+async function doDraw(){
+  if(isDrawing || hasDrawn) return;
+  const avail = getAvail();
+  if(avail.length===0){ showEmptyMsg(); return; }
+  isDrawing=true;
+  const btn=document.getElementById('draw-btn');
+  btn.disabled=true;
+
+  // Pre-determine result BEFORE animation starts
+  const result = weightedPick(avail);
+  if(!result){ isDrawing=false; btn.disabled=false; return; }
+
+  if(curMethod==='slot'){
+    btn.textContent='🎰 돌아가는 중…';
+    spinSlot(result, avail);
+    await sleep(2900);
+  } else if(curMethod==='roulette'){
+    btn.textContent='🎡 돌아가는 중…';
+    spinRoulette(result, avail);
+    await sleep(4200);
+  } else if(curMethod==='tombola'){
+    btn.textContent='🎱 섞는 중…';
+    // Speed up idle
+    if(tombolaAnim){cancelAnimationFrame(tombolaAnim);tombolaAnim=null;}
+    const box=document.getElementById('tombola-box');
+    if(box){
+      const bw=54,bh=54;
+      // Increase ball speeds
+      tombolaBalls.forEach(b=>{
+        b.vx*=2.5+(Math.random()*.5); b.vy*=2.5+(Math.random()*.5);
+      });
+      animTombola(box,bw,bh,5);
+    }
+    await sleep(1500);
+    revealTombolaWinner(result, avail);
+    await sleep(800);
+  }
+
+  await resolveResult(result);
+}
+
+function getAvailableForDraw(){
+  return (cfg.items||[]).filter(it=>!cfg.deductOnDraw||(it.remainingCount??it.totalCount)>0);
+}
+
+async function resolveResult(item){
+  if(cfg.deductOnDraw){
+    await deductItem(item);
+    const local = cfg.items.find(it=>it.id===item.id);
+    if(local){ local.remainingCount=Math.max(0,(local.remainingCount??local.totalCount)-1); }
+  } else {
+    await recordDraw(item);
+  }
+  showResultOverlay(item);
+}
+
+function showResultOverlay(item){
+  const remain = cfg.deductOnDraw?Math.max(0,(item.remainingCount??item.totalCount)-1):null;
+  document.getElementById('result-name').textContent=item.name;
+  document.getElementById('result-remain').textContent=
+    cfg.deductOnDraw?`남은 수량: ${remain}개`:'';
+  document.getElementById('result-overlay').classList.add('show');
+  updateStockInfo();
+}
+
+function confirmResult(){
+  // Close overlay and permanently lock
+  document.getElementById('result-overlay').classList.remove('show');
+  hasDrawn = true;
+  isDrawing = false;
+  // Stop all animations
+  stopAllIdle();
+  // Show done screen
+  const animArea = document.getElementById('anim-area');
+  animArea.innerHTML=`<div class="done-msg">뽑기를 완료했어요 ✓</div>`;
+  animArea.style.cursor='default';
+  const btn=document.getElementById('draw-btn');
+  btn.disabled=true;
+  btn.style.opacity='.25';
+  btn.style.cursor='not-allowed';
+  btn.textContent='뽑기 완료';
+  updateStockInfo();
+}
+
+function showEmptyMsg(){
+  const btn=document.getElementById('draw-btn');
+  btn.disabled=true; btn.textContent='모두 소진되었어요';
+}
+
+function updateStockInfo(){
+  const el=document.getElementById('stock-info');
+  if(!cfg.deductOnDraw||!cfg.items?.length){ el.textContent=''; return; }
+  el.innerHTML=(cfg.items||[]).map(it=>{
+    const rem=it.remainingCount??it.totalCount;
+    return `<span style="${rem===0?'color:rgba(255,255,255,.2);text-decoration:line-through':''}">${esc(it.name)}&nbsp;${rem}개</span>`;
+  }).join('&ensp;·&ensp;');
+}
+
+/* ─── Firestore ─── */
+async function deductItem(item){
+  try{
+    const ref=db.collection('cms_raffle_configs').doc(CONFIG_ID);
+    await db.runTransaction(async tx=>{
+      const snap=await tx.get(ref); if(!snap.exists) return;
+      const items=[...(snap.data().items||[])];
+      const idx=items.findIndex(it=>it.id===item.id); if(idx<0) return;
+      const rem=items[idx].remainingCount??items[idx].totalCount;
+      if(rem<=0) return;
+      items[idx]={...items[idx],remainingCount:rem-1};
+      tx.update(ref,{items});
+    });
+    await recordDraw(item);
+  }catch(e){ console.error('deduct',e); }
+}
+
+async function recordDraw(item){
+  try{
+    await db.collection('cms_raffle_records').doc(CONFIG_ID).collection('draws').add({
+      itemId:item.id,
+      itemName:item.name,
+      method:curMethod,
+      drawnAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(e){ console.error('record',e); }
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+init();
+</script>
+</body>
+</html>

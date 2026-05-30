@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>뽑기</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#fff;color:#000;min-height:100vh;}
+
+#app{padding:24px 20px 32px;min-height:100vh;display:flex;flex-direction:column;}
+
+/* States */
+.state-view{flex:1;display:flex;flex-direction:column;}
+.state-view.hidden{display:none!important;}
+
+/* Loading */
+#sv-loading{align-items:center;justify-content:center;gap:12px;}
+.spinner{width:28px;height:28px;border:3px solid rgba(0,0,0,.12);border-top-color:#000;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:14px;color:rgba(0,0,0,.45);font-weight:600;}
+
+/* No-config / No-auth */
+#sv-no-config,#sv-no-auth{align-items:center;justify-content:center;gap:10px;text-align:center;}
+.state-icon{font-size:40px;margin-bottom:4px;}
+.state-title{font-size:16px;font-weight:800;letter-spacing:-.3px;}
+.state-desc{font-size:13px;color:rgba(0,0,0,.45);line-height:1.6;margin-top:4px;}
+
+/* Waiting approval */
+#sv-waiting{align-items:center;justify-content:center;gap:16px;text-align:center;}
+#waiting-qr{background:#f5f5f5;border-radius:16px;padding:20px;display:inline-block;}
+#waiting-qr-inner{width:160px;height:160px;}
+.waiting-label{font-size:15px;font-weight:800;letter-spacing:-.3px;}
+.waiting-sub{font-size:12px;color:rgba(0,0,0,.45);line-height:1.6;}
+.pulse-dot{width:10px;height:10px;background:#000;border-radius:50%;animation:pulse 1.4s ease-in-out infinite;display:inline-block;margin-right:6px;vertical-align:middle;}
+@keyframes pulse{0%,100%{opacity:.3;transform:scale(.85);}50%{opacity:1;transform:scale(1.1);}}
+
+/* Already drawn / Done — ticket */
+#sv-already-drawn,#sv-done{align-items:center;justify-content:center;}
+.ticket-wrap{width:100%;max-width:320px;}
+.ticket{background:#fff;border:2px solid #000;border-radius:18px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.1);}
+.ticket-top{background:#000;color:#fff;padding:16px 20px 14px;text-align:center;}
+.ticket-badge{font-size:10px;font-weight:800;letter-spacing:2px;opacity:.6;margin-bottom:6px;}
+.ticket-item-name{font-size:22px;font-weight:900;letter-spacing:-.4px;line-height:1.3;}
+.ticket-divider{border:none;border-top:2px dashed rgba(0,0,0,.15);margin:0 18px;}
+.ticket-body{padding:18px 20px;}
+.ticket-used-badge{display:inline-block;padding:4px 12px;border:1.5px solid rgba(0,0,0,.2);border-radius:20px;font-size:11px;font-weight:700;color:rgba(0,0,0,.55);margin-bottom:14px;}
+.ticket-used-badge.used{border-color:#e74c3c;color:#e74c3c;}
+.ticket-qr-wrap{display:flex;justify-content:center;margin-bottom:14px;}
+#ticket-qr,#already-ticket-qr{width:130px;height:130px;}
+.ticket-hint{font-size:11px;color:rgba(0,0,0,.35);text-align:center;line-height:1.5;}
+
+/* Ready */
+#sv-ready{align-items:center;justify-content:center;gap:20px;text-align:center;}
+.raffle-header{text-align:center;margin-bottom:4px;}
+.raffle-name{font-size:18px;font-weight:900;letter-spacing:-.3px;}
+.raffle-desc{font-size:12px;color:rgba(0,0,0,.45);line-height:1.5;margin-top:4px;}
+.ready-icon{font-size:52px;}
+.ready-msg{font-size:15px;font-weight:700;letter-spacing:-.2px;color:rgba(0,0,0,.7);}
+
+/* Method tabs */
+.method-tabs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:4px;}
+.method-tab-btn{padding:6px 14px;border:1.5px solid rgba(0,0,0,.2);background:transparent;color:rgba(0,0,0,.5);font-size:12px;font-weight:700;border-radius:20px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .2s;}
+.method-tab-btn.on{background:#000;color:#fff;border-color:#000;}
+
+/* Draw button */
+.draw-btn{width:100%;max-width:280px;padding:16px;background:#000;color:#fff;border:none;border-radius:14px;font-size:18px;font-weight:900;cursor:pointer;font-family:inherit;letter-spacing:1px;transition:transform .1s,opacity .15s;}
+.draw-btn:active{transform:scale(.97);}
+.draw-btn:disabled{opacity:.35;cursor:not-allowed;}
+
+/* Drawing — animation screen */
+#sv-drawing{align-items:center;justify-content:center;gap:16px;background:#0d0d0d;color:#fff;margin:-24px -20px -32px;padding:24px 20px;}
+
+/* Slot (dark) */
+.slot-machine{display:flex;gap:10px;padding:20px 16px;background:rgba(255,255,255,.04);border-radius:20px;border:2px solid rgba(255,255,255,.1);}
+.slot-reel{width:80px;height:112px;overflow:hidden;border-radius:10px;background:#000;border:2px solid rgba(255,255,255,.15);position:relative;}
+.slot-reel::before,.slot-reel::after{content:'';position:absolute;left:0;right:0;height:34px;z-index:2;pointer-events:none;}
+.slot-reel::before{top:0;background:linear-gradient(to bottom,rgba(0,0,0,.95),transparent);}
+.slot-reel::after{bottom:0;background:linear-gradient(to top,rgba(0,0,0,.95),transparent);}
+.slot-highlight{position:absolute;top:50%;left:0;right:0;transform:translateY(-50%);height:38px;border-top:2px solid rgba(255,215,0,.9);border-bottom:2px solid rgba(255,215,0,.9);pointer-events:none;z-index:3;background:rgba(255,215,0,.06);}
+.slot-strip{display:flex;flex-direction:column;}
+.slot-cell{width:80px;height:38px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;text-align:center;padding:4px;color:#fff;line-height:1.3;}
+
+/* Roulette (dark) */
+#r-outer{position:relative;display:inline-block;}
+#r-canvas{display:block;border-radius:50%;box-shadow:0 0 40px rgba(0,0,0,.6);}
+#r-needle{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:30px solid #fff;filter:drop-shadow(0 2px 6px rgba(0,0,0,.7));z-index:5;}
+#r-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;background:#fff;border-radius:50%;border:3px solid #333;z-index:4;}
+
+/* Tombola (dark) */
+#t-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:320px;}
+#t-box{width:100%;height:180px;border:2.5px solid rgba(255,255,255,.2);border-radius:20px;background:rgba(255,255,255,.04);overflow:hidden;position:relative;}
+.t-ball{position:absolute;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;text-align:center;padding:5px;color:#fff;line-height:1.2;box-shadow:inset -4px -4px 8px rgba(0,0,0,.3),inset 2px 2px 4px rgba(255,255,255,.2);}
+#t-result{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;text-align:center;padding:8px;color:#fff;opacity:0;transition:opacity .6s,transform .6s;transform:scale(.6);box-shadow:0 0 30px rgba(255,255,255,.3);}
+#t-result.show{opacity:1;transform:scale(1);}
+
+.drawing-label{font-size:13px;color:rgba(255,255,255,.5);font-weight:700;letter-spacing:.5px;}
+
+/* Stock info */
+.stock-info{font-size:11px;color:rgba(0,0,0,.35);text-align:center;line-height:1.8;margin-top:8px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Loading -->
+  <div id="sv-loading" class="state-view" style="display:flex;">
+    <div class="spinner"></div>
+    <div class="loading-text">불러오는 중…</div>
+  </div>
+
+  <!-- No config -->
+  <div id="sv-no-config" class="state-view hidden">
+    <div class="state-icon">❓</div>
+    <div class="state-title">뽑기 설정을 찾을 수 없어요</div>
+    <div class="state-desc">관리자에게 문의해주세요.</div>
+  </div>
+
+  <!-- No auth -->
+  <div id="sv-no-auth" class="state-view hidden">
+    <div class="state-icon">🔒</div>
+    <div class="state-title">로그인 후 이용할 수 있어요</div>
+    <div class="state-desc">프로젝트에 로그인하고 다시 시도해주세요.</div>
+  </div>
+
+  <!-- Waiting approval -->
+  <div id="sv-waiting" class="state-view hidden">
+    <div id="waiting-qr">
+      <div id="waiting-qr-inner"></div>
+    </div>
+    <div class="waiting-label"><span class="pulse-dot"></span>체커의 확인을 기다리는 중…</div>
+    <div class="waiting-sub">체커가 QR을 스캔하면<br>자동으로 진행됩니다.</div>
+  </div>
+
+  <!-- Already drawn -->
+  <div id="sv-already-drawn" class="state-view hidden">
+    <div class="ticket-wrap">
+      <div class="ticket">
+        <div class="ticket-top">
+          <div class="ticket-badge">MY TICKET</div>
+          <div class="ticket-item-name" id="already-item-name">-</div>
+        </div>
+        <hr class="ticket-divider">
+        <div class="ticket-body">
+          <div id="already-used-badge" class="ticket-used-badge">사용 여부: 미사용</div>
+          <div class="ticket-qr-wrap">
+            <div id="already-ticket-qr"></div>
+          </div>
+          <div class="ticket-hint">체커에게 QR을 보여주세요</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ready -->
+  <div id="sv-ready" class="state-view hidden">
+    <div>
+      <div class="raffle-name" id="ready-raffle-name"></div>
+      <div class="raffle-desc" id="ready-raffle-desc"></div>
+    </div>
+    <div class="ready-icon">🎲</div>
+    <div class="ready-msg">준비됐어요! 뽑기를 시작하세요</div>
+    <div class="method-tabs" id="method-tabs"></div>
+    <button class="draw-btn" id="draw-btn" onclick="startDraw()">뽑기 시작!</button>
+    <div class="stock-info" id="stock-info"></div>
+  </div>
+
+  <!-- Drawing (animation) -->
+  <div id="sv-drawing" class="state-view hidden">
+    <div id="anim-inner"></div>
+    <div class="drawing-label" id="drawing-label">뽑는 중…</div>
+  </div>
+
+  <!-- Done — ticket -->
+  <div id="sv-done" class="state-view hidden">
+    <div class="ticket-wrap">
+      <div class="ticket">
+        <div class="ticket-top">
+          <div class="ticket-badge">당 첨 🎉</div>
+          <div class="ticket-item-name" id="done-item-name">-</div>
+        </div>
+        <hr class="ticket-divider">
+        <div class="ticket-body">
+          <div class="ticket-used-badge">사용 여부: 미사용</div>
+          <div class="ticket-qr-wrap">
+            <div id="ticket-qr"></div>
+          </div>
+          <div class="ticket-hint">체커에게 QR을 보여주세요</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- #app -->
+
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",
+  authDomain:"beyhome-admin.firebaseapp.com",
+  projectId:"beyhome-admin",
+  storageBucket:"beyhome-admin.firebasestorage.app",
+  messagingSenderId:"849320781553",
+  appId:"1:849320781553:web:9d844044e85995c0aa2b50"
+});
+const db = firebase.firestore();
+const FS = firebase.firestore;
+
+/* ─── lmp-context ─── */
+let ctxProjectId = '';
+let ctxUserId = '';
+let ctxUserFields = {};
+let ctxBlockId = '';
+let _ctxReady = false;
+
+function _lmpOriginOk(e){
+  const o = e.origin;
+  return o===location.origin || o==='https://lazymaxpotential.kr' || o.endsWith('.vercel.app') || o==='null';
+}
+
+window.addEventListener('message', e => {
+  if(!_lmpOriginOk(e)) return;
+  if(e.data?.type !== 'lmp-context') return;
+  ctxProjectId = e.data.projectId || '';
+  ctxUserId    = e.data.userId    || '';
+  ctxUserFields = e.data.userFields || {};
+  ctxBlockId   = e.data.blockId   || '';
+  if(!_ctxReady){ _ctxReady=true; onContextReady(); }
+});
+window.parent.postMessage({ type: 'lmp-ready' }, '*');
+
+// Fallback: if no lmp-context within 1.5s, proceed without auth (standalone preview)
+setTimeout(()=>{ if(!_ctxReady){ _ctxReady=true; onContextReady(); } }, 1500);
+
+/* ─── Config & state ─── */
+const RAFFLE_ID = new URLSearchParams(location.search).get('id') || '';
+let cfg = null;
+let curMethod = '';
+let checkerUnsub = null;
+
+const BALL_COLORS = ['#e74c3c','#3498db','#2ecc71','#e67e22','#9b59b6','#1abc9c','#f39c12','#e91e63','#00bcd4','#8bc34a'];
+const METHOD_LABELS = {slot:'슬롯머신', roulette:'룰렛', tombola:'뽑기통'};
+
+/* ─── Entry point ─── */
+async function onContextReady(){
+  if(!RAFFLE_ID){ showState('no-config'); return; }
+  if(!ctxUserId){ showState('no-auth'); return; }
+
+  try{
+    const doc = await db.collection('cms_raffle_configs').doc(RAFFLE_ID).get();
+    if(!doc.exists){ showState('no-config'); return; }
+    cfg = {id:doc.id, ...doc.data()};
+    // Filter to valid methods only
+    if(cfg.methods) cfg.methods = cfg.methods.filter(m=>['slot','roulette','tombola'].includes(m));
+    if(!cfg.methods || !cfg.methods.length) cfg.methods = ['slot'];
+
+    // Check if already drawn
+    const userRef = db.collection(`cms_users_${ctxProjectId}`).doc(ctxUserId);
+    const userDoc = await userRef.get();
+    const userData = userDoc.exists ? userDoc.data() : {};
+    const priorResult = userData.raffleResults?.[RAFFLE_ID];
+
+    if(priorResult){
+      showAlreadyDrawn(priorResult, userData);
+      return;
+    }
+
+    // Checker approval gate
+    if(cfg.requireCheckerApproval){
+      const checks = userData.externalChecks?.[ctxBlockId];
+      if(!checks || !checks.length){
+        showWaitingApproval(userRef);
+        return;
+      }
+    }
+
+    showReady();
+  }catch(e){
+    console.error('init error',e);
+    showState('no-config');
+  }
+}
+
+/* ─── Already drawn ─── */
+function showAlreadyDrawn(result, userData){
+  document.getElementById('already-item-name').textContent = result.itemName || result.itemId || '-';
+  const used = !!result.used;
+  const badge = document.getElementById('already-used-badge');
+  badge.textContent = used?'사용 여부: 사용됨':'사용 여부: 미사용';
+  badge.className = 'ticket-used-badge'+(used?' used':'');
+  // Generate QR
+  const qrContent = `RAFFLE:${RAFFLE_ID}:${ctxProjectId}:${ctxUserId}`;
+  makeQR('already-ticket-qr', qrContent);
+  showState('already-drawn');
+}
+
+/* ─── Waiting approval ─── */
+function showWaitingApproval(userRef){
+  // Use same format as mission QR: {projectId}:{userId}:{blockId}
+  const qrContent = `${ctxProjectId}:${ctxUserId}:${ctxBlockId}`;
+  makeQR('waiting-qr-inner', qrContent);
+  showState('waiting-approval');
+  // Listen for approval
+  if(checkerUnsub) checkerUnsub();
+  checkerUnsub = userRef.onSnapshot(snap=>{
+    const data = snap.data()||{};
+    const checks = data.externalChecks?.[ctxBlockId];
+    if(checks && checks.length){
+      if(checkerUnsub){ checkerUnsub(); checkerUnsub=null; }
+      // Check again if already drawn (edge case)
+      const prior = data.raffleResults?.[RAFFLE_ID];
+      if(prior){ showAlreadyDrawn(prior, data); return; }
+      showReady();
+    }
+  });
+}
+
+/* ─── Ready ─── */
+function showReady(){
+  document.getElementById('ready-raffle-name').textContent = cfg.name||'뽑기';
+  const desc = cfg.description||'';
+  const descEl = document.getElementById('ready-raffle-desc');
+  descEl.textContent=desc; descEl.style.display=desc?'':'none';
+
+  // Method tabs
+  const tabsEl = document.getElementById('method-tabs');
+  if(cfg.methods.length<=1){
+    tabsEl.style.display='none';
+    curMethod = cfg.methods[0];
+  } else {
+    tabsEl.innerHTML = cfg.methods.map(m=>`<button class="method-tab-btn" data-m="${m}" onclick="selectMethod('${m}')">${METHOD_LABELS[m]||m}</button>`).join('');
+    selectMethod(cfg.methods[0]);
+  }
+  updateStockInfo();
+  showState('ready');
+}
+
+function selectMethod(m){
+  curMethod=m;
+  document.querySelectorAll('.method-tab-btn').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
+}
+
+function getAvail(){
+  return (cfg.items||[]).filter(it=>!cfg.deductOnDraw||(it.remainingCount??it.totalCount)>0);
+}
+
+function weightedPick(items){
+  const w = items.map(it=>cfg.deductOnDraw?(it.remainingCount??it.totalCount):it.totalCount);
+  const total = w.reduce((a,b)=>a+b,0);
+  if(total<=0) return null;
+  let r=Math.random()*total;
+  for(let i=0;i<items.length;i++){ r-=w[i]; if(r<=0) return items[i]; }
+  return items[items.length-1];
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function updateStockInfo(){
+  const el = document.getElementById('stock-info');
+  if(!el) return;
+  if(!cfg.deductOnDraw||!cfg.items?.length){ el.textContent=''; return; }
+  el.innerHTML=(cfg.items||[]).map(it=>{
+    const rem=it.remainingCount??it.totalCount;
+    return `<span style="${rem===0?'opacity:.3;text-decoration:line-through':''}">${esc(it.name)}&nbsp;${rem}개</span>`;
+  }).join('&ensp;·&ensp;');
+}
+
+/* ─── Drawing ─── */
+let _drawAnim = null;
+let _rouletteAngle = -Math.PI/2;
+let _tombolaBalls = [];
+let _tombAnimId = null;
+
+async function startDraw(){
+  const avail = getAvail();
+  if(!avail.length){
+    document.getElementById('draw-btn').disabled=true;
+    document.getElementById('draw-btn').textContent='모두 소진됐어요';
+    return;
+  }
+  document.getElementById('draw-btn').disabled=true;
+  const result = weightedPick(avail);
+  if(!result) return;
+
+  showState('drawing');
+  const inner = document.getElementById('anim-inner');
+  const lbl = document.getElementById('drawing-label');
+
+  if(curMethod==='slot' || !curMethod){
+    lbl.textContent='슬롯 돌아가는 중…';
+    inner.innerHTML=buildSlot();
+    spinSlot(result, avail);
+    await sleep(2900);
+  } else if(curMethod==='roulette'){
+    lbl.textContent='룰렛 돌아가는 중…';
+    inner.innerHTML=buildRoulette();
+    setTimeout(()=>drawWheel(_rouletteAngle),20);
+    await sleep(100);
+    spinRoulette(result, avail);
+    await sleep(4200);
+  } else if(curMethod==='tombola'){
+    lbl.textContent='뽑기통 섞는 중…';
+    inner.innerHTML=buildTombola();
+    await sleep(50);
+    initTombola(avail);
+    await sleep(1500);
+    revealTombolaWinner(result, avail);
+    await sleep(900);
+  }
+
+  // Cancel any lingering animation
+  if(_tombAnimId){cancelAnimationFrame(_tombAnimId);_tombAnimId=null;}
+
+  await finalizeDraw(result);
+}
+
+/* ─── SLOT ─── */
+function buildSlot(){
+  return `<div class="slot-machine">${[0,1,2].map(i=>`<div class="slot-reel" id="dsr${i}"><div class="slot-strip" id="dss${i}"></div><div class="slot-highlight"></div></div>`).join('')}</div>`;
+}
+function spinSlot(result, items){
+  const H=38, viewH=112, center=Math.floor(viewH/H/2);
+  const ri = items.findIndex(it=>it.id===result.id);
+  [0,1,2].forEach((col,idx)=>{
+    const strip = document.getElementById('dss'+col); if(!strip) return;
+    const pool = [...items,...items,...items,...items,...items,...items,...items,...items,...items];
+    strip.innerHTML = pool.map(it=>`<div class="slot-cell">${esc(it.name)}</div>`).join('');
+    strip.style.transition='none'; strip.style.transform='translateY(0px)';
+    const loops=5+idx, targetCell=loops*items.length+ri, targetY=-(targetCell-center)*H;
+    setTimeout(()=>{
+      strip.style.transition=`transform ${1.8+idx*0.4}s cubic-bezier(0.15,0.85,0.3,1)`;
+      strip.style.transform=`translateY(${targetY}px)`;
+    }, 60+idx*280);
+  });
+}
+
+/* ─── ROULETTE ─── */
+function buildRoulette(){
+  const sz = Math.min((window.innerWidth||360)-60, 240);
+  return `<div id="r-outer"><canvas id="r-canvas" width="${sz}" height="${sz}"></canvas><div id="r-needle"></div><div id="r-center"></div></div>`;
+}
+function drawWheel(angle){
+  const canvas = document.getElementById('r-canvas'); if(!canvas) return;
+  const sz=canvas.width, cx=sz/2, cy=sz/2, r=sz/2-4;
+  const ctx=canvas.getContext('2d');
+  const items=cfg.items||[];
+  const total=items.reduce((s,it)=>s+(cfg.deductOnDraw?(it.remainingCount??it.totalCount):it.totalCount),0);
+  ctx.clearRect(0,0,sz,sz);
+  if(total<=0) return;
+  let a=angle;
+  items.forEach((it,i)=>{
+    const cnt=cfg.deductOnDraw?(it.remainingCount??it.totalCount):it.totalCount;
+    const sweep=(cnt/total)*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+sweep); ctx.closePath();
+    ctx.fillStyle=BALL_COLORS[i%BALL_COLORS.length]; ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.25)'; ctx.lineWidth=1.5; ctx.stroke();
+    if(sweep>0.18){
+      ctx.save(); ctx.translate(cx,cy); ctx.rotate(a+sweep/2);
+      ctx.textAlign='right'; ctx.fillStyle='#fff';
+      ctx.font=`bold ${Math.min(11,Math.max(8,sz/28))}px -apple-system,sans-serif`;
+      const lbl=it.name.length>8?it.name.slice(0,8)+'…':it.name;
+      ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=3;
+      ctx.fillText(lbl,r-8,4); ctx.restore();
+    }
+    a+=sweep;
+  });
+}
+function spinRoulette(result, items){
+  const total=items.reduce((s,it)=>s+(cfg.deductOnDraw?(it.remainingCount??it.totalCount):it.totalCount),0);
+  let segStart=0;
+  const ri=items.findIndex(it=>it.id===result.id);
+  for(let i=0;i<ri;i++) segStart+=((cfg.deductOnDraw?(items[i].remainingCount??items[i].totalCount):items[i].totalCount)/total)*Math.PI*2;
+  const cnt=cfg.deductOnDraw?(result.remainingCount??result.totalCount):result.totalCount;
+  const slice=(cnt/total)*Math.PI*2;
+  const mid=segStart+slice/2;
+  const currentNorm=_rouletteAngle%(Math.PI*2);
+  const spins=6+Math.random()*2;
+  const desired=-Math.PI/2-mid;
+  const diff=((desired-currentNorm)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+  const target=_rouletteAngle+diff+Math.PI*2*spins;
+  const dur=4000, t0=performance.now(), a0=_rouletteAngle;
+  function tick(now){
+    const t=Math.min((now-t0)/dur,1), e=1-Math.pow(1-t,4);
+    _rouletteAngle=a0+(target-a0)*e;
+    drawWheel(_rouletteAngle);
+    if(t<1) _drawAnim=requestAnimationFrame(tick); else _drawAnim=null;
+  }
+  _drawAnim=requestAnimationFrame(tick);
+}
+
+/* ─── TOMBOLA ─── */
+function buildTombola(){
+  return `<div id="t-wrap"><div id="t-box"></div><div id="t-result"></div></div>`;
+}
+function initTombola(items){
+  _tombolaBalls=[];
+  const box=document.getElementById('t-box'); if(!box) return;
+  box.innerHTML='';
+  const count=Math.min(items.length,10), bw=52, bh=52;
+  const BW=box.offsetWidth||280, BH=box.offsetHeight||180;
+  for(let i=0;i<count;i++){
+    const it=items[i];
+    const el=document.createElement('div'); el.className='t-ball';
+    el.style.background=BALL_COLORS[i%BALL_COLORS.length];
+    el.textContent=it.name.length>7?it.name.slice(0,7)+'…':it.name;
+    const x=Math.random()*(BW-bw), y=Math.random()*(BH-bh);
+    el.style.left=x+'px'; el.style.top=y+'px';
+    box.appendChild(el);
+    _tombolaBalls.push({el,x,y,vx:(Math.random()-.5)*5,vy:(Math.random()-.5)*5,id:it.id});
+  }
+  const res=document.getElementById('t-result');
+  if(res){ res.style.cssText='width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;text-align:center;padding:8px;color:#fff;opacity:0;transition:opacity .6s,transform .6s;transform:scale(.6);box-shadow:0 0 30px rgba(255,255,255,.3);'; }
+  animTombola(box,bw,bh);
+}
+function animTombola(box,bw,bh){
+  const BW=box.offsetWidth||280, BH=box.offsetHeight||180;
+  _tombolaBalls.forEach(b=>{
+    b.x+=b.vx; b.y+=b.vy;
+    if(b.x<0){b.x=0;b.vx=Math.abs(b.vx)+(Math.random()-.5)*.3;}
+    if(b.x>BW-bw){b.x=BW-bw;b.vx=-Math.abs(b.vx)-(Math.random()-.5)*.3;}
+    if(b.y<0){b.y=0;b.vy=Math.abs(b.vy)+(Math.random()-.5)*.3;}
+    if(b.y>BH-bh){b.y=BH-bh;b.vy=-Math.abs(b.vy)-(Math.random()-.5)*.3;}
+    const mv=6;
+    b.vx=Math.max(-mv,Math.min(mv,b.vx)); b.vy=Math.max(-mv,Math.min(mv,b.vy));
+    if(Math.random()<0.02){b.vx+=(Math.random()-.5)*2;b.vy+=(Math.random()-.5)*2;}
+    b.el.style.left=b.x+'px'; b.el.style.top=b.y+'px';
+  });
+  _tombAnimId=requestAnimationFrame(()=>animTombola(box,bw,bh));
+}
+function revealTombolaWinner(result, items){
+  if(_tombAnimId){cancelAnimationFrame(_tombAnimId);_tombAnimId=null;}
+  const ri=items.findIndex(it=>it.id===result.id);
+  const box=document.getElementById('t-box');
+  if(box){
+    const bw=52,bh=52;
+    const BW=box.offsetWidth||280, BH=box.offsetHeight||180;
+    _tombolaBalls.forEach(b=>{
+      if(b.id!==result.id){
+        b.el.style.transition='all .4s ease'; b.el.style.opacity='0.1'; b.el.style.transform='scale(.7)';
+      } else {
+        b.el.style.transition='all .6s cubic-bezier(.2,.8,.3,1.2)';
+        b.el.style.left=(BW/2-bw/2)+'px'; b.el.style.top=(BH/2-bh/2)+'px';
+        b.el.style.transform='scale(1.4)';
+        b.el.style.boxShadow='0 0 30px rgba(255,255,255,.6),inset -4px -4px 8px rgba(0,0,0,.3)';
+      }
+    });
+  }
+  const res=document.getElementById('t-result');
+  if(res){
+    res.style.background=BALL_COLORS[ri%BALL_COLORS.length];
+    res.textContent=result.name.length>10?result.name.slice(0,10)+'…':result.name;
+    setTimeout(()=>{ res.style.opacity='1'; res.style.transform='scale(1)'; },300);
+  }
+}
+
+/* ─── Finalize & save ─── */
+async function finalizeDraw(item){
+  const now = new Date();
+  const resultData = { itemId:item.id, itemName:item.name, drawnAt:now, used:false };
+
+  try{
+    // Save to user doc
+    const userRef = db.collection(`cms_users_${ctxProjectId}`).doc(ctxUserId);
+    await userRef.set({ raffleResults: { [RAFFLE_ID]: resultData } }, {merge:true});
+
+    // Save to raffle entries collection
+    await db.collection('cms_raffle_records').doc(RAFFLE_ID)
+      .collection('entries').doc(ctxUserId).set({
+        itemId: item.id,
+        itemName: item.name,
+        projectId: ctxProjectId,
+        userId: ctxUserId,
+        userFields: ctxUserFields,
+        drawnAt: FS.FieldValue.serverTimestamp(),
+        used: false
+      });
+
+    // Deduct count if configured
+    if(cfg.deductOnDraw){
+      const cfgRef = db.collection('cms_raffle_configs').doc(RAFFLE_ID);
+      await db.runTransaction(async tx=>{
+        const snap = await tx.get(cfgRef); if(!snap.exists) return;
+        const items2 = [...(snap.data().items||[])];
+        const idx = items2.findIndex(it=>it.id===item.id); if(idx<0) return;
+        const rem = items2[idx].remainingCount??items2[idx].totalCount;
+        if(rem<=0) return;
+        items2[idx]={...items2[idx], remainingCount:rem-1};
+        tx.update(cfgRef,{items:items2});
+      });
+    }
+  }catch(e){ console.error('save draw result',e); }
+
+  // Send completion signal
+  window.parent.postMessage({ type: 'lmp-tool-complete' }, '*');
+
+  showTicket(item);
+}
+
+function showTicket(item){
+  document.getElementById('done-item-name').textContent = item.name;
+  const qrContent = `RAFFLE:${RAFFLE_ID}:${ctxProjectId}:${ctxUserId}`;
+  makeQR('ticket-qr', qrContent);
+  showState('done');
+}
+
+/* ─── QR generator ─── */
+function makeQR(containerId, text){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML='';
+  try{
+    new QRCode(el, {
+      text,
+      width: 130,
+      height: 130,
+      colorDark: '#000',
+      colorLight: '#fff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  }catch(e){ el.textContent='QR 생성 실패'; console.error(e); }
+}
+
+/* ─── Helpers ─── */
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ─── showState (corrected for hyphenated IDs) ─── */
+// Override with explicit ID mapping
+const STATE_IDS = {
+  'loading': 'sv-loading',
+  'no-config': 'sv-no-config',
+  'no-auth': 'sv-no-auth',
+  'waiting-approval': 'sv-waiting',
+  'already-drawn': 'sv-already-drawn',
+  'ready': 'sv-ready',
+  'drawing': 'sv-drawing',
+  'done': 'sv-done'
+};
+
+function showState(name){
+  Object.entries(STATE_IDS).forEach(([s,id])=>{
+    const el=document.getElementById(id);
+    if(el) el.classList.toggle('hidden', s!==name);
+  });
+}
+</script>
+</body>
+</html>

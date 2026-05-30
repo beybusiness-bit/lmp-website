@@ -63,6 +63,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .result-wrap{display:none;margin-top:16px;padding:16px;border-radius:4px;text-align:center;}
 .result-wrap.ok{background:rgba(0,180,80,.1);border:1.5px solid rgba(0,180,80,.3);}
 .result-wrap.err{background:rgba(204,0,0,.08);border:1.5px solid rgba(204,0,0,.25);}
+.result-wrap.warn{background:rgba(220,130,0,.1);border:1.5px solid rgba(220,130,0,.35);}
 .result-icon{font-size:32px;margin-bottom:6px;}
 .result-title{font-size:16px;font-weight:800;margin-bottom:4px;}
 .result-sub{font-size:12px;color:rgba(0,0,0,.5);line-height:1.5;}
@@ -78,17 +79,38 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .hi-block{color:rgba(0,0,0,.5);}
 .hi-time{font-size:11px;color:rgba(0,0,0,.3);margin-left:auto;white-space:nowrap;}
 
-/* Label picker */
-.lp-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
-.lp-sheet{width:100%;max-width:430px;background:#fff;border-radius:14px 14px 0 0;padding:20px 20px 44px;}
-.lp-title{font-size:14px;font-weight:800;text-align:center;margin-bottom:16px;}
-.lp-btn{display:block;width:100%;padding:14px;border:none;background:#000;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:4px;margin-bottom:8px;}
-.lp-btn.sec{background:#fff;color:#000;border:2px solid #000;}
-.lp-cancel{display:block;width:100%;padding:12px;background:transparent;border:none;color:rgba(0,0,0,.45);font-size:13px;cursor:pointer;font-family:inherit;margin-top:4px;}
-.lp-divider{font-size:11px;color:rgba(0,0,0,.3);text-align:center;margin:10px 0;}
-.lp-custom-row{display:flex;gap:8px;align-items:center;}
-.lp-custom-inp{flex:1;background:transparent;border:none;border-bottom:1.5px solid rgba(0,0,0,.3);font-size:15px;color:#000;padding:8px 0;outline:none;font-family:inherit;}
-.lp-custom-ok{padding:9px 14px;background:#000;border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+/* ── 사용자 패널 (확인 + 일괄 체크) ── */
+.up-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:flex-end;justify-content:center;}
+.up-sheet{width:100%;max-width:430px;background:#fff;border-radius:14px 14px 0 0;padding:20px 20px 0;max-height:82vh;display:flex;flex-direction:column;overflow:hidden;}
+.up-drag-bar{width:36px;height:4px;background:rgba(0,0,0,.15);border-radius:2px;margin:0 auto 16px;}
+.up-user-hd{font-size:18px;font-weight:800;margin-bottom:2px;}
+.up-user-sub{font-size:12px;color:rgba(0,0,0,.4);margin-bottom:14px;}
+.up-label-section{padding:12px 14px;background:#f5f5f5;border-radius:8px;margin-bottom:14px;flex-shrink:0;}
+.up-label-title{font-size:10px;font-weight:800;color:rgba(0,0,0,.4);letter-spacing:.6px;margin-bottom:8px;}
+.up-label-btns{display:flex;gap:6px;flex-wrap:wrap;}
+.up-label-btn{padding:7px 14px;border:2px solid #ddd;background:#fff;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;}
+.up-label-btn.sel{border-color:#000;background:#000;color:#fff;}
+.up-missions-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-shrink:0;}
+.up-missions-title{font-size:11px;font-weight:800;color:rgba(0,0,0,.4);letter-spacing:.5px;}
+.up-select-all{font-size:11px;color:rgba(0,0,0,.5);cursor:pointer;text-decoration:underline;padding:2px 0;}
+.up-missions-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-bottom:8px;}
+.up-mission-item{display:flex;align-items:flex-start;gap:10px;padding:12px;border:2px solid #eee;border-radius:8px;cursor:pointer;transition:all .15s;user-select:none;}
+.up-mission-item.sel{border-color:#000;background:#f8f8f8;}
+.up-mission-item.already-done{opacity:.5;cursor:default;}
+.up-mi-check{width:20px;height:20px;border:2px solid #ccc;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-top:1px;transition:all .15s;}
+.up-mi-check.checked{background:#000;border-color:#000;color:#fff;}
+.up-mi-info{flex:1;min-width:0;}
+.up-mi-stage{font-size:10px;color:rgba(0,0,0,.4);margin-bottom:2px;}
+.up-mi-name{font-size:13px;font-weight:700;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.up-mi-badges{display:flex;gap:4px;flex-wrap:wrap;}
+.up-mi-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#eee;color:rgba(0,0,0,.55);}
+.up-mi-badge.mine{background:#000;color:#fff;}
+.up-actions{flex-shrink:0;padding:12px 0 32px;}
+.up-confirm-btn{width:100%;padding:15px;background:#000;border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;border-radius:4px;transition:opacity .15s;}
+.up-confirm-btn:disabled{opacity:.3;cursor:not-allowed;}
+.up-cancel-btn{display:block;width:100%;padding:11px;background:transparent;border:none;color:rgba(0,0,0,.4);font-size:13px;cursor:pointer;font-family:inherit;margin-top:6px;}
+.up-loading{padding:30px;text-align:center;color:rgba(0,0,0,.4);font-size:13px;}
+.up-spinner{width:22px;height:22px;border:2.5px solid rgba(0,0,0,.1);border-top-color:#000;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px;}
 </style>
 </head>
 <body>
@@ -127,7 +149,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
     </div>
 
     <div class="scanner-wrap">
-      <div class="scan-hint">사용자의 미션 QR을 스캔하면<br>해당 미션에 확인 배지가 즉시 표시됩니다.</div>
+      <div class="scan-hint">사용자의 미션 QR을 스캔하면<br>미션 목록을 확인하고 일괄 처리할 수 있어요.</div>
 
       <button class="scan-btn" id="scan-btn" onclick="toggleScan()">
         📷&nbsp; QR 스캔 시작
@@ -145,7 +167,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
       </div>
       <button class="scan-stop-btn" id="scan-stop-btn" onclick="stopScan()" style="display:none;">■ 스캔 중단</button>
 
-      <!-- 비밀번호 폴백 -->
+      <!-- 코드 직접 입력 -->
       <div class="pw-section">
         <div class="pw-toggle" onclick="togglePwForm()">QR 스캔 대신 코드 직접 입력</div>
         <div class="pw-form" id="pw-form">
@@ -176,18 +198,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 
 </div>
 
-<!-- 문구 선택 모달 (복수 confirmLabels) -->
-<div class="lp-backdrop" id="lp-backdrop" style="display:none;">
-  <div class="lp-sheet">
-    <div class="lp-title">확인 배지 문구 선택</div>
-    <div id="lp-list"></div>
-    <div class="lp-divider">— 또는 직접 입력 —</div>
-    <div class="lp-custom-row">
-      <input class="lp-custom-inp" id="lp-custom-inp" placeholder="문구 직접 입력"
-        onkeydown="if(event.key==='Enter')_confirmLabelPickerCustom()">
-      <button class="lp-custom-ok" onclick="_confirmLabelPickerCustom()">확인</button>
+<!-- 사용자 패널 (확인 확인 + 라벨 선택 + 일괄 체크) -->
+<div class="up-backdrop" id="up-backdrop" style="display:none;" onclick="_upBackdropClick(event)">
+  <div class="up-sheet" id="up-sheet">
+    <div class="up-drag-bar"></div>
+    <div class="up-user-hd" id="up-user-hd"></div>
+    <div class="up-user-sub" id="up-user-sub"></div>
+
+    <!-- 배지 문구 선택 (복수 레이블 있을 때만) -->
+    <div class="up-label-section" id="up-label-section" style="display:none;">
+      <div class="up-label-title">확인 배지 문구 선택</div>
+      <div class="up-label-btns" id="up-label-btns"></div>
     </div>
-    <button class="lp-cancel" onclick="_cancelLabelPicker()">취소</button>
+
+    <!-- 미션 목록 -->
+    <div class="up-missions-hd">
+      <div class="up-missions-title">미션 목록</div>
+      <span class="up-select-all" id="up-select-all-btn" onclick="_upSelectAllPending()">미완료 전체 선택</span>
+    </div>
+    <div class="up-missions-list" id="up-missions-list">
+      <div class="up-loading"><div class="up-spinner"></div>미션 목록 불러오는 중…</div>
+    </div>
+
+    <div class="up-actions">
+      <button class="up-confirm-btn" id="up-confirm-btn" onclick="_confirmUserPanel()" disabled>미션을 선택하세요</button>
+      <button class="up-cancel-btn" onclick="_closeUserPanel()">취소</button>
+    </div>
   </div>
 </div>
 
@@ -206,7 +242,6 @@ firebase.initializeApp({
 const db = firebase.firestore();
 
 /* ── URL에서 projectId 추출 ── */
-// /check/{projectId} 또는 /check/?p={projectId}
 const _path = window.location.pathname.replace(/\/$/, '').split('/');
 const PROJECT_ID = _path[_path.length - 1] !== 'check'
   ? _path[_path.length - 1]
@@ -215,7 +250,7 @@ const PROJECT_ID = _path[_path.length - 1] !== 'check'
 let projectData = null;
 let authFields = [];
 let AUTH_COLLECTION = '';
-let checkerSession = null; // { userId, userName, roleId, roleName }
+let checkerSession = null; // { userId, userName, roleId, roleName, confirmLabels }
 let scanActive = false;
 let scanStream = null;
 let scanRaf = null;
@@ -225,11 +260,8 @@ const checkHistory = [];
 async function init() {
   if (!PROJECT_ID) { showView('no-project'); return; }
 
-  // 세션 복원
   const saved = _getSavedSession();
-  if (saved) {
-    checkerSession = saved;
-  }
+  if (saved) checkerSession = saved;
 
   try {
     const doc = await db.collection('cms_projects').doc(PROJECT_ID).get();
@@ -254,7 +286,6 @@ function buildLoginForm() {
   const sub = document.getElementById('login-sub');
   sub.textContent = (projectData?.authTitle || '로그인') + ' — 체커 권한이 있는 계정으로 로그인하세요.';
 
-  // authKeyField 하나만 입력받음
   const keyName = projectData?.authKeyField || authFields[0]?.key;
   const f = authFields.find(a => a.key === keyName) || authFields[0];
   const container = document.getElementById('login-fields');
@@ -274,7 +305,6 @@ async function doLogin() {
   err.textContent = '';
   btn.disabled = true; btn.textContent = '확인 중…';
 
-  // authKeyField 하나로만 조회
   const keyName = projectData?.authKeyField || authFields[0]?.key;
   const keyField = authFields.find(a => a.key === keyName) || authFields[0];
   const val = document.getElementById('lf-' + keyField?.key)?.value.trim() || '';
@@ -299,7 +329,6 @@ async function doLogin() {
     const role = roles.find(r => r.id === checkerRoleId);
     const roleName = role?.name || checkerRoleId;
 
-    // 이름 필드 찾기 (첫 번째 non-phone 필드 또는 첫 번째 필드)
     const nameField = authFields.find(f => f.key !== 'phone' && f.key !== 'tel') || authFields[0];
     const userName = userData[nameField?.key] || userDoc.id;
 
@@ -323,6 +352,7 @@ function doLogout() {
   checkerSession = null;
   _clearSession();
   stopScan();
+  _cachedMissionBlocks = null;
   buildLoginForm();
   showView('login');
 }
@@ -377,17 +407,23 @@ function scanFrame() {
     const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
     if (code?.data) {
       processCode(code.data);
-      return; // 스캔 성공 시 멈춤
+      return;
     }
   }
   scanRaf = requestAnimationFrame(scanFrame);
 }
 
-/* ── QR 코드 처리 ── */
+/* ── QR / 코드 처리 ── */
 async function processCode(raw) {
   stopScan();
   hideResult();
   document.getElementById('pw-err').textContent = '';
+
+  // 뽑기 티켓 QR
+  if ((raw || '').startsWith('RAFFLE:')) {
+    await processRaffleCode(raw);
+    return;
+  }
 
   const parts = (raw || '').split(':');
   if (parts.length !== 3) {
@@ -412,67 +448,251 @@ async function processCode(raw) {
     const nameField = authFields.find(f => f.key !== 'phone') || authFields[0];
     const displayName = userData[nameField?.key] || userId;
 
-    // 이미 체크한 경우
-    const existing = (userData.externalChecks?.[blockId] || []);
-    const alreadyByMe = existing.some(c => c.roleId === checkerSession.roleId);
-    if (alreadyByMe) {
-      showResult('ok', '✅', '이미 확인됨', `${displayName} 님은 이미 "${checkerSession.roleName}" 확인이 완료됐어요.`);
+    // 사용자 패널 열기 (확인 + 일괄 체크)
+    await _openUserPanel(userId, userRef, userData, displayName, blockId);
+  } catch(e) {
+    showResult('err', '❌', '오류 발생', e.message);
+  }
+}
+
+/* ── 사용자 패널 ── */
+let _upUserId = null;
+let _upUserRef = null;
+let _upUserData = null;
+let _upDisplayName = null;
+let _upSelectedBlocks = new Set();
+let _upSelectedLabel = null;
+let _cachedMissionBlocks = null; // [{stageId, stageTitle, stageOrder, blocks:[...]}]
+
+async function _openUserPanel(userId, userRef, userData, displayName, preSelectedBlockId) {
+  _upUserId = userId;
+  _upUserRef = userRef;
+  _upUserData = userData;
+  _upDisplayName = displayName;
+  _upSelectedBlocks = new Set();
+
+  // 사용자 정보
+  document.getElementById('up-user-hd').textContent = displayName;
+  document.getElementById('up-user-sub').textContent = '확인할 미션을 선택하고 아래 버튼을 누르세요.';
+
+  // 패널 열기 + 로딩 상태
+  document.getElementById('up-missions-list').innerHTML =
+    '<div class="up-loading"><div class="up-spinner"></div>미션 목록 불러오는 중…</div>';
+  document.getElementById('up-backdrop').style.display = 'flex';
+  _updateConfirmBtn();
+
+  // 배지 문구 선택 (복수 레이블)
+  const labels = checkerSession.confirmLabels || [];
+  _upSelectedLabel = labels[0] || checkerSession.roleName;
+  if (labels.length >= 2) {
+    const btnsEl = document.getElementById('up-label-btns');
+    btnsEl.innerHTML = labels.map((l, i) =>
+      `<button class="up-label-btn${i===0?' sel':''}" onclick="_upPickLabel(${i})">${l.replace(/</g,'&lt;')}</button>`
+    ).join('');
+    document.getElementById('up-label-section').style.display = '';
+  } else {
+    document.getElementById('up-label-section').style.display = 'none';
+  }
+
+  // 미션 블록 로드
+  const stages = await _loadAllMissionBlocks();
+
+  // 스캔/입력한 blockId 미리 선택 (이미 내 역할로 체크 안 된 경우)
+  if (preSelectedBlockId) {
+    const alreadyByMe = ((userData.externalChecks?.[preSelectedBlockId]) || [])
+      .some(c => c.roleId === checkerSession.roleId);
+    if (!alreadyByMe) _upSelectedBlocks.add(preSelectedBlockId);
+  }
+
+  _renderMissionList(stages, userData);
+}
+
+function _upPickLabel(idx) {
+  const labels = checkerSession.confirmLabels || [];
+  _upSelectedLabel = labels[idx] || checkerSession.roleName;
+  document.querySelectorAll('.up-label-btn').forEach((b, j) => {
+    b.classList.toggle('sel', j === idx);
+  });
+}
+
+async function _loadAllMissionBlocks() {
+  if (_cachedMissionBlocks) return _cachedMissionBlocks;
+
+  const stages = (projectData.stages || [])
+    .filter(s => s.publishStatus !== 'hidden')
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  const results = await Promise.all(stages.map(async stage => {
+    try {
+      const snap = await db.collection('cms_projects').doc(PROJECT_ID)
+        .collection('stage_content').doc(stage.id).get();
+      if (!snap.exists) return null;
+      const blocks = (snap.data().blocks || []).filter(b => b.checkable);
+      if (!blocks.length) return null;
+      return { stageId: stage.id, stageTitle: stage.title || '스테이지', stageOrder: stage.order || 0, blocks };
+    } catch(_) { return null; }
+  }));
+
+  _cachedMissionBlocks = results.filter(Boolean).sort((a, b) => a.stageOrder - b.stageOrder);
+  return _cachedMissionBlocks;
+}
+
+function _blockLabel(block) {
+  if (block.textContent) {
+    const stripped = block.textContent.replace(/<[^>]*>/g, '').trim();
+    if (stripped) return stripped.slice(0, 40);
+  }
+  const map = { text:'텍스트 블록', image:'이미지 블록', mixed:'혼합 블록', embed:'임베드', form:'폼', tool:'도구' };
+  return map[block.type] || '미션 블록';
+}
+
+function _renderMissionList(stagesWithBlocks, userData) {
+  const listEl = document.getElementById('up-missions-list');
+  if (!stagesWithBlocks.length) {
+    listEl.innerHTML = '<div style="padding:24px;text-align:center;color:rgba(0,0,0,.4);font-size:13px;">체크 가능한 미션이 없어요.</div>';
+    _updateConfirmBtn();
+    return;
+  }
+
+  let html = '';
+  for (const stage of stagesWithBlocks) {
+    for (const block of stage.blocks) {
+      const checks = userData.externalChecks?.[block.id] || [];
+      const alreadyByMe = checks.some(c => c.roleId === checkerSession.roleId);
+      const isSelected = _upSelectedBlocks.has(block.id);
+
+      const badgesHtml = checks.map(c => {
+        const isMe = c.roleId === checkerSession.roleId;
+        return `<span class="up-mi-badge${isMe?' mine':''}">${(c.confirmLabel||c.roleName).replace(/</g,'&lt;')}</span>`;
+      }).join('');
+
+      html += `
+        <div class="up-mission-item${isSelected?' sel':''}${alreadyByMe?' already-done':''}"
+             data-block="${block.id}" onclick="_upToggleBlock('${block.id}',${alreadyByMe})">
+          <div class="up-mi-check${isSelected?' checked':''}" id="up-chk-${block.id}">${isSelected?'✓':''}</div>
+          <div class="up-mi-info">
+            <div class="up-mi-stage">${stage.stageTitle.replace(/</g,'&lt;')}</div>
+            <div class="up-mi-name">${_blockLabel(block).replace(/</g,'&lt;')}</div>
+            ${badgesHtml ? `<div class="up-mi-badges">${badgesHtml}</div>` : ''}
+            ${alreadyByMe ? '<div style="font-size:10px;color:rgba(0,0,0,.3);margin-top:3px;">이미 확인됨</div>' : ''}
+          </div>
+        </div>`;
+    }
+  }
+  listEl.innerHTML = html;
+  _updateConfirmBtn();
+}
+
+function _upToggleBlock(blockId, alreadyDone) {
+  if (alreadyDone) return;
+  if (_upSelectedBlocks.has(blockId)) {
+    _upSelectedBlocks.delete(blockId);
+  } else {
+    _upSelectedBlocks.add(blockId);
+  }
+  const item = document.querySelector(`.up-mission-item[data-block="${blockId}"]`);
+  const chk = document.getElementById('up-chk-' + blockId);
+  if (item) item.classList.toggle('sel', _upSelectedBlocks.has(blockId));
+  if (chk) {
+    chk.classList.toggle('checked', _upSelectedBlocks.has(blockId));
+    chk.textContent = _upSelectedBlocks.has(blockId) ? '✓' : '';
+  }
+  _updateConfirmBtn();
+}
+
+function _upSelectAllPending() {
+  if (!_cachedMissionBlocks) return;
+  const userData = _upUserData || {};
+  for (const stage of _cachedMissionBlocks) {
+    for (const block of stage.blocks) {
+      const alreadyByMe = (userData.externalChecks?.[block.id] || [])
+        .some(c => c.roleId === checkerSession.roleId);
+      if (!alreadyByMe) _upSelectedBlocks.add(block.id);
+    }
+  }
+  _renderMissionList(_cachedMissionBlocks, userData);
+}
+
+function _updateConfirmBtn() {
+  const btn = document.getElementById('up-confirm-btn');
+  const n = _upSelectedBlocks.size;
+  btn.textContent = n > 0 ? `${n}개 미션 확인 완료` : '미션을 선택하세요';
+  btn.disabled = n === 0;
+}
+
+async function _confirmUserPanel() {
+  if (!_upSelectedBlocks.size) return;
+  const btn = document.getElementById('up-confirm-btn');
+  btn.disabled = true;
+  btn.textContent = '처리 중…';
+
+  const label = _upSelectedLabel || checkerSession.roleName;
+  const updates = {};
+  for (const blockId of _upSelectedBlocks) {
+    updates[`externalChecks.${blockId}`] = firebase.firestore.FieldValue.arrayUnion({
+      roleId: checkerSession.roleId,
+      roleName: checkerSession.roleName,
+      confirmLabel: label,
+      checkerUserId: checkerSession.userId,
+      checkedAt: new Date()
+    });
+  }
+
+  try {
+    await _upUserRef.update(updates);
+    const count = _upSelectedBlocks.size;
+    const checked = [..._upSelectedBlocks];
+    _closeUserPanel();
+    showResult('ok', '✅', `${count}개 미션 확인 완료!`,
+      `${_upDisplayName || '사용자'} 님의 미션에 "${label}" 배지가 추가됐어요.`);
+    checked.forEach(bid => addHistory(_upDisplayName || '', bid));
+  } catch(e) {
+    _closeUserPanel();
+    showResult('err', '❌', '오류 발생', e.message);
+  }
+}
+
+function _closeUserPanel() {
+  document.getElementById('up-backdrop').style.display = 'none';
+  _upUserId = null;
+  _upUserRef = null;
+  _upUserData = null;
+  _upDisplayName = null;
+  _upSelectedBlocks = new Set();
+}
+
+function _upBackdropClick(e) {
+  if (e.target === document.getElementById('up-backdrop')) _closeUserPanel();
+}
+
+/* ── 뽑기 티켓 처리 ── */
+async function processRaffleCode(raw) {
+  const segs = raw.split(':');
+  if (segs.length < 4) { showResult('err', '❌', '인식 실패', '올바른 뽑기 QR이 아닙니다.'); return; }
+  const [, raffleId, qrProjectId, userId] = segs;
+  const userRef = db.collection('cms_users_' + qrProjectId).doc(userId);
+  const entryRef = db.collection('cms_raffle_records').doc(raffleId).collection('entries').doc(userId);
+  try {
+    const [userDoc, entryDoc] = await Promise.all([userRef.get(), entryRef.get()]);
+    if (!entryDoc.exists) { showResult('err', '❌', '당첨 기록 없음', '이 사용자의 뽑기 당첨 기록이 없어요.'); return; }
+    const entry = entryDoc.data();
+    const userData = userDoc.exists ? userDoc.data() : {};
+    const nameField = authFields && authFields[0];
+    const displayName = nameField ? (userData[nameField.key] || userId) : userId;
+    const itemName = entry.itemName || '?';
+    const isUsed = !!entry.used;
+    if (isUsed) {
+      showResult('warn', '⚠️', '이미 사용됨', `${displayName} 님의 「${itemName}」 티켓은 이미 사용됐어요.`);
       return;
     }
-
-    // 문구 결정 — 복수면 선택 모달
-    const labels = checkerSession.confirmLabels || [];
-    if (labels.length > 1) {
-      _showLabelPicker(labels, { userRef, blockId, userData, displayName });
+    if (confirm(`${displayName} 님의 「${itemName}」 티켓을 사용 처리하시겠어요?`)) {
+      await entryRef.update({ used: true, usedAt: firebase.firestore.FieldValue.serverTimestamp(), usedByRole: checkerSession.roleName || '' });
+      await userRef.update({ [`raffleResults.${raffleId}.used`]: true });
+      showResult('ok', '✅', '티켓 사용 완료!', `${displayName} 님의 「${itemName}」 티켓을 사용 처리했어요.`);
     } else {
-      await _writeExternalCheck(userRef, blockId, userData, labels[0] || checkerSession.roleName, displayName);
+      showResult('ok', '🎟️', '미사용 티켓', `${displayName} 님은 「${itemName}」에 당첨됐고 아직 사용하지 않았어요.`);
     }
-  } catch(e) {
-    showResult('err', '❌', '오류 발생', e.message);
-  }
-}
-
-let _pendingCheck = null;
-function _showLabelPicker(labels, pending) {
-  _pendingCheck = pending;
-  document.getElementById('lp-list').innerHTML = labels.map((l, i) =>
-    `<button class="lp-btn" onclick="_confirmLabelPicker(${i})">${l.replace(/</g,'&lt;')}</button>`
-  ).join('');
-  document.getElementById('lp-custom-inp').value = '';
-  document.getElementById('lp-backdrop').style.display = 'flex';
-}
-function _cancelLabelPicker() {
-  document.getElementById('lp-backdrop').style.display = 'none';
-  _pendingCheck = null;
-}
-async function _confirmLabelPicker(i) {
-  const label = (checkerSession.confirmLabels || [])[i] || checkerSession.roleName;
-  document.getElementById('lp-backdrop').style.display = 'none';
-  if (_pendingCheck) await _writeExternalCheck(_pendingCheck.userRef, _pendingCheck.blockId, _pendingCheck.userData, label, _pendingCheck.displayName);
-  _pendingCheck = null;
-}
-async function _confirmLabelPickerCustom() {
-  const label = document.getElementById('lp-custom-inp').value.trim() || checkerSession.roleName;
-  document.getElementById('lp-backdrop').style.display = 'none';
-  if (_pendingCheck) await _writeExternalCheck(_pendingCheck.userRef, _pendingCheck.blockId, _pendingCheck.userData, label, _pendingCheck.displayName);
-  _pendingCheck = null;
-}
-async function _writeExternalCheck(userRef, blockId, userData, confirmLabel, displayName) {
-  try {
-    await userRef.update({
-      [`externalChecks.${blockId}`]: firebase.firestore.FieldValue.arrayUnion({
-        roleId: checkerSession.roleId,
-        roleName: checkerSession.roleName,
-        confirmLabel,
-        checkerUserId: checkerSession.userId,
-        checkedAt: new Date()
-      })
-    });
-    showResult('ok', '✅', '확인 완료!', `${displayName} 님의 미션에 "${confirmLabel}" 배지가 추가됐어요.`);
-    addHistory(displayName, blockId);
-  } catch(e) {
-    showResult('err', '❌', '오류 발생', e.message);
-  }
+  } catch(e) { showResult('err', '❌', '오류 발생', e.message); }
 }
 
 /* ── 결과 표시 ── */
@@ -509,7 +729,7 @@ function addHistory(userName, blockId) {
   `).join('');
 }
 
-/* ── 비밀번호 폼 토글 ── */
+/* ── 코드 입력 토글 ── */
 function togglePwForm() {
   const f = document.getElementById('pw-form');
   f.style.display = f.style.display === 'block' ? 'none' : 'block';
