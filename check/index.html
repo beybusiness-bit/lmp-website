@@ -487,9 +487,11 @@ async function _cpConfirm() {
   const btn = document.getElementById('cp-confirm-btn');
   btn.disabled = true; btn.textContent = '처리 중…';
   const label = _cpSelectedLabel || checkerSession.roleName;
+  const savedBlockId = _cpBlockId;
+  const savedName = _cpDisplayName;
   try {
     await _cpUserRef.update({
-      [`externalChecks.${_cpBlockId}`]: firebase.firestore.FieldValue.arrayUnion({
+      [`externalChecks.${savedBlockId}`]: firebase.firestore.FieldValue.arrayUnion({
         roleId: checkerSession.roleId,
         roleName: checkerSession.roleName,
         confirmLabel: label,
@@ -498,10 +500,9 @@ async function _cpConfirm() {
       })
     });
     _cpClose();
-    showResult('ok', '✅', '확인 완료!', `${_cpDisplayName} 님의 미션에 "${label}" 배지가 추가됐어요.`);
-    addHistory(_cpDisplayName, _cpBlockId);
-    // 목록 모드 캐시 무효화 (같은 블록이면)
-    if (_lstBlockId === _cpBlockId) _lstAllUsers = null;
+    showResult('ok', '✅', '확인 완료!', `${savedName} 님의 미션에 "${label}" 배지가 추가됐어요.`);
+    addHistory(savedName, savedBlockId);
+    if (_lstBlockId === savedBlockId) _lstAllUsers = null;
   } catch(e) { showResult('err', '❌', '오류 발생', e.message); btn.disabled = false; btn.textContent = '이 미션 확인 완료'; }
 }
 
@@ -643,7 +644,7 @@ function _renderLstUsers(users) {
     const isSelected = _lstSelectedUsers.has(u._id);
 
     const extBadges = extChecks.map(c =>
-      `<span class="lst-ext-badge${c.roleId===checkerSession.roleId?' mine':''}">${(c.confirmLabel||c.roleName).replace(/</g,'&lt;')}</span>`
+      `<span class="lst-ext-badge${c.roleId===checkerSession.roleId?' mine':''}">${String(c.confirmLabel||c.roleName||'확인').replace(/</g,'&lt;')}</span>`
     ).join('');
 
     html += `
