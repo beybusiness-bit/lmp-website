@@ -8120,7 +8120,15 @@ function _getPendingSpan(ctx){
   let node=sel.getRangeAt(0).startContainer;
   let el=node.nodeType===3?node.parentElement:node;
   const ed=getEd(ctx);
-  while(el&&el!==ed){if(el.dataset&&el.dataset.fmtPending==='1')return el;el=el.parentElement;}
+  while(el&&el!==ed){
+    if(el.dataset&&el.dataset.fmtPending==='1'){
+      // saveRange() is a no-op while popup is open (_fmtPopType guard) — bypass it directly
+      // so closeFmtPopup restores cursor to inside the span, not before it.
+      savedRange={el:ed,range:sel.getRangeAt(0).cloneRange()};
+      return el;
+    }
+    el=el.parentElement;
+  }
   const span=document.createElement('span');
   span.dataset.fmtPending='1';
   span.textContent='​';
@@ -8129,6 +8137,7 @@ function _getPendingSpan(ctx){
   const nr=document.createRange();
   nr.setStart(span.firstChild,1);nr.setEnd(span.firstChild,1);
   sel.removeAllRanges();sel.addRange(nr);
+  savedRange={el:ed,range:nr.cloneRange()}; // same reason as above
   return span;
 }
 function fmtCmd(ctx,cmd){
