@@ -8134,12 +8134,19 @@ function _getPendingSpan(ctx){
 function fmtCmd(ctx,cmd){
   focusEd(ctx);
   const sel=window.getSelection();
-  if(sel&&sel.isCollapsed&&cmd==='bold'){
+  if(sel&&sel.isCollapsed){
     const span=_getPendingSpan(ctx);
     if(span){
-      const isBold=span.style.fontWeight==='bold'||parseInt(span.style.fontWeight||'0')>=700;
-      span.style.fontWeight=isBold?'normal':'bold';
-      document.getElementById('fmt-bold-'+ctx)?.classList.toggle('on',!isBold);
+      if(cmd==='bold'){
+        const isBold=span.style.fontWeight==='bold'||parseInt(span.style.fontWeight||'0')>=700;
+        span.style.fontWeight=isBold?'normal':'bold';
+        document.getElementById('fmt-bold-'+ctx)?.classList.toggle('on',!isBold);
+      }else if(cmd==='italic'){
+        span.style.fontStyle=span.style.fontStyle==='italic'?'normal':'italic';
+      }else if(cmd==='underline'){
+        const hasU=span.style.textDecoration.includes('underline');
+        span.style.textDecoration=hasU?'none':'underline';
+      }
     }
     scheduleBmPreview();return;
   }
