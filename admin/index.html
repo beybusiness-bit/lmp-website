@@ -8232,8 +8232,9 @@ function prevImg(id,url){const el=document.getElementById(id);if(url&&url.starts
 /* ── 포맷 드롭다운 팝업 ── */
 let _fmtPopCtx=null,_fmtPopType=null,_fmtPopBtn=null,_fmtCtxRange=null;
 function openFmtDd(btn,type,ctx){
+  console.log('[openFmtDd] called type='+type+' ctx='+ctx);
   const pop=document.getElementById('fmt-popup');
-  if(pop.style.display!=='none'&&_fmtPopType===type&&_fmtPopCtx===ctx){closeFmtPopup();return;}
+  if(pop.style.display!=='none'&&_fmtPopType===type&&_fmtPopCtx===ctx){console.log('[openFmtDd] toggling close');closeFmtPopup();return;}
   const _ed=getEd(ctx);
   if(_ed){
     const _s=window.getSelection();
@@ -8377,6 +8378,7 @@ function openFmtDd(btn,type,ctx){
   const r=btn.getBoundingClientRect();
   pop.style.left=r.left+'px';pop.style.top=(r.bottom+3)+'px';
   const pr=pop.getBoundingClientRect();
+  console.log('[openFmtDd] popup shown at left='+pop.style.left+' top='+pop.style.top+' rect=',pr);
   if(pr.right>window.innerWidth-6) pop.style.left=(window.innerWidth-pr.width-6)+'px';
   if(pr.bottom>window.innerHeight-6) pop.style.top=Math.max(6,r.top-pr.height-3)+'px'; // 아래 화면 밖이면 위로 뒤집기
   if(parseInt(pop.style.left)<6) pop.style.left='6px';
