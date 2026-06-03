@@ -94,6 +94,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .cal-day.cal-sat{color:#00c;}
 .cal-info{padding:8px 12px;font-size:12px;text-align:center;border-top:1px solid rgba(0,0,0,.08);min-height:34px;display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.55);}
 
+/* 리치텍스트 블록 */
+.ff-richtext{margin-bottom:24px;line-height:1.7;font-size:14px;color:#000;}
+.ff-richtext img{max-width:100%;height:auto;display:block;margin:6px 0;}
+.ff-richtext p,.ff-richtext div{margin-bottom:0.4em;}
+.ff-richtext p:last-child,.ff-richtext div:last-child{margin-bottom:0;}
+
 /* 결과 시각화 */
 #chart-screen{padding:4px 0 24px;}
 .lmp-results-hd{font-size:16px;font-weight:800;margin-bottom:6px;letter-spacing:-.3px;}
@@ -217,11 +223,14 @@ function esc(s) {
 }
 
 function renderField(f) {
+  const type = f.type;
+  if (type === 'richtext') {
+    return `<div class="ff-richtext">${f.content || ''}</div>`;
+  }
   const fid = f.key || f.id;
   const req = f.required ? '<span class="ff-required">*</span>' : '';
   const desc = f.description ? `<div class="ff-desc">${f.description}</div>` : '';
   const ph = esc(f.placeholder || '');
-  const type = f.type;
   if (type === 'text' || type === 'string') {
     const hasLimit = f.minChars > 0 || f.maxChars > 0;
     const maxAttr  = f.maxChars > 0 ? ` maxlength="${f.maxChars}"` : '';
@@ -544,6 +553,7 @@ async function submitForm() {
   errEl.textContent = '';
 
   for (const f of fields) {
+    if (f.type === 'richtext') continue;
     const fid = f.key || f.id;
     let val;
     if (f.type === 'select' && f.selectMode === 'buttons') {

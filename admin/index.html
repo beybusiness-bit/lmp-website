@@ -3321,6 +3321,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   </div>
 </div>
 
+<div class="modal-ov" id="tf-rte-modal">
+  <div class="modal-box" style="max-width:640px;width:95vw;">
+    <div class="modal-ttl">텍스트 블록 편집</div>
+    <div class="modal-scroll" style="flex:1;overflow-y:auto;padding-bottom:8px;">
+      <div class="mini-rte-wrap" style="border:1.5px solid rgba(0,0,0,.15);">
+        <div class="fmt-bar" style="padding:5px 6px;border-bottom:1.5px solid rgba(0,0,0,.12);gap:3px;flex-wrap:wrap;">
+          <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="fmtCmd('tf-rte-content','bold')"><b>B</b></button>
+          <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="fmtCmd('tf-rte-content','italic')"><i>I</i></button>
+          <button class="fmt-btn" onmousedown="event.preventDefault()" onpointerdown="epd(event)" onclick="fmtCmd('tf-rte-content','underline')"><u>U</u></button>
+          <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-tf-rte-content" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','tf-rte-content')">Aa</button>
+          <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-al-tf-rte-content" onpointerdown="epd(event)" onclick="openFmtDd(this,'al','tf-rte-content')">≡</button>
+          <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-tf-rte-content" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','tf-rte-content')" style="padding:5px 7px;"><span id="fmt-clr-dot-tf-rte-content" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+          <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bg-tf-rte-content" onpointerdown="epd(event)" onclick="openFmtDd(this,'bg','tf-rte-content')" style="padding:4px 7px;" title="텍스트 배경색"><span style="display:flex;flex-direction:column;align-items:center;gap:1px;"><b style="font-size:10px;line-height:1;">A</b><span id="fmt-bg-dot-tf-rte-content" style="display:block;width:14px;height:3px;border-radius:1px;background:rgba(0,0,0,.18);"></span></span></button>
+          <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-link-tf-rte-content" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','tf-rte-content')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+          <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-hr-tf-rte-content" onpointerdown="epd(event)" onclick="openFmtDd(this,'hr','tf-rte-content')" title="구분선" style="font-size:11px;">—</button>
+          <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-img-tf-rte-content" onpointerdown="epd(event)" onclick="openFmtDd(this,'img','tf-rte-content')" title="이미지" style="font-size:13px;padding:4px 7px;">🖼</button>
+        </div>
+        <div class="mini-rte" id="ed-tf-rte-content" contenteditable="true" data-ph="텍스트를 입력하거나 이미지를 삽입하세요." onmouseup="saveRange(this)" ontouchend="saveRange(this)" onkeyup="saveRange(this)" style="min-height:160px;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="mbtn-cancel" onclick="document.getElementById('tf-rte-modal').classList.remove('on')">취소</button>
+      <button class="mbtn-save" onclick="saveTfRteBlock()">저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- preview-wrap: 프로젝트 편집 패널 내로 이동됨 (proj-preview-panel) -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -10571,13 +10598,28 @@ async function toolFormEdit(docId){
     loadTfInlineResponses();
   }catch(e){alert('로드 실패: '+e.message);}
 }
-function _tfInsertRow(pos){return `<div class="insert-row" onclick="toolFormOpenFieldModal(null,${pos})"><button class="insert-row-btn">+</button></div>`;}
+function _tfInsertRow(pos){return `<div class="insert-row" style="display:flex;gap:4px;justify-content:center;"><button class="insert-row-btn" onclick="toolFormOpenFieldModal(null,${pos})">+ 필드</button><button class="insert-row-btn" style="background:rgba(0,0,0,.07);color:rgba(0,0,0,.7);font-size:11px;" onclick="openTfRteModal(null,${pos})">📝 텍스트</button></div>`;}
 function renderTfFieldList(){
   const el=document.getElementById('tf-field-list');
   if(!el) return;
   const typeLabel={string:'짧은텍스트',textarea:'긴텍스트',number:'숫자',select:'선택',color:'색상',file:'파일'};
   if(!tfFields.length){el.innerHTML=_tfInsertRow(0)+'<div class="empty-msg" style="padding:6px 0;">필드가 없어요.</div>';renderTfChartConfigList(tfChartConfigs);return;}
   const items=tfFields.map((f,i)=>{
+    if(f.type==='richtext'){
+      const preview=(f.content||'').replace(/<[^>]*>/g,'').trim().slice(0,40)||'(내용 없음)';
+      return `<div class="field-item">
+        <div class="field-info">
+          <div class="field-name" style="font-size:12px;color:rgba(0,0,0,.5);">📝 텍스트 블록</div>
+          <div class="field-meta" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${preview}</div>
+        </div>
+        <div class="field-badges">
+          ${i>0?`<span class="fbadge" onclick="mvTfField(${i},-1)">↑</span>`:''}
+          ${i<tfFields.length-1?`<span class="fbadge" onclick="mvTfField(${i},1)">↓</span>`:''}
+          <span class="fbadge" onclick="openTfRteModal(${i},null)">편집</span>
+          <span class="fbadge danger" onclick="rmTfField(${i})">삭제</span>
+        </div>
+      </div>`;
+    }
     const tl=f.type==='select'?(f.selectMode==='buttons'?'버튼선택':'드롭다운'):(typeLabel[f.type]||f.type);
     return `<div class="field-item">
       <div class="field-info">
@@ -10599,11 +10641,37 @@ function renderTfFieldList(){
 }
 function mvTfField(i,d){const j=i+d;if(j<0||j>=tfFields.length)return;[tfFields[i],tfFields[j]]=[tfFields[j],tfFields[i]];renderTfFieldList();}
 function rmTfField(i){if(!confirm('이 필드를 삭제할까요?'))return;tfFields.splice(i,1);renderTfFieldList();}
-function dupTfField(i){const copy=JSON.parse(JSON.stringify(tfFields[i]));copy.id=uid();copy.key=copy.key+'_copy';tfFields.splice(i+1,0,copy);renderTfFieldList();}
+function dupTfField(i){const copy=JSON.parse(JSON.stringify(tfFields[i]));copy.id=uid();if(copy.type!=='richtext')copy.key=copy.key+'_copy';tfFields.splice(i+1,0,copy);renderTfFieldList();}
 function toolFormOpenFieldModal(idx, insertAt){
   formFieldCtx='tool';
   curFormFields=tfFields;
   openFormFieldModal(idx, insertAt);
+}
+let _tfRteEditIdx=null, _tfRteInsertAt=null;
+function openTfRteModal(editIdx, insertAt){
+  _tfRteEditIdx=(editIdx!=null)?Number(editIdx):null;
+  _tfRteInsertAt=(insertAt!=null)?Number(insertAt):null;
+  const existing=(_tfRteEditIdx!=null)?tfFields[_tfRteEditIdx]:null;
+  const modal=document.getElementById('tf-rte-modal');
+  modal.classList.add('on');
+  document.body.appendChild(modal);
+  const ed=document.getElementById('ed-tf-rte-content');
+  if(ed) ed.innerHTML=existing?.content||'';
+  setTimeout(()=>{if(ed){ed.focus();}},50);
+}
+function saveTfRteBlock(){
+  const ed=document.getElementById('ed-tf-rte-content');
+  const content=ed?ed.innerHTML:'';
+  if(_tfRteEditIdx!=null){
+    tfFields[_tfRteEditIdx]={...tfFields[_tfRteEditIdx],content,type:'richtext'};
+  } else {
+    const pos=(_tfRteInsertAt!=null)?_tfRteInsertAt:tfFields.length;
+    const block={id:uid(),type:'richtext',content,order:pos};
+    tfFields.splice(pos,0,block);
+  }
+  tfFields.forEach((f,i)=>{f.order=i;});
+  document.getElementById('tf-rte-modal').classList.remove('on');
+  renderTfFieldList();
 }
 const _TF_CHART_TYPES={
   string:[{v:'text-list',l:'응답 목록'},{v:'table',l:'전체 응답 표'}],
@@ -10861,7 +10929,7 @@ function _getTfRespCols(){
   const ufKeySet=new Set();
   tfRespData.forEach(r=>{if(r._userFields) Object.keys(r._userFields).filter(_isUfUserKey).forEach(k=>ufKeySet.add(k));});
   const userCols=Array.from(ufKeySet).map(k=>({key:'_uf_'+k,label:k,type:'_user',val:r=>{const v=(r._userFields||{})[k];return v!=null?String(v):'';}}))
-  const formCols=fields.map(f=>({key:f.key,label:f.label,type:f.type,isFile:f.type==='file',val:r=>{const v=r[f.key];return Array.isArray(v)?v.join(', '):String(v??'');}}));
+  const formCols=fields.filter(f=>f.type!=='richtext').map(f=>({key:f.key,label:f.label,type:f.type,isFile:f.type==='file',val:r=>{const v=r[f.key];return Array.isArray(v)?v.join(', '):String(v??'');}}));
   return [tsCol,...userCols,...formCols];
 }
 
@@ -11000,7 +11068,7 @@ async function createTfRespSheet(){
   if(!tfCurDocId) return;
   if(!(tfRespFields||[]).length){alert('필드를 먼저 추가해주세요.');return;}
   const title=(document.getElementById('tf-title')?.value.trim()||'폼')+'의 응답';
-  const headers=['제출일시',...(tfRespFields||[]).map(f=>f.label)];
+  const headers=['제출일시',...(tfRespFields||[]).filter(f=>f.type!=='richtext').map(f=>f.label)];
   const btn=document.getElementById('tf-resp-sheet-btn');
   if(btn){btn.disabled=true;btn.textContent='생성 중…';}
   try{

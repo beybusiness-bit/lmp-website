@@ -415,9 +415,16 @@ async function processCode(raw) {
   if ((raw || '').startsWith('RAFFLE:')) { await processRaffleCode(raw); return; }
 
   const parts = (raw || '').split(':');
-  if (parts.length !== 3) { showResult('err', '❌', '인식 실패', '올바른 미션 QR이 아닙니다.'); return; }
+  if (parts.length !== 3) {
+    const preview = String(raw || '').slice(0, 80);
+    showResult('err', '❌', '인식 실패', `올바른 미션 QR이 아닙니다. (${parts.length}개 파트 / 데이터: "${preview}")`);
+    return;
+  }
   const [qrProjectId, userId, blockId] = parts;
-  if (qrProjectId !== PROJECT_ID) { showResult('err', '❌', '프로젝트 불일치', '다른 프로젝트의 QR입니다.'); return; }
+  if (qrProjectId !== PROJECT_ID) {
+    showResult('err', '❌', '프로젝트 불일치', `QR: "${qrProjectId}" / 체커: "${PROJECT_ID || '(없음)'}"`);
+    return;
+  }
 
   try {
     const userDoc = await db.collection(AUTH_COLLECTION).doc(userId).get();
