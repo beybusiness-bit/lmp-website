@@ -8119,6 +8119,7 @@ function focusEd(ctx){
   // If restoreRange failed (stale/missing range), place cursor at end of editor
   const sel=window.getSelection();
   if(!sel||!sel.rangeCount||!ed.contains(sel.anchorNode)){
+    console.log('[focusEd] restoreRange failed, placing cursor at end. ctx='+ctx);
     const r=document.createRange();
     r.selectNodeContents(ed);r.collapse(false);
     sel.removeAllRanges();sel.addRange(r);
@@ -8128,6 +8129,7 @@ function focusEd(ctx){
 /* 커서 위치(선택 없음)에 포맷을 쌓아두는 pending span 반환 또는 생성 */
 function _getPendingSpan(ctx){
   const sel=window.getSelection();
+  console.log('[_getPendingSpan] ctx='+ctx+' rangeCount='+sel?.rangeCount+' isCollapsed='+sel?.isCollapsed);
   if(!sel||!sel.rangeCount||!sel.isCollapsed)return null;
   let node=sel.getRangeAt(0).startContainer;
   let el=node.nodeType===3?node.parentElement:node;
@@ -8176,8 +8178,9 @@ function fmtCmd(ctx,cmd){
 function fmtSz(ctx,px){
   focusEd(ctx);
   const sel=window.getSelection();
+  console.log('[fmtSz] ctx='+ctx+' px='+px+' rangeCount='+sel?.rangeCount+' isCollapsed='+sel?.isCollapsed);
   if(!sel||!sel.rangeCount)return;
-  if(sel.isCollapsed){const span=_getPendingSpan(ctx);if(span)span.style.fontSize=px+'px';return;}
+  if(sel.isCollapsed){const span=_getPendingSpan(ctx);console.log('[fmtSz] span=',span);if(span)span.style.fontSize=px+'px';return;}
   const ed=getEd(ctx);
   document.execCommand('fontSize',false,'7');
   ed.querySelectorAll('font[size="7"]').forEach(el=>{el.removeAttribute('size');el.style.fontSize=px+'px';});
