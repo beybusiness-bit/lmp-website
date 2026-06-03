@@ -8112,7 +8112,19 @@ function getEd(ctx){
   // 도구 설명 필드: ed-{ctx} 우선, rte-{ctx} 폴백
   return document.getElementById('ed-'+ctx)||document.getElementById('rte-'+ctx)||null;
 }
-function focusEd(ctx){const ed=getEd(ctx);ed.focus({preventScroll:true});restoreRange(ed);}
+function focusEd(ctx){
+  const ed=getEd(ctx);
+  ed.focus({preventScroll:true});
+  restoreRange(ed);
+  // If restoreRange failed (stale/missing range), place cursor at end of editor
+  const sel=window.getSelection();
+  if(!sel||!sel.rangeCount||!ed.contains(sel.anchorNode)){
+    const r=document.createRange();
+    r.selectNodeContents(ed);r.collapse(false);
+    sel.removeAllRanges();sel.addRange(r);
+    savedRange={el:ed,range:r.cloneRange()};
+  }
+}
 /* 커서 위치(선택 없음)에 포맷을 쌓아두는 pending span 반환 또는 생성 */
 function _getPendingSpan(ctx){
   const sel=window.getSelection();
