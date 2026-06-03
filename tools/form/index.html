@@ -506,7 +506,7 @@ async function init() {
     } else {
       titleEl.style.marginBottom = '24px';
     }
-    const fields = (formConfig.fields || []).sort((a, b) => (a.order || 0) - (b.order || 0));
+    const fields = formConfig.fields || [];
     document.getElementById('form-fields').innerHTML = fields.map(renderField).join('');
     const submitBtn = document.getElementById('submit-btn');
     if (submitBtn) submitBtn.textContent = applyVars(formConfig.submitBtnText || '제출하기');
@@ -547,7 +547,7 @@ async function submitForm() {
     document.getElementById('form-err').textContent = '로그인 후 제출할 수 있어요.';
     return;
   }
-  const fields = (formConfig.fields || []).sort((a, b) => (a.order || 0) - (b.order || 0));
+  const fields = formConfig.fields || [];
   const result = {};
   const errEl = document.getElementById('form-err');
   errEl.textContent = '';
@@ -758,7 +758,7 @@ async function showHistory() {
       document.getElementById('history-list').innerHTML = '<div style="text-align:center;padding:24px 0;font-size:13px;color:rgba(0,0,0,.5);">제출 내역이 없어요.</div>';
       return;
     }
-    const fields = (formConfig.fields || []).sort((a, b) => (a.order || 0) - (b.order || 0));
+    const fields = formConfig.fields || [];
     const docs = snap.docs.slice().sort((a, b) => (b.data().submittedAt?.toMillis?.() || 0) - (a.data().submittedAt?.toMillis?.() || 0));
     docs.forEach(doc => {
       const d = doc.data();
@@ -811,7 +811,7 @@ function editFromHistory(responseId) {
 
   // noResubmit 폼은 init()에서 폼 필드를 렌더링하지 않으므로 여기서 렌더링
   const fieldsContainer = document.getElementById('form-fields');
-  const fields = (formConfig.fields || []).sort((a, b) => (a.order || 0) - (b.order || 0));
+  const fields = formConfig.fields || [];
   if (!fieldsContainer.children.length) {
     fieldsContainer.innerHTML = fields.map(renderField).join('');
     const titleEl = document.getElementById('form-title');
