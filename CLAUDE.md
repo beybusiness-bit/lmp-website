@@ -550,6 +550,13 @@ cms_youtube_submissions/{projectId}/songs/{docId}
 
 cms_copy_gen_usages/{configId}__{userId}
   ← 문구 생성기 사용 횟수 추적
+
+cms_chat_configs/{chatId}
+  title, description, maxMessages, anonWords1[], anonWords2[]
+  createdAt, updatedAt
+
+cms_chat_messages/{chatId}/messages/{msgId}
+  name, color, text, createdAt
 ```
 
 #### Firestore 보안 규칙 (현재 적용된 것 기준)
@@ -559,6 +566,8 @@ match /{col}/{doc} { allow read, write: if col.matches('cms_users_.*'); }
 match /cms_form_configs/{document=**} { allow write: if true; }
 match /cms_youtube_submissions/{document=**} { allow write: if true; }
 match /cms_copy_gen_usages/{document=**} { allow write: if true; }
+match /cms_chat_configs/{document=**} { allow read, write: if true; }  ← ⚠️ Firebase Console 수동 적용 필요
+match /cms_chat_messages/{chatId}/messages/{msgId} { allow read, write: if true; }  ← ⚠️ Firebase Console 수동 적용 필요
 ```
 
 #### 외부 연동
@@ -609,6 +618,7 @@ rteInsertVar(id)  // 커서 위치에 {{key}} 변수 삽입 (prompt로 키 입�
 | `payment` | `/tools/payment/?id={configId}` | 선택형 |
 | `copy-gen` | `/tools/copy-gen/?id={configId}` | 선택형 |
 | `youtube-playlist` | `/tools/youtube-playlist/` | 단일(인스턴스 없음) |
+| `chat` | `/tools/chat/?id={chatId}` | 선택형(인스턴스 선택) |
 
 도구 완료 신호: `window.parent.postMessage({ type: 'lmp-tool-complete' }, '*')`
 플레이어 수신 후 `autoCheckBlock(blockId)` 호출 → 진행률 저장
@@ -845,7 +855,12 @@ match /cms_payment_records/{doc} { allow read: if true; }
 #### 다음 세션 시작점 🔲
 
 **최우선 항목:**
-- **admin onSnapshot 리스너 누수 수정**: Chrome Memory 탭에서 ↑5.9 kB/s 지속 증가 확인 — admin 탭 전환 시 이전 Firestore 리스너가 unsubscribe되지 않고 쌓여서 장시간 사용 시 느려짐. `onSnapshot` 호출 결과를 변수에 저장하고 화면 전환 시 unsubscribe 호출하는 방식으로 수정
+- **채팅 도구 Firebase 규칙 적용** ⚠️ 사용자 직접 수행 필요: Firebase Console → Firestore Database → 규칙 탭에 아래 내용 추가 후 게시
+  ```
+  match /cms_chat_configs/{document=**} { allow read, write: if true; }
+  match /cms_chat_messages/{chatId}/messages/{msgId} { allow read, write: if true; }
+  ```
+  → 규칙 미적용 시 채팅 도구 "Missing or insufficient permissions" 오류 발생
 
 **미완료 항목:**
 - **GAS 재배포 필요**: updateFormRow + bulkAppend + Calendar 액션 코드는 추가됐으나 GAS 편집기에서 "새 버전" 배포 안 됨 → script.google.com → 배포 → 배포 관리 → 기존 배포 편집 → 새 버전
@@ -857,6 +872,14 @@ match /cms_payment_records/{doc} { allow read: if true; }
 
 **기타:**
 - PAT: 만료 시 재발급 (GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic) → repo 권한)
+
+#### 이번 세션 완료 항목 (채팅 도구 추가 + 신규 프로젝트 오염 버그 수정 세션)
+- **채팅 도구 추가** ✅: `tools/chat/index.html` — Firestore `onSnapshot` 실시간 채팅, 익명 닉네임 자동 생성(`anonWords1`+`anonWords2`), sessionStorage 닉네임/색상 유지, 메시지 수 제한(`pruneOldMessages`), 이름 변경, Enter 전송, origin 검증
+- **admin 채팅 도구 통합** ✅: 목록/편집 화면 HTML, `chatShowList`/`chatOpenConfig`/`chatSaveConfig`/`chatDeleteConfig` JS 함수, `openTool('chat')` 핸들러, nav restore, `copyToolUrl` 맵, `switchToolType` forEach (admin/index.html)
+- **채팅 Firestore 규칙 추가** ✅: `firestore.rules`에 `cms_chat_configs`, `cms_chat_messages` 허용 규칙 추가 — Firebase Console 수동 적용 필요
+- **신규 프로젝트 생성 시 이전 프로젝트 값 오염 버그 수정** ✅: `startNewProject()`에서 OG태그·인사말·배경색·사이즈 필드 등 DOM 초기화 누락 수정, `curKeyColors` 기본 4색으로 초기화 (admin/index.html)
+- **병합형 레이아웃 배경이미지 없을 때 스테이지 제목 안보임 수정** ✅: `.no-bg-img .stage-title.merged{color:var(--prep-bg)}` → `color:#000` 으로 변경 (p/ + 3파일 동기화)
+- **키컬러 삭제 버튼 항상 표시** ✅: 2개 이하일 때 버튼 숨김(없음) → 비활성화(회색, cursor:not-allowed)로 변경 (admin/index.html)
 
 #### 이번 세션 완료 항목 (꾸미기 도구 저장 + mini-RTE 수정 세션)
 - **꾸미기 도구 iOS 저장 수정** ✅: Web Share API 정상 동작, 이미지 실제 저장 가능
