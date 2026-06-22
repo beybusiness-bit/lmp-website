@@ -5836,11 +5836,18 @@ function startNewProject() {
   setSelfReg(false); document.getElementById('p-self-reg-modal-title').value=''; document.getElementById('p-self-reg-modal-desc').value=''; document.getElementById('p-self-reg-cta').value='등록하기'; document.getElementById('p-self-reg-success').value='';
   setSelfRegCtaSep(false); document.getElementById('p-self-reg-cta-icon-url').value=''; document.getElementById('p-self-reg-cta-sep-text').value='등록하기';
   curStats=[]; curCheckerRoles=[]; renderCheckerRoles(); curElementOrder=['edition','logo','dday','stats'];
-  curKeyColors=[];
-  ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-title','p-auth-desc']
+  curKeyColors=[{color:'#00CE6B',holdTime:8,transitionTime:2},{color:'#FFF100',holdTime:8,transitionTime:2},{color:'#F95548',holdTime:8,transitionTime:2},{color:'#0BC6FF',holdTime:8,transitionTime:2}];
+  ['p-id','p-name','p-edition','p-logo-url','p-logo-txt','p-cta-icon','p-cta-text','p-dday-date','p-auth-title','p-auth-desc',
+   'p-og-title','p-og-desc','p-og-image','p-greeting-text']
     .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   updateAuthColDisplay();
   const szEl = document.getElementById('p-logo-txt-size'); if(szEl) szEl.value='24';
+  const wEl = document.getElementById('p-logo-img-w'); if(wEl) wEl.value='76';
+  const ctaSzEl = document.getElementById('p-cta-icon-size'); if(ctaSzEl) ctaSzEl.value='72';
+  const efEdEl = document.getElementById('p-edition-font-size'); if(efEdEl) efEdEl.value='18';
+  const efDdEl = document.getElementById('p-dday-font-size'); if(efDdEl) efDdEl.value='32';
+  const efStEl = document.getElementById('p-stats-font-size'); if(efStEl) efStEl.value='21';
+  curElemFontSizes={}; curElementMargins={};
   document.getElementById('proj-del').style.display = 'none';
   const urlPrev = document.getElementById('p-url-preview');
   urlPrev.textContent = ''; urlPrev.href = '#'; urlPrev.style.display = 'none';
