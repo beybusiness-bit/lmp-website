@@ -4230,7 +4230,7 @@ function renderKeyColorList() {
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
         <input type="color" id="kcp-${i}" value="${c}" style="width:36px;height:32px;border:1.5px solid #000;padding:1px;cursor:pointer;flex-shrink:0;" oninput="onKcPick(${i},this.value)">
         <input id="kch-${i}" class="fi-sm" value="${c.toUpperCase()}" style="flex:1;margin-bottom:0;text-transform:uppercase;" oninput="onKcHex(${i},this.value)">
-        ${curKeyColors.length > 2 ? `<button class="rm-btn2" onclick="removeKeyColor(${i})">✕</button>` : ''}
+        <button class="rm-btn2" onclick="removeKeyColor(${i})" ${curKeyColors.length <= 2 ? 'disabled style="opacity:.3;cursor:not-allowed;"' : ''}>✕</button>
       </div>
       <div style="display:flex;gap:8px;">
         <label style="flex:1;font-size:11px;color:rgba(0,0,0,.5);">유지 (초)<input id="kcht-${i}" class="fi-sm" type="number" min="1" max="60" value="${k.holdTime||8}" style="margin:2px 0 0;display:block;" oninput="onKcHold(${i},this.value)"></label>
