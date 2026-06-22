@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="preload">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -10,7 +10,8 @@
 html{height:100%;}
 body{background:var(--body-bg,var(--c));transition:background-color 1s ease;display:flex;justify-content:center;height:100svh;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;}
 #app{width:100%;max-width:430px;height:100svh;overflow-y:scroll;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;position:relative;}
-:root{--c:#00CE6B;--prep-bg:#FFF100;--fill-color:#F95548;--menu-bg:#0BC6FF;}
+:root{--c:#000;--prep-bg:#000;--fill-color:#000;--menu-bg:#000;}
+html.preload *,html.preload *:before,html.preload *:after{transition:none!important;}
 .btn{display:block;width:100%;background:transparent;border:2px solid #000;border-radius:0;color:#000;font-size:15px;font-weight:700;padding:12px 0;cursor:pointer;font-family:inherit;letter-spacing:-.3px;-webkit-tap-highlight-color:transparent;transition:background .15s,color .15s;}
 .btn:hover,.btn:active{background:#000;color:var(--btn-ctx,#fff);}
 .inp{width:100%;background:transparent!important;border:none;border-bottom:2px solid #000;color:#000;font-size:17px;font-weight:600;padding:8px 0;outline:none;font-family:inherit;letter-spacing:1px;-webkit-appearance:none;appearance:none;border-radius:0;box-shadow:none!important;}
@@ -783,6 +784,7 @@ function applySettings(d){
   setCss('--prep-bg', prepBg);
   /* pager active dot: key color that differs from pager bar bg (--prep-bg) */
   setCss('--guide-pager', pickOther(prepBg, KEY_COLORS)||KEY_COLORS[0]||'#000');
+  requestAnimationFrame(()=>document.documentElement.classList.remove('preload'));
 
   /* title */
   if(d.name) document.title = d.name;
