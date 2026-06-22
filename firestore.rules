@@ -89,6 +89,14 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // 채팅
+    match /cms_chat_configs/{document=**} {
+      allow read, write: if true;
+    }
+    match /cms_chat_messages/{chatId}/messages/{msgId} {
+      allow read, write: if true;
+    }
+
     // 페이지 방문 카운터
     match /cms_page_views/{document=**} {
       allow read, write: if true;

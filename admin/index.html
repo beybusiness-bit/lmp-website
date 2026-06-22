@@ -453,6 +453,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
                   <option value="">선택하세요</option>
                   <option value="booth">꾸미기 도구 — 완성 이미지 갤러리</option>
                   <option value="guestbook">방명록 — 카드 슬라이더</option>
+                  <option value="chat">채팅 — 실시간 채팅방</option>
                 </select>
               </div>
               <div id="p-widget-instance-wrap" style="margin-bottom:10px;display:none;">
@@ -912,6 +913,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
             <div class="pi-name">방명록</div>
             <div class="pi-meta">방명록·기대평·후기 등 카드형 항목 수집 · 승인 관리</div>
           </div>
+          <div class="proj-item" onclick="openTool('chat')" style="cursor:pointer;">
+            <div class="pi-name">채팅</div>
+            <div class="pi-meta">실시간 채팅방 · 방문자 누구나 참여 · 익명 닉네임 자동 생성</div>
+          </div>
           <div class="proj-item" onclick="openTool('utm')" style="cursor:pointer;">
             <div class="pi-name">UTM 빌더 &amp; 숏링크</div>
             <div class="pi-meta">채널별 UTM URL 생성 · 대량 생성 · /go/닉네임 숏링크 · vercel.json 내보내기</div>
@@ -1078,6 +1083,56 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="sect-head">제출 내역</div>
               <div id="gbk-entries-summary" style="font-size:12px;color:rgba(0,0,0,.55);margin-bottom:10px;"></div>
               <div id="gbk-entries-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 채팅 관리 화면 -->
+      <div id="tool-chat-view" style="display:none;flex-direction:column;overflow:hidden;">
+        <div class="ed-top" style="flex-shrink:0;padding:10px 16px;margin-bottom:0;border-bottom:1.5px solid #000;">
+          <span class="back-btn" onclick="chatBack()">←</span>
+          <span id="chat-header-title" style="font-size:12px;font-weight:800;color:rgba(0,0,0,.4);">채팅</span>
+          <div style="flex:1;"></div>
+        </div>
+        <div id="chat-list-screen" style="padding:16px;overflow-y:auto;flex:1;">
+          <div class="ed-lbl" style="margin-bottom:16px;color:rgba(0,0,0,.5);">채팅방을 만든 뒤 블록 에디터의 "도구" 탭에서 채팅 블록으로 연결할 수 있어요.</div>
+          <button class="save-btn" onclick="chatCreateConfig()" style="width:100%;margin-bottom:16px;">+ 새 채팅방 만들기</button>
+          <div id="chat-config-list"><div class="empty-msg">불러오는 중…</div></div>
+        </div>
+        <div id="chat-edit-screen" style="display:none;flex-direction:column;overflow:hidden;">
+          <div style="padding:10px 16px;border-bottom:1.5px solid rgba(0,0,0,.12);flex-shrink:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button class="mbtn-cancel" style="flex:0 0 auto;" onclick="chatShowList()">← 목록</button>
+            <button class="save-btn" style="flex:1;" onclick="chatSaveConfig(event)">저장</button>
+            <button class="prev-btn" onclick="openToolPreview('/tools/chat/?id='+chatState.curConfigId)" style="font-size:11px;padding:6px 10px;">미리보기</button>
+            <button class="prev-btn" onclick="chatDeleteConfig()" style="font-size:11px;padding:6px 10px;color:#c00;border-color:#c00;">삭제</button>
+          </div>
+          <div style="padding:16px;overflow-y:auto;flex:1;">
+            <div class="ed-sect">
+              <div class="ed-lbl">채팅방 이름</div>
+              <input class="fi" id="chat-title-inp" placeholder="예: 실시간 Q&amp;A" style="margin-bottom:0;">
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">설명 <span style="font-weight:400;opacity:.55;">(선택)</span></div>
+              <div class="fmt-bar" style="display:flex;gap:2px;flex-wrap:wrap;margin-bottom:4px;">
+                <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-bold-chat-desc" onpointerdown="epd(event)" onclick="fmtCmd('chat-desc','bold')"><b>B</b></button>
+                <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-sz-chat-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'sz','chat-desc')">Aa</button>
+                <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-clr-chat-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'clr','chat-desc')" style="padding:5px 7px;"><span id="fmt-clr-dot-chat-desc" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#000;border:1.5px solid rgba(0,0,0,.2);vertical-align:middle;"></span></button>
+                <button class="fmt-btn" onmousedown="event.preventDefault()" id="fmt-link-chat-desc" onpointerdown="epd(event)" onclick="openFmtDd(this,'link','chat-desc')" title="링크" style="font-size:13px;padding:4px 7px;">🔗</button>
+              </div>
+              <div class="mini-rte" id="ed-chat-desc" contenteditable="true" data-ph="채팅방 설명을 입력하세요" onmouseup="saveRange(this)" ontouchend="saveRange(this)" onkeyup="saveRange(this)"></div>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">익명 닉네임 — 단어 묶음 1 <span style="font-weight:400;opacity:.55;">(쉼표 구분, 예: 형용사)</span></div>
+              <textarea class="fi-sm" id="chat-anon-w1-inp" placeholder="예: 게으른, 빠른, 귀여운, 졸린, 용감한" style="width:100%;height:64px;resize:vertical;margin-bottom:0;font-size:13px;" oninput="chatSyncAnonWords(1)"></textarea>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">익명 닉네임 — 단어 묶음 2 <span style="font-weight:400;opacity:.55;">(쉼표 구분, 예: 동물·명사)</span></div>
+              <textarea class="fi-sm" id="chat-anon-w2-inp" placeholder="예: 카피바라, 너구리, 고양이, 판다, 토끼" style="width:100%;height:64px;resize:vertical;margin-bottom:0;font-size:13px;" oninput="chatSyncAnonWords(2)"></textarea>
+            </div>
+            <div class="ed-sect">
+              <div class="ed-lbl">최대 메시지 수 <span style="font-weight:400;opacity:.55;">(초과 시 오래된 메시지 자동 삭제)</span></div>
+              <input class="fi" id="chat-max-msgs" type="number" min="20" max="1000" placeholder="200" style="margin-bottom:0;width:120px;">
             </div>
           </div>
         </div>
@@ -2533,6 +2588,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
         <button class="blk-tab"    id="ttab-payment"           onclick="switchToolType('payment')"           style="font-size:12px;padding:6px 12px;">결제</button>
         <button class="blk-tab"    id="ttab-guestbook"         onclick="switchToolType('guestbook')"         style="font-size:12px;padding:6px 12px;">방명록</button>
         <button class="blk-tab"    id="ttab-raffle"            onclick="switchToolType('raffle')"            style="font-size:12px;padding:6px 12px;">뽑기</button>
+        <button class="blk-tab"    id="ttab-chat"              onclick="switchToolType('chat')"              style="font-size:12px;padding:6px 12px;">채팅</button>
       </div>
       <div id="tool-inst-section">
         <div class="ed-lbl" style="margin-bottom:6px;">인스턴스 선택</div>
@@ -6588,9 +6644,9 @@ function renderBlockList() {
   if(!curBlocks.length){el.innerHTML=_blkInsertRow(0)+'<div class="empty-msg" style="padding:10px 0;">블록이 없어요.</div>';return;}
   const items=curBlocks.map((b,i)=>{
     const tl=b.type==='text'?'텍스트':b.type==='image'?'이미지':b.type==='mixed'?'혼합':b.type==='embed'?'임베드':b.type==='tool'?'도구':b.type==='spacer'?'스페이서':b.type==='divider'?'구분선':b.type==='mission'?'미션':'폼(구)';
-    const _ttMap={'form':'폼','booth':'꾸미기','guide':'계산기','youtube-playlist':'유튜브 뮤직','schedule':'일정잡기','copy-gen':'문구 생성기','payment':'결제','guestbook':'방명록','raffle':'뽑기'};
+    const _ttMap={'form':'폼','booth':'꾸미기','guide':'계산기','youtube-playlist':'유튜브 뮤직','schedule':'일정잡기','copy-gen':'문구 생성기','payment':'결제','guestbook':'방명록','raffle':'뽑기','chat':'채팅'};
     const _ttLabel=_ttMap[b.toolType]||b.toolType||'?';
-    const _tcId=b.toolConfig?.formId||b.toolConfig?.boothId||b.toolConfig?.guideId||b.toolConfig?.copyGenId||b.toolConfig?.scheduleId||b.toolConfig?.youtubePlaylistId||b.toolConfig?.paymentId||b.toolConfig?.guestbookId||'';
+    const _tcId=b.toolConfig?.formId||b.toolConfig?.boothId||b.toolConfig?.guideId||b.toolConfig?.copyGenId||b.toolConfig?.scheduleId||b.toolConfig?.youtubePlaylistId||b.toolConfig?.paymentId||b.toolConfig?.guestbookId||b.toolConfig?.chatId||'';
     const toolSubLbl=b.type==='tool'?(_ttLabel+(_tcId?' · '+_tcId:'')):'';
 
     const pv=b.type==='text'?(b.textContent||'').replace(/<[^>]+>/g,'').slice(0,32):
@@ -7341,7 +7397,7 @@ function openBlockModal(idx,insertAt){
     curBlkToolType=b.toolType||'form';
     curBlkToolConfig={...b.toolConfig||{}};
     curBlkCompleteTrigger=b.completeTrigger||'tool-signal';
-    ['form','booth','guide','youtube-playlist','schedule','copy-gen','payment','guestbook','raffle'].forEach(k=>{
+    ['form','booth','guide','youtube-playlist','schedule','copy-gen','payment','guestbook','raffle','chat'].forEach(k=>{
       const el=document.getElementById('ttab-'+k);
       if(el) el.classList.toggle('on',k===curBlkToolType);
     });
@@ -7796,6 +7852,7 @@ function saveBlock(){
     else if(curBlkToolType==='payment') tc.paymentId=selV;
     else if(curBlkToolType==='guestbook') tc.guestbookId=selV;
     else if(curBlkToolType==='raffle') tc.raffleId=selV;
+    else if(curBlkToolType==='chat') tc.chatId=selV;
     b.toolType=curBlkToolType;
     b.toolConfig=tc;
     b.height=curToolHeightMode==='full'?'full':(curToolHeightMode==='px'?parseInt(document.getElementById('tool-height')?.value)||0:0);
@@ -7939,7 +7996,7 @@ function switchBlkTab(t){
 const SINGLE_TOOL_TYPES = []; // 모든 도구 인스턴스 선택형
 function switchToolType(tt){
   curBlkToolType=tt;
-  ['form','booth','guide','youtube-playlist','schedule','copy-gen','payment','guestbook','raffle'].forEach(k=>{
+  ['form','booth','guide','youtube-playlist','schedule','copy-gen','payment','guestbook','raffle','chat'].forEach(k=>{
     const el=document.getElementById('ttab-'+k);
     if(el) el.classList.toggle('on',k===tt);
   });
@@ -7984,9 +8041,12 @@ async function loadToolInstList(tt){
     } else if(tt==='raffle'){
       const snap=await db.collection('cms_raffle_configs').get();
       toolInstList=snap.docs.map(d=>({id:d.id,...d.data()}));
+    } else if(tt==='chat'){
+      const snap=await db.collection('cms_chat_configs').orderBy('createdAt','desc').get();
+      toolInstList=snap.docs.map(d=>({id:d.id,...d.data()}));
     }
   }catch(e){ console.error('[loadToolInstList]',e); }
-  const cur=tt==='form'?curBlkToolConfig?.formId:tt==='booth'?curBlkToolConfig?.boothId:tt==='guide'?curBlkToolConfig?.guideId:tt==='schedule'?curBlkToolConfig?.scheduleId:tt==='copy-gen'?curBlkToolConfig?.copyGenId:tt==='youtube-playlist'?curBlkToolConfig?.youtubePlaylistId:tt==='payment'?curBlkToolConfig?.paymentId:tt==='guestbook'?curBlkToolConfig?.guestbookId:tt==='raffle'?curBlkToolConfig?.raffleId:'';
+  const cur=tt==='form'?curBlkToolConfig?.formId:tt==='booth'?curBlkToolConfig?.boothId:tt==='guide'?curBlkToolConfig?.guideId:tt==='schedule'?curBlkToolConfig?.scheduleId:tt==='copy-gen'?curBlkToolConfig?.copyGenId:tt==='youtube-playlist'?curBlkToolConfig?.youtubePlaylistId:tt==='payment'?curBlkToolConfig?.paymentId:tt==='guestbook'?curBlkToolConfig?.guestbookId:tt==='raffle'?curBlkToolConfig?.raffleId:tt==='chat'?curBlkToolConfig?.chatId:'';
   sel.innerHTML='<option value="">— 선택하세요 —</option>'+toolInstList.map(x=>`<option value="${x.id}"${x.id===cur?' selected':''}>${x.name||x.title||x.id}</option>`).join('');
 }
 function openToolManageLink(e){
@@ -8002,6 +8062,7 @@ function openToolManageLink(e){
     'payment':           'payment',
     'guestbook':         'guestbook',
     'raffle':            'raffle',
+    'chat':              'chat',
   };
   const toolId = toolIdMap[tt] || 'form-mgr';
   const instId = tt==='form'?curBlkToolConfig?.formId
@@ -8012,7 +8073,8 @@ function openToolManageLink(e){
     :tt==='youtube-playlist'?curBlkToolConfig?.youtubePlaylistId
     :tt==='payment'?curBlkToolConfig?.paymentId
     :tt==='guestbook'?curBlkToolConfig?.guestbookId
-    :tt==='raffle'?curBlkToolConfig?.raffleId:'';
+    :tt==='raffle'?curBlkToolConfig?.raffleId
+    :tt==='chat'?curBlkToolConfig?.chatId:'';
   /* 블록 모달 + 스테이지 오버레이(z-index:200) 닫기 — 오버레이가 열린 채로 switchTab 하면 도구 패널이 가려짐 */
   document.getElementById('block-modal').classList.remove('on');
   const sco = document.getElementById('stage-content-overlay');
@@ -8026,6 +8088,7 @@ function openToolManageLink(e){
     else if(tt==='youtube-playlist') ytPlaylistEdit(instId);
     else if(tt==='payment') pyEdit(instId);
     else if(tt==='guestbook') gbkOpenConfig(instId);
+    else if(tt==='chat') chatOpenConfig(instId);
   }
 }
 /* ── 이미지 초점 드래그 ── */
@@ -9484,6 +9547,7 @@ window.addEventListener('load', () => {
       else if(st.toolId==='youtube-playlist') ytPlaylistEdit(st.docId);
       else if(st.toolId==='payment') pyEdit(st.docId);
       else if(st.toolId==='guestbook') gbkOpenConfig(st.docId);
+      else if(st.toolId==='chat') chatOpenConfig(st.docId);
       _navRestore=false;
       return;
     }
@@ -9508,6 +9572,7 @@ function openTool(toolId) {
   if(toolId === 'copy-gen') { cgShowList(); }
   if(toolId === 'payment') { pyInit(); }
   if(toolId === 'guestbook') { gbkShowList(); }
+  if(toolId === 'chat') { chatShowList(); }
   if(toolId === 'utm') { utmInit(); }
   if(toolId === 'lottery') { lotteryInit(); }
 }
@@ -12279,6 +12344,7 @@ function copyToolUrl(toolType, docId, btn){
     'schedule':'/tools/schedule/?id=',
     'payment':'/tools/payment/?id=',
     'guestbook':'/tools/guestbook/?id=',
+    'chat':'/tools/chat/?id=',
     'guide':'/tools/guide/?id=',
     'booth':'/tools/booth/',
     'booth-config':'/tools/booth/?config=',
@@ -13295,6 +13361,119 @@ async function deleteGbkEntry(configId, entryId) {
     await db.collection('cms_guestbook_entries').doc(configId).collection('entries').doc(entryId).delete();
     gbkViewEntries();
   } catch(e) { alert('삭제 실패: ' + e.message); }
+}
+
+/* ── Chat Tool ── */
+const chatState = { curConfigId: null, curAnonWords1: [], curAnonWords2: [] };
+
+function chatBack() { closeTool(); }
+
+function chatShowList() {
+  document.getElementById('chat-list-screen').style.display = '';
+  document.getElementById('chat-edit-screen').style.display = 'none';
+  document.getElementById('chat-header-title').textContent = '채팅';
+  chatLoadList();
+}
+
+async function chatLoadList() {
+  const listEl = document.getElementById('chat-config-list');
+  listEl.innerHTML = '<div class="empty-msg">불러오는 중…</div>';
+  try {
+    const snap = await db.collection('cms_chat_configs').orderBy('createdAt','desc').get();
+    if (snap.empty) { listEl.innerHTML = '<div class="empty-msg">아직 채팅방이 없어요.</div>'; return; }
+    listEl.innerHTML = snap.docs.map(d => {
+      const data = d.data();
+      return `<div class="proj-item" onclick="chatOpenConfig('${d.id}')" style="cursor:pointer;">
+        <div class="pi-name">${escHtml(data.title || '(제목 없음)')}</div>
+        <div class="pi-meta">최대 ${data.maxMessages||200}개 메시지</div>
+        <div class="blk-acts" style="margin-top:6px;">
+          <button class="b-btn" onclick="event.stopPropagation();copyToolUrl('chat','${d.id}',this)" title="URL 복사">🔗</button>
+          <button class="b-btn" onclick="event.stopPropagation();if(confirm('이 채팅방을 삭제할까요?'))chatDeleteById('${d.id}')">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { listEl.innerHTML = `<div class="empty-msg">불러오기 실패: ${escHtml(e.message)}</div>`; }
+}
+
+async function chatDeleteById(id) {
+  try { await db.collection('cms_chat_configs').doc(id).delete(); chatLoadList(); }
+  catch(e) { alert('삭제 실패: ' + e.message); }
+}
+
+async function chatCreateConfig() {
+  try {
+    const docRef = await db.collection('cms_chat_configs').add({
+      title: '새 채팅방',
+      description: '',
+      anonWords1: [],
+      anonWords2: [],
+      maxMessages: 200,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    chatOpenConfig(docRef.id);
+  } catch(e) { alert('생성 실패: ' + e.message); }
+}
+
+async function chatOpenConfig(configId) {
+  chatState.curConfigId = configId;
+  document.getElementById('chat-list-screen').style.display = 'none';
+  document.getElementById('chat-edit-screen').style.display = 'flex';
+  document.getElementById('chat-header-title').textContent = '채팅방 편집';
+  try {
+    const snap = await db.collection('cms_chat_configs').doc(configId).get();
+    if (!snap.exists) { alert('설정을 찾을 수 없어요.'); chatShowList(); return; }
+    const data = snap.data();
+    chatState.curAnonWords1 = [...(data.anonWords1 || [])];
+    chatState.curAnonWords2 = [...(data.anonWords2 || [])];
+    document.getElementById('chat-title-inp').value = data.title || '';
+    rteSet('chat-desc', data.description || '');
+    document.getElementById('chat-max-msgs').value = data.maxMessages || 200;
+    chatRenderAnonWords();
+    if(!_navRestore) history.pushState({v:'tool-edit',toolId:'chat',docId:configId},'','#tools/chat/'+configId);
+  } catch(e) { alert('불러오기 실패: ' + e.message); chatShowList(); }
+}
+
+async function chatSaveConfig(e) {
+  if (e) e.preventDefault();
+  if (!chatState.curConfigId) return;
+  const btn = document.querySelector('#chat-edit-screen .save-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '저장 중…'; }
+  try {
+    await db.collection('cms_chat_configs').doc(chatState.curConfigId).update({
+      title: document.getElementById('chat-title-inp').value.trim() || '채팅',
+      description: rteGet('chat-desc'),
+      anonWords1: chatState.curAnonWords1,
+      anonWords2: chatState.curAnonWords2,
+      maxMessages: parseInt(document.getElementById('chat-max-msgs').value) || 200,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    if (btn) { btn.textContent = '저장됨 ✓'; setTimeout(()=>{ btn.disabled=false; btn.textContent='저장'; },1500); }
+  } catch(ex) {
+    alert('저장 실패: ' + ex.message);
+    if (btn) { btn.disabled=false; btn.textContent='저장'; }
+  }
+}
+
+async function chatDeleteConfig() {
+  if (!chatState.curConfigId) return;
+  if (!confirm('이 채팅방을 삭제할까요? 메시지는 별도로 남아있을 수 있습니다.')) return;
+  try {
+    await db.collection('cms_chat_configs').doc(chatState.curConfigId).delete();
+    chatShowList();
+  } catch(e) { alert('삭제 실패: ' + e.message); }
+}
+
+function chatSyncAnonWords(which) {
+  const raw = document.getElementById('chat-anon-w' + which + '-inp').value;
+  const arr = raw.split(',').map(w => w.trim()).filter(Boolean);
+  if (which === 1) chatState.curAnonWords1 = arr;
+  else chatState.curAnonWords2 = arr;
+}
+
+function chatRenderAnonWords() {
+  document.getElementById('chat-anon-w1-inp').value = chatState.curAnonWords1.join(', ');
+  document.getElementById('chat-anon-w2-inp').value = chatState.curAnonWords2.join(', ');
 }
 </script>
 <!-- 폼 필드 추가/편집 모달 -->

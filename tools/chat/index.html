@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>채팅</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+:root{--lmp-block-bg:#fff;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:transparent;color:#000;display:flex;flex-direction:column;overflow:hidden;}
+
+#loading{display:flex;align-items:center;justify-content:center;flex:1;font-size:14px;color:rgba(0,0,0,.45);}
+#err-screen{display:none;padding:40px 20px;text-align:center;font-size:14px;color:#c00;font-weight:700;line-height:1.6;}
+#chat-wrap{display:none;flex:1;flex-direction:column;overflow:hidden;}
+#chat-wrap.on{display:flex;}
+
+#chat-header{padding:12px 16px 8px;border-bottom:1.5px solid rgba(0,0,0,.1);flex-shrink:0;}
+#chat-title{font-size:15px;font-weight:800;line-height:1.3;}
+#chat-desc{font-size:12px;color:rgba(0,0,0,.5);margin-top:3px;line-height:1.5;}
+#my-name-row{margin-top:6px;display:inline-flex;align-items:center;gap:5px;font-size:11px;color:rgba(0,0,0,.45);cursor:pointer;}
+#my-name-row:active{opacity:.6;}
+#my-name-val{font-weight:700;color:rgba(0,0,0,.65);}
+
+#msg-list{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch;}
+.msg-empty{text-align:center;color:rgba(0,0,0,.35);font-size:13px;padding:32px 16px;line-height:1.7;}
+
+.msg-row{display:flex;gap:9px;align-items:flex-start;}
+.msg-avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;}
+.msg-body{flex:1;min-width:0;}
+.msg-meta{display:flex;align-items:baseline;gap:6px;margin-bottom:3px;}
+.msg-name{font-size:12px;font-weight:700;}
+.msg-time{font-size:10px;color:rgba(0,0,0,.35);white-space:nowrap;flex-shrink:0;}
+.msg-text{font-size:14px;line-height:1.55;word-break:break-word;white-space:pre-wrap;}
+
+#input-row{padding:10px 12px;border-top:1.5px solid rgba(0,0,0,.1);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;background:#fff;}
+#chat-input{flex:1;border:1.5px solid rgba(0,0,0,.18);border-radius:18px;padding:8px 14px;font-size:14px;font-family:inherit;outline:none;resize:none;max-height:90px;overflow-y:auto;line-height:1.45;background:transparent;}
+#chat-input:focus{border-color:#000;}
+#send-btn{background:#000;color:#fff;border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+#send-btn:disabled{opacity:.3;cursor:not-allowed;}
+#send-btn:not(:disabled):active{opacity:.7;}
+</style>
+</head>
+<body>
+<div id="loading">불러오는 중…</div>
+<div id="err-screen"></div>
+<div id="chat-wrap">
+  <div id="chat-header">
+    <div id="chat-title"></div>
+    <div id="chat-desc"></div>
+    <div id="my-name-row" onclick="changeName()">나: <span id="my-name-val"></span> ✏️</div>
+  </div>
+  <div id="msg-list"><div class="msg-empty">불러오는 중…</div></div>
+  <div id="input-row">
+    <textarea id="chat-input" placeholder="메시지를 입력하세요" maxlength="300" rows="1"
+      oninput="onInputChange()" onkeydown="onInputKey(event)"></textarea>
+    <button id="send-btn" onclick="sendMsg()" disabled>↑</button>
+  </div>
+</div>
+<script>
+const FIREBASE_CONFIG={apiKey:"AIzaSyC8uy09XOeEYIs1m3Rga5BMqd7gS7o3roI",authDomain:"beyhome-admin.firebaseapp.com",projectId:"beyhome-admin",storageBucket:"beyhome-admin.firebasestorage.app",messagingSenderId:"849320781553",appId:"1:849320781553:web:9d844044e85995c0aa2b50"};
+firebase.initializeApp(FIREBASE_CONFIG);
+const db=firebase.firestore();
+
+const params=new URLSearchParams(location.search);
+const CHAT_ID=params.get('id')||'';
+
+let ctxProjectId='',ctxUserId='',ctxUserFields={};
+let CONFIG={};
+let myName='',myColor='';
+let _unsubscribe=null,_autoScroll=true;
+
+const AVATAR_COLORS=['#e74c3c','#e67e22','#27ae60','#1abc9c','#2980b9','#8e44ad','#e91e63','#00bcd4','#ff5722','#607d8b','#795548','#f39c12'];
+
+function _lmpOriginOk(o){if(!o)return true;try{const h=new URL(o).hostname;return h==='lazymaxpotential.kr'||h.endsWith('.vercel.app')||h==='localhost'||h==='127.0.0.1';}catch{return false;}}
+
+window.addEventListener('message',e=>{
+  if(!_lmpOriginOk(e.origin))return;
+  if(e.data?.type!=='lmp-context')return;
+  ctxProjectId=e.data.projectId||'';
+  ctxUserId=e.data.userId||'';
+  ctxUserFields=e.data.userFields||{};
+});
+window.parent.postMessage({type:'lmp-ready'},'*');
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+if(!CHAT_ID){
+  document.getElementById('loading').style.display='none';
+  const er=document.getElementById('err-screen');
+  er.style.display='block';
+  er.textContent='채팅 ID가 없어요. 블록 에디터에서 채팅 인스턴스를 연결해주세요.';
+}else{init();}
+
+async function init(){
+  try{
+    const snap=await db.collection('cms_chat_configs').doc(CHAT_ID).get();
+    if(!snap.exists)throw new Error('채팅 설정을 찾을 수 없어요.');
+    CONFIG=snap.data();
+    document.getElementById('chat-title').textContent=CONFIG.title||'채팅';
+    const descEl=document.getElementById('chat-desc');
+    if(CONFIG.description){descEl.innerHTML=CONFIG.description;}else{descEl.style.display='none';}
+    myName=getOrCreateName();
+    myColor=getOrCreateColor();
+    document.getElementById('my-name-val').textContent=myName;
+    document.getElementById('loading').style.display='none';
+    document.getElementById('chat-wrap').classList.add('on');
+    subscribeMessages();
+  }catch(e){
+    document.getElementById('loading').style.display='none';
+    const er=document.getElementById('err-screen');
+    er.style.display='block';
+    er.textContent='오류: '+e.message;
+  }
+}
+
+function getOrCreateName(){
+  const key='chat_name_'+CHAT_ID;
+  let n=sessionStorage.getItem(key);
+  if(n)return n;
+  n=generateAnonName();
+  sessionStorage.setItem(key,n);
+  return n;
+}
+function getOrCreateColor(){
+  const key='chat_color_'+CHAT_ID;
+  let c=sessionStorage.getItem(key);
+  if(c)return c;
+  c=AVATAR_COLORS[Math.floor(Math.random()*AVATAR_COLORS.length)];
+  sessionStorage.setItem(key,c);
+  return c;
+}
+function generateAnonName(){
+  const w1=CONFIG.anonWords1||[];
+  const w2=CONFIG.anonWords2||[];
+  if(!w1.length&&!w2.length)return'익명';
+  const p1=w1.length?w1[Math.floor(Math.random()*w1.length)]:'';
+  const p2=w2.length?w2[Math.floor(Math.random()*w2.length)]:'';
+  return[p1,p2].filter(Boolean).join(' ')||'익명';
+}
+function changeName(){
+  const n=prompt('대화명을 입력해주세요 (최대 16자)',myName);
+  if(!n||!n.trim())return;
+  myName=n.trim().slice(0,16);
+  sessionStorage.setItem('chat_name_'+CHAT_ID,myName);
+  document.getElementById('my-name-val').textContent=myName;
+}
+
+function subscribeMessages(){
+  const maxMsg=CONFIG.maxMessages||200;
+  if(_unsubscribe)_unsubscribe();
+  _unsubscribe=db.collection('cms_chat_messages').doc(CHAT_ID)
+    .collection('messages')
+    .orderBy('sentAt','asc')
+    .limitToLast(maxMsg)
+    .onSnapshot(snap=>{
+      renderMessages(snap.docs.map(d=>({id:d.id,...d.data()})));
+    },e=>console.error('[chat]',e));
+}
+
+function renderMessages(msgs){
+  const el=document.getElementById('msg-list');
+  const wasAtBottom=el.scrollTop+el.clientHeight>=el.scrollHeight-60;
+  if(!msgs.length){
+    el.innerHTML='<div class="msg-empty">아직 메시지가 없어요.<br>첫 번째로 인사해보세요 👋</div>';
+    return;
+  }
+  el.innerHTML=msgs.map(m=>{
+    const initials=esc((m.displayName||'?').slice(0,1));
+    const time=m.sentAt?.toDate?formatTime(m.sentAt.toDate()):'';
+    return`<div class="msg-row">
+      <div class="msg-avatar" style="background:${esc(m.color||'#999')}">${initials}</div>
+      <div class="msg-body">
+        <div class="msg-meta"><span class="msg-name">${esc(m.displayName||'익명')}</span><span class="msg-time">${time}</span></div>
+        <div class="msg-text">${esc(m.text||'')}</div>
+      </div>
+    </div>`;
+  }).join('');
+  if(wasAtBottom||_autoScroll){el.scrollTop=el.scrollHeight;_autoScroll=false;}
+}
+
+function formatTime(d){
+  const now=new Date(),diff=now-d;
+  if(diff<60000)return'방금';
+  if(diff<3600000)return Math.floor(diff/60000)+'분 전';
+  const h=d.getHours(),m=String(d.getMinutes()).padStart(2,'0');
+  return(h<12?'오전':'오후')+' '+(h%12||12)+':'+m;
+}
+function onInputChange(){
+  const v=document.getElementById('chat-input').value.trim();
+  document.getElementById('send-btn').disabled=!v;
+  const ta=document.getElementById('chat-input');
+  ta.style.height='auto';
+  ta.style.height=Math.min(ta.scrollHeight,90)+'px';
+}
+function onInputKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+async function sendMsg(){
+  const input=document.getElementById('chat-input');
+  const text=input.value.trim();
+  if(!text)return;
+  document.getElementById('send-btn').disabled=true;
+  input.value='';
+  input.style.height='auto';
+  _autoScroll=true;
+  try{
+    await db.collection('cms_chat_messages').doc(CHAT_ID).collection('messages').add({
+      text,displayName:myName,color:myColor,
+      userId:ctxUserId||null,
+      sentAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    pruneOldMessages();
+  }catch(e){
+    alert('전송 실패: '+e.message);
+    input.value=text;
+    onInputChange();
+  }
+}
+async function pruneOldMessages(){
+  const maxMsg=CONFIG.maxMessages||200;
+  try{
+    const snap=await db.collection('cms_chat_messages').doc(CHAT_ID)
+      .collection('messages').orderBy('sentAt','asc').get();
+    if(snap.size<=maxMsg)return;
+    const toDelete=snap.docs.slice(0,snap.size-maxMsg);
+    const batch=db.batch();
+    toDelete.forEach(d=>batch.delete(d.ref));
+    await batch.commit();
+  }catch(e){}
+}
+</script>
+</body>
+</html>
