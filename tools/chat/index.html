@@ -20,22 +20,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 #chat-header{padding:12px 16px 8px;border-bottom:1.5px solid rgba(0,0,0,.1);flex-shrink:0;}
 #chat-title{font-size:15px;font-weight:800;line-height:1.3;}
 #chat-desc{font-size:12px;color:rgba(0,0,0,.5);margin-top:3px;line-height:1.5;}
-#my-name-row{margin-top:6px;display:inline-flex;align-items:center;gap:5px;font-size:11px;color:rgba(0,0,0,.45);cursor:pointer;}
+#chat-header-meta{display:flex;align-items:center;justify-content:space-between;margin-top:6px;}
+#online-count{font-size:11px;color:rgba(0,0,0,.4);}
+#my-name-row{display:none;align-items:center;gap:5px;font-size:11px;color:rgba(0,0,0,.45);cursor:pointer;}
 #my-name-row:active{opacity:.6;}
 #my-name-val{font-weight:700;color:rgba(0,0,0,.65);}
 
-#msg-list{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch;}
+#msg-list{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch;}
 .msg-empty{text-align:center;color:rgba(0,0,0,.35);font-size:13px;padding:32px 16px;line-height:1.7;}
 
+/* 시스템 메시지 (입장/퇴장) */
+.msg-system{text-align:center;font-size:11px;color:rgba(0,0,0,.38);padding:2px 0;line-height:1.6;}
+
+/* 일반 메시지 */
 .msg-row{display:flex;gap:9px;align-items:flex-start;}
-.msg-avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;}
+.msg-avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;overflow:hidden;}
+.msg-avatar img{width:100%;height:100%;object-fit:cover;}
 .msg-body{flex:1;min-width:0;}
 .msg-meta{display:flex;align-items:baseline;gap:6px;margin-bottom:3px;}
 .msg-name{font-size:12px;font-weight:700;}
 .msg-time{font-size:10px;color:rgba(0,0,0,.35);white-space:nowrap;flex-shrink:0;}
 .msg-text{font-size:14px;line-height:1.55;word-break:break-word;white-space:pre-wrap;}
+.msg-text a{color:#0070f3;text-decoration:underline;word-break:break-all;}
 
-#input-row{padding:10px 12px;border-top:1.5px solid rgba(0,0,0,.1);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;background:#fff;}
+/* 입력 영역 - 투명 배경 */
+#input-row{padding:10px 12px;border-top:1.5px solid rgba(0,0,0,.1);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;background:transparent;}
 #chat-input{flex:1;border:1.5px solid rgba(0,0,0,.18);border-radius:18px;padding:8px 14px;font-size:14px;font-family:inherit;outline:none;resize:none;max-height:90px;overflow-y:auto;line-height:1.45;background:transparent;}
 #chat-input:focus{border-color:#000;}
 #send-btn{background:#000;color:#fff;border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
@@ -50,7 +59,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   <div id="chat-header">
     <div id="chat-title"></div>
     <div id="chat-desc"></div>
-    <div id="my-name-row" onclick="changeName()">나: <span id="my-name-val"></span> ✏️</div>
+    <div id="chat-header-meta">
+      <div id="online-count"></div>
+      <div id="my-name-row" onclick="changeName()">나: <span id="my-name-val"></span> ✏️</div>
+    </div>
   </div>
   <div id="msg-list"><div class="msg-empty">불러오는 중…</div></div>
   <div id="input-row">
@@ -69,8 +81,11 @@ const CHAT_ID=params.get('id')||'';
 
 let ctxProjectId='',ctxUserId='',ctxUserFields={};
 let CONFIG={};
-let myName='',myColor='';
-let _unsubscribe=null,_autoScroll=true;
+let myName='',myColor='',myPhotoUrl='';
+let _unsubscribe=null,_unsubPresence=null,_autoScroll=true;
+let _presenceKey='',_presenceInterval=null,_leftSent=false;
+let _isAnon=true;
+let _ctxReceived=false,_initPending=false;
 
 const AVATAR_COLORS=['#e74c3c','#e67e22','#27ae60','#1abc9c','#2980b9','#8e44ad','#e91e63','#00bcd4','#ff5722','#607d8b','#795548','#f39c12'];
 
@@ -82,37 +97,71 @@ window.addEventListener('message',e=>{
   ctxProjectId=e.data.projectId||'';
   ctxUserId=e.data.userId||'';
   ctxUserFields=e.data.userFields||{};
+  _ctxReceived=true;
+  if(_initPending){_initPending=false;init();}
 });
 window.parent.postMessage({type:'lmp-ready'},'*');
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function linkify(rawText){
+  // 텍스트를 escape한 뒤 URL을 <a> 태그로 변환
+  const escaped=esc(rawText);
+  return escaped.replace(/(https?:\/\/[^\s<>"']+)/g,'<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+}
 
 if(!CHAT_ID){
   document.getElementById('loading').style.display='none';
   const er=document.getElementById('err-screen');
   er.style.display='block';
   er.textContent='채팅 ID가 없어요. 블록 에디터에서 채팅 인스턴스를 연결해주세요.';
-}else{init();}
+} else {
+  // lmp-context를 최대 500ms 대기 후 없으면 그냥 시작
+  _initPending=true;
+  setTimeout(()=>{if(_initPending){_initPending=false;init();}},500);
+}
 
 async function init(){
   try{
     const snap=await db.collection('cms_chat_configs').doc(CHAT_ID).get();
     if(!snap.exists)throw new Error('채팅 설정을 찾을 수 없어요.');
     CONFIG=snap.data();
+    _isAnon=(CONFIG.chatMode||'anon')==='anon';
+
     document.getElementById('chat-title').textContent=CONFIG.title||'채팅';
     const descEl=document.getElementById('chat-desc');
     if(CONFIG.description){descEl.innerHTML=CONFIG.description;}else{descEl.style.display='none';}
-    myName=getOrCreateName();
-    myColor=getOrCreateColor();
-    document.getElementById('my-name-val').textContent=myName;
+
+    setupIdentity();
+
     document.getElementById('loading').style.display='none';
     document.getElementById('chat-wrap').classList.add('on');
     subscribeMessages();
+    setupPresence();
   }catch(e){
     document.getElementById('loading').style.display='none';
     const er=document.getElementById('err-screen');
     er.style.display='block';
     er.textContent='오류: '+e.message;
+  }
+}
+
+function setupIdentity(){
+  if(_isAnon){
+    myName=getOrCreateName();
+    myColor=getOrCreateColor();
+    myPhotoUrl='';
+    const nameRow=document.getElementById('my-name-row');
+    nameRow.style.display='inline-flex';
+    document.getElementById('my-name-val').textContent=myName;
+  } else {
+    // 실명 모드: lmp-context userFields에서 이름/사진 추출
+    const nameField=CONFIG.realNameField||'name';
+    const photoField=CONFIG.realPhotoField||'';
+    myName=String(ctxUserFields[nameField]||ctxUserFields['이름']||ctxUserFields['name']||'사용자').slice(0,20);
+    myColor=getOrCreateColor();
+    myPhotoUrl=photoField&&ctxUserFields[photoField]?String(ctxUserFields[photoField]):'';
+    document.getElementById('my-name-row').style.display='none';
   }
 }
 
@@ -141,11 +190,70 @@ function generateAnonName(){
   return[p1,p2].filter(Boolean).join(' ')||'익명';
 }
 function changeName(){
+  if(!_isAnon)return;
   const n=prompt('대화명을 입력해주세요 (최대 16자)',myName);
   if(!n||!n.trim())return;
   myName=n.trim().slice(0,16);
   sessionStorage.setItem('chat_name_'+CHAT_ID,myName);
   document.getElementById('my-name-val').textContent=myName;
+  if(_presenceKey){
+    db.collection('cms_chat_presence').doc(CHAT_ID).collection('users').doc(_presenceKey)
+      .update({name:myName}).catch(()=>{});
+  }
+}
+
+/* ── Presence: 입장·퇴장·접속자 수 ── */
+function setupPresence(){
+  _presenceKey='sess_'+(ctxUserId||Math.random().toString(36).slice(2,10));
+  const presRef=db.collection('cms_chat_presence').doc(CHAT_ID).collection('users').doc(_presenceKey);
+
+  // 입장 등록 + 입장 메시지
+  presRef.set({
+    name:myName,
+    joinedAt:firebase.firestore.FieldValue.serverTimestamp(),
+    lastSeen:firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=>{
+    sendSystemMsg(myName+'님이 입장하였습니다.');
+  }).catch(()=>{});
+
+  // 5초마다 lastSeen 갱신 (접속 중 유지)
+  _presenceInterval=setInterval(()=>{
+    presRef.update({lastSeen:firebase.firestore.FieldValue.serverTimestamp()}).catch(()=>{});
+  },5000);
+
+  // 퇴장 처리 (중복 방지)
+  const handleLeave=()=>{
+    if(_leftSent)return;
+    _leftSent=true;
+    clearInterval(_presenceInterval);
+    presRef.delete().catch(()=>{});
+    sendSystemMsg(myName+'님이 퇴장하였습니다.');
+  };
+  window.addEventListener('pagehide',handleLeave);
+  window.addEventListener('beforeunload',handleLeave);
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='hidden')handleLeave();
+  });
+
+  // 접속자 수 실시간 구독 (lastSeen 60초 이내만 온라인)
+  _unsubPresence=db.collection('cms_chat_presence').doc(CHAT_ID).collection('users')
+    .onSnapshot(snap=>{
+      const cutoff=new Date(Date.now()-60000);
+      const onlineCount=snap.docs.filter(d=>{
+        const ls=d.data().lastSeen?.toDate?.();
+        return !ls||(ls>=cutoff);
+      }).length;
+      const el=document.getElementById('online-count');
+      el.textContent=onlineCount>0?'접속 중 '+onlineCount+'명':'';
+    },()=>{});
+}
+
+function sendSystemMsg(text){
+  db.collection('cms_chat_messages').doc(CHAT_ID).collection('messages').add({
+    type:'system',
+    text,
+    sentAt:firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(()=>{});
 }
 
 function subscribeMessages(){
@@ -168,15 +276,33 @@ function renderMessages(msgs){
     return;
   }
   el.innerHTML=msgs.map(m=>{
-    const initials=esc((m.displayName||'?').slice(0,1));
+    // 시스템 메시지 (입장/퇴장)
+    if(m.type==='system'){
+      return`<div class="msg-system">${esc(m.text||'')}</div>`;
+    }
     const time=m.sentAt?.toDate?formatTime(m.sentAt.toDate()):'';
-    return`<div class="msg-row">
-      <div class="msg-avatar" style="background:${esc(m.color||'#999')}">${initials}</div>
-      <div class="msg-body">
-        <div class="msg-meta"><span class="msg-name">${esc(m.displayName||'익명')}</span><span class="msg-time">${time}</span></div>
-        <div class="msg-text">${esc(m.text||'')}</div>
-      </div>
-    </div>`;
+    const textHtml=linkify(m.text||'');
+    if(_isAnon){
+      // 익명 모드: 아바타 동그라미 없음
+      return`<div class="msg-row">
+        <div class="msg-body">
+          <div class="msg-meta"><span class="msg-name">${esc(m.displayName||'익명')}</span><span class="msg-time">${time}</span></div>
+          <div class="msg-text">${textHtml}</div>
+        </div>
+      </div>`;
+    } else {
+      // 실명 모드: 아바타 표시 (이미지 또는 이니셜 원)
+      const avatarHtml=m.photoUrl
+        ?`<div class="msg-avatar"><img src="${esc(m.photoUrl)}" alt=""></div>`
+        :`<div class="msg-avatar" style="background:${esc(m.color||'#999')}">${esc((m.displayName||'?').slice(0,1))}</div>`;
+      return`<div class="msg-row">
+        ${avatarHtml}
+        <div class="msg-body">
+          <div class="msg-meta"><span class="msg-name">${esc(m.displayName||'사용자')}</span><span class="msg-time">${time}</span></div>
+          <div class="msg-text">${textHtml}</div>
+        </div>
+      </div>`;
+    }
   }).join('');
   if(wasAtBottom||_autoScroll){el.scrollTop=el.scrollHeight;_autoScroll=false;}
 }
@@ -189,13 +315,19 @@ function formatTime(d){
   return(h<12?'오전':'오후')+' '+(h%12||12)+':'+m;
 }
 function onInputChange(){
-  const v=document.getElementById('chat-input').value.trim();
-  document.getElementById('send-btn').disabled=!v;
   const ta=document.getElementById('chat-input');
+  const v=ta.value.trim();
+  document.getElementById('send-btn').disabled=!v;
   ta.style.height='auto';
   ta.style.height=Math.min(ta.scrollHeight,90)+'px';
 }
-function onInputKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+function onInputKey(e){
+  // isComposing: 한국어 IME 조합 중 엔터 무시 → 마지막 글자 중복 방지
+  if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){
+    e.preventDefault();
+    sendMsg();
+  }
+}
 async function sendMsg(){
   const input=document.getElementById('chat-input');
   const text=input.value.trim();
@@ -206,7 +338,10 @@ async function sendMsg(){
   _autoScroll=true;
   try{
     await db.collection('cms_chat_messages').doc(CHAT_ID).collection('messages').add({
-      text,displayName:myName,color:myColor,
+      text,
+      displayName:myName,
+      color:myColor,
+      photoUrl:myPhotoUrl||null,
       userId:ctxUserId||null,
       sentAt:firebase.firestore.FieldValue.serverTimestamp()
     });

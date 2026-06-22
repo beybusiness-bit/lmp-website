@@ -1123,12 +1123,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
               <div class="mini-rte" id="ed-chat-desc" contenteditable="true" data-ph="채팅방 설명을 입력하세요" onmouseup="saveRange(this)" ontouchend="saveRange(this)" onkeyup="saveRange(this)"></div>
             </div>
             <div class="ed-sect">
-              <div class="ed-lbl">익명 닉네임 — 단어 묶음 1 <span style="font-weight:400;opacity:.55;">(쉼표 구분, 예: 형용사)</span></div>
-              <textarea class="fi-sm" id="chat-anon-w1-inp" placeholder="예: 게으른, 빠른, 귀여운, 졸린, 용감한" style="width:100%;height:64px;resize:vertical;margin-bottom:0;font-size:13px;" oninput="chatSyncAnonWords(1)"></textarea>
+              <div class="ed-lbl">대화 방식</div>
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;margin-bottom:6px;">
+                <input type="radio" name="chat-mode" value="anon" id="chat-mode-anon" onchange="chatModeChange()"> 익명 대화 (랜덤 닉네임)
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+                <input type="radio" name="chat-mode" value="real" id="chat-mode-real" onchange="chatModeChange()"> 실명 대화 (로그인 사용자 정보 사용)
+              </label>
             </div>
-            <div class="ed-sect">
-              <div class="ed-lbl">익명 닉네임 — 단어 묶음 2 <span style="font-weight:400;opacity:.55;">(쉼표 구분, 예: 동물·명사)</span></div>
-              <textarea class="fi-sm" id="chat-anon-w2-inp" placeholder="예: 카피바라, 너구리, 고양이, 판다, 토끼" style="width:100%;height:64px;resize:vertical;margin-bottom:0;font-size:13px;" oninput="chatSyncAnonWords(2)"></textarea>
+            <div id="chat-real-settings" style="display:none;">
+              <div class="ed-sect">
+                <div class="ed-lbl">이름 필드 키 <span style="font-weight:400;opacity:.55;">(사용자 문서에서 이름으로 쓸 필드명)</span></div>
+                <input class="fi" id="chat-real-name-field" placeholder="예: name, 이름, nickname" style="margin-bottom:0;">
+              </div>
+              <div class="ed-sect">
+                <div class="ed-lbl">사진 필드 키 <span style="font-weight:400;opacity:.55;">(선택 — 프로필 사진 URL 필드명)</span></div>
+                <input class="fi" id="chat-real-photo-field" placeholder="예: photoUrl, profileImage" style="margin-bottom:0;">
+              </div>
+            </div>
+            <div id="chat-anon-settings">
+              <div class="ed-sect">
+                <div class="ed-lbl">익명 닉네임 — 단어 묶음 1 <span style="font-weight:400;opacity:.55;">(쉼표 구분, 예: 형용사)</span></div>
+                <textarea class="fi-sm" id="chat-anon-w1-inp" placeholder="예: 게으른, 빠른, 귀여운, 졸린, 용감한" style="width:100%;height:64px;resize:vertical;margin-bottom:0;font-size:13px;" oninput="chatSyncAnonWords(1)"></textarea>
+              </div>
+              <div class="ed-sect">
+                <div class="ed-lbl">익명 닉네임 — 단어 묶음 2 <span style="font-weight:400;opacity:.55;">(쉼표 구분, 예: 동물·명사)</span></div>
+                <textarea class="fi-sm" id="chat-anon-w2-inp" placeholder="예: 카피바라, 너구리, 고양이, 판다, 토끼" style="width:100%;height:64px;resize:vertical;margin-bottom:0;font-size:13px;" oninput="chatSyncAnonWords(2)"></textarea>
+              </div>
             </div>
             <div class="ed-sect">
               <div class="ed-lbl">최대 메시지 수 <span style="font-weight:400;opacity:.55;">(초과 시 오래된 메시지 자동 삭제)</span></div>
@@ -13436,6 +13457,11 @@ async function chatOpenConfig(configId) {
     document.getElementById('chat-title-inp').value = data.title || '';
     rteSet('chat-desc', data.description || '');
     document.getElementById('chat-max-msgs').value = data.maxMessages || 200;
+    const mode = data.chatMode || 'anon';
+    document.getElementById('chat-mode-'+mode).checked = true;
+    document.getElementById('chat-real-name-field').value = data.realNameField || '';
+    document.getElementById('chat-real-photo-field').value = data.realPhotoField || '';
+    chatModeChange();
     chatRenderAnonWords();
     if(!_navRestore) history.pushState({v:'tool-edit',toolId:'chat',docId:configId},'','#tools/chat/'+configId);
   } catch(e) { alert('불러오기 실패: ' + e.message); chatShowList(); }
@@ -13447,9 +13473,13 @@ async function chatSaveConfig(e) {
   const btn = document.querySelector('#chat-edit-screen .save-btn');
   if (btn) { btn.disabled = true; btn.textContent = '저장 중…'; }
   try {
+    const chatMode = document.querySelector('input[name="chat-mode"]:checked')?.value || 'anon';
     await db.collection('cms_chat_configs').doc(chatState.curConfigId).update({
       title: document.getElementById('chat-title-inp').value.trim() || '채팅',
       description: rteGet('chat-desc'),
+      chatMode,
+      realNameField: document.getElementById('chat-real-name-field').value.trim(),
+      realPhotoField: document.getElementById('chat-real-photo-field').value.trim(),
       anonWords1: chatState.curAnonWords1,
       anonWords2: chatState.curAnonWords2,
       maxMessages: parseInt(document.getElementById('chat-max-msgs').value) || 200,
@@ -13481,6 +13511,12 @@ function chatSyncAnonWords(which) {
 function chatRenderAnonWords() {
   document.getElementById('chat-anon-w1-inp').value = chatState.curAnonWords1.join(', ');
   document.getElementById('chat-anon-w2-inp').value = chatState.curAnonWords2.join(', ');
+}
+
+function chatModeChange() {
+  const mode = document.querySelector('input[name="chat-mode"]:checked')?.value || 'anon';
+  document.getElementById('chat-real-settings').style.display = mode === 'real' ? 'block' : 'none';
+  document.getElementById('chat-anon-settings').style.display = mode === 'anon' ? 'block' : 'none';
 }
 </script>
 <!-- 폼 필드 추가/편집 모달 -->
